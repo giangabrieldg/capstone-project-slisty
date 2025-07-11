@@ -1,0 +1,252 @@
+/* Define CSS variables for consistent theming */
+:root {
+    --primary-color: #2c9045;
+    /* Primary brand color */
+    --secondary-color: #e6f3ea;
+    /* Light background for cards */
+    --background-color: #ffffff;
+    /* Main background */
+    --secondary-background-color: #f5f1e9;
+    /* Secondary background */
+    --text-color: #2d2d2d;
+    /* Primary text color */
+    --hover-color: #0f5e23;
+    --secondary-text-color: #5e5d5d;
+    /* Secondary text color */
+    --white-text-color: #f9f6ee;
+    /* Text color for sidebar */
+    --font-poppins: "Poppins", sans-serif;
+    /* Main font */
+    --font-baloo: "Baloo 2", sans-serif;
+    /* Heading font */
+    --yellow-color: #ffeb3b;
+    /* Yellow for alternative actions */
+}
+
+/* Base body styles */
+body {
+    background-color: var(--background-color);
+    font-family: var(--font-poppins);
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+}
+
+/* Main content area styling, offset for sidebar */
+.content {
+    margin-left: 250px;
+    padding: 30px;
+    width: calc(100% - 250px);
+    transition: margin-left 0.3s ease-in-out, width 0.3s ease-in-out;
+}
+
+/* Responsive adjustments for medium and smaller screens */
+@media (max-width: 992px) {
+    .content {
+        margin-left: 0;
+        width: 100%;
+        padding: 20px;
+    }
+
+    body.sidebar-visible .content {
+        margin-left: 250px;
+        width: calc(100% - 250px);
+    }
+}
+
+/* Responsive adjustments for small screens */
+@media (max-width: 576px) {
+    .content {
+        padding: 15px;
+    }
+
+    body.sidebar-visible .content {
+        margin-left: 200px;
+        width: calc(100% - 200px);
+    }
+}
+
+/* Menu Management header */
+.menu-management-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding: 15px 25px;
+    background-color: var(--background-color);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+}
+
+.menu-management-header h2 {
+    color: var(--text-color);
+    font-weight: 700;
+    font-size: 1.8rem;
+    margin: 0;
+}
+
+.header-actions {
+    gap: 5px;
+    display: flex;
+    align-items: center;
+}
+
+.search-bar {
+    width: 200px;
+    padding: 5px 10px;
+    border: 1px solid var(--secondary-color);
+    border-radius: 4px;
+}
+
+.search-bar:focus {
+    border-color: var(--primary-color);
+    outline: none;
+    box-shadow: 0 0 5px rgba(44, 144, 69, 0.3);
+}
+
+.add-item-btn {
+    background-color: var(--primary-color);
+    border: none;
+    color: var(--white-text-color);
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.add-item-btn:hover {
+    background-color: var(--hover-color);
+}
+
+/* Menu Management table heading */
+.menu-management-table h3 {
+    color: var(--text-color);
+    font-weight: 700;
+    margin-bottom: 15px;
+    font-size: 1.5rem;
+}
+
+/* Table styling */
+.table {
+    background-color: var(--background-color);
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.table th {
+    font-family: var(--font-poppins);
+    font-weight: 600;
+    color: var(--text-color);
+    background-color: var(--secondary-color);
+    padding: 15px;
+}
+
+.table td {
+    font-family: var(--font-poppins);
+    color: var(--text-color);
+    padding: 15px;
+    vertical-align: middle;
+}
+
+.menu-image {
+    width: 50px;
+    height: 50px;
+    object-fit: cover;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.enlarge-image:hover {
+    opacity: 0.8;
+}
+
+/* Action buttons */
+.edit-item {
+    background-color: var(--yellow-color);
+    border: none;
+    color: #333;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-family: var(--font-poppins);
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    margin-right: 5px;
+}
+
+.edit-item:hover {
+    background-color: #fdd835;
+}
+
+.remove-item {
+    background-color: #dc3545;
+    border: none;
+    color: var(--white-text-color);
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-family: var(--font-poppins);
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.remove-item:hover {
+    background-color: #c82333;
+}
+
+/* Modal styling */
+#itemModal .btn-success {
+    background-color: var(--primary-color);
+    border: none;
+    color: var(--white-text-color);
+}
+
+#itemModal .btn-success:hover {
+    background-color: var(--hover-color);
+}
+
+/* Image Modal styling */
+#imageModal .modal-body {
+    padding: 20px;
+}
+
+#enlargedImage {
+    max-width: 100%;
+    max-height: 80vh;
+}
+
+/* Responsive adjustments for small screens */
+@media (max-width: 576px) {
+    .menu-management-header {
+        flex-direction: column;
+        gap: 15px;
+        padding: 15px;
+    }
+
+    .header-actions {
+        flex-direction: column;
+        gap: 10px;
+        width: 100%;
+    }
+
+    .search-bar,
+    .add-item-btn {
+        width: 100%;
+    }
+
+    .table-responsive {
+        font-size: 0.85rem;
+    }
+
+    .table th,
+    .table td {
+        padding: 10px;
+    }
+
+    .edit-item,
+    .remove-item {
+        width: 100%;
+        margin-bottom: 5px;
+    }
+}

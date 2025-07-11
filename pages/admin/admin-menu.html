@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <!-- Character encoding and responsive viewport -->
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Dashboard - Menu Management</title>
+    <!-- Bootstrap CSS for responsive grid and components -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <!-- Custom styles for menu management -->
+    <link rel="stylesheet" href="/SLISTY/styles/admin-menu.css" />
+    <link rel="stylesheet" href="/SLISTY/styles/sidebar.css" />
+    <!-- Google Fonts for typography -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;700&family=Poppins:wght@300;400;600&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Bootstrap Icons for icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css"
+    />
+  </head>
+  <body>
+    <!-- Sidebar toggle button for mobile view -->
+    <button class="sidebar-toggle" aria-label="Toggle sidebar">
+      <i class="bi bi-list"></i>
+    </button>
+    <!-- Main layout container with flexbox for sidebar and content -->
+    <div class="d-flex">
+      <!-- Sidebar for navigation -->
+      <aside class="sidebar">
+        <!-- Sidebar header with logo and user info -->
+        <div class="sidebar-header">
+          <div class="user-info">
+            <div class="user-icon"></div>
+            <span class="user-name">Admin Name</span>
+            <span class="user-role">Admin</span>
+          </div>
+        </div>
+        <!-- Navigation menu -->
+        <nav class="sidebar-nav">
+          <a href="admin-dashboard.html" class="nav-item dashboard">
+            <i class="bi bi-speedometer2 icon"></i>
+            <span>Dashboard</span>
+          </a>
+          <a href="admin-reports.html" class="nav-item reports">
+            <i class="bi bi-bar-chart-line icon"></i>
+            <span>Reports</span>
+          </a>
+          <a href="admin-orders-and-payments.html" class="nav-item orders">
+            <i class="bi bi-basket icon"></i>
+            <span>Orders and Payments</span>
+          </a>
+          <a href="admin-users.html" class="nav-item user-management">
+            <i class="bi bi-people icon"></i>
+            <span>User Management</span>
+          </a>
+          <a href="admin-cakes.html" class="nav-item custom-cake-orders">
+            <i class="bi bi-bag-check icon"></i>
+            <span>Custom Cake Orders</span>
+          </a>
+          <a href="admin-menu.html" class="nav-item menu-management active">
+            <i class="bi bi-journal-text icon"></i>
+            <span>Menu Management</span>
+          </a>
+          <a
+            href="admin-faq.html"
+            class="nav-item faqs-and-inquiries-management"
+          >
+            <i class="bi bi-question-circle icon"></i>
+            <span>FAQs and Inquiries</span>
+          </a>
+          <a href="../customer/index.html" class="nav-item logout">
+            <i class="bi bi-box-arrow-right icon"></i>
+            <span>Logout</span>
+          </a>
+        </nav>
+      </aside>
+      <!-- Main content area -->
+      <main class="content">
+        <!-- Menu Management header -->
+        <div class="menu-management-header">
+          <h2>Menu Management</h2>
+          <div class="header-actions">
+            <input
+              type="text"
+              class="form-control search-bar"
+              placeholder="Search by Item Name or Category..."
+            />
+            <button class="btn btn-primary add-item-btn">Add New Item</button>
+          </div>
+        </div>
+        <!-- Menu Management table -->
+        <div class="menu-management-table">
+          <h3>Menu Items</h3>
+          <div class="table-responsive">
+            <table class="table table-hover" id="menuTable">
+              <thead>
+                <tr>
+                  <th>Item Name</th>
+                  <th>Category</th>
+                  <th>Image</th>
+                  <th>Price (₱)</th>
+                  <th>Description</th>
+                  <th>Sizes (Cakes)</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Ube Moist Cake</td>
+                  <td>Cakes</td>
+                  <td>
+                    <img
+                      src="https://via.placeholder.com/50"
+                      alt="Ube Moist Cake"
+                      class="menu-image enlarge-image"
+                    />
+                  </td>
+                  <td>450.00</td>
+                  <td>A rich, moist cake with ube flavor.</td>
+                  <td>6", 8", 10"</td>
+                  <td>
+                    <button
+                      class="btn btn-warning btn-sm edit-item"
+                      data-item-name="Ube Moist Cake"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      class="btn btn-danger btn-sm remove-item"
+                      data-item-name="Ube Moist Cake"
+                    >
+                      Remove
+                    </button>
+                  </td>
+                </tr>
+                <tr>
+                  <td>Chocolate Croissant</td>
+                  <td>Pastries</td>
+                  <td>
+                    <img
+                      src="https://via.placeholder.com/50"
+                      alt="Chocolate Croissant"
+                      class="menu-image enlarge-image"
+                    />
+                  </td>
+                  <td>120.00</td>
+                  <td>Flaky pastry filled with chocolate.</td>
+                  <td>-</td>
+                  <td>
+                    <button
+                      class="btn btn-warning btn-sm edit-item"
+                      data-item-name="Chocolate Croissant"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      class="btn btn-danger btn-sm remove-item"
+                      data-item-name="Chocolate Croissant"
+                    >
+                      Remove
+                    </button>
+                  </td>
+                </tr>
+                <tr>
+                  <td>Adobo Rice Meal</td>
+                  <td>Rice Meals</td>
+                  <td>
+                    <img
+                      src="https://via.placeholder.com/50"
+                      alt="Adobo Rice Meal"
+                      class="menu-image enlarge-image"
+                    />
+                  </td>
+                  <td>150.00</td>
+                  <td>Traditional Filipino adobo with rice.</td>
+                  <td>-</td>
+                  <td>
+                    <button
+                      class="btn btn-warning btn-sm edit-item"
+                      data-item-name="Adobo Rice Meal"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      class="btn btn-danger btn-sm remove-item"
+                      data-item-name="Adobo Rice Meal"
+                    >
+                      Remove
+                    </button>
+                  </td>
+                </tr>
+                <tr>
+                  <td>Cheese Stick</td>
+                  <td>Snacks</td>
+                  <td>
+                    <img
+                      src="https://via.placeholder.com/50"
+                      alt="Cheese Stick"
+                      class="menu-image enlarge-image"
+                    />
+                  </td>
+                  <td>80.00</td>
+                  <td>Crispy fried cheese sticks.</td>
+                  <td>-</td>
+                  <td>
+                    <button
+                      class="btn btn-warning btn-sm edit-item"
+                      data-item-name="Cheese Stick"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      class="btn btn-danger btn-sm remove-item"
+                      data-item-name="Cheese Stick"
+                    >
+                      Remove
+                    </button>
+                  </td>
+                </tr>
+                <tr>
+                  <td>Iced Coffee</td>
+                  <td>Drinks</td>
+                  <td>
+                    <img
+                      src="https://via.placeholder.com/50"
+                      alt="Iced Coffee"
+                      class="menu-image enlarge-image"
+                    />
+                  </td>
+                  <td>100.00</td>
+                  <td>Refreshing cold coffee brew.</td>
+                  <td>-</td>
+                  <td>
+                    <button
+                      class="btn btn-warning btn-sm edit-item"
+                      data-item-name="Iced Coffee"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      class="btn btn-danger btn-sm remove-item"
+                      data-item-name="Iced Coffee"
+                    >
+                      Remove
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <!-- Add/Edit Item Modal -->
+        <div
+          class="modal fade"
+          id="itemModal"
+          tabindex="-1"
+          aria-labelledby="itemModalLabel"
+          aria-hidden="true"
+        >
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="itemModalLabel">
+                  Add New Menu Item
+                </h5>
+                <button
+                  type="button"
+                  class="btn-close"
+                  data-bs-dismiss="modal"
+                  aria-label="Close"
+                ></button>
+              </div>
+              <div class="modal-body">
+                <form id="itemForm">
+                  <input type="hidden" id="editItemName" />
+                  <div class="mb-3">
+                    <label for="itemName" class="form-label">Item Name</label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="itemName"
+                      required
+                    />
+                  </div>
+                  <div class="mb-3">
+                    <label for="category" class="form-label">Category</label>
+                    <select class="form-select" id="category" required>
+                      <option value="Cakes">Cakes</option>
+                      <option value="Pastries">Pastries</option>
+                      <option value="Rice Meals">Rice Meals</option>
+                      <option value="Snacks">Snacks</option>
+                      <option value="Drinks">Drinks</option>
+                    </select>
+                  </div>
+                  <div class="mb-3">
+                    <label for="price" class="form-label">Price (₱)</label>
+                    <input
+                      type="number"
+                      class="form-control"
+                      id="price"
+                      step="0.01"
+                      min="0"
+                      required
+                    />
+                  </div>
+                  <div class="mb-3">
+                    <label for="imageUpload" class="form-label"
+                      >Upload Image</label
+                    >
+                    <input
+                      type="file"
+                      class="form-control"
+                      id="imageUpload"
+                      accept="image/*"
+                    />
+                  </div>
+                  <div class="mb-3">
+                    <label for="description" class="form-label"
+                      >Description</label
+                    >
+                    <textarea
+                      class="form-control"
+                      id="description"
+                      rows="3"
+                      required
+                    ></textarea>
+                  </div>
+                  <div class="mb-3">
+                    <label for="sizes" class="form-label"
+                      >Sizes (for Cakes, comma-separated e.g., 6", 8",
+                      10")</label
+                    >
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="sizes"
+                      placeholder="Leave blank for non-cake items"
+                    />
+                  </div>
+                  <button type="submit" class="btn btn-success" id="saveItem">
+                    Save Item
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Image View Modal -->
+        <div
+          class="modal fade"
+          id="imageModal"
+          tabindex="-1"
+          aria-labelledby="imageModalLabel"
+          aria-hidden="true"
+        >
+          <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="imageModalLabel">Image Preview</h5>
+                <button
+                  type="button"
+                  class="btn-close"
+                  data-bs-dismiss="modal"
+                  aria-label="Close"
+                ></button>
+              </div>
+              <div class="modal-body text-center">
+                <img
+                  src=""
+                  alt="Enlarged Image"
+                  id="enlargedImage"
+                  class="img-fluid"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+    <!-- Bootstrap JS and custom script -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      // Search functionality
+      document.querySelector(".search-bar").addEventListener("input", (e) => {
+        const searchTerm = e.target.value.toLowerCase();
+        document.querySelectorAll("#menuTable tbody tr").forEach((row) => {
+          const itemName = row.cells[0].textContent.toLowerCase();
+          const category = row.cells[1].textContent.toLowerCase();
+          row.style.display =
+            itemName.includes(searchTerm) || category.includes(searchTerm)
+              ? ""
+              : "none";
+        });
+      });
+
+      // Add New Item functionality
+      document.querySelector(".add-item-btn").addEventListener("click", () => {
+        document.getElementById("itemModalLabel").textContent =
+          "Add New Menu Item";
+        document.getElementById("editItemName").value = "";
+        document.getElementById("itemForm").reset();
+        document.getElementById("imageUpload").value = "";
+        bootstrap.Modal.getOrCreateInstance(
+          document.getElementById("itemModal")
+        ).show();
+      });
+
+      // Edit Item functionality
+      document.querySelectorAll(".edit-item").forEach((button) => {
+        button.addEventListener("click", () => {
+          const itemName = button.getAttribute("data-item-name");
+          const row = button.closest("tr");
+          document.getElementById("itemModalLabel").textContent =
+            "Edit Menu Item";
+          document.getElementById("editItemName").value = itemName;
+          document.getElementById("itemName").value = row.cells[0].textContent;
+          document.getElementById("category").value = row.cells[1].textContent;
+          document.getElementById("price").value =
+            row.cells[3].textContent.replace("₱", "");
+          document.getElementById("description").value =
+            row.cells[4].textContent;
+          document.getElementById("sizes").value =
+            row.cells[5].textContent === "-" ? "" : row.cells[5].textContent;
+          document.getElementById("imageUpload").value = "";
+          bootstrap.Modal.getOrCreateInstance(
+            document.getElementById("itemModal")
+          ).show();
+        });
+      });
+
+      // Save Item functionality
+      document.getElementById("itemForm").addEventListener("submit", (e) => {
+        e.preventDefault();
+        const itemName = document.getElementById("itemName").value;
+        const category = document.getElementById("category").value;
+        const price = document.getElementById("price").value;
+        const description = document.getElementById("description").value;
+        const sizes = document.getElementById("sizes").value || "-";
+        const imageUpload = document.getElementById("imageUpload").files[0];
+        const editItemName = document.getElementById("editItemName").value;
+
+        const table = document
+          .getElementById("menuTable")
+          .getElementsByTagName("tbody")[0];
+        if (editItemName) {
+          const row = document
+            .querySelector(`#menuTable tr td:contains("${editItemName}")`)
+            .closest("tr");
+          row.cells[0].textContent = itemName;
+          row.cells[1].textContent = category;
+          row.cells[3].textContent = price;
+          row.cells[4].textContent = description;
+          row.cells[5].textContent = sizes;
+          row
+            .querySelector(".edit-item")
+            .setAttribute("data-item-name", itemName);
+          row
+            .querySelector(".remove-item")
+            .setAttribute("data-item-name", itemName);
+          alert(
+            `Item "${editItemName}" updated successfully! (Image upload simulated)`
+          );
+        } else {
+          const newRow = table.insertRow();
+          newRow.innerHTML = `
+            <td>${itemName}</td>
+            <td>${category}</td>
+            <td><img src="https://via.placeholder.com/50" alt="${itemName}" class="menu-image enlarge-image"></td>
+            <td>${price}</td>
+            <td>${description}</td>
+            <td>${sizes}</td>
+            <td>
+              <button class="btn btn-warning btn-sm edit-item" data-item-name="${itemName}">Edit</button>
+              <button class="btn btn-danger btn-sm remove-item" data-item-name="${itemName}">Remove</button>
+            </td>
+          `;
+          alert(
+            `Item "${itemName}" added successfully! (Image upload simulated)`
+          );
+        }
+        bootstrap.Modal.getInstance(
+          document.getElementById("itemModal")
+        ).hide();
+        document.getElementById("itemForm").reset();
+      });
+
+      // Remove Item functionality
+      document.querySelectorAll(".remove-item").forEach((button) => {
+        button.addEventListener("click", () => {
+          const itemName = button.getAttribute("data-item-name");
+          if (confirm(`Are you sure you want to remove "${itemName}"?`)) {
+            button.closest("tr").remove();
+            alert(`Item "${itemName}" removed successfully!`);
+          }
+        });
+      });
+
+      // Image View functionality
+      document.querySelectorAll(".enlarge-image").forEach((img) => {
+        img.addEventListener("click", () => {
+          document.getElementById("enlargedImage").src = img.src;
+          bootstrap.Modal.getOrCreateInstance(
+            document.getElementById("imageModal")
+          ).show();
+        });
+      });
+
+      // Sidebar toggle functionality
+      const sidebarToggle = document.querySelector(".sidebar-toggle");
+      const sidebar = document.querySelector(".sidebar");
+      const body = document.body;
+
+      sidebarToggle.addEventListener("click", () => {
+        sidebar.classList.toggle("show");
+        body.classList.toggle("sidebar-visible");
+      });
+
+      document.addEventListener("click", (e) => {
+        if (
+          window.innerWidth <= 992 &&
+          !sidebar.contains(e.target) &&
+          !sidebarToggle.contains(e.target) &&
+          sidebar.classList.contains("show")
+        ) {
+          sidebar.classList.remove("show");
+          body.classList.remove("sidebar-visible");
+        }
+      });
+    </script>
+  </body>
+</html>

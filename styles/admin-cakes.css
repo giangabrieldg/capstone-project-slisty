@@ -1,0 +1,211 @@
+:root {
+    --primary-color: #2c9045;
+    --secondary-color: #e6f3ea;
+    --background-color: #ffffff;
+    --secondary-background-color: #f5f1e9;
+    --sidebar-hover-color: #a8d9b0;
+    --text-color: #2d2d2d;
+    --secondary-text-color: #5e5d5d;
+    --white-text-color: #f9f6ee;
+    --font-poppins: "Poppins", sans-serif;
+    --font-baloo: "Baloo 2", sans-serif;
+}
+
+body {
+    background-color: var(--background-color);
+    font-family: var(--font-poppins);
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+}
+
+.content {
+    margin-left: 250px;
+    padding: 30px;
+    width: calc(100% - 250px);
+    transition: margin-left 0.3s ease-in-out, width 0.3s ease-in-out;
+}
+
+@media (max-width: 992px) {
+    .content {
+        margin-left: 0;
+        width: 100%;
+        padding: 20px;
+    }
+
+    body.sidebar-visible .content {
+        margin-left: 250px;
+        width: calc(100% - 250px);
+    }
+}
+
+@media (max-width: 576px) {
+    .content {
+        padding: 15px;
+    }
+
+    body.sidebar-visible .content {
+        margin-left: 200px;
+        width: calc(100% - 200px);
+    }
+}
+
+.custom-cake-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding: 15px 25px;
+    background-color: var(--background-color);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+}
+
+.custom-cake-header h2 {
+    color: var(--text-color);
+    font-weight: 700;
+    font-size: 1.8rem;
+    margin: 0;
+}
+
+.header-actions {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.search-bar {
+    width: 200px;
+    padding: 5px 10px;
+    border: 1px solid var(--secondary-color);
+    border-radius: 4px;
+}
+
+.filter-btn {
+    background-color: var(--primary-color);
+    border: none;
+    color: var(--white-text-color);
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.filter-btn:hover {
+    background-color: var(--sidebar-hover-color);
+}
+
+.custom-cake-table h3 {
+    color: var(--text-color);
+    font-weight: 700;
+    margin-bottom: 15px;
+    font-size: 1.5rem;
+}
+
+.table {
+    background-color: var(--background-color);
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.table th {
+    font-family: var(--font-poppins);
+    font-weight: 600;
+    color: var(--text-color);
+    background-color: var(--secondary-color);
+    padding: 15px;
+}
+
+.table td {
+    font-family: var(--font-poppins);
+    color: var(--text-color);
+    padding: 15px;
+    vertical-align: middle;
+}
+
+.view-image {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.view-image:hover {
+    color: var(--sidebar-hover-color);
+}
+
+.status {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.status.pending {
+    background-color: #e2e3e5;
+    color: #383d41;
+}
+
+.status.feasible {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.status.not-feasible {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.status-select {
+    width: 150px;
+    display: inline-block;
+    margin-right: 10px;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    padding: 5px 15px;
+    font-size: 0.85rem;
+}
+
+.btn-primary:hover {
+    background-color: var(--sidebar-hover-color);
+    border-color: var(--sidebar-hover-color);
+}
+
+@media (max-width: 576px) {
+    .custom-cake-header {
+        flex-direction: column;
+        gap: 15px;
+        padding: 15px;
+    }
+
+    .header-actions {
+        flex-direction: column;
+        gap: 10px;
+        width: 100%;
+    }
+
+    .search-bar {
+        width: 100%;
+    }
+
+    .filter-btn {
+        width: 100%;
+    }
+
+    .table-responsive {
+        font-size: 0.85rem;
+    }
+
+    .table th,
+    .table td {
+        padding: 10px;
+    }
+
+    .status-select {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+}

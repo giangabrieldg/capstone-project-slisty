@@ -1,0 +1,187 @@
+/* Define CSS variables for consistent theming */
+:root {
+    --primary-color: #2c9045;
+    /* Primary brand color */
+    --secondary-color: #e6f3ea;
+    /* Light background for cards */
+    --background-color: #ffffff;
+    /* Main background */
+    --secondary-background-color: #f5f1e9;
+    /* Secondary background */
+    --sidebar-hover-color: #a8d9b0;
+    /* Sidebar hover state */
+    --text-color: #2d2d2d;
+    /* Primary text color */
+    --secondary-text-color: #5e5d5d;
+    /* Secondary text color */
+    --white-text-color: #f9f6ee;
+    /* Text color for sidebar */
+    --font-poppins: "Poppins", sans-serif;
+    /* Main font */
+    --font-baloo: "Baloo 2", sans-serif;
+    /* Heading font */
+}
+
+/* Sidebar styling, visible by default */
+.sidebar {
+    width: 250px;
+    background-color: var(--primary-color);
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    overflow-y: auto;
+    transition: transform 0.3s ease-in-out;
+    /* Smooth slide animation */
+    z-index: 1000;
+    color: var(--white-text-color);
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    /* Subtle shadow for depth */
+}
+
+/* Sidebar header with logo and user info */
+.sidebar-header {
+    padding: 30px 20px;
+    text-align: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    /* Subtle divider */
+}
+
+.logo {
+    max-width: 120px;
+    margin-bottom: 20px;
+    /* Space below logo */
+}
+
+.user-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.user-icon {
+    width: 60px;
+    height: 60px;
+    background-color: var(--white-text-color);
+    border-radius: 50%;
+    margin-bottom: 15px;
+}
+
+.user-info .user-name {
+    font-family: var(--font-poppins);
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.user-info .user-role {
+    font-family: var(--font-poppins);
+    font-size: 0.85rem;
+    color: #d3d3d3;
+}
+
+/* Navigation menu */
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    padding: 10px 0;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    padding: 15px 25px;
+    color: var(--white-text-color);
+    text-decoration: none;
+    font-family: var(--font-poppins);
+    font-weight: 500;
+    font-size: 0.95rem;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    /* Smooth hover effect */
+}
+
+.nav-item .icon {
+    margin-right: 15px;
+    font-size: 1.2rem;
+    color: var(--white-text-color);
+    transition: color 0.3s ease;
+}
+
+.nav-item span {
+    flex: 1;
+    /* Ensure text takes available space */
+}
+
+.nav-item.active,
+.nav-item:hover {
+    background-color: var(--sidebar-hover-color);
+    color: var(--primary-color);
+}
+
+.nav-item.active .icon,
+.nav-item:hover .icon {
+    color: var(--primary-color)
+}
+
+/* Sidebar toggle button for mobile */
+.sidebar-toggle {
+    display: none;
+    /* Hidden by default on desktop */
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    background-color: var(--primary-color);
+    border: none;
+    color: var(--white-text-color);
+    padding: 12px;
+    border-radius: 8px;
+    z-index: 1100;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.sidebar-toggle:hover {
+    background-color: var(--sidebar-hover-color);
+}
+
+/* Responsive adjustments for medium and smaller screens */
+@media (max-width: 992px) {
+    .sidebar-toggle {
+        display: block;
+        /* Show toggle button on mobile */
+    }
+
+    .summary-card {
+        margin-bottom: 15px;
+    }
+}
+
+/* Responsive adjustments for medium and smaller screens */
+@media (max-width: 992px) {
+    .sidebar {
+        transform: translateX(-100%);
+        /* Hide sidebar by default on mobile */
+    }
+
+    .sidebar.show {
+        transform: translateX(0);
+        /* Show when toggled */
+    }
+}
+
+/* Responsive adjustments for small screens */
+@media (max-width: 576px) {
+    .sidebar {
+        width: 200px;
+        /* Narrower sidebar for mobile */
+    }
+
+    .nav-item {
+        padding: 12px 20px;
+        font-size: 0.9rem;
+    }
+
+    .nav-item .icon {
+        margin-right: 10px;
+        font-size: 1.1rem;
+    }
+}
