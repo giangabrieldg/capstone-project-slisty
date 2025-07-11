@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Product - Slice N Grind</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-4Q6Gf2aSP4eDXB8Miphtr37CMZZQ5oXLH2yaXMJ2w8e2ZtHTl7GptT4jmndRuHDT"
+      crossorigin="anonymous"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/SLISTY/styles/navbar.css" />
+    <link rel="stylesheet" href="/SLISTY/styles/products.css" />
+    <link rel="stylesheet" href="/SLISTY/styles/footer.css" />
+  </head>
+  <body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg">
+      <div class="container">
+        <a class="navbar-brand d-flex align-items-center" href="index.html">
+          <img
+            src="../assets/logo/logo.png"
+            alt="Slice N Grind Logo"
+            class="logo me-2"
+            width="75"
+            height="75"
+          />
+          <span class="logo-text">Slice N Grind</span>
+        </a>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="offcanvas"
+          data-bs-target="#offcanvasNavbar"
+          aria-controls="offcanvasNavbar"
+          aria-label="Toggle navigation"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <!-- Sidebar -->
+        <div
+          class="offcanvas offcanvas-start"
+          tabindex="-1"
+          id="offcanvasNavbar"
+          aria-labelledby="offcanvasNavbarLabel"
+        >
+          <div class="offcanvas-header text-black border-bottom">
+            <h5 class="offcanvas-title" id="offcanvasNavbarLabel">Browse</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="offcanvas"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="offcanvas-body">
+            <ul class="navbar-nav justify-content-end flex-grow-1 pe-3 py-3">
+              <li class="nav-item">
+                <a
+                  class="nav-link d-flex align-items-center gap-2 px-3 py-2 w-100"
+                  href="index.html"
+                  >Home</a
+                >
+              </li>
+              <li class="nav-item">
+                <a
+                  class="nav-link d-flex align-items-center gap-2 px-3 py-2 w-100"
+                  href="index.html#about"
+                  >About</a
+                >
+              </li>
+              <li class="nav-item">
+                <a
+                  class="nav-link d-flex align-items-center gap-2 px-3 py-2 w-100"
+                  href="menu.html"
+                  >Menu</a
+                >
+              </li>
+              <li class="nav-item">
+                <a
+                  class="nav-link d-flex align-items-center gap-2 px-3 py-2 w-100"
+                  href="customize.html"
+                  >Customize Cake</a
+                >
+              </li>
+              <li class="nav-item">
+                <a
+                  href="login.html"
+                  class="nav-link d-flex align-items-center gap-2 px-3 py-2 w-100 icon-btn"
+                  aria-label="User Profile"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    class="bi bi-person"
+                    viewBox="0 0 16 16"
+                  >
+                    <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
+                    <path d="M2 14c0-2 2-4 6-4s6 2 6 4" />
+                  </svg>
+                  <span>User Profile</span>
+                </a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Product Section -->
+    <section class="py-5 product-section">
+      <div class="container">
+        <div class="row g-4 align-items-center">
+          <!-- Product Image -->
+          <div class="col-md-6">
+            <div class="product-image-container">
+              <img
+                src="/SLISTY/assets/cakes/cake1.png"
+                alt="Choco De Leche"
+                class="product-image img-fluid"
+              />
+            </div>
+          </div>
+
+          <!-- Product Details -->
+          <div class="col-md-6">
+            <h1 class="h3 fw-normal text-dark mb-2">Choco De Leche</h1>
+            <p class="price fw-lighter mb-2">₱540.00 - ₱709.00</p>
+            <p class="text-muted mb-4">
+              Luscious cake topped with creamy dulce de leche and rich chocolate
+              swirls.
+            </p>
+
+            <!-- Size Selection -->
+            <div class="mb-4">
+              <label class="form-label text-dark">Size</label>
+              <div class="d-flex gap-2">
+                <button type="button" class="size-btn">6x3</button>
+                <button type="button" class="size-btn">8x3</button>
+              </div>
+            </div>
+
+            <!-- Quantity Selector -->
+            <div class="mb-4 d-flex align-items-center gap-3">
+              <label class="form-label text-dark">Quantity</label>
+              <div class="d-flex align-items-center border rounded">
+                <button type="button" class="quantity-btn">-</button>
+                <input
+                  type="number"
+                  class="form-control text-center border-0"
+                  value="1"
+                  style="width: 60px"
+                />
+                <button type="button" class="quantity-btn">+</button>
+              </div>
+            </div>
+
+            <!-- Separator Line -->
+            <div class="separator-line mb-4"></div>
+
+            <!-- Add to Cart Button -->
+            <button class="add-to-cart-btn">Add to Cart</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer-section py-5">
+      <div class="container">
+        <div class="row g-4">
+          <div class="col-md-6">
+            <div class="d-flex align-items-center gap-2 mb-3">
+              <img
+                src="/SLISTY/assets/logo/logo.png"
+                alt="Slice N Grind Logo"
+                class="footer-logo"
+              />
+              <h5 class="footer-title fw-semibold mb-0">Slice N Grind</h5>
+            </div>
+            <p class="footer-text">
+              Slice N Grind, established on December 9, 2023, is a
+              cafe/restaurant located on Poblacion, Santa Maria, Bulacan,
+              between Kodak Sta. Maria and Mercury Drugstore.
+            </p>
+            <div class="social-icons d-flex gap-3 mt-3">
+              <a
+                href="https://facebook.com"
+                target="https://www.facebook.com/profile.php?id=100088185348191"
+                class="social-link"
+              >
+                <svg
+                  class="social-icon"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                >
+                  <path
+                    d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.563V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z"
+                  />
+                </svg>
+              </a>
+              <a href="https://twitter.com" target="_blank" class="social-link">
+                <svg
+                  class="social-icon"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                >
+                  <path
+                    d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"
+                  />
+                </svg>
+              </a>
+              <a
+                href="https://instagram.com"
+                target="_blank"
+                class="social-link"
+              >
+                <svg
+                  class="social-icon"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                >
+                  <path
+                    d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.332.014 7.052.072c-4.95.089-6.863 2.065-6.953 6.953C.014 8.332 0 8.741 0 12c0 3.259.014 3.668.072 4.948.089 4.888 2.065 6.863 6.953 6.953 1.28.058 1.689.072 4.948.072s3.668-.014 4.948-.072c4.888-.089 6.863-2.065 6.953-6.953.058-1.28.072-1.689.072-4.948 0-3.259-.014-3.668-.072-4.948-.089-4.888-2.065-6.863-6.953-6.953C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"
+                  />
+                </svg>
+              </a>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <h5 class="footer-title fw-semibold mb-3">Quick Links</h5>
+            <ul class="list-unstyled">
+              <li><a href="index.html" class="footer-link d-block">Home</a></li>
+              <li>
+                <a href="index.html#about" class="footer-link d-block">About</a>
+              </li>
+              <li><a href="menu.html" class="footer-link d-block">Menu</a></li>
+              <li>
+                <a href="index.html#inquiry" class="footer-link d-block"
+                  >Contact</a
+                >
+              </li>
+            </ul>
+          </div>
+          <div class="col-md-3">
+            <h5 class="footer-title fw-semibold mb-3">Contact</h5>
+            <p class="footer-text">📞 123-456-7890</p>
+            <p class="footer-text">✉️ info@slicengrind.com</p>
+            <p class="footer-text">📍 Poblacion, Santa Maria, Bulacan</p>
+          </div>
+        </div>
+        <div class="text-center border-top border-secondary mt-4 pt-3">
+          <p class="footer-text mb-0">
+            © 2025 Slice N Grind. All rights reserved.
+          </p>
+        </div>
+      </div>
+    </footer>
+
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO"
+      crossorigin="anonymous"
+    ></script>
+    <script>
+      // Function to get URL parameter
+      function getParameterByName(name) {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(name);
+      }
+
+      // Product data
+      const products = {
+        "salted-caramel": {
+          name: "Salted Caramel Flan",
+          price: "₱599.00 - ₱839.00",
+          description:
+            "A delightful cake with a layer of creamy salted caramel flan.",
+          image: "/SLISTY/assets/cakes/cake2.png",
+        },
+        "choco-de-leche": {
+          name: "Choco De Leche",
+          price: "₱540.00 - ₱709.00",
+          description:
+            "Luscious cake topped with creamy dulce de leche and rich chocolate swirls.",
+          image: "/SLISTY/assets/cakes/cake1.png",
+        },
+        "ube-moist": {
+          name: "Ube Moist Cake",
+          price: "₱530.00 - ₱759.00",
+          description: "A moist ube cake with a rich purple yam flavor.",
+          image: "/SLISTY/assets/cakes/cake3.png",
+        },
+        carrot: {
+          name: "Carrot Cake",
+          price: "₱839.00",
+          description:
+            "A classic carrot cake with a moist texture and cream cheese frosting.",
+          image: "/SLISTY/assets/cakes/carrot-cake.png",
+        },
+        "caramel-almond": {
+          name: "Caramel Almond Cake",
+          price: "₱389.00 - ₱589.00",
+          description: "A nutty almond cake drizzled with caramel.",
+          image: "/SLISTY/assets/cakes/caramel-almond-cake.png",
+        },
+        "red-velvet": {
+          name: "Red Velvet Moist Cake",
+          price: "₱599.00 - ₱839.00",
+          description: "A rich red velvet cake with a creamy frosting.",
+          image: "/SLISTY/assets/cakes/red-velvet-moist-cake.png",
+        },
+      };
+
+      document.addEventListener("DOMContentLoaded", () => {
+        const productId = getParameterByName("product");
+        const product = products[productId];
+
+        if (product) {
+          document.querySelector(".col-md-6 h1").textContent = product.name;
+          document.querySelector(".col-md-6 .price").textContent =
+            product.price;
+          document.querySelector(".col-md-6 .text-muted").textContent =
+            product.description;
+          document.querySelector(".col-md-6 .product-image").src =
+            product.image;
+        } else {
+          // Default to Choco De Leche if no product is found
+          document.querySelector(".col-md-6 h1").textContent = "Choco De Leche";
+          document.querySelector(".col-md-6 .price").textContent =
+            "₱540.00 - ₱709.00";
+          document.querySelector(".col-md-6 .text-muted").textContent =
+            "Luscious cake topped with creamy dulce de leche and rich chocolate swirls.";
+          document.querySelector(".col-md-6 .product-image").src =
+            "../assets/cakes/cake1.png";
+        }
+
+        // Quantity control script
+        document.querySelectorAll(".quantity-btn").forEach((button) => {
+          button.addEventListener("click", () => {
+            const input = button.parentElement.querySelector("input");
+            let value = parseInt(input.value);
+            if (button.textContent === "-") value = Math.max(1, value - 1);
+            if (button.textContent === "+") value += 1;
+            input.value = value;
+          });
+        });
+      });
+    </script>
+  </body>
+</html>

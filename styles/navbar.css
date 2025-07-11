@@ -1,0 +1,79 @@
+@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@400..800&family=Poppins:wght@100..900&display=swap');
+
+:root {
+    --primary-color: #2C9045;
+    --secondary-color: #BCE4CC;
+    --background-color: #BAE3CA;
+    --hover-color: #A8D9B0;
+    --text-color: #2D2D2D;
+    --font-poppins: 'Poppins', sans-serif;
+}
+
+/* ---------------Navbar--------------- */
+.navbar {
+    background-color: #BAE3CA !important;
+}
+
+.logo-text {
+    color: var(--primary-color);
+    font-weight: 700;
+    font-size: 24px;
+}
+
+/* Uniform nav link & icon styling */
+.navbar-nav .nav-link,
+.icon-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.5rem 1rem;
+    font-size: 18px;
+    color: var(--text-color);
+    font-family: var(--font-poppins);
+    text-decoration: none;
+    background: none;
+    border: none;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.navbar-nav .nav-link:hover,
+.navbar-nav .nav-link.active,
+.icon-btn:hover {
+    color: var(--primary-color);
+    background-color: var(--hover-color);
+    border-radius: 0.375rem;
+}
+
+.icon-btn:focus {
+    outline: none;
+}
+
+.icon-btn svg {
+    display: block;
+    stroke: var(--text-color);
+    fill: none;
+    stroke-width: 1.5;
+    transition: stroke 0.3s ease;
+}
+
+.icon-btn:hover svg {
+    stroke: var(--primary-color);
+}
+
+/* Responsive adjustments for navbar*/
+@media (min-width: 992px) {
+
+    /* Remove hover background and padding styling on large screens */
+    .navbar-nav .nav-link:hover,
+    .navbar-nav .nav-link.active,
+    .icon-btn:hover {
+        background-color: transparent !important;
+        border-radius: 0;
+    }
+
+    /* Hide nav text (like "User Profile" and "Cart") on large screens */
+    .icon-btn span {
+        display: none;
+    }
+}

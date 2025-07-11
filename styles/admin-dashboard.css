@@ -1,0 +1,243 @@
+/* Define CSS variables for consistent theming */
+:root {
+    --primary-color: #2c9045;
+    /* Primary brand color */
+    --secondary-color: #e6f3ea;
+    /* Light background for cards */
+    --background-color: #ffffff;
+    /* Main background */
+    --secondary-background-color: #f5f1e9;
+    /* Secondary background */
+    --sidebar-hover-color: #a8d9b0;
+    /* Sidebar hover state */
+    --text-color: #2d2d2d;
+    /* Primary text color */
+    --secondary-text-color: #5e5d5d;
+    /* Secondary text color */
+    --white-text-color: #f9f6ee;
+    /* Text color for sidebar */
+    --font-poppins: "Poppins", sans-serif;
+    /* Main font */
+    --font-baloo: "Baloo 2", sans-serif;
+    /* Heading font */
+}
+
+/* Base body styles */
+body {
+    background-color: var(--background-color);
+    font-family: var(--font-poppins);
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+}
+
+/* Main content area styling, offset for sidebar */
+.content {
+    margin-left: 250px;
+    /* Space for visible sidebar on desktop */
+    padding: 30px;
+    width: calc(100% - 250px);
+    transition: margin-left 0.3s ease-in-out, width 0.3s ease-in-out;
+    /* Smooth transition for sidebar toggle */
+}
+
+/* Responsive adjustments for medium and smaller screens */
+@media (max-width: 992px) {
+    .content {
+        margin-left: 0;
+        /* No sidebar space when hidden */
+        width: 100%;
+        padding: 20px;
+    }
+
+    body.sidebar-visible .content {
+        margin-left: 250px;
+        /* Adjust when sidebar is toggled */
+        width: calc(100% - 250px);
+    }
+}
+
+/* Responsive adjustments for small screens */
+@media (max-width: 576px) {
+    .content {
+        padding: 15px;
+        /* Reduced padding for mobile */
+    }
+
+    body.sidebar-visible .content {
+        margin-left: 200px;
+        /* Narrower sidebar on mobile */
+        width: calc(100% - 200px);
+    }
+}
+
+/* Dashboard header with title and notification */
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding: 15px 25px;
+    background-color: var(--background-color);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    /* Subtle shadow for depth */
+    border-radius: 8px;
+}
+
+.dashboard-header h2 {
+    color: var(--text-color);
+    font-weight: 700;
+    font-size: 1.8rem;
+    margin: 0;
+}
+
+/* Notification icon styling */
+.notification {
+    position: relative;
+    cursor: pointer;
+    color: var(--primary-color);
+    font-size: 1.5rem;
+    transition: transform 0.2s ease;
+    /* Hover animation */
+}
+
+.notification:hover {
+    transform: scale(1.1);
+}
+
+.notification .notification-count {
+    position: absolute;
+    top: -8px;
+    right: -10px;
+    background-color: #ff0000;
+    color: var(--white-text-color);
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Sales summary grid - Removed flex properties, relying on Bootstrap grid */
+.sales-summary {
+    margin-bottom: 30px;
+}
+
+/* Individual summary card */
+.summary-card {
+    background-color: var(--background-color);
+    padding: 25px;
+    text-align: center;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    min-width: 200px;
+    /* Minimum width for consistency */
+}
+
+.summary-card:hover {
+    transform: translateY(-5px);
+    /* Lift effect on hover */
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.summary-card .icon {
+    font-size: 2rem;
+    color: var(--primary-color);
+    margin-bottom: 15px;
+}
+
+.summary-card h4 {
+    color: var(--text-color);
+    font-weight: 700;
+    margin: 0 0 10px;
+    font-size: 1.5rem;
+}
+
+.summary-card p {
+    margin: 0;
+    color: var(--secondary-text-color);
+    font-family: var(--font-poppins);
+    font-size: 0.9rem;
+}
+
+/* Orders table heading */
+.order-table h3 {
+    color: var(--text-color);
+    font-weight: 700;
+    margin-bottom: 15px;
+    font-size: 1.5rem;
+}
+
+/* Table styling */
+.table {
+    background-color: var(--background-color);
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.table th {
+    font-family: var(--font-poppins);
+    font-weight: 600;
+    color: var(--text-color);
+    background-color: var(--secondary-color);
+    padding: 15px;
+}
+
+.table td {
+    font-family: var(--font-poppins);
+    color: var(--text-color);
+    padding: 15px;
+    vertical-align: middle;
+}
+
+.table td small {
+    color: var(--secondary-text-color);
+    font-size: 0.85rem;
+}
+
+/* Status badge styling */
+.status {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.status.in-progress {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.status.ready {
+    background-color: #cce5ff;
+    color: #004085;
+}
+
+.status.completed {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+/* Responsive adjustments for small screens */
+@media (max-width: 576px) {
+    .summary-card {
+        margin-bottom: 15px;
+    }
+
+    .table-responsive {
+        font-size: 0.85rem;
+        /* Smaller text for better fit */
+    }
+
+    .table th,
+    .table td {
+        padding: 10px;
+    }
+}

@@ -1,0 +1,86 @@
+:root {
+    --primary-color: #2C9045;
+    --secondary-color: #BCE4CC;
+    --background-color: #FFFBF0;
+    --secondary-background-color: #F5F1E9;
+    --sidebar-hover-color: #106826;
+    --text-color: #2D2D2D;
+    --secondary-text-color: #5e5d5d;
+    --white-text-color: #F9F6EE;
+    --font-poppins: 'Poppins', sans-serif;
+    --font-baloo: 'Baloo 2', sans-serif;
+}
+
+body {
+    background-color: var(--secondary-background-color);
+    margin: 0;
+    font-family: var(--font-poppins);
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* ---------------Create Account Page--------------- */
+.create-account-container {
+    background-color: var(--background-color);
+    padding: 2.5rem;
+    border-radius: 10px;
+    box-shadow: 0 0 12px rgba(0, 0, 0, 0.12);
+    width: 100%;
+    max-width: 520px;
+    margin: 2.5rem auto;
+    flex: 1;
+}
+
+.btn-create-account {
+    color: var(--white-text-color);
+    background-color: var(--primary-color);
+    border: none;
+    width: 100%;
+    font-weight: 600;
+    padding: 0.75rem 1rem;
+    font-size: 1.1rem;
+    border-radius: 5px;
+}
+
+.btn-create-account:hover {
+    background-color: #25793a;
+}
+
+.text-muted a {
+    color: var(--secondary-text-color);
+    text-decoration: none;
+}
+
+.text-muted a:hover {
+    text-decoration: underline;
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+    .create-account-container {
+        padding: 2rem 1.5rem;
+        max-width: 90%;
+        margin: 2rem auto;
+    }
+
+    .btn-create-account {
+        font-size: 1rem;
+        padding: 0.65rem 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .create-account-container {
+        padding: 1.5rem 1rem;
+        max-width: 100%;
+        margin: 1.5rem auto;
+        border-radius: 0;
+        box-shadow: none;
+    }
+
+    .btn-create-account {
+        font-size: 0.95rem;
+        padding: 0.6rem 1rem;
+    }
+}

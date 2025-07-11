@@ -1,0 +1,91 @@
+@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@400..800&family=Poppins:wght@100..900&display=swap');
+
+:root {
+    --primary-color: #2C9045;
+    --secondary-color: #BCE4CC;
+    --background-color: #FFFBF0;
+    --secodary-background-color: #F5F1E9;
+    --footer-bg-color: #2D2D2D;
+    --footer-text-color: #B0B0B0;
+    --text-color: #2D2D2D;
+    --secondary-text-color: #5e5d5d;
+    --font-poppins: 'Poppins', sans-serif;
+    --font-baloo: 'Baloo 2', sans-serif;
+}
+
+/*  --------------Footer Section-------------- */
+.footer-section {
+    background-color: var(--footer-bg-color);
+    color: var(--footer-text-color);
+    padding: 4rem 0;
+}
+
+.footer-logo {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+}
+
+.footer-title {
+    font-size: 1.5rem;
+    font-family: var(--font-poppins);
+    color: white;
+    font-weight: 600;
+}
+
+.footer-text {
+    font-size: 1rem;
+    font-family: var(--font-poppins);
+    color: var(--footer-text-color);
+    line-height: 1.6;
+}
+
+.footer-link {
+    font-size: 1rem;
+    font-family: var(--font-poppins);
+    color: var(--footer-text-color);
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.footer-link:hover {
+    color: white;
+}
+
+.social-icons {
+    display: flex;
+    gap: 1rem;
+}
+
+.social-icon {
+    width: 30px;
+    height: 30px;
+    color: white;
+    transition: opacity 0.3s ease;
+}
+
+.social-icon:hover {
+    opacity: 0.8;
+}
+
+@media (max-width: 768px) {
+
+    .footer-logo {
+        width: 30px;
+        height: 30px;
+    }
+
+    .footer-title {
+        font-size: 1.3rem;
+    }
+
+    .footer-text,
+    .footer-link {
+        font-size: 0.9rem;
+    }
+
+    .social-icon {
+        width: 25px;
+        height: 25px;
+    }
+}

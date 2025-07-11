@@ -1,0 +1,88 @@
+:root {
+    --primary-color: #2C9045;
+    --secondary-color: #BCE4CC;
+    --background-color: #FFFBF0;
+    --secondary-background-color: #F5F1E9;
+    --sidebar-hover-color: #106826;
+    --text-color: #2D2D2D;
+    --secondary-text-color: #5e5d5d;
+    --white-text-color: #F9F6EE;
+    --font-poppins: 'Poppins', sans-serif;
+    --font-baloo: 'Baloo 2', sans-serif;
+}
+
+body {
+    background-color: var(--secondary-background-color);
+    margin: 0;
+    font-family: var(--font-poppins);
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* ---------------Login Page--------------- */
+.login-container {
+    background-color: var(--background-color);
+    padding: 2rem;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 500px;
+    margin: 2rem auto;
+    flex: 1;
+}
+
+.btn-login {
+    color: var(--white-text-color);
+    background-color: var(--primary-color);
+    border: none;
+    width: 100%;
+}
+
+.btn-login:hover {
+    color: var(--white-text-color);
+    background-color: #25793a
+}
+
+.btn-google {
+    background-color: #f1ebeb;
+    color: var(--secondary-text-color);
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-google:hover {
+    background-color: #e0dede;
+}
+
+.btn-google img {
+    margin-right: 10px;
+}
+
+.text-muted a {
+    color: var(--secondary-text-color);
+    text-decoration: none;
+}
+
+.text-muted a:hover {
+    text-decoration: underline;
+}
+
+.separator {
+    text-align: center;
+    color: var(--secondary-text-color);
+    margin: 1rem 0;
+}
+
+.separator::before,
+.separator::after {
+    content: '';
+    display: inline-block;
+    width: 40%;
+    height: 1px;
+    background-color: var(--secondary-text-color);
+    vertical-align: middle;
+    margin: 0 0.5rem;
+}

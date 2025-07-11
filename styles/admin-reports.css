@@ -1,0 +1,270 @@
+/* Define CSS variables for consistent theming */
+:root {
+    --primary-color: #2c9045;
+    /* Primary brand color */
+    --secondary-color: #e6f3ea;
+    /* Light background for cards */
+    --background-color: #ffffff;
+    /* Main background */
+    --secondary-background-color: #f5f1e9;
+    /* Secondary background */
+    --hover-color: #0f5e23;
+    /* Sidebar hover state */
+    --text-color: #2d2d2d;
+    /* Primary text color */
+    --secondary-text-color: #5e5d5d;
+    /* Secondary text color */
+    --white-text-color: #f9f6ee;
+    /* Text color for sidebar */
+    --font-poppins: "Poppins", sans-serif;
+    /* Main font */
+    --font-baloo: "Baloo 2", sans-serif;
+    /* Heading font */
+}
+
+/* Base body styles */
+body {
+    background-color: var(--background-color);
+    font-family: var(--font-poppins);
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+}
+
+/* Main content area styling, offset for sidebar */
+.content {
+    margin-left: 250px;
+    padding: 30px;
+    width: calc(100% - 250px);
+    transition: margin-left 0.3s ease-in-out, width 0.3s ease-in-out;
+    /* Smooth transition for sidebar toggle */
+}
+
+/* Responsive adjustments for medium and smaller screens */
+@media (max-width: 992px) {
+    .content {
+        margin-left: 0;
+        /* No sidebar space when hidden */
+        width: 100%;
+        padding: 20px;
+    }
+
+    body.sidebar-visible .content {
+        margin-left: 250px;
+        /* Adjust when sidebar is toggled */
+        width: calc(100% - 250px);
+    }
+}
+
+/* Responsive adjustments for small screens */
+@media (max-width: 576px) {
+    .content {
+        padding: 15px;
+        /* Reduced padding for mobile */
+    }
+
+    body.sidebar-visible .content {
+        margin-left: 200px;
+        /* Narrower sidebar on mobile */
+        width: calc(100% - 200px);
+    }
+}
+
+/* Reports header with title, date filter, and export button */
+.reports-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding: 15px 25px;
+    background-color: var(--background-color);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+}
+
+.reports-header h2 {
+    color: var(--text-color);
+    font-weight: 700;
+    font-size: 1.8rem;
+    margin: 0;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.date-filter {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.date-filter label {
+    color: var(--text-color);
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.date-filter input {
+    padding: 5px 10px;
+    border: 1px solid var(--secondary-color);
+    border-radius: 4px;
+    font-family: var(--font-poppins);
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    border: none;
+    color: var(--white-text-color);
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.btn-primary:hover {
+    background-color: var(--hover-color);
+    border-color: var(--hover-color);
+}
+
+/* Charts section */
+.charts-section {
+    margin-bottom: 30px;
+}
+
+.chart-card {
+    background-color: var(--background-color);
+    padding: 25px;
+    text-align: center;
+    border-radius: 12px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.chart-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.chart-card h3 {
+    color: var(--text-color);
+    font-weight: 700;
+    margin-bottom: 15px;
+    font-size: 1.5rem;
+}
+
+.chart-card canvas {
+    max-height: 300px;
+}
+
+/* Reports table heading */
+.reports-table h3 {
+    color: var(--text-color);
+    font-weight: 700;
+    margin-bottom: 15px;
+    font-size: 1.5rem;
+}
+
+/* Table styling */
+
+.search-bar {
+    width: 200px;
+    padding: 5px 10px;
+    border: 1px solid var(--secondary-color);
+    border-radius: 4px;
+}
+
+.date-picker:focus {
+    border-color: var(--primary-color);
+    outline: none;
+    box-shadow: 0 0 5px rgba(44, 144, 69, 0.3);
+}
+
+.filter-btn {
+    background-color: var(--primary-color);
+    border: none;
+    color: var(--white-text-color);
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.filter-btn:hover {
+    background-color: var(--sidebar-hover-color);
+}
+
+.table {
+    background-color: var(--background-color);
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.table th {
+    font-family: var(--font-poppins);
+    font-weight: 600;
+    color: var(--text-color);
+    background-color: var(--secondary-color);
+    padding: 15px;
+}
+
+.table td {
+    font-family: var(--font-poppins);
+    color: var(--text-color);
+    padding: 15px;
+    vertical-align: middle;
+}
+
+.table td small {
+    color: var(--secondary-text-color);
+    font-size: 0.85rem;
+}
+
+/* Status badge styling */
+.status {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.status.in-progress {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.status.completed {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+/* Responsive adjustments for small screens */
+@media (max-width: 576px) {
+    .reports-header {
+        flex-direction: column;
+        gap: 15px;
+        padding: 15px;
+    }
+
+    .header-actions {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .chart-card canvas {
+        max-height: 200px;
+    }
+
+    .table-responsive {
+        font-size: 0.85rem;
+    }
+
+    .table th,
+    .table td {
+        padding: 10px;
+    }
+}

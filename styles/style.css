@@ -1,0 +1,436 @@
+@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@400..800&family=Poppins:wght@100..900&display=swap');
+
+:root {
+    --primary-color: #2C9045;
+    --secondary-color: #BCE4CC;
+    --background-color: #FFFBF0;
+    --secodary-background-color: #F5F1E9;
+    --sidebar-hover-color: #A8D9B0;
+    --text-color: #2D2D2D;
+    --secondary-text-color: #5e5d5d;
+    --white-text-color: #F9F6EE;
+    --font-poppins: 'Poppins', sans-serif;
+    --font-baloo: 'Baloo 2', sans-serif;
+}
+
+body {
+    background: linear-gradient(to bottom, #E6F4EA, #B2D8B2);
+    font-family: var(--font-poppins);
+    margin: 0;
+    padding: 0;
+}
+
+/* AOS Animation Enhancements */
+[data-aos] {
+    opacity: 0;
+    transition-property: transform, opacity;
+}
+
+[data-aos].aos-animate {
+    opacity: 1;
+}
+
+[data-aos="fade-up"] {
+    transform: translateY(50px);
+}
+
+[data-aos="fade-up"].aos-animate {
+    transform: translateY(0);
+}
+
+[data-aos="fade-right"] {
+    transform: translateX(-50px);
+}
+
+[data-aos="fade-right"].aos-animate {
+    transform: translateX(0);
+}
+
+[data-aos="fade-left"] {
+    transform: translateX(50px);
+}
+
+[data-aos="fade-left"].aos-animate {
+    transform: translateX(0);
+}
+
+[data-aos="zoom-in"] {
+    transform: scale(0.8);
+}
+
+[data-aos="zoom-in"].aos-animate {
+    transform: scale(1);
+}
+
+/* Navbar */
+.logo-text {
+    color: var(--primary-color);
+    font-weight: 700;
+    font-size: 24px;
+}
+
+/* Link & Icon Styling */
+.navbar-nav .nav-link,
+.icon-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.5rem 1rem;
+    font-size: 18px;
+    color: var(--text-color);
+    font-family: var(--font-poppins);
+    text-decoration: none;
+    background: none;
+    border: none;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.navbar-nav .nav-link:hover,
+.navbar-nav .nav-link.active,
+.icon-btn:hover {
+    color: var(--primary-color);
+    background-color: var(--sidebar-hover-color);
+    border-radius: 0.375rem;
+}
+
+.icon-btn:focus {
+    outline: none;
+}
+
+.icon-btn svg {
+    display: block;
+    stroke: var(--text-color);
+    fill: none;
+    stroke-width: 1.5;
+    transition: stroke 0.3s ease;
+}
+
+.icon-btn:hover svg {
+    stroke: var(--primary-color);
+}
+
+/* Hero Section */
+.hero-btn {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 10px 20px;
+    width: 60%;
+    height: 100%;
+    border-radius: 20px;
+    font-weight: 500;
+    transition: all 0.3s ease-in-out;
+}
+
+.hero-btn:hover {
+    background-color: #25793a;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.hero-btn:active {
+    transform: translateY(0);
+}
+
+.hero-section {
+    min-height: 100vh;
+    max-width: 1200px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.hero-title {
+    padding-top: 5rem;
+    font-size: 3rem;
+    line-height: 1.2;
+    font-family: var(--font-baloo);
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.hero-subtitle {
+    font-size: 1.3rem;
+    color: #333;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.cake-img-container {
+    background: none;
+    padding: 1rem;
+    margin-top: 2rem;
+}
+
+.cake-img {
+    width: 100%;
+    max-width: 900px;
+    height: auto;
+    border-radius: 0;
+    object-fit: contain;
+    box-shadow: none;
+}
+
+/* About Us Section */
+.about-us-section {
+    background-color: #FFFDF9;
+    padding: 4rem 0;
+}
+
+.about-subtitle {
+    font-size: 1rem;
+    font-family: var(--font-poppins);
+    color: var(--primary-color);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.3rem;
+    text-align: center;
+}
+
+.about-title {
+    font-size: 2.5rem;
+    line-height: 1.2;
+    font-family: var(--font-baloo);
+    color: #2D2D2D;
+    font-weight: 600;
+    text-align: center;
+}
+
+.about-text {
+    font-size: 1.1rem;
+    color: #2D2D2D;
+    line-height: 1.8;
+    text-align: justify;
+}
+
+/* Image styling */
+img.img-fluid.rounded {
+    max-width: 80%;
+    height: auto;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Signature Cakes Section */
+.signature-cakes-section {
+    background-color: var(--secodary-background-color);
+    padding: 4rem 0;
+}
+
+.section-subtitle {
+    font-size: 1rem;
+    font-family: var(--font-poppins);
+    color: var(--primary-color);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.3rem;
+}
+
+.section-title {
+    font-size: 2.5rem;
+    line-height: 1.2;
+    font-family: var(--font-baloo);
+    color: #2D2D2D;
+    font-weight: 600;
+}
+
+.view-more {
+    font-size: 1rem;
+    font-family: var(--font-poppins);
+    color: var(--primary-color);
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.view-more:hover {
+    color: #237237;
+}
+
+.cake-card {
+    background-color: rgba(255, 255, 255, 0.2);
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+}
+
+.cake-card:hover {
+    transform: translateY(-5px);
+}
+
+.cake-img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 10px;
+    object-fit: contain;
+}
+
+.cake-name {
+    font-size: 1.25rem;
+    font-family: var(--font-poppins);
+    color: #2D2D2D;
+    margin-bottom: 0.5rem;
+}
+
+.cake-price {
+    font-size: 1.1rem;
+    font-family: var(--font-poppins);
+    color: var(--primary-color);
+}
+
+/* Custom button styling */
+.btn-outline-custom-green {
+    border: 2px solid var(--primary-color);
+    color: var(--primary-color);
+    background-color: transparent;
+    padding: 0.4rem 1.5rem;
+    font-family: var(--font-poppins);
+    font-weight: 600;
+    border-radius: 50px;
+    transition: all 0.3s ease;
+}
+
+.btn-outline-custom-green:hover {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+/* Inquiry Section */
+.inquiry-section {
+    background-color: #FFFDF9;
+    padding: 4rem 0;
+}
+
+.inquiry-title {
+    font-size: 2.5rem;
+    font-family: var(--font-baloo);
+    color: #2D2D2D;
+    font-weight: 600;
+}
+
+.inquiry-text {
+    font-size: 1rem;
+    font-family: var(--font-poppins);
+    color: var(--secondary-text-color);
+    font-weight: lighter;
+    line-height: 1.6;
+}
+
+.form-control {
+    border-radius: 5px;
+    border: 1px solid #D3D3D3;
+    padding: 0.75rem;
+    font-family: var(--font-poppins);
+    color: #2D2D2D;
+}
+
+.form-control::placeholder {
+    color: #A0A0A0;
+}
+
+/* Responsive adjustments for navbar */
+@media (min-width: 992px) {
+
+    .navbar-nav .nav-link:hover,
+    .navbar-nav .nav-link.active,
+    .icon-btn:hover {
+        background-color: transparent !important;
+        border-radius: 0;
+    }
+
+    .icon-btn span {
+        display: none;
+    }
+}
+
+/* Responsive adjustments for hero section */
+@media (max-width: 768px) {
+    .hero-title {
+        font-size: 2rem;
+    }
+
+    .hero-subtitle {
+        font-size: 1rem;
+        max-width: 300px;
+    }
+
+    .cake-img {
+        max-width: 600px;
+    }
+}
+
+/* Responsive adjustments for about us section */
+@media (min-width: 768px) {
+    .about-subtitle {
+        text-align: left;
+    }
+
+    .about-title {
+        text-align: left;
+    }
+
+    .about-text {
+        text-align: left;
+    }
+}
+
+@media (max-width: 768px) {
+    .about-subtitle {
+        padding-top: 1rem;
+        font-size: 1.2rem;
+        letter-spacing: 0.2rem;
+    }
+
+    .about-title {
+        font-size: 2rem;
+    }
+
+    .about-text {
+        font-size: 1rem;
+        line-height: 1.6;
+    }
+
+    img.img-fluid.rounded {
+        max-width: 100%;
+    }
+}
+
+/* Responsive adjustments for signature cakes section */
+@media (max-width: 768px) {
+    .section-subtitle {
+        font-size: 1.2rem;
+        letter-spacing: 0.2rem;
+    }
+
+    .section-title {
+        font-size: 2rem;
+    }
+
+    .view-more {
+        font-size: 0.9rem;
+    }
+
+    .cake-name {
+        font-size: 1.1rem;
+    }
+
+    .cake-price {
+        font-size: 1rem;
+    }
+}
+
+/* Responsive adjustments for inquiry section and footer */
+@media (max-width: 768px) {
+    .inquiry-title {
+        font-size: 2rem;
+    }
+
+    .inquiry-text {
+        font-size: 1rem;
+    }
+
+    .btn-outline-custom-green {
+        padding: 0.3rem 1.2rem;
+        font-size: 0.9rem;
+    }
+}
