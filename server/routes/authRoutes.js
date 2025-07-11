@@ -22,7 +22,7 @@ router.post('/signup-email', async (req, res) => {
       return res.status(400).json({ message: 'Email already registered' });
     }
 
-    const user = await User.create({ email, isVerified: false });
+    const user = await User.create({ email, isVerified: false, userLevel: 'Customer' });
 
     const token = jwt.sign({ userID: user.userID, email: user.email }, process.env.JWT_SECRET, {
       expiresIn: '24h',
@@ -92,6 +92,43 @@ router.post('/complete-registration', verifyToken, async (req, res) => {
     res.status(200).json({ message: 'Registration completed successfully' });
   } catch (error) {
     console.error('Error in complete-registration:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Route to handle login
+router.post('/login', async (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ message: 'Email and password are required' });
+  }
+
+  try {
+    const user = await User.findOne({ where: { email } });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (!user.isVerified) {
+      return res.status(400).json({ message: 'Email not verified' });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Invalid password' });
+    }
+
+    // Generate a login token
+    const token = jwt.sign({ userID: user.userID, userLevel: user.userLevel }, process.env.JWT_SECRET, { expiresIn: '24h' });
+    console.log('Login token generated:', token);
+
+    // Redirect to index.html (client-side will handle this)
+    res.status(200).json({ message: 'Login successful', token });
+  } catch (error) {
+    console.error('Error in login:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

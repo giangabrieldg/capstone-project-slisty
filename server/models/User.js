@@ -33,6 +33,11 @@ const User = sequelize.define('User', {
     type: DataTypes.STRING,
     allowNull: true, // Stores JWT for email verification
   },
+  userLevel: {
+    type: DataTypes.ENUM('Customer', 'Admin', 'Staff'), // Restrict to these values
+    defaultValue: 'Customer', // Default for sign-up users
+    allowNull: false, // Required field
+  },
 }, {
   timestamps: true, // Enable createdAt and updatedAt
   tableName: 'Users', // Explicitly set table name to match SQL

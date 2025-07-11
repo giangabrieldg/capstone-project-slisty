@@ -15,9 +15,11 @@ app.use(bodyParser.json());
 
 // Serve static files from the SLISTY/pages directory
 const path = require('path');
-app.use('/pages', express.static(path.join(__dirname, '../pages')));
+
+app.use(express.static(path.join(__dirname, '../SLISTY')));
 
 // Serve static files for styles, scripts, and assets under /SLISTY path
+app.use('/pages', express.static(path.join(__dirname, '../pages')));
 app.use('/SLISTY/styles', express.static(path.join(__dirname, '../styles')));
 app.use('/SLISTY/scripts', express.static(path.join(__dirname, '../scripts')));
 app.use('/SLISTY/assets', express.static(path.join(__dirname, '../assets')));
