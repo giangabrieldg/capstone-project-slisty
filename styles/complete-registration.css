@@ -1,0 +1,32 @@
+:root {
+    --primary-green: #2c9045;
+    --font-poppins: "Poppins", sans-serif;
+}
+
+body {
+    font-family: var(--font-poppins);
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+
+.card {
+    padding: 2rem;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 500px;
+    margin: 2rem auto;
+    flex: 1;
+}
+
+.btn-primary {
+    background-color: var(--primary-green);
+    border: none;
+}
+
+.btn-primary:hover {
+    background-color: #247a3b;
+    /* Darker shade for hover */
+}
