@@ -146,9 +146,7 @@
         <!-- Link to login page -->
         <p class="text-center mt-3">
           Already have an account?
-          <a
-            href="/SLISTY/pages/customer/login.html"
-            class="text-decoration-none"
+          <a href="/pages/customer/login.html" class="text-decoration-none"
             >Log in</a
           >
         </p>
@@ -282,7 +280,7 @@
             headers: {
               "Content-Type": "application/json",
             },
-            body: JSON.stringify({ email }), // Send email as JSON
+            body: JSON.stringify({ email }),
           });
 
           // Parse response
@@ -291,10 +289,10 @@
           // Show response message
           alert(data.message);
 
-          // If successful, clear form and guide user
+          // If successful
           if (response.ok) {
             signupEmailForm.reset();
-            // Optionally redirect or update UI to inform user to check email
+            //redirect or update UI to inform user to check email
             document.querySelector(".card-body").innerHTML = `
             <h2 class="text-center">Check Your Email</h2>
             <p class="text-center">A verification link has been sent to ${email}. Please check your inbox (and spam folder) to continue.</p>

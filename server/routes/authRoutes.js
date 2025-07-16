@@ -25,7 +25,7 @@ router.post('/signup-email', async (req, res) => {
     const user = await User.create({ email, isVerified: false, userLevel: 'Customer' });
 
     const token = jwt.sign({ userID: user.userID, email: user.email }, process.env.JWT_SECRET, {
-      expiresIn: '24h',
+      expiresIn: '1h',
     });
 
     await user.update({ verificationToken: token });
@@ -125,8 +125,14 @@ router.post('/login', async (req, res) => {
     const token = jwt.sign({ userID: user.userID, userLevel: user.userLevel }, process.env.JWT_SECRET, { expiresIn: '24h' });
     console.log('Login token generated:', token);
 
-    // Redirect to index.html (client-side will handle this)
-    res.status(200).json({ message: 'Login successful', token });
+    // Return user data including name
+    res.status(200).json({
+      message: 'Login successful',
+      token,
+      user: {
+        name: user.name // Include the user's name
+      }
+    });
   } catch (error) {
     console.error('Error in login:', error);
     res.status(500).json({ message: 'Server error' });
