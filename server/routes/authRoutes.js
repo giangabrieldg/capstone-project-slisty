@@ -125,12 +125,13 @@ router.post('/login', async (req, res) => {
     const token = jwt.sign({ userID: user.userID, userLevel: user.userLevel }, process.env.JWT_SECRET, { expiresIn: '24h' });
     console.log('Login token generated:', token);
 
-    // Return user data including name
+    // Return user data including name and userLevel
     res.status(200).json({
       message: 'Login successful',
       token,
       user: {
-        name: user.name // Include the user's name
+        name: user.name, // Include the user's name
+        userLevel: user.userLevel // Include userLevel for frontend redirection
       }
     });
   } catch (error) {
