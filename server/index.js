@@ -15,10 +15,12 @@ app.use(cors());
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
 
-app.use('/pages', express.static(path.join(__dirname, '../pages')));
-app.use('/styles', express.static(path.join(__dirname, '../styles')));
-app.use('/scripts', express.static(path.join(__dirname, '../scripts')));
-app.use('/assets', express.static(path.join(__dirname, '../assets')));
+app.use('/public', express.static(path.join(__dirname, '../public')));
+app.use('/styles', express.static(path.join(__dirname, '../public/styles')));
+app.use('/scripts', express.static(path.join(__dirname, '../public/scripts')));
+app.use('/assets', express.static(path.join(__dirname, '../public/assets')));
+app.use('/models', express.static(path.join(__dirname, '../public/models')));
+app.use('/includes', express.static(path.join(__dirname, '../public/includes')));
 app.use('/uploads', express.static(path.join(__dirname, '../Uploads')));
 
 const uploadDir = path.join(__dirname, '../Uploads');

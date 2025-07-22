@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Customize Cake - Slice N Grind</title>
+
+    <!-- Bootstrap CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-4Q6Gf2aSP4eDXB8Miphtr37CMZZQ5oXLH2yaXMJ2w8e2ZtHTl7GptT4jmndRuHDT"
+      crossorigin="anonymous"
+    />
+
+    <!-- Google Fonts -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/lights/RectAreaLightUniformsLib.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/helpers/RectAreaLightHelper.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/RGBELoader.js"></script>
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/styles/customize-wizard.css" />
+    <link rel="stylesheet" href="/styles/navbar.css" />
+    <link rel="stylesheet" href="/styles/footer.css" />
+  </head>
+
+  <body>
+    <!-- Tour Elements -->
+    <div class="tour-overlay" id="tourOverlay"></div>
+    <div class="tour-highlight" id="tourHighlight"></div>
+    <div class="tour-tooltip" id="tourTooltip">
+      <div class="tour-tooltip-header" id="tourTooltipHeader"></div>
+      <div class="tour-tooltip-content" id="tourTooltipContent"></div>
+      <div class="tour-step-counter" id="tourStepCounter"></div>
+    </div>
+
+    <!-- Navbar -->
+    <div data-include-html="/includes/navbar.html"></div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <h1 class="text-center mb-4">Menu</h1>
+      <div class="cake-customizer">
+        <div class="viewer-section" id="cakeViewer">
+          <!-- Tour Start Button -->
+          <button class="tour-start-btn" id="tourStartBtn">Take a tour</button>
+          <div id="canvas-container">
+            <div class="loading-screen" id="loadingScreen">
+              <div class="spinner"></div>
+            </div>
+          </div>
+          <div class="controls-overlay">Click and drag to rotate</div>
+        </div>
+
+        <div class="customization-panel">
+          <!-- Order Summary View -->
+          <div id="orderSummaryView" class="order-summary">
+            <div class="order-summary-header">Your Custom Cake</div>
+            <div class="summary-item" onclick="goToStep(1)">
+              <div class="summary-item-left">
+                <span class="summary-check">✓</span>
+                <div class="summary-item-content">
+                  <div>
+                    <strong>Size:</strong>
+                    <span id="summarySize">6" Round</span>
+                  </div>
+                </div>
+              </div>
+              <div class="summary-item-price" id="summarySizePrice">₱850</div>
+            </div>
+            <div class="summary-item" onclick="goToStep(2)">
+              <div class="summary-item-left">
+                <span class="summary-check">✓</span>
+                <div class="summary-item-content">
+                  <div>
+                    <strong>Flavor:</strong>
+                    <span id="summaryFlavor">Chocolate</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="summary-item" onclick="goToStep(3)">
+              <div class="summary-item-left">
+                <span class="summary-check">✓</span>
+                <div class="summary-item-content">
+                  <div>
+                    <strong>Icing:</strong>
+                    <span id="summaryIcing">Buttercreme - White</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="summary-item" onclick="goToStep(4)">
+              <div class="summary-item-left">
+                <span class="summary-check">✓</span>
+                <div class="summary-item-content">
+                  <div>
+                    <strong>Filling:</strong>
+                    <span id="summaryFilling">Strawberry</span>
+                  </div>
+                </div>
+              </div>
+              <div class="summary-item-price" id="summaryFillingPrice">
+                +₱150.00
+              </div>
+            </div>
+            <div
+              class="summary-item"
+              onclick="goToStep(5)"
+              id="summaryBottomBorderItem"
+              style="display: none"
+            >
+              <div class="summary-item-left">
+                <span class="summary-check">✓</span>
+                <div class="summary-item-content">
+                  <div>
+                    <strong>Bottom Border:</strong>
+                    <span id="summaryBottomBorder">Shells - White</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div
+              class="summary-item"
+              onclick="goToStep(6)"
+              id="summaryTopBorderItem"
+              style="display: none"
+            >
+              <div class="summary-item-left">
+                <span class="summary-check">✓</span>
+                <div class="summary-item-content">
+                  <div>
+                    <strong>Top Border:</strong>
+                    <span id="summaryTopBorder">Beads - White</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div
+              class="summary-item"
+              onclick="goToStep(7)"
+              id="summaryMessageItem"
+              style="display: none"
+            >
+              <div class="summary-item-left">
+                <span class="summary-check">✓</span>
+                <div class="summary-item-content">
+                  <div>
+                    <strong>Message:</strong>
+                    <span id="summaryMessage">"Happy Birthday"</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div
+              class="summary-item"
+              onclick="goToStep(8)"
+              id="summaryDecorationsItem"
+              style="display: none"
+            >
+              <div class="summary-item-left">
+                <span class="summary-check">✓</span>
+                <div class="summary-item-content">
+                  <div>
+                    <strong>Decoration:</strong>
+                    <span id="summaryDecorations">Balloons</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="summary-total">
+              <div
+                class="text-sm text-gray-600 mb-2"
+                style="font-size: 1.1rem !important"
+              >
+                Subtotal
+              </div>
+              <div class="text-2xl font-bold" id="summaryTotal">
+                <strong>₱1000.00</strong>
+              </div>
+            </div>
+            <div class="summary-buttons">
+              <button class="summary-btn primary-btn" onclick="addToCart()">
+                Add to Cart
+              </button>
+              <button
+                class="summary-btn secondary-btn"
+                onclick="saveDesignImage()"
+              >
+                Save Design
+              </button>
+              <button class="summary-btn primary-btn" onclick="checkout()">
+                Check out
+              </button>
+              <button
+                class="summary-btn secondary-btn"
+                onclick="showFirstStep()"
+              >
+                Edit all choices
+              </button>
+            </div>
+          </div>
+
+          <!-- Step Content -->
+          <div class="step-content" style="display: none">
+            <!-- Step 1: Size -->
+            <div class="step-section active" id="step-1">
+              <div class="step-header">
+                <span class="step-check">✓</span>
+                <h3>Size</h3>
+              </div>
+              <div class="size-options-walmart" id="sizeOptions">
+                <div
+                  class="size-option-walmart active"
+                  data-size="small"
+                  data-price="850"
+                >
+                  <div class="size-circle-walmart">6"</div>
+                  <div class="size-details">
+                    <span class="servings">12 servings</span>
+                  </div>
+                  <div class="size-price">₱850</div>
+                </div>
+                <div
+                  class="size-option-walmart"
+                  data-size="medium"
+                  data-price="1020"
+                >
+                  <div class="size-circle-walmart">8"</div>
+                  <div class="size-details">
+                    <span class="servings">16 servings</span>
+                  </div>
+                  <div class="size-price">₱1020</div>
+                </div>
+                <div
+                  class="size-option-walmart"
+                  data-size="large"
+                  data-price="1700"
+                >
+                  <div class="size-circle-walmart">10"</div>
+                  <div class="size-details">
+                    <span class="servings">24 servings</span>
+                  </div>
+                  <div class="size-price">₱1700</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 2: Flavor -->
+            <div class="step-section" id="step-2">
+              <div class="step-header">
+                <span class="step-check">✓</span>
+                <h3>Flavor</h3>
+              </div>
+              <div class="flavor-options-walmart" id="flavorOptions">
+                <div
+                  class="flavor-option-walmart active"
+                  data-color="#8B4513"
+                  data-flavor="Chocolate"
+                >
+                  <div class="flavor-circle" style="background: #8b4513"></div>
+                  <span>Chocolate</span>
+                </div>
+                <div
+                  class="flavor-option-walmart"
+                  data-color="#F3E6C6"
+                  data-flavor="White"
+                >
+                  <div
+                    class="flavor-circle"
+                    style="background: #f3e6c6; border: 2px solid #ddd"
+                  ></div>
+                  <span>White</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 3: Icing -->
+            <div class="step-section" id="step-3">
+              <div class="step-header">
+                <span class="step-check">✓</span>
+                <h3>Icing</h3>
+              </div>
+              <div class="icing-style-walmart" id="icingStyles">
+                <div class="icing-style-option active" data-icing="buttercream">
+                  <div class="icing-details">
+                    <h4>Buttercreme style</h4>
+                  </div>
+                </div>
+                <div class="icing-style-option" data-icing="whipped">
+                  <div class="icing-details">
+                    <h4>Whipped</h4>
+                  </div>
+                </div>
+              </div>
+              <div class="icing-color-section">
+                <h4>Color: <span id="selectedColorName">White</span></h4>
+                <div class="color-options-walmart" id="icingColors">
+                  <div
+                    class="color-option-walmart active"
+                    style="background: #ffffff; border: 2px solid #ddd"
+                    data-color="#FFFFFF"
+                    data-name="White"
+                  ></div>
+                  <div
+                    class="color-option-walmart"
+                    style="background: #ffddee"
+                    data-color="#FFDDEE"
+                    data-name="Light Pink"
+                  ></div>
+                  <div
+                    class="color-option-walmart"
+                    style="background: #ffb6c1"
+                    data-color="#FFB6C1"
+                    data-name="Pink"
+                  ></div>
+                  <div
+                    class="color-option-walmart"
+                    style="background: #ff6347"
+                    data-color="#FF6347"
+                    data-name="Red"
+                  ></div>
+                  <div
+                    class="color-option-walmart"
+                    style="background: #ffa500"
+                    data-color="#FFA500"
+                    data-name="Orange"
+                  ></div>
+                  <div
+                    class="color-option-walmart"
+                    style="background: #ffff00"
+                    data-color="#FFFF00"
+                    data-name="Yellow"
+                  ></div>
+                  <div
+                    class="color-option-walmart"
+                    style="background: #87ceeb"
+                    data-color="#87CEEB"
+                    data-name="Light Blue"
+                  ></div>
+                  <div
+                    class="color-option-walmart"
+                    style="background: #1e90ff"
+                    data-color="#1E90FF"
+                    data-name="Blue"
+                  ></div>
+                  <div
+                    class="color-option-walmart"
+                    style="background: #8a2be2"
+                    data-color="#8A2BE2"
+                    data-name="Purple"
+                  ></div>
+                  <div
+                    class="color-option-walmart"
+                    style="background: #32cd32"
+                    data-color="#32CD32"
+                    data-name="Green"
+                  ></div>
+                  <div
+                    class="color-option-walmart"
+                    style="background: #adff2f"
+                    data-color="#ADFF2F"
+                    data-name="Lime"
+                  ></div>
+                  <div
+                    class="color-option-walmart"
+                    style="background: #20b2aa"
+                    data-color="#20B2AA"
+                    data-name="Teal"
+                  ></div>
+                  <div
+                    class="color-option-walmart"
+                    style="background: #2f2f2f"
+                    data-color="#2F2F2F"
+                    data-name="Black"
+                  ></div>
+                  <div
+                    class="color-option-walmart"
+                    style="background: #a9a9a9"
+                    data-color="#A9A9A9"
+                    data-name="Gray"
+                  ></div>
+                  <div
+                    class="color-option-walmart"
+                    style="background: #8b4513"
+                    data-color="#8B4513"
+                    data-name="Brown"
+                  ></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 4: Filling -->
+            <div class="step-section" id="step-4">
+              <div class="step-header">
+                <span class="step-check">✓</span>
+                <h3>Filling</h3>
+              </div>
+              <div class="filling-options-walmart" id="fillingOptions">
+                <div
+                  class="filling-option-walmart"
+                  data-filling="none"
+                  data-name="No selection"
+                >
+                  <div class="no-selection-icon">✕</div>
+                  <div class="filling-details">
+                    <div class="filling-name">No selection</div>
+                  </div>
+                </div>
+                <div
+                  class="filling-option-walmart active"
+                  data-filling="strawberry"
+                  data-name="Strawberry"
+                >
+                  <div
+                    class="filling-preview"
+                    style="background: #b70824"
+                  ></div>
+                  <div class="filling-details">
+                    <div class="filling-name">Strawberry</div>
+                  </div>
+                  <div class="filling-price">Add ₱150.00</div>
+                </div>
+                <div
+                  class="filling-option-walmart"
+                  data-filling="bavarian"
+                  data-name="Bavarian creme"
+                >
+                  <div
+                    class="filling-preview"
+                    style="background: #f1e7c3"
+                  ></div>
+                  <div class="filling-details">
+                    <div class="filling-name">Bavarian creme</div>
+                  </div>
+                  <div class="filling-price">Add ₱150.00</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 5: Bottom Border -->
+            <div class="step-section" id="step-5">
+              <div class="step-header">
+                <span class="step-check">✓</span>
+                <h3>Bottom Border</h3>
+              </div>
+              <div class="border-options-walmart" id="bottomBorderOptions">
+                <div
+                  class="border-option-walmart active"
+                  data-border="none"
+                  data-name="No border"
+                >
+                  <span>No border</span>
+                </div>
+                <div
+                  class="border-option-walmart"
+                  data-border="beads"
+                  data-name="Beads"
+                >
+                  <span>Beads</span>
+                </div>
+                <div
+                  class="border-option-walmart"
+                  data-border="shells"
+                  data-name="Shells"
+                >
+                  <span>Shells</span>
+                </div>
+              </div>
+              <div
+                class="border-color-section"
+                id="bottomBorderColorSection"
+                style="display: none"
+              >
+                <h4>
+                  Border Color:
+                  <span id="selectedBottomBorderColorName">White</span>
+                </h4>
+                <div class="color-options-walmart" data-border-type="bottom">
+                  <div
+                    class="color-option-walmart active"
+                    style="background: #ffffff; border: 2px solid #ddd"
+                    data-color="#FFFFFF"
+                    data-name="White"
+                  ></div>
+                  <div
+                    class="color-option-walmart"
+                    style="background: #ffddee"
+                    data-color="#FFDDEE"
+                    data-name="Light Pink"
+                  ></div>
+                  <div
+                    class="color-option-walmart"
+                    style="background: #ffb6c1"
+                    data-color="#FFB6C1"
+                    data-name="Pink"
+                  ></div>
+                  <div
+                    class="color-option-walmart"
+                    style="background: #ff6347"
+                    data-color="#FF6347"
+                    data-name="Red"
+                  ></div>
+                  <div
+                    class="color-option-walmart"
+                    style="background: #ffa500"
+                    data-color="#FFA500"
+                    data-name="Orange"
+                  ></div>
+                  <div
+                    class="color-option-walmart"
+                    style="background: #ffff00"
+                    data-color="#FFFF00"
+                    data-name="Yellow"
+                  ></div>
+                  <div
+                    class="color-option-walmart"
+                    style="background: #87ceeb"
+                    data-color="#87CEEB"
+                    data-name="Light Blue"
+                  ></div>
+                  <div
+                    class="color-option-walmart"
+                    style="background: #1e90ff"
+                    data-color="#1E90FF"
+                    data-name="Blue"
+                  ></div>
+                  <div
+                    class="color-option-walmart"
+                    style="background: #8a2be2"
+                    data-color="#8A2BE2"
+                    data-name="Purple"
+                  ></div>
+                  <div
+                    class="color-option-walmart"
+                    style="background: #32cd32"
+                    data-color="#32CD32"
+                    data-name="Green"
+                  ></div>
+                  <div
+                    class="color-option-walmart"
+                    style="background: #adff2f"
+                    data-color="#ADFF2F"
+                    data-name="Lime"
+                  ></div>
+                  <div
+                    class="color-option-walmart"
+                    style="background: #20b2aa"
+                    data-color="#20B2AA"
+                    data-name="Teal"
+                  ></div>
+                  <div
+                    class="color-option-walmart"
+                    style="background: #2f2f2f"
+                    data-color="#2F2F2F"
+                    data-name="Black"
+                  ></div>
+                  <div
+                    class="color-option-walmart"
+                    style="background: #a9a9a9"
+                    data-color="#A9A9A9"
+                    data-name="Gray"
+                  ></div>
+                  <div
+                    class="color-option-walmart"
+                    style="background: #8b4513"
+                    data-color="#8B4513"
+                    data-name="Brown"
+                  ></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 6: Top Border -->
+            <div class="step-section" id="step-6">
+              <div class="step-header">
+                <span class="step-check">✓</span>
+                <h3>Top Border</h3>
+              </div>
+              <div class="border-options-walmart" id="topBorderOptions">
+                <div
+                  class="border-option-walmart active"
+                  data-border="none"
+                  data-name="No border"
+                >
+                  <span>No border</span>
+                </div>
+                <div
+                  class="border-option-"
+                  data-border="beads"
+                  data-name="Beads"
+                >
+                  <span>Beads</span>
+                </div>
+                <div
+                  class="border-option-walmart"
+                  data-border="shells"
+                  data-name="Shells"
+                >
+                  <span>Shells</span>
+                </div>
+              </div>
+              <div
+                class="border-color-section"
+                id="topBorderColorSection"
+                style="display: none"
+              >
+                <h4>
+                  Border Color:
+                  <span id="selectedTopBorderColorName">White</span>
+                </h4>
+                <div class="color-options-walmart" data-border-type="top">
+                  <div
+                    class="color-option-walmart active"
+                    style="background: #ffffff; border: 2px solid #ddd"
+                    data-color="#FFFFFF"
+                    data-name="White"
+                  ></div>
+                  <div
+                    class="color-option-walmart"
+                    style="background: #ffddee"
+                    data-color="#FFDDEE"
+                    data-name="Light Pink"
+                  ></div>
+                  <div
+                    class="color-option-walmart"
+                    style="background: #ffb6c1"
+                    data-color="#FFB6C1"
+                    data-name="Pink"
+                  ></div>
+                  <div
+                    class="color-option-walmart"
+                    style="background: #ff6347"
+                    data-color="#FF6347"
+                    data-name="Red"
+                  ></div>
+                  <div
+                    class="color-option-walmart"
+                    style="background: #ffa500"
+                    data-color="#FFA500"
+                    data-name="Orange"
+                  ></div>
+                  <div
+                    class="color-option-walmart"
+                    style="background: #ffff00"
+                    data-color="#FFFF00"
+                    data-name="Yellow"
+                  ></div>
+                  <div
+                    class="color-option-walmart"
+                    style="background: #87ceeb"
+                    data-color="#87CEEB"
+                    data-name="Light Blue"
+                  ></div>
+                  <div
+                    class="color-option-walmart"
+                    style="background: #1e90ff"
+                    data-color="#1E90FF"
+                    data-name="Blue"
+                  ></div>
+                  <div
+                    class="color-option-walmart"
+                    style="background: #8a2be2"
+                    data-color="#8A2BE2"
+                    data-name="Purple"
+                  ></div>
+                  <div
+                    class="color-option-walmart"
+                    style="background: #32cd32"
+                    data-color="#32CD32"
+                    data-name="Green"
+                  ></div>
+                  <div
+                    class="color-option-walmart"
+                    style="background: #adff2f"
+                    data-color="#ADFF2F"
+                    data-name="Lime"
+                  ></div>
+                  <div
+                    class="color-option-walmart"
+                    style="background: #20b2aa"
+                    data-color="#20B2AA"
+                    data-name="Teal"
+                  ></div>
+                  <div
+                    class="color-option-walmart"
+                    style="background: #2f2f2f"
+                    data-color="#2F2F2F"
+                    data-name="Black"
+                  ></div>
+                  <div
+                    class="color-option-walmart"
+                    style="background: #a9a9a9"
+                    data-color="#A9A9A9"
+                    data-name="Gray"
+                  ></div>
+                  <div
+                    class="color-option-walmart"
+                    style="background: #8b4513"
+                    data-color="#8B4513"
+                    data-name="Brown"
+                  ></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 7: Custom Message -->
+            <div class="step-section" id="step-7">
+              <div class="step-header">
+                <span class="step-check">✓</span>
+                <h3>Custom Message</h3>
+              </div>
+              <div class="message-options-walmart" id="messageOptions">
+                <div class="message-option-walmart active" data-message="none">
+                  <span style="font-weight: 500">No message</span>
+                </div>
+                <div class="message-option-walmart" data-message="custom">
+                  <span style="font-weight: 500">Add custom message</span>
+                  <div class="message-input-walmart">
+                    <input
+                      type="text"
+                      id="customTextWalmart"
+                      class="form-control-walmart"
+                      placeholder="Happy Birthday!"
+                      maxlength="50"
+                    />
+                    <div class="char-counter">
+                      <span id="charCountWalmart">0</span>/50 characters
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 8: Decorations -->
+            <div class="step-section" id="step-8">
+              <div class="step-header">
+                <span class="step-check">✓</span>
+                <h3>Decorations</h3>
+              </div>
+              <div class="decorations-options-walmart" id="decorationOptions">
+                <div
+                  class="decoration-option-walmart active"
+                  data-decoration="none"
+                  data-name="No decorations"
+                >
+                  <span>No decorations</span>
+                </div>
+                <div
+                  class="decoration-option-walmart"
+                  data-decoration="flowers"
+                  data-name="Flowers"
+                >
+                  <span>Flowers</span>
+                </div>
+                <div class="flower-options-walmart" id="flowerSubOptions">
+                  <div
+                    class="flower-option-walmart"
+                    data-flower-type="daisies"
+                    data-name="Daisies"
+                  >
+                    <span>Daisies</span>
+                  </div>
+                  <div
+                    class="flower-option-walmart"
+                    data-flower-type="buttonRoses"
+                    data-name="Button Roses"
+                  >
+                    <span>Button Roses</span>
+                  </div>
+                </div>
+                <div
+                  class="decoration-option-walmart"
+                  data-decoration="balloons"
+                  data-name="Balloons"
+                >
+                  <span>Balloons</span>
+                </div>
+                <div
+                  class="decoration-option-walmart"
+                  data-decoration="toppings"
+                  data-name="Toppings"
+                >
+                  <span>Toppings</span>
+                </div>
+                <!-- Toppings Color Section -->
+                <div class="toppings-color-section" id="toppingsColorSection">
+                  <h4>
+                    Color: <span id="selectedToppingsColorName">White</span>
+                  </h4>
+                  <div class="toppings-color-options" id="toppingsColors">
+                    <div
+                      class="toppings-color-option"
+                      style="background: #ff0000"
+                      data-color="#FF0000"
+                      data-name="Red"
+                    ></div>
+                    <div
+                      class="toppings-color-option"
+                      style="background: #ffa500"
+                      data-color="#FFA500"
+                      data-name="Orange"
+                    ></div>
+                    <div
+                      class="toppings-color-option"
+                      style="background: #ffff00"
+                      data-color="#FFFF00"
+                      data-name="Yellow"
+                    ></div>
+                    <div
+                      class="toppings-color-option"
+                      style="background: #32cd32"
+                      data-color="#32CD32"
+                      data-name="Green"
+                    ></div>
+                    <div
+                      class="toppings-color-option"
+                      style="background: #1e90ff"
+                      data-color="#1E90FF"
+                      data-name="Blue"
+                    ></div>
+                    <div
+                      class="toppings-color-option"
+                      style="background: #8a2be2"
+                      data-color="#8A2BE2"
+                      data-name="Purple"
+                    ></div>
+                    <div
+                      class="toppings-color-option"
+                      style="background: #ffb6c1"
+                      data-color="#FFB6C1"
+                      data-name="Pink"
+                    ></div>
+                    <div
+                      class="toppings-color-option"
+                      style="background: #000000"
+                      data-color="#000000"
+                      data-name="Black"
+                    ></div>
+                    <div
+                      class="toppings-color-option active"
+                      style="background: #ffffff; border: 2px solid #ddd"
+                      data-color="#FFFFFF"
+                      data-name="White"
+                    ></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Navigation -->
+          <div class="step-navigation" style="display: none">
+            <button
+              class="nav-btn"
+              id="prevBtn"
+              onclick="prevStep()"
+              style="display: none"
+            >
+              ← Back
+            </button>
+            <div class="next-step-info">
+              <span id="nextStepName">Flavor</span>
+              <button class="nav-btn" id="nextBtn" onclick="nextStep()">
+                →
+              </button>
+            </div>
+          </div>
+
+          <!-- Upload Image Section -->
+          <div
+            class="upload-section"
+            style="
+              margin-top: 32px;
+              padding-top: 20px;
+              border-top: 1px solid #e0e0e0;
+            "
+          >
+            <h4
+              style="
+                font-size: 1.1rem;
+                font-weight: 600;
+                color: var(--text-color);
+                margin-bottom: 16px;
+                text-align: center;
+              "
+            >
+              Have a custom design in mind?
+            </h4>
+            <div
+              class="upload-area"
+              id="uploadArea"
+              style="
+                border: 2px dashed #d0d0d0;
+                border-radius: 8px;
+                padding: 40px 20px;
+                text-align: center;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                background: #fafafa;
+              "
+            >
+              <div
+                style="
+                  color: var(--secondary-text-color);
+                  font-size: 0.9rem;
+                  margin-bottom: 12px;
+                "
+              >
+                Click or drag & drop to this area to upload
+              </div>
+              <input
+                type="file"
+                id="imageUpload"
+                accept="image/*"
+                style="display: none"
+              />
+              <div
+                style="
+                  text-decoration: underline;
+                  color: var(--primary-color);
+                  font-size: 0.9rem;
+                  cursor: pointer;
+                "
+                onclick="document.getElementById('imageUpload').click();"
+              >
+                Upload Image Reference
+              </div>
+            </div>
+            <div
+              id="uploadedImage"
+              style="display: none; margin-top: 16px; text-align: center"
+            >
+              <img
+                id="previewImage"
+                style="
+                  max-width: 100%;
+                  max-height: 200px;
+                  border-radius: 8px;
+                  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+                "
+              />
+              <div style="margin-top: 8px">
+                <button
+                  onclick="removeUploadedImage()"
+                  style="
+                    background: none;
+                    border: none;
+                    color: var(--secondary-text-color);
+                    font-size: 0.8rem;
+                    cursor: pointer;
+                    text-decoration: underline;
+                  "
+                >
+                  Remove image
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Footer -->
+    <div data-include-html="/includes/footer.html"></div>
+    <script src="/scripts/include-html.js"></script>
+    <script src="/scripts/update-navbar.js"></script>
+
+    <!-- Bootstrap JS -->
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO"
+      crossorigin="anonymous"
+    ></script>
+
+    <!-- Custom JavaScript -->
+    <script src="/scripts/custom-cake.js"></script>
+  </body>
+</html>

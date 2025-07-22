@@ -57,7 +57,7 @@ router.get('/verify', verifyToken, async (req, res) => {
     const newToken = jwt.sign({ userID: user.userID }, process.env.JWT_SECRET, { expiresIn: '24h' });
     console.log('New token generated for completion:', newToken);
 
-    const redirectUrl = `http://localhost:3000/pages/customer/complete-registration.html?userID=${user.userID}&token=${newToken}`;
+    const redirectUrl = `http://localhost:3000/public/customer/complete-registration.html?userID=${user.userID}&token=${newToken}`;
     console.log('Redirecting to:', redirectUrl);
     res.redirect(redirectUrl);
   } catch (error) {

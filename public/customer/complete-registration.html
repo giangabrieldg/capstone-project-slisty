@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Complete Registration</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles/complete-registration.css" />
+    <link rel="stylesheet" href="/styles/navbar.css" />
+    <link rel="stylesheet" href="/styles/footer.css" />
+  </head>
+  <body>
+    <!-- Navbar -->
+    <div data-include-html="/pages/includes/navbar.html"></div>
+
+    <div class="card">
+      <div class="card-body">
+        <h2 class="card-title text-center">Complete Registration</h2>
+        <form id="completeRegistrationForm">
+          <div class="mb-3">
+            <label for="name" class="form-label">Full Name</label>
+            <input type="text" class="form-control" id="name" required />
+          </div>
+          <div class="mb-3">
+            <label for="password" class="form-label">Password</label>
+            <input
+              type="password"
+              class="form-control"
+              id="password"
+              required
+            />
+          </div>
+          <button type="submit" class="btn btn-primary w-100">
+            Complete Registration
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div data-include-html="/includes/footer.html"></div>
+    <script src="/scripts/include-html.js"></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO"
+      crossorigin="anonymous"
+    ></script>
+    <script>
+      document
+        .getElementById("completeRegistrationForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const name = document.getElementById("name").value;
+          const password = document.getElementById("password").value;
+
+          const urlParams = new URLSearchParams(window.location.search);
+          const token = urlParams.get("token");
+
+          if (!token) {
+            alert("Token not found. Please verify your email again.");
+            return;
+          }
+
+          try {
+            const response = await fetch(
+              `http://localhost:3000/api/auth/complete-registration?token=${encodeURIComponent(
+                token
+              )}`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name, password }),
+              }
+            );
+            const data = await response.json();
+            alert(data.message);
+            if (response.ok) {
+              // Store the token and redirect to login page
+              localStorage.setItem("token", data.token);
+              window.location.href = "/customer/login.html";
+            } else {
+              if (data.message === "Invalid or expired token") {
+                alert(
+                  "Your verification token has expired. Please request a new verification email."
+                );
+              } else if (data.message === "User not found") {
+                alert(
+                  "User not found. Please start the registration process again."
+                );
+              }
+            }
+          } catch (error) {
+            console.error("Error:", error);
+            alert("An error occurred. Please try again later.");
+          }
+        });
+    </script>
+  </body>
+</html>
