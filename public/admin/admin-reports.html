@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <!-- Character encoding and responsive viewport -->
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Dashboard - Reports</title>
+    <!-- Bootstrap CSS for responsive grid and components -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <!-- Custom styles for reports -->
+    <link rel="stylesheet" href="/styles/sidebar.css" />
+    <link rel="stylesheet" href="/styles/admin-reports.css" />
+    <!-- Google Fonts for typography -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;700&family=Poppins:wght@300;400;600&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Bootstrap Icons for icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css"
+    />
+    <!-- Chart.js for charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- table2excel for Excel export -->
+    <script src="https://cdn.jsdelivr.net/npm/table2excel@1.0.0/dist/table2excel.min.js"></script>
+  </head>
+  <body>
+    <!-- Sidebar toggle button for mobile view -->
+    <button class="sidebar-toggle" aria-label="Toggle sidebar">
+      <i class="bi bi-list"></i>
+    </button>
+    <!-- Main layout container with flexbox for sidebar and content -->
+    <div class="d-flex">
+      <!-- Sidebar for navigation -->
+      <aside class="sidebar">
+        <!-- Sidebar header with logo and user info -->
+        <div class="sidebar-header">
+          <div class="user-info">
+            <div class="user-icon"></div>
+            <span class="user-name">Admin Name</span>
+            <span class="user-role">Admin</span>
+          </div>
+        </div>
+        <!-- Navigation menu -->
+        <nav class="sidebar-nav">
+          <a href="admin-dashboard.html" class="nav-item dashboard">
+            <i class="bi bi-speedometer2 icon"></i>
+            <span>Dashboard</span>
+          </a>
+          <a href="admin-reports.html" class="nav-item reports active">
+            <i class="bi bi-bar-chart-line icon"></i>
+            <span>Reports</span>
+          </a>
+          <a href="admin-orders.html" class="nav-item orders">
+            <i class="bi bi-basket icon"></i>
+            <span>Orders and Payments</span>
+          </a>
+          <a href="admin-users.html" class="nav-item user-management">
+            <i class="bi bi-people icon"></i>
+            <span>User Management</span>
+          </a>
+          <a href="admin-cakes.html" class="nav-item custom-cake-orders">
+            <i class="bi bi-bag-check icon"></i>
+            <span>Custom Cake Orders</span>
+          </a>
+          <a href="admin-menu.html" class="nav-item menu-management">
+            <i class="bi bi-journal-text icon"></i>
+            <span>Menu Management</span>
+          </a>
+          <a
+            href="admin-faq.html"
+            class="nav-item faqs-and-inquiries-management"
+          >
+            <i class="bi bi-question-circle icon"></i>
+            <span>FAQs and Inquiries</span>
+          </a>
+          <a href="/public/index.html" class="nav-item logout">
+            <i class="bi bi-box-arrow-right icon"></i>
+            <span>Logout</span>
+          </a>
+        </nav>
+      </aside>
+      <!-- Main content area -->
+      <main class="content">
+        <!-- Reports header with title, date filter, and export button -->
+        <div class="reports-header">
+          <h2>Reports</h2>
+          <div class="header-actions">
+            <div class="date-filter">
+              <input
+                type="date"
+                class="form-control date-picker"
+                id="datePicker"
+                name="datePicker"
+              />
+            </div>
+            <button id="exportExcel" class="btn btn-primary">
+              <i class="bi bi-file-earmark-excel"></i> Export to Excel
+            </button>
+          </div>
+        </div>
+        <!-- Charts section -->
+        <div class="charts-section row">
+          <div class="col-lg-6 col-md-12">
+            <div class="chart-card">
+              <h3>Total Orders</h3>
+              <canvas id="totalOrdersChart"></canvas>
+            </div>
+          </div>
+          <div class="col-lg-6 col-md-12">
+            <div class="chart-card">
+              <h3>Popular Items</h3>
+              <canvas id="popularItemsChart"></canvas>
+            </div>
+          </div>
+        </div>
+        <!-- Reports table with search and filter -->
+        <div class="reports-table">
+          <div class="row align-items-center mb-3">
+            <div class="col-auto">
+              <h3 class="m-0">Sales Report</h3>
+            </div>
+            <div class="col-auto ms-auto">
+              <div class="header-actions">
+                <input
+                  type="text"
+                  class="form-control search-bar"
+                  placeholder="Search by order ID or customer name..."
+                />
+                <button
+                  class="filter-btn"
+                  data-bs-toggle="modal"
+                  data-bs-target="#filterModal"
+                >
+                  Filter Orders
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-hover" id="salesTable">
+              <thead>
+                <tr>
+                  <th>Order ID</th>
+                  <th>Customer Name</th>
+                  <th>Amount</th>
+                  <th>Order Details</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>#ORD001</td>
+                  <td>Jane Cooper</td>
+                  <td>₱539.00</td>
+                  <td>Ube Moist Cake<br />Qty: 2</td>
+                  <td><span class="status completed">Completed</span></td>
+                </tr>
+                <tr>
+                  <td>#ORD002</td>
+                  <td>John Doe</td>
+                  <td>₱539.00</td>
+                  <td>Ube Moist Cake<br />Qty: 2</td>
+                  <td><span class="status in-progress">In Progress</span></td>
+                </tr>
+                <tr>
+                  <td>#ORD003</td>
+                  <td>Bruce Wayne</td>
+                  <td>₱539.00</td>
+                  <td>Ube Moist Cake<br />Qty: 2</td>
+                  <td><span class="status completed">Completed</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <!-- Filter Modal -->
+        <div
+          class="modal fade"
+          id="filterModal"
+          tabindex="-1"
+          aria-labelledby="filterModalLabel"
+          aria-hidden="true"
+        >
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="filterModalLabel">
+                  Filter Sales Report
+                </h5>
+                <button
+                  type="button"
+                  class="btn-close"
+                  data-bs-dismiss="modal"
+                  aria-label="Close"
+                ></button>
+              </div>
+              <div class="modal-body">
+                <div class="mb-3">
+                  <label for="filterStatus" class="form-label">Status</label>
+                  <select class="form-select" id="filterStatus">
+                    <option value="">All</option>
+                    <option value="completed">Completed</option>
+                    <option value="in-progress">In Progress</option>
+                  </select>
+                </div>
+                <button class="btn btn-primary" id="applyFilter">
+                  Apply Filter
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+    <!-- Bootstrap JS and custom script -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      // Export to Excel functionality using table2excel
+      document.getElementById("exportExcel").addEventListener("click", () => {
+        let table = document.getElementById("salesTable");
+        let filename =
+          "Sales_Report_" + new Date().toISOString().slice(0, 10) + ".xls";
+        if (table) {
+          $(table).table2excel({
+            filename: filename,
+            exclude: ".no-export",
+            preserveColors: true,
+          });
+        }
+      });
+
+      // Total Orders Chart
+      const totalOrdersCtx = document
+        .getElementById("totalOrdersChart")
+        .getContext("2d");
+      new Chart(totalOrdersCtx, {
+        type: "line",
+        data: {
+          labels: ["Jun 3", "Jun 4", "Jun 5"],
+          datasets: [
+            {
+              label: "Total Orders",
+              data: [4, 2, 1],
+              borderColor: "rgba(44, 144, 69, 1)",
+              backgroundColor: "rgba(44, 144, 69, 0.2)",
+              tension: 0.4,
+            },
+            {
+              label: "Custom Cake Orders",
+              data: [3, 1, 0],
+              borderColor: "rgba(255, 215, 0, 1)",
+              backgroundColor: "rgba(255, 215, 0, 0.2)",
+              tension: 0.4,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: { beginAtZero: true },
+          },
+        },
+      });
+
+      // Popular Items Chart
+      const popularItemsCtx = document
+        .getElementById("popularItemsChart")
+        .getContext("2d");
+      new Chart(popularItemsCtx, {
+        type: "bar",
+        data: {
+          labels: ["Ube Moist Cake", "Chocolate Cake", "Red Velvet"],
+          datasets: [
+            {
+              label: "Order Count",
+              data: [5, 3, 2],
+              backgroundColor: "rgba(44, 144, 69, 0.8)",
+              borderColor: "rgba(44, 144, 69, 1)",
+              borderWidth: 1,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: { beginAtZero: true },
+          },
+        },
+      });
+
+      // Search functionality
+      document.querySelector(".search-bar").addEventListener("input", (e) => {
+        const searchTerm = e.target.value.toLowerCase();
+        document.querySelectorAll("#salesTable tbody tr").forEach((row) => {
+          const orderId = row.cells[0].textContent.toLowerCase();
+          const customerName = row.cells[1].textContent.toLowerCase();
+          const orderDetails = row.cells[3].textContent.toLowerCase();
+          row.style.display =
+            orderId.includes(searchTerm) ||
+            customerName.includes(searchTerm) ||
+            orderDetails.includes(searchTerm)
+              ? ""
+              : "none";
+        });
+      });
+
+      // Filter functionality
+      document.getElementById("applyFilter").addEventListener("click", () => {
+        const status = document
+          .getElementById("filterStatus")
+          .value.toLowerCase();
+        document.querySelectorAll("#salesTable tbody tr").forEach((row) => {
+          const rowStatusElement = row.cells[4].querySelector(".status");
+          const rowStatus = rowStatusElement
+            ? rowStatusElement.textContent.trim().toLowerCase()
+            : "";
+          if (status === "" || rowStatus === status.replace("-", " ")) {
+            row.style.display = "";
+          } else {
+            row.style.display = "none";
+          }
+        });
+        bootstrap.Modal.getInstance(
+          document.getElementById("filterModal")
+        ).hide();
+      });
+
+      // Sidebar toggle functionality
+      const sidebarToggle = document.querySelector(".sidebar-toggle");
+      const sidebar = document.querySelector(".sidebar");
+      const body = document.body;
+
+      sidebarToggle.addEventListener("click", () => {
+        sidebar.classList.toggle("show");
+        body.classList.toggle("sidebar-visible");
+      });
+
+      document.addEventListener("click", (e) => {
+        if (
+          window.innerWidth <= 992 &&
+          !sidebar.contains(e.target) &&
+          !sidebarToggle.contains(e.target) &&
+          sidebar.classList.contains("show")
+        ) {
+          sidebar.classList.remove("show");
+          body.classList.remove("sidebar-visible");
+        }
+      });
+    </script>
+  </body>
+</html>

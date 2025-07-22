@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Dashboard - Custom Cake Orders</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;700&family=Poppins:wght@300;400;600&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles/sidebar.css" />
+    <link rel="stylesheet" href="/styles/admin-cakes.css" />
+  </head>
+  <body>
+    <button class="sidebar-toggle" aria-label="Toggle sidebar">
+      <i class="bi bi-list"></i>
+    </button>
+    <div class="d-flex">
+      <aside class="sidebar">
+        <!-- Sidebar header with logo and user info -->
+        <div class="sidebar-header">
+          <div class="user-info">
+            <div class="user-icon"></div>
+            <span class="user-name">Admin Name</span>
+            <span class="user-role">Admin</span>
+          </div>
+        </div>
+        <!-- Navigation menu -->
+        <nav class="sidebar-nav">
+          <a href="admin-dashboard.html" class="nav-item dashboard">
+            <i class="bi bi-speedometer2 icon"></i>
+            <span>Dashboard</span>
+          </a>
+          <a href="admin-reports.html" class="nav-item reports">
+            <i class="bi bi-bar-chart-line icon"></i>
+            <span>Reports</span>
+          </a>
+          <a href="admin-orders-and-payments.html" class="nav-item orders">
+            <i class="bi bi-basket icon"></i>
+            <span>Orders and Payments</span>
+          </a>
+          <a href="admin-users.html" class="nav-item user-management">
+            <i class="bi bi-people icon"></i>
+            <span>User Management</span>
+          </a>
+          <a href="admin-cakes.html" class="nav-item custom-cake-orders active">
+            <i class="bi bi-bag-check icon"></i>
+            <span>Custom Cake Orders</span>
+          </a>
+          <a href="admin-menu.html" class="nav-item menu-management">
+            <i class="bi bi-journal-text icon"></i>
+            <span>Menu Management</span>
+          </a>
+          <a
+            href="admin-faq.html"
+            class="nav-item faqs-and-inquiries-management"
+          >
+            <i class="bi bi-question-circle icon"></i>
+            <span>FAQs and Inquiries</span>
+          </a>
+          <a href="/public/index.html" class="nav-item logout">
+            <i class="bi bi-box-arrow-right icon"></i>
+            <span>Logout</span>
+          </a>
+        </nav>
+      </aside>
+
+      <main class="content">
+        <div class="custom-cake-header">
+          <h2>Custom Cake Orders</h2>
+          <div class="header-actions">
+            <input
+              type="text"
+              class="form-control search-bar"
+              placeholder="Search by order ID or customer name..."
+            />
+            <button
+              class="filter-btn"
+              data-bs-toggle="modal"
+              data-bs-target="#filterModal"
+            >
+              Filter Orders
+            </button>
+          </div>
+        </div>
+        <div class="custom-cake-table">
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>Order ID</th>
+                  <th>Customer Name</th>
+                  <th>Customization Details</th>
+                  <th>Image Reference</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody class="cake-orders">
+                <tr>
+                  <td>CC001</td>
+                  <td>Juan Dela Cruz</td>
+                  <td>Chocolate cake, 6x3, blue frosting, superhero theme</td>
+                  <td>
+                    <a
+                      href="#"
+                      class="view-image"
+                      data-bs-toggle="modal"
+                      data-bs-target="#imageModal"
+                      >View</a
+                    >
+                  </td>
+                  <td><span class="status pending">Pending Review</span></td>
+                  <td>
+                    <select
+                      class="form-select status-select"
+                      data-order-id="CC001"
+                    >
+                      <option value="Pending Review" selected>
+                        Pending Review
+                      </option>
+                      <option value="Feasible">Feasible</option>
+                      <option value="Not Feasible">Not Feasible</option>
+                    </select>
+                    <button class="btn btn-primary btn-sm update-status">
+                      Update
+                    </button>
+                  </td>
+                </tr>
+                <tr>
+                  <td>CC002</td>
+                  <td>Maria Santos</td>
+                  <td>Vanilla cake, 8x3, floral design, pink icing</td>
+                  <td>
+                    <a
+                      href="#"
+                      class="view-image"
+                      data-bs-toggle="modal"
+                      data-bs-target="#imageModal"
+                      >View</a
+                    >
+                  </td>
+                  <td><span class="status not-feasible">Not Feasible</span></td>
+                  <td>
+                    <select
+                      class="form-select status-select"
+                      data-order-id="CC002"
+                    >
+                      <option value="Pending Review">Pending Review</option>
+                      <option value="Feasible">Feasible</option>
+                      <option value="Not Feasible" selected>
+                        Not Feasible
+                      </option>
+                    </select>
+                    <button class="btn btn-primary btn-sm update-status">
+                      Update
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div
+          class="modal fade"
+          id="imageModal"
+          tabindex="-1"
+          aria-labelledby="imageModalLabel"
+          aria-hidden="true"
+        >
+          <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="imageModalLabel">
+                  Image Reference
+                </h5>
+                <button
+                  type="button"
+                  class="btn-close"
+                  data-bs-dismiss="modal"
+                  aria-label="Close"
+                ></button>
+              </div>
+              <div class="modal-body">
+                <img
+                  src="placeholder-image.jpg"
+                  class="img-fluid"
+                  alt="Customer Image Reference"
+                />
+              </div>
+              <div class="modal-footer">
+                <button
+                  type="button"
+                  class="btn btn-secondary"
+                  data-bs-dismiss="modal"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div
+          class="modal fade"
+          id="filterModal"
+          tabindex="-1"
+          aria-labelledby="filterModalLabel"
+          aria-hidden="true"
+        >
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="filterModalLabel">Filter Orders</h5>
+                <button
+                  type="button"
+                  class="btn-close"
+                  data-bs-dismiss="modal"
+                  aria-label="Close"
+                ></button>
+              </div>
+              <div class="modal-body">
+                <form id="filterForm">
+                  <div class="mb-3">
+                    <label for="filterStatus" class="form-label">Status</label>
+                    <select class="form-select" id="filterStatus">
+                      <option value="">All</option>
+                      <option value="Pending Review">Pending Review</option>
+                      <option value="Feasible">Feasible</option>
+                      <option value="Not Feasible">Not Feasible</option>
+                    </select>
+                  </div>
+                  <button type="submit" class="btn btn-primary">
+                    Apply Filter
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      // Status update functionality
+      document.querySelectorAll(".update-status").forEach((button) => {
+        button.addEventListener("click", function () {
+          const row = this.closest("tr");
+          const select = row.querySelector(".status-select");
+          const orderId = select.dataset.orderId;
+          const newStatus = select.value;
+          const statusSpan = row.querySelector(".status");
+          statusSpan.textContent = newStatus;
+          statusSpan.className = `status ${newStatus
+            .toLowerCase()
+            .replace(" ", "-")}`;
+          alert(`Status for Order ${orderId} updated to: ${newStatus}`);
+          // Placeholder for backend API call
+        });
+      });
+
+      // Search functionality
+      document.querySelector(".search-bar").addEventListener("input", (e) => {
+        const searchTerm = e.target.value.toLowerCase();
+        document.querySelectorAll(".cake-orders tr").forEach((row) => {
+          const orderId = row.cells[0].textContent.toLowerCase();
+          const customerName = row.cells[1].textContent.toLowerCase();
+          row.style.display =
+            orderId.includes(searchTerm) || customerName.includes(searchTerm)
+              ? ""
+              : "none";
+        });
+      });
+
+      // Filter functionality
+      document.getElementById("filterForm").addEventListener("submit", (e) => {
+        e.preventDefault();
+        const status = document
+          .getElementById("filterStatus")
+          .value.toLowerCase()
+          .replace(" ", "-");
+        document.querySelectorAll(".cake-orders tr").forEach((row) => {
+          const rowStatus = row
+            .querySelector(".status")
+            .className.split(" ")[1];
+          row.style.display =
+            status === "" || rowStatus === status ? "" : "none";
+        });
+        const modal = bootstrap.Modal.getInstance(
+          document.getElementById("filterModal")
+        );
+        modal.hide();
+      });
+
+      // Sidebar toggle functionality
+      const sidebarToggle = document.querySelector(".sidebar-toggle");
+      const sidebar = document.querySelector(".sidebar");
+      const body = document.body;
+
+      sidebarToggle.addEventListener("click", () => {
+        sidebar.classList.toggle("show");
+        body.classList.toggle("sidebar-visible");
+      });
+
+      document.addEventListener("click", (e) => {
+        if (
+          window.innerWidth <= 992 &&
+          !sidebar.contains(e.target) &&
+          !sidebarToggle.contains(e.target) &&
+          sidebar.classList.contains("show")
+        ) {
+          sidebar.classList.remove("show");
+          body.classList.remove("sidebar-visible");
+        }
+      });
+    </script>
+  </body>
+</html>

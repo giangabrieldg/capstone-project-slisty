@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <!-- Character encoding and responsive viewport -->
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Dashboard - Orders and Payments</title>
+    <!-- Bootstrap CSS for responsive grid and components -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <!-- Custom styles for orders and payments -->
+    <link rel="stylesheet" href="/styles/sidebar.css" />
+    <link rel="stylesheet" href="/styles/admin-orders.css" />
+    <!-- Google Fonts for typography -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;700&family=Poppins:wght@300;400;600&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Bootstrap Icons for icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css"
+    />
+    <!-- table2excel for Excel export -->
+    <script src="https://cdn.jsdelivr.net/npm/table2excel@1.0.0/dist/table2excel.min.js"></script>
+  </head>
+  <body>
+    <!-- Sidebar toggle button for mobile view -->
+    <button class="sidebar-toggle" aria-label="Toggle sidebar">
+      <i class="bi bi-list"></i>
+    </button>
+    <!-- Main layout container with flexbox for sidebar and content -->
+    <div class="d-flex">
+      <!-- Sidebar for navigation -->
+      <aside class="sidebar">
+        <!-- Sidebar header with logo and user info -->
+        <div class="sidebar-header">
+          <div class="user-info">
+            <div class="user-icon"></div>
+            <span class="user-name">Admin Name</span>
+            <span class="user-role">Admin</span>
+          </div>
+        </div>
+        <!-- Navigation menu -->
+        <nav class="sidebar-nav">
+          <a href="admin-dashboard.html" class="nav-item dashboard">
+            <i class="bi bi-speedometer2 icon"></i>
+            <span>Dashboard</span>
+          </a>
+          <a href="admin-reports.html" class="nav-item reports">
+            <i class="bi bi-bar-chart-line icon"></i>
+            <span>Reports</span>
+          </a>
+          <a href="admin-orders.html" class="nav-item orders active">
+            <i class="bi bi-basket icon"></i>
+            <span>Orders and Payments</span>
+          </a>
+          <a href="admin-users.html" class="nav-item user-management">
+            <i class="bi bi-people icon"></i>
+            <span>User Management</span>
+          </a>
+          <a href="admin-cakes.html" class="nav-item custom-cake-orders">
+            <i class="bi bi-bag-check icon"></i>
+            <span>Custom Cake Orders</span>
+          </a>
+          <a href="admin-menu.html" class="nav-item menu-management">
+            <i class="bi bi-journal-text icon"></i>
+            <span>Menu Management</span>
+          </a>
+          <a
+            href="admin-faq.html"
+            class="nav-item faqs-and-inquiries-management"
+          >
+            <i class="bi bi-question-circle icon"></i>
+            <span>FAQs and Inquiries</span>
+          </a>
+          <a href="/public/index.html" class="nav-item logout">
+            <i class="bi bi-box-arrow-right icon"></i>
+            <span>Logout</span>
+          </a>
+        </nav>
+      </aside>
+      <!-- Main content area -->
+      <main class="content">
+        <!-- Orders and Payments header -->
+        <div class="orders-payments-header">
+          <h2>Orders and Payments</h2>
+          <div class="header-actions">
+            <input
+              type="text"
+              class="form-control search-bar"
+              placeholder="Search by Order ID, Name, or Amount..."
+            />
+            <input
+              type="date"
+              class="form-control date-picker"
+              id="datePicker"
+            />
+            <button
+              class="btn btn-secondary filter-btn"
+              type="button"
+              data-bs-toggle="modal"
+              data-bs-target="#filterModal"
+            >
+              Filter
+            </button>
+            <button id="exportExcel" class="btn btn-primary">
+              <i class="bi bi-file-earmark-excel"></i> Export to Excel
+            </button>
+          </div>
+        </div>
+        <!-- Orders and Payments table -->
+        <div class="orders-payments-table">
+          <div class="table-responsive">
+            <table class="table table-hover" id="ordersPaymentsTable">
+              <thead>
+                <tr>
+                  <th>Order ID</th>
+                  <th>Customer Name</th>
+                  <th>Order Date</th>
+                  <th>Amount</th>
+                  <th>Payment Method</th>
+                  <th>Order Details</th>
+                  <th>Delivery Method</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr data-order-date="2025-06-23">
+                  <td>#ORD001</td>
+                  <td>Jane Cooper</td>
+                  <td>2025-06-23</td>
+                  <td>₱539.00</td>
+                  <td>GCash</td>
+                  <td>Ube Moist Cake<br />Qty: 2</td>
+                  <td>Delivery</td>
+                  <td><span class="status completed">Completed</span></td>
+                  <td>
+                    <select class="status-select" data-order-id="#ORD001">
+                      <option value="pending">Pending</option>
+                      <option value="in-progress">In Progress</option>
+                      <option value="completed" selected>Completed</option>
+                      <option value="ready-for-delivery">
+                        Ready for Delivery
+                      </option>
+                    </select>
+                    <button class="update-status-btn" data-order-id="#ORD001">
+                      Update
+                    </button>
+                  </td>
+                </tr>
+                <tr data-order-date="2025-06-22">
+                  <td>#ORD002</td>
+                  <td>John Doe</td>
+                  <td>2025-06-22</td>
+                  <td>₱650.00</td>
+                  <td>Cash on Delivery</td>
+                  <td>Ube Moist Cake<br />Qty: 2</td>
+                  <td>Pickup</td>
+                  <td><span class="status in-progress">In Progress</span></td>
+                  <td>
+                    <button
+                      class="btn btn-success btn-sm confirm-payment"
+                      data-order-id="#ORD002"
+                    >
+                      Confirm Payment
+                    </button>
+                    <select class="status-select" data-order-id="#ORD002">
+                      <option value="pending">Pending</option>
+                      <option value="in-progress" selected>In Progress</option>
+                      <option value="completed">Completed</option>
+                      <option value="ready-for-delivery">
+                        Ready for Delivery
+                      </option>
+                    </select>
+                    <button class="update-status-btn" data-order-id="#ORD002">
+                      Update
+                    </button>
+                  </td>
+                </tr>
+                <tr data-order-date="2025-06-21">
+                  <td>#ORD003</td>
+                  <td>Bruce Wayne</td>
+                  <td>2025-06-21</td>
+                  <td>₱450.00</td>
+                  <td>GCash</td>
+                  <td>Ube Moist Cake<br />Qty: 2</td>
+                  <td>Delivery</td>
+                  <td><span class="status pending">Pending</span></td>
+                  <td>
+                    <button
+                      class="btn btn-success btn-sm confirm-payment"
+                      data-order-id="#ORD003"
+                    >
+                      Confirm Payment
+                    </button>
+                    <select class="status-select" data-order-id="#ORD003">
+                      <option value="pending" selected>Pending</option>
+                      <option value="in-progress">In Progress</option>
+                      <option value="completed">Completed</option>
+                      <option value="ready-for-delivery">
+                        Ready for Delivery
+                      </option>
+                    </select>
+                    <button class="update-status-btn" data-order-id="#ORD003">
+                      Update
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <!-- Filter Modal -->
+        <div
+          class="modal fade"
+          id="filterModal"
+          tabindex="-1"
+          aria-labelledby="filterModalLabel"
+          aria-hidden="true"
+        >
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="filterModalLabel">
+                  Filter Orders and Payments
+                </h5>
+                <button
+                  type="button"
+                  class="btn-close"
+                  data-bs-dismiss="modal"
+                  aria-label="Close"
+                ></button>
+              </div>
+              <div class="modal-body">
+                <div class="mb-3">
+                  <label for="filterStatus" class="form-label">Status</label>
+                  <select class="form-select" id="filterStatus">
+                    <option value="">All</option>
+                    <option value="pending">Pending</option>
+                    <option value="in-progress">In Progress</option>
+                    <option value="completed">Completed</option>
+                    <option value="ready-for-delivery">
+                      Ready for Delivery
+                    </option>
+                  </select>
+                </div>
+                <div class="mb-3">
+                  <label for="filterPaymentStatus" class="form-label"
+                    >Payment Status</label
+                  >
+                  <select class="form-select" id="filterPaymentStatus">
+                    <option value="">All</option>
+                    <option value="unpaid">Unpaid</option>
+                    <option value="paid">Paid</option>
+                  </select>
+                </div>
+                <button class="btn btn-primary" id="applyFilter">
+                  Apply Filter
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+    <!-- Bootstrap JS and custom script -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      // Export to Excel functionality using table2excel
+      document.getElementById("exportExcel").addEventListener("click", () => {
+        let table = document.getElementById("ordersPaymentsTable");
+        let filename =
+          "Orders_and_Payments_" +
+          new Date().toISOString().slice(0, 10) +
+          ".xls";
+        if (table) {
+          $(table).table2excel({
+            filename: filename,
+            exclude: ".no-export",
+            preserveColors: true,
+          });
+        }
+      });
+
+      // Search functionality
+      document.querySelector(".search-bar").addEventListener("input", (e) => {
+        const searchTerm = e.target.value.toLowerCase();
+        applyFilters();
+      });
+
+      // Date picker functionality
+      document
+        .getElementById("datePicker")
+        .addEventListener("change", applyFilters);
+
+      // Filter functionality
+      document.getElementById("applyFilter").addEventListener("click", () => {
+        applyFilters();
+        bootstrap.Modal.getInstance(
+          document.getElementById("filterModal")
+        ).hide();
+      });
+
+      // Combined filter function
+      function applyFilters() {
+        const searchTerm = document
+          .querySelector(".search-bar")
+          .value.toLowerCase();
+        const selectedDate = document.getElementById("datePicker").value;
+        const status = document
+          .getElementById("filterStatus")
+          .value.toLowerCase();
+        const paymentStatus = document
+          .getElementById("filterPaymentStatus")
+          .value.toLowerCase();
+
+        document
+          .querySelectorAll("#ordersPaymentsTable tbody tr")
+          .forEach((row) => {
+            const orderId = row.cells[0].textContent.toLowerCase();
+            const customerName = row.cells[1].textContent.toLowerCase();
+            const amount = row.cells[3].textContent.toLowerCase();
+            const rowOrderDate = row.getAttribute("data-order-date");
+            const rowStatus = row.cells[7].querySelector(".status")
+              ? row.cells[7]
+                  .querySelector(".status")
+                  .textContent.trim()
+                  .toLowerCase()
+              : "";
+            const rowPaymentStatus = row.cells[4].querySelector(".status")
+              ? row.cells[4]
+                  .querySelector(".status")
+                  .textContent.trim()
+                  .toLowerCase()
+              : "";
+
+            const dateMatch = !selectedDate || rowOrderDate >= selectedDate;
+            const searchMatch =
+              orderId.includes(searchTerm) ||
+              customerName.includes(searchTerm) ||
+              amount.includes(searchTerm);
+            const statusMatch =
+              status === "" || rowStatus === status.replace("-", " ");
+            const paymentStatusMatch =
+              paymentStatus === "" ||
+              rowPaymentStatus === paymentStatus.replace("-", " ");
+
+            row.style.display =
+              dateMatch && searchMatch && statusMatch && paymentStatusMatch
+                ? ""
+                : "none";
+          });
+      }
+
+      // Confirm Payment functionality
+      document.querySelectorAll(".confirm-payment").forEach((button) => {
+        button.addEventListener("click", () => {
+          const orderId = button.getAttribute("data-order-id");
+          const row = document
+            .querySelector(`#ordersPaymentsTable tr td:contains("${orderId}")`)
+            .closest("tr");
+          row.cells[4].innerHTML = '<span class="status paid">Paid</span>';
+          button.disabled = true;
+          button.textContent = "Confirmed";
+          alert(
+            `Payment confirmed for Order ${orderId}. Notification sent to customer!`
+          );
+        });
+      });
+
+      // Update status functionality
+      document.querySelectorAll(".update-status-btn").forEach((button) => {
+        button.addEventListener("click", () => {
+          const orderId = button.getAttribute("data-order-id");
+          const select = document.querySelector(
+            `.status-select[data-order-id="${orderId}"]`
+          );
+          const newStatus = select.value;
+          const statusSpan = document.querySelector(
+            `tr td:nth-child(8) span[data-order-id="${orderId}"]`
+          );
+          if (statusSpan) {
+            statusSpan.className = `status ${newStatus}`;
+            statusSpan.textContent =
+              newStatus.charAt(0).toUpperCase() +
+              newStatus.split("-").join(" ").slice(1);
+            alert(
+              `Status for Order ${orderId} updated to ${newStatus}. Notification sent to customer!`
+            );
+          }
+          applyFilters(); // Reapply filters to reflect changes
+        });
+      });
+
+      // Sidebar toggle functionality
+      const sidebarToggle = document.querySelector(".sidebar-toggle");
+      const sidebar = document.querySelector(".sidebar");
+      const body = document.body;
+
+      sidebarToggle.addEventListener("click", () => {
+        sidebar.classList.toggle("show");
+        body.classList.toggle("sidebar-visible");
+      });
+
+      document.addEventListener("click", (e) => {
+        if (
+          window.innerWidth <= 992 &&
+          !sidebar.contains(e.target) &&
+          !sidebarToggle.contains(e.target) &&
+          sidebar.classList.contains("show")
+        ) {
+          sidebar.classList.remove("show");
+          body.classList.remove("sidebar-visible");
+        }
+      });
+    </script>
+  </body>
+</html>
