@@ -6,7 +6,7 @@ const { Sequelize } = require('sequelize');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const bcrypt = require('bcrypt');
-const User = require('./models/User');
+const User = require('./models/user-model.js');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -68,8 +68,11 @@ sequelize.sync({ force: false })
 
 const authRoutes = require('./routes/authRoutes');
 const menuRoutes = require('./routes/menu');
+const cartRoutes = require('./routes/cart');
+
 app.use('/api/auth', authRoutes);
 app.use('/api/menu', menuRoutes);
+app.use('/api/cart', cartRoutes);
 
 app.use((err, req, res, next) => {
   if (err instanceof multer.MulterError) {

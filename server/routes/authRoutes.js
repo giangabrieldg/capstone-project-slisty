@@ -1,7 +1,7 @@
 const express = require('express');
 const jwt = require('jsonwebtoken'); // Keep this single import
 const bcrypt = require('bcrypt');
-const User = require('../models/User');
+const User = require('../models/user-model');
 const { sendVerificationEmail } = require('../utils/sendEmail');
 const verifyToken = require('../middleware/verifyToken');
 require('dotenv').config();
