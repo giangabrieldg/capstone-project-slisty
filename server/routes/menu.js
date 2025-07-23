@@ -1,22 +1,33 @@
-const express = require('express');
-const router = express.Router();
-const MenuItem = require('../models/menuItem');
-const { authenticate } = require('../middleware/menuAccessControl');
-const multer = require('multer');
-const path = require('path');
+/**
+ * Express router for handling menu item CRUD operations.
+ * Supports image uploads and access control for certain routes.
+ */
 
+const express = require('express'); // Express framework for routing
+const router = express.Router(); // Router instance for menu routes
+const MenuItem = require('../models/menuItem'); // MenuItem model for DB operations
+const { authenticate } = require('../middleware/menuAccessControl'); // Middleware for role-based authentication
+const multer = require('multer'); // Middleware for handling multipart/form-data (file uploads)
+const path = require('path'); // Node.js path module for handling file paths
+
+// Configure multer storage for uploaded images
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
+    // Set upload destination folder
     cb(null, 'uploads/');
   },
   filename: (req, file, cb) => {
+    // Set filename as current timestamp + original file extension
     cb(null, Date.now() + path.extname(file.originalname));
   }
 });
+
+// Multer upload instance with file size limit and file type filter
 const upload = multer({
   storage: storage,
-  limits: { fileSize: 10 * 1024 * 1024 },
+  limits: { fileSize: 10 * 1024 * 1024 }, // Limit file size to 10MB
   fileFilter: (req, file, cb) => {
+    // Allow only image files with specific extensions
     const filetypes = /jpeg|jpg|png|gif/;
     const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
     const mimetype = filetypes.test(file.mimetype);
@@ -28,6 +39,7 @@ const upload = multer({
   }
 });
 
+// GET /api/menu - Retrieve all menu items
 router.get('/', async (req, res) => {
   try {
     const menuItems = await MenuItem.findAll();
@@ -39,6 +51,7 @@ router.get('/', async (req, res) => {
   }
 });
 
+// GET /api/menu/:menuId - Retrieve a single menu item by ID
 router.get('/:menuId', async (req, res) => {
   try {
     const menuItem = await MenuItem.findByPk(req.params.menuId);
@@ -50,6 +63,8 @@ router.get('/:menuId', async (req, res) => {
   }
 });
 
+// POST /api/menu - Create a new menu item (Admin and Staff only)
+// Handles image upload for the menu item
 router.post('/', authenticate(['Admin', 'Staff']), upload.single('image'), async (req, res) => {
   try {
     const { name, category, price, description, sizes } = req.body;
@@ -66,6 +81,8 @@ router.post('/', authenticate(['Admin', 'Staff']), upload.single('image'), async
   }
 });
 
+// PUT /api/menu/:menuId - Update an existing menu item (Admin and Staff only)
+// Handles image upload for updating the menu item image
 router.put('/:menuId', authenticate(['Admin', 'Staff']), upload.single('image'), async (req, res) => {
   try {
     const { name, category, price, description, sizes } = req.body;
@@ -81,6 +98,7 @@ router.put('/:menuId', authenticate(['Admin', 'Staff']), upload.single('image'),
   }
 });
 
+// DELETE /api/menu/:menuId - Delete a menu item (Admin and Staff only)
 router.delete('/:menuId', authenticate(['Admin', 'Staff']), async (req, res) => {
   try {
     const menuItem = await MenuItem.findByPk(req.params.menuId);
@@ -93,4 +111,5 @@ router.delete('/:menuId', authenticate(['Admin', 'Staff']), async (req, res) => 
   }
 });
 
+// Export the router to be used in the main app
 module.exports = router;

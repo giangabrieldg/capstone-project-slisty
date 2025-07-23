@@ -9,10 +9,12 @@ const sequelize = new Sequelize(
   process.env.DB_PASSWORD,
   {
     host: process.env.DB_HOST,
+    port: process.env.DB_PORT ? parseInt(process.env.DB_PORT) : 3306,
     dialect: 'mysql',
-    logging: false, // Disable logging for cleaner console output
+    logging: false,
   }
 );
+
 
 // Export the sequelize instance for use in models and server
 module.exports = sequelize;

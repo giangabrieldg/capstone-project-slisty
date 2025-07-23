@@ -1,5 +1,5 @@
 const express = require('express');
-const jwt = require('jsonwebtoken');
+const jwt = require('jsonwebtoken'); // Keep this single import
 const bcrypt = require('bcrypt');
 const User = require('../models/User');
 const { sendVerificationEmail } = require('../utils/sendEmail');
@@ -40,9 +40,17 @@ router.post('/signup-email', async (req, res) => {
 });
 
 // Route to verify email via token
-router.get('/verify', verifyToken, async (req, res) => {
+router.get('/verify', async (req, res) => {
   try {
-    const user = await User.findByPk(req.user.userID);
+    const token = req.query.token;
+    console.log('Token received in /verify route:', token); // Log token for debugging
+    if (!token) {
+      return res.status(401).json({ message: 'No token provided' });
+    }
+
+    // Verify token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findByPk(decoded.userID);
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -67,15 +75,17 @@ router.get('/verify', verifyToken, async (req, res) => {
 });
 
 // Route to complete registration with name and password
-router.post('/complete-registration', verifyToken, async (req, res) => {
+router.post('/complete-registration', async (req, res) => {
   const { name, password } = req.body;
+  const token = req.query.token; // Get token from query
 
-  if (!name || !password) {
-    return res.status(400).json({ message: 'Name and password are required' });
+  if (!name || !password || !token) {
+    return res.status(400).json({ message: 'Name, password, and token are required' });
   }
 
   try {
-    const user = await User.findByPk(req.user.userID);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findByPk(decoded.userID);
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -86,7 +96,6 @@ router.post('/complete-registration', verifyToken, async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-
     await user.update({ name, password: hashedPassword });
 
     res.status(200).json({ message: 'Registration completed successfully' });
