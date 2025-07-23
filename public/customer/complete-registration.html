@@ -18,7 +18,7 @@
   </head>
   <body>
     <!-- Navbar -->
-    <div data-include-html="/pages/includes/navbar.html"></div>
+    <div data-include-html="/public/includes/navbar.html"></div>
 
     <div class="card">
       <div class="card-body">
@@ -60,6 +60,7 @@
           const name = document.getElementById("name").value;
           const password = document.getElementById("password").value;
 
+          // Extract token from URL query parameters
           const urlParams = new URLSearchParams(window.location.search);
           const token = urlParams.get("token");
 
@@ -69,22 +70,21 @@
           }
 
           try {
+            console.log("Sending token:", token); // Debug token
             const response = await fetch(
-              `http://localhost:3000/api/auth/complete-registration?token=${encodeURIComponent(
-                token
-              )}`,
+              `http://localhost:3000/api/auth/complete-registration?token=${token}`,
               {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                  "Content-Type": "application/json",
+                },
                 body: JSON.stringify({ name, password }),
               }
             );
             const data = await response.json();
             alert(data.message);
             if (response.ok) {
-              // Store the token and redirect to login page
-              localStorage.setItem("token", data.token);
-              window.location.href = "/customer/login.html";
+              window.location.href = "/public/customer/login.html";
             } else {
               if (data.message === "Invalid or expired token") {
                 alert(
