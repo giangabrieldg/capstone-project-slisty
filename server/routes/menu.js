@@ -5,7 +5,7 @@
 
 const express = require('express'); // Express framework for routing
 const router = express.Router(); // Router instance for menu routes
-const MenuItem = require('../models/menuItem'); // MenuItem model for DB operations
+const MenuItem = require('../models/menu-item-model'); // MenuItem model for DB operations
 const { authenticate } = require('../middleware/menuAccessControl'); // Middleware for role-based authentication
 const multer = require('multer'); // Middleware for handling multipart/form-data (file uploads)
 const path = require('path'); // Node.js path module for handling file paths

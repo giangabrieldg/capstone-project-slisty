@@ -1,5 +1,5 @@
 const verifyToken = require('./verifyToken');
-const User = require('../models/User');
+const User = require('../models/user-model');
 
 const authenticate = (roles = []) => async (req, res, next) => {
   try {
