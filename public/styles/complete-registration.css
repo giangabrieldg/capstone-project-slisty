@@ -2,9 +2,12 @@
     --primary-green: #2c9045;
     --font-poppins: "Poppins", sans-serif;
     ---text-color: #2d2d2d;
+    --background-color: #FFFBF0;
+    --secondary-background-color: #F5F1E9;
 }
 
 body {
+    background-color: var(--secondary-background-color);
     font-family: var(--font-poppins);
     display: flex;
     flex-direction: column;
@@ -12,6 +15,7 @@ body {
 }
 
 .card {
+    background-color: var(--background-color);
     padding: 2rem;
     border-radius: 10px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);

@@ -68,7 +68,7 @@
     min-width: 150px;
 }
 
-.menu-card {
+.card {
     border: none;
     border-radius: 12px;
     background-color: var(--secondary-bg-color);
@@ -81,18 +81,9 @@
 
 }
 
-.menu-card:hover {
+.card:hover {
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
     transform: translateY(-5px);
-}
-
-.menu-image-wrapper {
-    position: relative;
-    width: 100%;
-    aspect-ratio: 4 / 3;
-    /* Default aspect ratio for larger screens */
-    overflow: hidden;
-    border-radius: 8px;
 }
 
 .menu-img {
@@ -110,23 +101,6 @@
     height: 100%;
     background: rgba(255, 255, 255, 0.3);
     border-radius: 8px;
-}
-
-.menu-name {
-    font-size: 1.25rem;
-    font-family: var(--font-poppins);
-    color: #333;
-    margin: 1rem 0 0.5rem;
-    text-align: center;
-}
-
-.menu-price {
-    font-size: 1rem;
-    font-family: var(--font-poppins);
-    color: var(--primary-color);
-    font-weight: 600;
-    margin: 0;
-    text-align: center;
 }
 
 .menu-section .row {
