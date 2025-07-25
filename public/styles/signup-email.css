@@ -1,11 +1,12 @@
-/* Define custom variables for styling */
 :root {
     --primary-green: #2c9045;
     --font-poppins: "Poppins", sans-serif;
+    --background-color: #FFFBF0;
+    --secondary-background-color: #F5F1E9;
 }
 
-/* Apply Poppins font and center content */
 body {
+    background-color: var(--secondary-background-color);
     font-family: var(--font-poppins);
     display: flex;
     flex-direction: column;
@@ -14,6 +15,7 @@ body {
 
 /* Style the card container */
 .card {
+    background-color: var(--background-color);
     padding: 2rem;
     border-radius: 10px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
