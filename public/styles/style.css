@@ -328,6 +328,18 @@ img.img-fluid.rounded {
     color: #A0A0A0;
 }
 
+/* Focus effect for form inputs */
+.form-control:focus {
+    border-color: #2c9045;
+    box-shadow: 0 0 5px rgba(44, 144, 69, 0.3);
+}
+
+/* Center reCAPTCHA widget */
+.g-recaptcha {
+    display: inline-block;
+    margin: 15px 0;
+}
+
 /* Responsive adjustments for navbar */
 @media (min-width: 992px) {
 

@@ -66,10 +66,14 @@ sequelize.sync({ force: false })
   })
   .catch(err => console.error('Sync error:', err.message, err.stack));
 
+//Backend Routes
+
 const authRoutes = require('./routes/authRoutes');
 const menuRoutes = require('./routes/menu');
 const cartRoutes = require('./routes/cart');
+const inquiriesRoutes = require('./routes/inquiriesRoutes');
 
+app.use('/api/inquiries', inquiriesRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/menu', menuRoutes);
 app.use('/api/cart', cartRoutes);
