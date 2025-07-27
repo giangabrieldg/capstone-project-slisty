@@ -55,8 +55,8 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         </td>
         <td>
-          ${inquiry.status === 'Replied' ? 
-            `<button class="btn btn-warning btn-sm edit-reply" data-id="${inquiry.inquiryId}">Edit Reply</button>` : 
+        ${inquiry.status === 'Replied' ? 
+            '' : 
             `<button class="btn btn-success btn-sm send-reply" data-id="${inquiry.inquiryId}">Send Reply</button>`
           }
         </td>
@@ -98,36 +98,24 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       });
     });
-
-    // Add event listeners for edit reply buttons
-    document.querySelectorAll('.edit-reply').forEach(button => {
-      button.addEventListener('click', () => {
-        const row = button.closest('tr');
-        const reply = row.cells[4].textContent;
-        row.cells[4].innerHTML = `<textarea class="form-control reply-text" rows="2">${reply}</textarea>`;
-        row.querySelector('.status').className = 'status pending';
-        row.querySelector('.status').textContent = 'Pending';
-        const sendButton = document.createElement('button');
-        sendButton.className = 'btn btn-success btn-sm send-reply';
-        sendButton.dataset.id = button.dataset.id;
-        sendButton.textContent = 'Send Reply';
-        button.replaceWith(sendButton);
-      });
-    });
   }
 
   // Function to filter inquiries based on search and date
   function filterInquiries() {
     const searchTerm = searchBar.value.toLowerCase();
-    const dateFilter = dateFilter.value;
+    // Get the selected date from the date picker input
+    const selectedDate = dateFilter.value;
     const rows = inquiriesTableBody.querySelectorAll('tr');
 
     rows.forEach(row => {
       const customer = row.cells[0].textContent.toLowerCase();
       const subject = row.cells[1].textContent.toLowerCase();
       const date = row.cells[2].textContent;
+      // Check if the row matches the search term in customer or subject
       const matchesSearch = customer.includes(searchTerm) || subject.includes(searchTerm);
-      const matchesDate = !dateFilter || date === dateFilter;
+      // Check if the row matches the selected date or if no date is selected
+      const matchesDate = !selectedDate || date === selectedDate;
+      // Show or hide the row based on both search and date match
       row.style.display = matchesSearch && matchesDate ? '' : 'none';
     });
   }

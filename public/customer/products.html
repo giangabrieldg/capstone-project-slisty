@@ -20,6 +20,7 @@
   </head>
   <body>
     <div data-include-html="/includes/navbar.html"></div>
+
     <section class="py-5 product-section">
       <div class="container">
         <div class="row g-4 align-items-center">
@@ -37,10 +38,12 @@
             <h1 class="h3 fw-normal text-dark mb-2" id="productName"></h1>
             <p class="price fw-lighter mb-2" id="productPrice"></p>
             <p class="text-muted mb-4" id="productDescription"></p>
+
             <div class="mb-4">
               <label class="form-label text-dark">Size</label>
               <div class="d-flex gap-2" id="sizeButtons"></div>
             </div>
+
             <div class="mb-4 d-flex align-items-center gap-3">
               <label class="form-label text-dark">Quantity</label>
               <div class="d-flex align-items-center border rounded">
@@ -55,13 +58,16 @@
                 <button type="button" class="quantity-btn">+</button>
               </div>
             </div>
+
             <div class="separator-line mb-4"></div>
             <button class="add-to-cart-btn">Add to Cart</button>
           </div>
         </div>
       </div>
     </section>
+
     <div data-include-html="/includes/footer.html"></div>
+
     <script src="/scripts/include-html.js"></script>
     <script src="/scripts/update-navbar.js"></script>
     <script src="/scripts/add-to-cart.js"></script>
@@ -74,11 +80,13 @@
       async function fetchProduct() {
         const urlParams = new URLSearchParams(window.location.search);
         const productId = urlParams.get("id");
+
         try {
           const response = await fetch(
             `http://localhost:3000/api/menu/${productId}`
           );
           const product = await response.json();
+
           if (response.ok) {
             document.getElementById("productName").textContent = product.name;
             document.getElementById("productPrice").textContent = `₱${
@@ -88,12 +96,14 @@
               product.description || "";
             document.getElementById("productImage").src =
               product.image || "/assets/placeholder.jpg";
+
             const sizeButtons = document.getElementById("sizeButtons");
             if (product.sizes) {
-              product.sizes.split(",").forEach((size) => {
+              const sizes = product.sizes.split(",");
+              sizes.forEach((size, index) => {
                 const button = document.createElement("button");
                 button.type = "button";
-                button.className = "size-btn";
+                button.className = `size-btn ${index === 0 ? "active" : ""}`;
                 button.textContent = size.trim();
                 button.addEventListener("click", () => {
                   document

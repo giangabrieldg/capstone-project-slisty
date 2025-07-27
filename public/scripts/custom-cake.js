@@ -581,6 +581,13 @@ function addToCart() {
 document.addEventListener("DOMContentLoaded", () => {
   // Initialize guided tour
   guidedTour = new GuidedTour()
+
+  // Ensure tour highlight is hidden on page load to prevent unwanted rectangle display
+  const tourHighlight = document.getElementById("tourHighlight")
+  if (tourHighlight) {
+    tourHighlight.style.display = "none"
+  }
+
   // Size options
   document.querySelectorAll(".size-option-walmart").forEach((el) =>
     el.addEventListener("click", () => {
