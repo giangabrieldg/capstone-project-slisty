@@ -1,87 +1,84 @@
-document.addEventListener('DOMContentLoaded', () => {
-  const cartItemsContainer = document.querySelector('#cartItemsContainer');
-  const checkoutBtn = document.querySelector('#checkoutBtn');
+document.addEventListener('DOMContentLoaded', async () => {
+  const cartItemsContainer = document.getElementById('cartItemsContainer');
+  const checkoutBtn = document.getElementById('checkoutBtn');
+  const token = localStorage.getItem('token');
 
-  // Fetch and display cart items
-  async function loadCart() {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        cartItemsContainer.innerHTML = '<p class="text-muted">Please log in to view your cart.</p>';
-        checkoutBtn.disabled = true;
-        return;
-      }
-
-      const response = await fetch('http://localhost:3000/api/cart', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        cartItemsContainer.innerHTML = `<p class="text-danger">Error: ${error.message}</p>`;
-        checkoutBtn.disabled = true;
-        return;
-      }
-
-      const { cartItems } = await response.json();
-      renderCartItems(cartItems);
-    } catch (error) {
-      console.error('Error loading cart:', error);
-      cartItemsContainer.innerHTML = '<p class="text-danger">Error loading cart.</p>';
-      checkoutBtn.disabled = true;
-    }
+  if (!token) {
+    cartItemsContainer.innerHTML = '<p class="text-muted">Please log in to view your cart.</p>';
+    checkoutBtn.disabled = true;
+    console.log('No token found, user not logged in');
+    return;
   }
 
-  // Render cart items
-  function renderCartItems(cartItems) {
-    if (cartItems.length === 0) {
+  try {
+    const response = await fetch('http://localhost:3000/api/cart', {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    console.log('Fetch /api/cart status:', response.status, response.statusText);
+    if (!response.ok) {
+      throw new Error(`HTTP error: ${response.status}`);
+    }
+
+    const { cartItems } = await response.json();
+    console.log('Cart items response:', cartItems);
+
+    if (!cartItems || cartItems.length === 0) {
       cartItemsContainer.innerHTML = '<p class="text-muted">Your cart is empty.</p>';
       checkoutBtn.disabled = true;
       return;
     }
 
-    let total = 0;
-    cartItemsContainer.innerHTML = `
-      <div class="list-group">
-        ${cartItems
-          .map((item) => {
-            const itemPrice = item.MenuItem?.price || 0;
-            const itemTotal = itemPrice * item.quantity;
-            total += itemTotal;
-            return `
-              <div class="list-group-item d-flex justify-content-between align-items-center">
-                <div>
-                  <h5 class="mb-1">${item.MenuItem?.name || 'Unknown Item'}</h5>
-                  <p class="mb-1 text-muted">
-                    ${item.size ? `Size: ${item.size}, ` : ''}Quantity: ${item.quantity}
-                  </p>
-                  <p class="mb-0">₱${itemTotal.toFixed(2)}</p>
-                </div>
-                <button class="btn btn-sm btn-danger remove-item" data-id="${item.cartItemId}">
-                  Remove
-                </button>
-              </div>
-            `;
-          })
-          .join('')}
-      </div>
-      <div class="mt-3">
-        <h4>Total: ₱${total.toFixed(2)}</h4>
-      </div>
-    `;
-
     checkoutBtn.disabled = false;
 
-    // Add remove item functionality
-    document.querySelectorAll('.remove-item').forEach((btn) => {
-      btn.addEventListener('click', async (e) => {
-        const cartItemId = parseInt(e.target.dataset.id);
+    let html = `
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th scope="col">Image</th>
+            <th scope="col">Item</th>
+            <th scope="col">Size</th>
+            <th scope="col">Price</th>
+            <th scope="col">Quantity</th>
+            <th scope="col">Total</th>
+            <th scope="col"></th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+
+    cartItems.forEach(item => {
+      const menuItem = item.MenuItem || {};
+      const imageUrl = menuItem.image || 'https://via.placeholder.com/300';
+      const size = item.size || 'N/A';
+      const price = parseFloat(menuItem.price) || 0;
+      const total = (price * item.quantity).toFixed(2);
+
+      console.log('Processing cart item:', { name: menuItem.name, size, price, imageUrl }); // Debug
+
+      html += `
+        <tr>
+          <td><img src="${imageUrl}" alt="${menuItem.name || 'Item'}" style="width: 50px; height: 50px; object-fit: cover;"></td>
+          <td>${menuItem.name || 'Unknown'}</td>
+          <td>${size}</td>
+          <td>₱${price.toFixed(2)}</td>
+          <td>${item.quantity}</td>
+          <td>₱${total}</td>
+          <td>
+            <button class="btn btn-sm btn-danger remove-item" data-cart-item-id="${item.cartItemId}">Remove</button>
+          </td>
+        </tr>
+      `;
+    });
+
+    html += '</tbody></table>';
+    cartItemsContainer.innerHTML = html;
+
+    document.querySelectorAll('.remove-item').forEach(button => {
+      button.addEventListener('click', async () => {
+        const cartItemId = button.getAttribute('data-cart-item-id');
         try {
-          const token = localStorage.getItem('token');
           const response = await fetch('http://localhost:3000/api/cart/remove', {
             method: 'DELETE',
             headers: {
@@ -90,31 +87,23 @@ document.addEventListener('DOMContentLoaded', () => {
             },
             body: JSON.stringify({ cartItemId }),
           });
-
           if (response.ok) {
-            loadCart(); // Refresh cart
+            alert('Item removed from cart');
+            document.dispatchEvent(new Event('DOMContentLoaded'));
           } else {
-            const error = await response.json();
-            alert(`Failed to remove item: ${error.message}`);
+            const result = await response.json();
+            alert('Failed to remove item: ' + result.message);
           }
         } catch (error) {
-          console.error('Error removing item:', error);
-          alert('Error removing item');
+          console.error('Remove item error:', error);
+          alert('Error removing item from cart');
         }
       });
     });
+
+  } catch (error) {
+    console.error('Fetch cart error:', error.message);
+    cartItemsContainer.innerHTML = '<p class="text-danger">Error loading cart. Please try again later.</p>';
+    checkoutBtn.disabled = true;
   }
-
-  // Initialize cart
-  loadCart();
-
-  // Logout functionality (optional, for completeness)
-  document.querySelector('#logoutLink').addEventListener('click', (e) => {
-    e.preventDefault();
-    localStorage.removeItem('token');
-    localStorage.removeItem('userName');
-    localStorage.removeItem('userEmail');
-    localStorage.removeItem('userLevel');
-    window.location.href = '/public/customer/login.html';
-  });
 });
