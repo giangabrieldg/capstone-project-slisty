@@ -13,6 +13,12 @@ const port = process.env.PORT || 3000;
 ///
 app.listen(port, () => console.log(`Server running on port ${port}`));
 
+
+//test route to check server status
+app.get('/', (req, res) => {
+  res.json({ message: 'Backend is running!' });
+});
+
 app.use(cors());
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
@@ -95,5 +101,3 @@ app.use((req, res) => {
   console.log(`404 - Unmatched route: ${req.method} ${req.url}`);
   res.status(404).json({ message: 'Route not found' });
 });
-
-app.listen(port, () => console.log(`Server running on port ${port}`));
