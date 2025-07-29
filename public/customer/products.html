@@ -39,7 +39,7 @@
             <p class="price fw-lighter mb-2" id="productPrice"></p>
             <p class="text-muted mb-4" id="productDescription"></p>
 
-            <div class="mb-4">
+            <div class="mb-4" id="sizeContainer">
               <label class="form-label text-dark">Size</label>
               <div class="d-flex gap-2" id="sizeButtons"></div>
             </div>
@@ -47,20 +47,25 @@
             <div class="mb-4 d-flex align-items-center gap-3">
               <label class="form-label text-dark">Quantity</label>
               <div class="d-flex align-items-center border rounded">
-                <button type="button" class="quantity-btn">-</button>
+                <button type="button" class="quantity-btn" id="decreaseQty">
+                  -
+                </button>
                 <input
                   type="number"
                   class="form-control text-center border-0"
                   value="1"
                   style="width: 60px"
                   id="quantityInput"
+                  min="1"
                 />
-                <button type="button" class="quantity-btn">+</button>
+                <button type="button" class="quantity-btn" id="increaseQty">
+                  +
+                </button>
               </div>
             </div>
 
             <div class="separator-line mb-4"></div>
-            <button class="add-to-cart-btn">Add to Cart</button>
+            <button class="add-to-cart-btn" id="addToCart">Add to Cart</button>
           </div>
         </div>
       </div>
@@ -77,6 +82,7 @@
       crossorigin="anonymous"
     ></script>
     <script>
+      // Fetch and display product details based on ID in URL
       async function fetchProduct() {
         const urlParams = new URLSearchParams(window.location.search);
         const productId = urlParams.get("id");
@@ -88,44 +94,94 @@
           const product = await response.json();
 
           if (response.ok) {
+            // Set product name, description, and image
             document.getElementById("productName").textContent = product.name;
-            document.getElementById("productPrice").textContent = `₱${
-              product.price
-            }${product.sizes ? ` (${product.sizes})` : ""}`;
             document.getElementById("productDescription").textContent =
               product.description || "";
             document.getElementById("productImage").src =
               product.image || "/assets/placeholder.jpg";
 
             const sizeButtons = document.getElementById("sizeButtons");
-            if (product.sizes) {
-              const sizes = product.sizes.split(",");
-              sizes.forEach((size, index) => {
+            const productPrice = document.getElementById("productPrice");
+            sizeButtons.innerHTML = "";
+
+            if (product.category === "Cakes") {
+              // Parse price JSON for cakes and create size buttons
+              let priceObj;
+              try {
+                priceObj = JSON.parse(product.price);
+              } catch {
+                priceObj = {};
+                productPrice.textContent = "Invalid price format";
+                document.getElementById("sizeContainer").style.display = "none";
+                return;
+              }
+              // Display first size's price by default
+              const firstSize = Object.keys(priceObj)[0];
+              productPrice.textContent = firstSize
+                ? `₱${Number(priceObj[firstSize]).toFixed(2)}`
+                : "No sizes available";
+              // Create buttons for each size
+              Object.entries(priceObj).forEach(([size, price], index) => {
                 const button = document.createElement("button");
                 button.type = "button";
                 button.className = `size-btn ${index === 0 ? "active" : ""}`;
-                button.textContent = size.trim();
+                button.textContent = `${size} - ₱${Number(price).toFixed(2)}`;
+                button.dataset.price = price;
+                button.dataset.size = size;
                 button.addEventListener("click", () => {
                   document
                     .querySelectorAll(".size-btn")
                     .forEach((btn) => btn.classList.remove("active"));
                   button.classList.add("active");
+                  productPrice.textContent = `₱${Number(price).toFixed(2)}`;
                 });
                 sizeButtons.appendChild(button);
               });
+              document.getElementById("sizeContainer").style.display = "block";
+            } else {
+              // Non-cake items: single price, hide size selector
+              productPrice.textContent = `₱${Number(product.price).toFixed(2)}`;
+              document.getElementById("sizeContainer").style.display = "none";
             }
           } else {
             document.getElementById("productName").textContent =
               "Product Not Found";
+            document.getElementById("productPrice").textContent = "";
+            document.getElementById("sizeContainer").style.display = "none";
           }
         } catch (error) {
           console.error("Error fetching product:", error);
           document.getElementById("productName").textContent =
             "Error Loading Product";
+          document.getElementById("productPrice").textContent = "";
+          document.getElementById("sizeContainer").style.display = "none";
         }
       }
 
-      document.addEventListener("DOMContentLoaded", fetchProduct);
+      // Handle quantity increment and decrement
+      function setupQuantityControls() {
+        const quantityInput = document.getElementById("quantityInput");
+        document.getElementById("decreaseQty").addEventListener("click", () => {
+          let value = parseInt(quantityInput.value);
+          if (value > 1) {
+            quantityInput.value = value - 1;
+          }
+        });
+        document.getElementById("increaseQty").addEventListener("click", () => {
+          let value = parseInt(quantityInput.value);
+          quantityInput.value = value + 1;
+        });
+        quantityInput.addEventListener("input", () => {
+          if (quantityInput.value < 1) quantityInput.value = 1;
+        });
+      }
+
+      // Initialize product page
+      document.addEventListener("DOMContentLoaded", () => {
+        fetchProduct();
+        setupQuantityControls();
+      });
     </script>
   </body>
 </html>

@@ -1,5 +1,5 @@
 const { Sequelize, DataTypes } = require('sequelize');
-const sequelize = require('../config/database'); // Adjust path if needed
+const sequelize = require('../config/database');
 
 const MenuItem = sequelize.define('MenuItem', {
   menuId: {
@@ -20,16 +20,17 @@ const MenuItem = sequelize.define('MenuItem', {
     allowNull: true,
   },
   price: {
-    type: DataTypes.DECIMAL(10, 2),
+    type: DataTypes.STRING(255), // JSON string for cakes, single price for others
     allowNull: false,
   },
   description: {
     type: DataTypes.TEXT,
     allowNull: true,
   },
-  sizes: {
-    type: DataTypes.STRING(255),
-    allowNull: true,
+  isActive: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: true,
   },
 }, {
   tableName: 'MenuItems',

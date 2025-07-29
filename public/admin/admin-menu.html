@@ -93,7 +93,6 @@
                   <th>Image</th>
                   <th>Price (₱)</th>
                   <th>Description</th>
-                  <th>Sizes (Cakes)</th>
                   <th>Action</th>
                 </tr>
               </thead>
@@ -149,8 +148,41 @@
                       <option value="Drinks">Drinks</option>
                     </select>
                   </div>
-                  <div class="mb-3">
-                    <label for="price" class="form-label">Price (₱)</label>
+                  <div class="mb-3" id="sizesContainer" style="display: none">
+                    <label for="sizePricePairs" class="form-label"
+                      >Sizes and Prices (for Cakes)</label
+                    >
+                    <div id="sizePricePairs">
+                      <div class="mb-2 size-price-pair">
+                        <div class="row">
+                          <div class="col-6">
+                            <input type="text" class="form-control"
+                            name="size_0" placeholder="Enter size (e.g., 6\")"
+                            />
+                          </div>
+                          <div class="col-6">
+                            <input
+                              type="number"
+                              class="form-control"
+                              name="price_0"
+                              step="0.01"
+                              min="0"
+                              placeholder="Enter price (₱)"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-secondary"
+                      id="addSizePrice"
+                    >
+                      Add Size
+                    </button>
+                  </div>
+                  <div class="mb-3" id="singlePriceContainer">
+                    <label class="form-label">Price (₱)</label>
                     <input
                       type="number"
                       class="form-control"
@@ -158,7 +190,7 @@
                       name="price"
                       step="0.01"
                       min="0"
-                      required
+                      placeholder="Enter price"
                     />
                   </div>
                   <div class="mb-3">
@@ -184,19 +216,6 @@
                       rows="3"
                       required
                     ></textarea>
-                  </div>
-                  <div class="mb-3">
-                    <label for="sizes" class="form-label"
-                      >Sizes (for Cakes, comma-separated e.g., 6", 8",
-                      10")</label
-                    >
-                    <input
-                      type="text"
-                      class="form-control"
-                      id="sizes"
-                      name="sizes"
-                      placeholder="Leave blank for non-cake items"
-                    />
                   </div>
                   <button type="submit" class="btn btn-success" id="saveItem">
                     Save Item

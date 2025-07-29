@@ -1,55 +1,65 @@
-document.addEventListener('DOMContentLoaded', () => {
-  const addToCartBtn = document.querySelector('.add-to-cart-btn');
-  if (!addToCartBtn) return; // Exit if button not found
+// Handle adding a product to the cart
+document.getElementById('addToCart').addEventListener('click', async () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const productId = urlParams.get('id');
+  const quantity = parseInt(document.getElementById('quantityInput').value);
+  const productName = document.getElementById('productName').textContent;
+  const productPriceElement = document.getElementById('productPrice');
+  const sizeContainer = document.getElementById('sizeContainer');
 
-  // Handle quantity buttons
-  document.querySelectorAll('.quantity-btn').forEach((button) => {
-    button.addEventListener('click', () => {
-      const input = button.parentElement.querySelector('input');
-      let value = parseInt(input.value);
-      if (button.textContent === '-') value = Math.max(1, value - 1);
-      if (button.textContent === '+') value += 1;
-      input.value = value;
-    });
-  });
+  let price;
+  let selectedSize = null;
 
-  // Add to cart functionality
-  addToCartBtn.addEventListener('click', async () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      alert('Please log in to add items to cart.');
-      window.location.href = '/public/customer/login.html';
+  try {
+    const response = await fetch(`http://localhost:3000/api/menu/${productId}`);
+    const product = await response.json();
+    if (!response.ok) {
+      alert('Failed to fetch product details.');
       return;
     }
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const productId = urlParams.get('id');
-    const quantity = parseInt(document.getElementById('quantityInput')?.value) || 1;
-    const selectedSizeBtn = document.querySelector('.size-btn.active');
-    const selectedSize = selectedSizeBtn ? selectedSizeBtn.textContent.trim() : null;
-
-    try {
-      const response = await fetch('http://localhost:3000/api/cart/add', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          menuId: parseInt(productId),
-          quantity,
-          size: selectedSize,
-        }),
-      });
-      const result = await response.json();
-      if (response.ok) {
-        alert('Item added to cart successfully!');
-      } else {
-        alert('Failed to add item to cart: ' + result.message);
+    if (product.category === 'Cakes') {
+      // For cakes, get the selected size and its price
+      const activeSizeButton = document.querySelector('.size-btn.active');
+      if (!activeSizeButton) {
+        alert('Please select a size.');
+        return;
       }
-    } catch (error) {
-      console.error('Add to cart error:', error);
-      alert('Error adding item to cart');
+      selectedSize = activeSizeButton.dataset.size;
+      price = Number(activeSizeButton.dataset.price);
+    } else {
+      // For non-cakes, use the single price
+      price = Number(product.price);
     }
-  });
+
+    // Create cart item object
+    const cartItem = {
+      id: productId,
+      name: productName,
+      size: selectedSize,
+      price: price,
+      quantity: quantity,
+      image: product.image || '/assets/placeholder.jpg',
+    };
+
+    // Retrieve or initialize cart from localStorage
+    let cart = JSON.parse(localStorage.getItem('cart')) || [];
+    const existingItemIndex = cart.findIndex(
+      item => item.id === productId && item.size === selectedSize
+    );
+    if (existingItemIndex >= 0) {
+      // Update quantity if item exists
+      cart[existingItemIndex].quantity += quantity;
+    } else {
+      // Add new item to cart
+      cart.push(cartItem);
+    }
+
+    // Save cart to localStorage
+    localStorage.setItem('cart', JSON.stringify(cart));
+    alert(`${productName}${selectedSize ? ` (${selectedSize})` : ''} added to cart!`);
+  } catch (error) {
+    console.error('Error adding to cart:', error);
+    alert('Error adding item to cart.');
+  }
 });
