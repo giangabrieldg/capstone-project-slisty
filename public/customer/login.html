@@ -70,6 +70,11 @@
     <script src="/scripts/include-html.js"></script>
 
     <script>
+      const BASE_URL =
+        window.location.hostname === "localhost"
+          ? "http://localhost:3000"
+          : "https://capstone-project-slisty.onrender.com"; // Replace with your deployed backend URL
+
       document
         .getElementById("loginForm")
         .addEventListener("submit", async (e) => {
@@ -78,16 +83,15 @@
           const password = document.getElementById("password").value;
 
           try {
-            const response = await fetch(
-              "http://localhost:3000/api/auth/login",
-              {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email, password }),
-              }
-            );
+            const response = await fetch(`${BASE_URL}/api/auth/login`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ email, password }),
+            });
+
             const data = await response.json();
             console.log("Login response:", data);
+
             if (response.ok) {
               localStorage.setItem("token", data.token);
               const userName = data.user?.name || email.split("@")[0] || "User";
@@ -97,40 +101,18 @@
                 "userLevel",
                 data.user?.userLevel || "Customer"
               );
-              console.log("Token stored:", data.token);
-              console.log("userLevel from response:", data.user?.userLevel);
-              console.log(
-                "userLevel in localStorage:",
-                localStorage.getItem("userLevel")
-              );
-              updateNavbarAndGreeting();
+
               // Redirect based on userLevel
               if (
                 data.user?.userLevel === "Admin" ||
                 data.user?.userLevel === "Staff"
               ) {
-                console.log(
-                  "Redirecting to admin-dashboard.html for userLevel:",
-                  data.user?.userLevel
-                );
                 window.location.href = "/public/admin/admin-dashboard.html";
               } else {
-                console.log(
-                  "Redirecting to index.html for userLevel:",
-                  data.user?.userLevel
-                );
                 window.location.href = "/public/index.html";
               }
             } else {
               alert(data.message || "Login failed");
-              console.log("Login failed with message:", data.message);
-              if (data.message === "User not found") {
-                alert("User not found. Please check your email or sign up.");
-              } else if (data.message === "Invalid password") {
-                alert("Incorrect password. Please try again.");
-              } else if (data.message === "Email not verified") {
-                alert("Please verify your email before logging in.");
-              }
             }
           } catch (error) {
             console.error("Error during login:", error);
