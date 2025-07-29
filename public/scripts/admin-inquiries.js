@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // Get JWT token from localStorage
       const token = localStorage.getItem('token');
       if (!token) {
-        inquiriesTableBody.innerHTML = '<tr><td colspan="6">Please log in.</td></tr>';
+        inquiriesTableBody.innerHTML = '<tr><td colspan="7">Please log in.</td></tr>';
         return;
       }
 
@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // Handle response
       if (!response.ok) {
         const error = await response.json();
-        inquiriesTableBody.innerHTML = `<tr><td colspan="6">Error: ${error.message}</td></tr>`;
+        inquiriesTableBody.innerHTML = `<tr><td colspan="7">Error: ${error.message}</td></tr>`;
         return;
       }
 
@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
       renderInquiries(inquiries);
     } catch (error) {
       console.error('Error loading inquiries:', error);
-      inquiriesTableBody.innerHTML = '<tr><td colspan="6">Error loading inquiries.</td></tr>';
+      inquiriesTableBody.innerHTML = '<tr><td colspan="7">Error loading inquiries.</td></tr>';
     }
   }
 
@@ -46,6 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
       <tr>
         <td>${inquiry.User?.name || inquiry.name}</td>
         <td>${inquiry.subject}</td>
+        <td>${inquiry.message}</td>
         <td>${new Date(inquiry.createdAt).toISOString().split('T')[0]}</td>
         <td><span class="status ${inquiry.status.toLowerCase()}">${inquiry.status}</span></td>
         <td>
