@@ -11,7 +11,7 @@ const User = require('./models/user-model.js');
 const app = express();
 const port = process.env.PORT || 3000;
 ///
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(port, () => console.log(`Server running on port ${PORT}`));
 
 app.use(cors());
 app.use(bodyParser.json({ limit: '10mb' }));
