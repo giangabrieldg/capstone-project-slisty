@@ -10,19 +10,21 @@ const User = require('./models/user-model.js');
 
 const app = express();
 const port = process.env.PORT || 3000;
-///
-app.listen(port, () => console.log(`Server running on port ${port}`));
 
+// Configure CORS to allow both localhost and frontend Render URL
+app.use(cors({
+  origin: [
+    'http://localhost:3000', // For local testing
+    'https://slice-n-grind.onrender.com' // Replace with your actual frontend Render URL
+  ],
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true // If using cookies or auth headers
+}));
 
-//test route to check server status
-app.get('/', (req, res) => {
-  res.json({ message: 'Backend is running!' });
-});
-
-app.use(cors());
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
 
+// Static file serving (remove if frontend is hosted separately on Render)
 app.use('/public', express.static(path.join(__dirname, '../public')));
 app.use('/styles', express.static(path.join(__dirname, '../public/styles')));
 app.use('/scripts', express.static(path.join(__dirname, '../public/scripts')));
@@ -54,9 +56,9 @@ async function createDefaultAdmin() {
         email: adminEmail,
         password: hashedPassword,
         name: 'Admin User',
-        username: 'admin', // Add username to match model
+        username: 'admin',
         userLevel: 'Admin',
-        isVerified: true, // Bypass email verification
+        isVerified: true,
       });
       console.log('Default admin user created:', adminEmail);
     } else {
@@ -74,8 +76,7 @@ sequelize.sync({ force: false })
   })
   .catch(err => console.error('Sync error:', err.message, err.stack));
 
-//Backend Routes
-
+// Backend Routes
 const authRoutes = require('./routes/authRoutes');
 const menuRoutes = require('./routes/menu');
 const cartRoutes = require('./routes/cart');
@@ -86,6 +87,12 @@ app.use('/api/auth', authRoutes);
 app.use('/api/menu', menuRoutes);
 app.use('/api/cart', cartRoutes);
 
+// Test route to check server status
+app.get('/', (req, res) => {
+  res.json({ message: 'Backend is running!' });
+});
+
+// Error handling middleware
 app.use((err, req, res, next) => {
   if (err instanceof multer.MulterError) {
     console.error('Multer error:', err.message);
@@ -97,7 +104,11 @@ app.use((err, req, res, next) => {
   next();
 });
 
+// 404 handler
 app.use((req, res) => {
   console.log(`404 - Unmatched route: ${req.method} ${req.url}`);
   res.status(404).json({ message: 'Route not found' });
 });
+
+// Start server
+app.listen(port, () => console.log(`Server running on port ${port}`));

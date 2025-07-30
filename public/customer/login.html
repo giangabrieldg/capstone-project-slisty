@@ -58,7 +58,7 @@
           Continue with Google
         </button>
         <div class="text-center text-muted">
-          <a href="../customer/signup-email.html">No account? Sign Up</a> |
+          <a href="/public/customer/signup-email.html">No account? Sign Up</a> |
           <a href="#">Forgot Password</a>
         </div>
       </form>
@@ -73,7 +73,7 @@
       const BASE_URL =
         window.location.hostname === "localhost"
           ? "http://localhost:3000"
-          : "https://capstone-project-slisty.onrender.com"; // Replace with your deployed backend URL
+          : "https://slice-n-grind.onrender.com";
 
       document
         .getElementById("loginForm")
@@ -103,13 +103,15 @@
               );
 
               // Redirect based on userLevel
+              const isLocalhost = window.location.hostname === "localhost";
+              const redirectBase = isLocalhost ? "/public" : ""; // Adjust for Render's static site paths
               if (
                 data.user?.userLevel === "Admin" ||
                 data.user?.userLevel === "Staff"
               ) {
-                window.location.href = "/public/admin/admin-dashboard.html";
+                window.location.href = `${redirectBase}/admin/admin-dashboard.html`;
               } else {
-                window.location.href = "/public/index.html";
+                window.location.href = `${redirectBase}/index.html`;
               }
             } else {
               alert(data.message || "Login failed");
