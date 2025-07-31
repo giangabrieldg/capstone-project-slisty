@@ -1,9 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const sequelize = require('../config/database');
-const { DataTypes } = require('sequelize');
-const MenuItemModel = require('../models/menu-item-model');
-const MenuItem = MenuItemModel(sequelize, DataTypes);
+const { MenuItem } = require('../models'); // Import from models/index.js
 const multer = require('multer');
 const path = require('path');
 const verifyToken = require('../middleware/verifyToken');
@@ -28,7 +25,7 @@ router.post('/', verifyToken, upload.single('image'), async (req, res) => {
       price,
       description,
       image,
-      stock: parseInt(stock), // Convert stock to integer
+      stock: parseInt(stock),
       isActive: true,
     });
     res.status(201).json(menuItem);

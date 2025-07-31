@@ -6,25 +6,50 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (!token) {
     cartItemsContainer.innerHTML = '<p class="text-muted">Please log in to view your cart.</p>';
     checkoutBtn.disabled = true;
-    console.log('No token found, user not logged in');
+    // Optional: Add a login button or link
+    cartItemsContainer.innerHTML += '<p><a href="/public/customer/login.html" class="btn btn-primary">Log In</a></p>';
     return;
   }
 
   try {
     const response = await fetch('http://localhost:3000/api/cart', {
       headers: {
-        'Authorization': `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
       },
     });
     console.log('Fetch /api/cart status:', response.status, response.statusText);
     if (!response.ok) {
-      throw new Error(`HTTP error: ${response.status}`);
+      if (response.status === 401) {
+        throw new Error('Please log in again: Invalid or expired token');
+      }
+      throw new Error(`HTTP error: ${response.status} ${response.statusText}`);
     }
 
-    const { cartItems } = await response.json();
-    console.log('Cart items response:', cartItems);
+    const data = await response.json();
+    console.log('Cart items response:', data.cartItems);
+    const cartItems = data.cartItems.map(item => {
+      const menuItem = item.MenuItem || {};
+      let price;
+      if (menuItem.category === 'Cakes' && item.size) {
+        try {
+          price = JSON.parse(menuItem.price)[item.size] || 0;
+        } catch {
+          price = 0;
+        }
+      } else {
+        price = parseFloat(menuItem.price) || 0;
+      }
+      return {
+        cartItemId: item.cartItemId,
+        name: menuItem.name || 'Unknown',
+        size: item.size || 'N/A',
+        price,
+        quantity: item.quantity,
+        image: menuItem.image || 'https://via.placeholder.com/300',
+      };
+    });
 
-    if (!cartItems || cartItems.length === 0) {
+    if (cartItems.length === 0) {
       cartItemsContainer.innerHTML = '<p class="text-muted">Your cart is empty.</p>';
       checkoutBtn.disabled = true;
       return;
@@ -49,19 +74,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     `;
 
     cartItems.forEach(item => {
-      const menuItem = item.MenuItem || {};
-      const imageUrl = menuItem.image || 'https://via.placeholder.com/300';
-      const size = item.size || 'N/A';
-      const price = parseFloat(menuItem.price) || 0;
+      const price = parseFloat(item.price) || 0;
       const total = (price * item.quantity).toFixed(2);
-
-      console.log('Processing cart item:', { name: menuItem.name, size, price, imageUrl }); // Debug
+      console.log('Processing cart item:', { name: item.name, size: item.size, price, image: item.image });
 
       html += `
         <tr>
-          <td><img src="${imageUrl}" alt="${menuItem.name || 'Item'}" style="width: 50px; height: 50px; object-fit: cover;"></td>
-          <td>${menuItem.name || 'Unknown'}</td>
-          <td>${size}</td>
+          <td><img src="${item.image}" alt="${item.name}" style="width: 50px; height: 50px; object-fit: cover;"></td>
+          <td>${item.name}</td>
+          <td>${item.size}</td>
           <td>₱${price.toFixed(2)}</td>
           <td>${item.quantity}</td>
           <td>₱${total}</td>
@@ -75,6 +96,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     html += '</tbody></table>';
     cartItemsContainer.innerHTML = html;
 
+    // Handle remove buttons for server-side cart items
     document.querySelectorAll('.remove-item').forEach(button => {
       button.addEventListener('click', async () => {
         const cartItemId = button.getAttribute('data-cart-item-id');
@@ -83,7 +105,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             method: 'DELETE',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`,
+              Authorization: `Bearer ${token}`,
             },
             body: JSON.stringify({ cartItemId }),
           });
@@ -92,18 +114,26 @@ document.addEventListener('DOMContentLoaded', async () => {
             document.dispatchEvent(new Event('DOMContentLoaded'));
           } else {
             const result = await response.json();
-            alert('Failed to remove item: ' + result.message);
+            alert(`Failed to remove item: ${result.message}`);
           }
         } catch (error) {
           console.error('Remove item error:', error);
-          alert('Error removing item from cart');
+          if (error.message.includes('Invalid or expired token')) {
+            alert('Your session has expired. Please log in again.');
+            window.location.href = '/public/customer/login.html'; // Adjust path to your login page
+          } else {
+            alert(`Error removing item: ${error.message}`);
+          }
         }
       });
     });
 
   } catch (error) {
     console.error('Fetch cart error:', error.message);
-    cartItemsContainer.innerHTML = '<p class="text-danger">Error loading cart. Please try again later.</p>';
+    cartItemsContainer.innerHTML = `<p class="text-danger">Error loading cart: ${error.message}</p>`;
+    if (error.message.includes('Invalid or expired token')) {
+      cartItemsContainer.innerHTML += '<p><a href="/public/customer/login.html" class="btn btn-primary">Log In</a></p>';
+    }
     checkoutBtn.disabled = true;
   }
 });
