@@ -20,10 +20,12 @@
     />
   </head>
   <body>
+    <!-- Sidebar toggle button -->
     <button class="sidebar-toggle" aria-label="Toggle sidebar">
       <i class="bi bi-list"></i>
     </button>
     <div class="d-flex">
+      <!-- Sidebar navigation -->
       <aside class="sidebar">
         <div class="sidebar-header">
           <div class="user-info">
@@ -71,6 +73,7 @@
         </nav>
       </aside>
       <main class="content">
+        <!-- Header with search and add item button -->
         <div class="menu-management-header">
           <h2>Menu Management</h2>
           <div class="header-actions">
@@ -82,6 +85,7 @@
             <button class="btn btn-primary add-item-btn">Add New Item</button>
           </div>
         </div>
+        <!-- Menu items table -->
         <div class="menu-management-table">
           <h3>Menu Items</h3>
           <div class="table-responsive">
@@ -92,6 +96,7 @@
                   <th>Category</th>
                   <th>Image</th>
                   <th>Price (₱)</th>
+                  <th>Stock</th>
                   <th>Description</th>
                   <th>Action</th>
                 </tr>
@@ -100,6 +105,7 @@
             </table>
           </div>
         </div>
+        <!-- Modal for adding/editing items -->
         <div
           class="modal fade"
           id="itemModal"
@@ -194,6 +200,19 @@
                     />
                   </div>
                   <div class="mb-3">
+                    <label for="stock" class="form-label">Stock</label>
+                    <input
+                      type="number"
+                      class="form-control"
+                      id="stock"
+                      name="stock"
+                      min="0"
+                      step="1"
+                      placeholder="Enter stock quantity"
+                      required
+                    />
+                  </div>
+                  <div class="mb-3">
                     <label for="imageUpload" class="form-label"
                       >Upload Image</label
                     >
@@ -225,6 +244,7 @@
             </div>
           </div>
         </div>
+        <!-- Modal for image preview -->
         <div
           class="modal fade"
           id="imageModal"

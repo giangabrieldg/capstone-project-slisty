@@ -1,40 +1,37 @@
-const { Sequelize, DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
-
-const MenuItem = sequelize.define('MenuItem', {
-  menuId: {
-    type: DataTypes.INTEGER,
-    autoIncrement: true,
-    primaryKey: true,
-  },
-  name: {
-    type: DataTypes.STRING(255),
-    allowNull: false,
-  },
-  category: {
-    type: DataTypes.STRING(100),
-    allowNull: false,
-  },
-  image: {
-    type: DataTypes.STRING(255),
-    allowNull: true,
-  },
-  price: {
-    type: DataTypes.STRING(255), // JSON string for cakes, single price for others
-    allowNull: false,
-  },
-  description: {
-    type: DataTypes.TEXT,
-    allowNull: true,
-  },
-  isActive: {
-    type: DataTypes.BOOLEAN,
-    allowNull: false,
-    defaultValue: true,
-  },
-}, {
-  tableName: 'MenuItems',
-  timestamps: true,
-});
-
-module.exports = MenuItem;
+module.exports = (sequelize, DataTypes) => {
+  const MenuItem = sequelize.define('MenuItem', {
+    menuId: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true,
+    },
+    name: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    category: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    price: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    description: {
+      type: DataTypes.TEXT,
+    },
+    image: {
+      type: DataTypes.STRING,
+    },
+    isActive: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: true,
+    },
+    stock: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+    },
+  });
+  return MenuItem;
+};

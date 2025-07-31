@@ -16,10 +16,12 @@ async function fetchMenuItems() {
       alert(`Failed to fetch menu items: ${menuItems.error || menuItems.message || 'Unknown error'}`);
       return;
     }
+    // Clear and populate the table body
     const tableBody = document.querySelector('#menuTable tbody');
     tableBody.innerHTML = '';
     menuItems.forEach(item => {
       const row = document.createElement('tr');
+      // Format price for display (JSON for cakes, single price for others)
       let priceDisplay = item.price;
       if (item.category === 'Cakes') {
         try {
@@ -33,13 +35,14 @@ async function fetchMenuItems() {
       } else {
         priceDisplay = `₱${Number(item.price).toFixed(2)}`;
       }
+      // Create table row with stock column
       const rowHtml = `
         <td>${item.name}</td>
         <td>${item.category}</td>
         <td><img src="${item.image || 'https://via.placeholder.com/50'}" alt="${item.name}" class="menu-image enlarge-image"></td>
         <td>${priceDisplay}</td>
+        <td>${item.stock}</td>
         <td>${item.description || ''}</td>
-        <td>-</td>
         <td>
           <button class="btn btn-warning btn-sm edit-item" data-id="${item.menuId}">Edit</button>
           <button class="btn btn-danger btn-sm remove-item" data-id="${item.menuId}">Remove</button>
@@ -48,7 +51,7 @@ async function fetchMenuItems() {
       row.innerHTML = rowHtml;
       tableBody.appendChild(row);
     });
-
+    // Add event listeners for edit, remove, and image enlarge buttons
     document.querySelectorAll('.edit-item').forEach(button => {
       button.addEventListener('click', () => openEditModal(button.getAttribute('data-id')));
     });
@@ -86,7 +89,7 @@ async function addMenuItem(formData, form) {
       console.log('Item added successfully:', responseData);
       form.reset();
       document.getElementById('imageUpload').value = '';
-      clearSizePricePairs();
+      clearSizePricePairs(false);
       bootstrap.Modal.getInstance(document.getElementById('itemModal')).hide();
       fetchMenuItems();
       alert(`Item "${formData.get('name')}" added successfully!`);
@@ -120,7 +123,7 @@ async function updateMenuItem(formData, form) {
       console.log('Item updated successfully:', responseData);
       form.reset();
       document.getElementById('imageUpload').value = '';
-      clearSizePricePairs();
+      clearSizePricePairs(false);
       bootstrap.Modal.getInstance(document.getElementById('itemModal')).hide();
       fetchMenuItems();
       alert(`Item "${formData.get('name')}" updated successfully!`);
@@ -182,14 +185,17 @@ async function openEditModal(menuId) {
       alert(`Failed to fetch menu item: ${item.error || item.message || 'Unknown error'}`);
       return;
     }
+    // Set modal title and form fields
     document.getElementById('itemModalLabel').textContent = 'Edit Menu Item';
     document.getElementById('editItemId').value = item.menuId;
     document.getElementById('itemName').value = item.name;
     document.getElementById('category').value = item.category;
+    document.getElementById('stock').value = item.stock; // Populate stock field
     const sizePricePairsDiv = document.getElementById('sizePricePairs');
     sizePricePairsDiv.innerHTML = '';
     const priceInput = document.getElementById('price');
     if (item.category === 'Cakes') {
+      // Show size-price inputs for cakes
       document.getElementById('sizesContainer').style.display = 'block';
       document.getElementById('singlePriceContainer').style.display = 'none';
       priceInput.removeAttribute('required');
@@ -215,12 +221,12 @@ async function openEditModal(menuId) {
         sizePricePairsDiv.appendChild(div);
       });
     } else {
+      // Show single price input for non-cakes
       document.getElementById('sizesContainer').style.display = 'none';
       document.getElementById('singlePriceContainer').style.display = 'block';
       priceInput.setAttribute('required', 'true');
-      document.getElementById('price').value = item.price;
-      // Clear size-price inputs and remove required attributes
       sizePricePairsDiv.innerHTML = '';
+      document.getElementById('price').value = item.price;
     }
     document.getElementById('description').value = item.description || '';
     document.getElementById('imageUpload').value = '';
@@ -231,10 +237,11 @@ async function openEditModal(menuId) {
   }
 }
 
-// Clear dynamic size-price inputs and reset to empty for non-cakes or one pair for cakes
+// Clear dynamic size-price inputs
 function clearSizePricePairs(isCake = false) {
   const sizePricePairsDiv = document.getElementById('sizePricePairs');
   if (isCake) {
+    // Initialize one size-price pair for cakes
     sizePricePairsDiv.innerHTML = `
       <div class="mb-2 size-price-pair">
         <div class="row">
@@ -248,6 +255,7 @@ function clearSizePricePairs(isCake = false) {
       </div>
     `;
   } else {
+    // Clear size-price inputs for non-cakes
     sizePricePairsDiv.innerHTML = '';
   }
 }
@@ -260,38 +268,42 @@ document.querySelector('.add-item-btn').addEventListener('click', () => {
     window.location.href = '/public/login.html';
     return;
   }
+  // Reset modal for adding new item
   document.getElementById('itemModalLabel').textContent = 'Add New Menu Item';
   document.getElementById('editItemId').value = '';
   document.getElementById('itemForm').reset();
   document.getElementById('imageUpload').value = '';
-  document.getElementById('category').value = 'Drinks'; // Default to non-cake category
+  document.getElementById('category').value = 'Drinks';
+  document.getElementById('stock').value = ''; // Reset stock field
   document.getElementById('sizesContainer').style.display = 'none';
   document.getElementById('singlePriceContainer').style.display = 'block';
   document.getElementById('price').setAttribute('required', 'true');
-  clearSizePricePairs(false); // Clear size-price inputs for non-cake
+  clearSizePricePairs(false);
   bootstrap.Modal.getOrCreateInstance(document.getElementById('itemModal')).show();
 });
 
-// Toggle size-price inputs and required attributes based on category selection
+// Toggle size-price inputs based on category
 document.getElementById('category').addEventListener('change', (e) => {
   const category = e.target.value;
   const sizesContainer = document.getElementById('sizesContainer');
   const singlePriceContainer = document.getElementById('singlePriceContainer');
   const priceInput = document.getElementById('price');
   if (category === 'Cakes') {
+    // Show size-price inputs for cakes
     sizesContainer.style.display = 'block';
     singlePriceContainer.style.display = 'none';
     priceInput.removeAttribute('required');
-    clearSizePricePairs(true); // Initialize with one required size-price pair
+    clearSizePricePairs(true);
   } else {
+    // Show single price input for non-cakes
     sizesContainer.style.display = 'none';
     singlePriceContainer.style.display = 'block';
     priceInput.setAttribute('required', 'true');
-    clearSizePricePairs(false); // Clear size-price inputs
+    clearSizePricePairs(false);
   }
 });
 
-// Add a new size-price input pair
+// Add a new size-price input pair for cakes
 document.getElementById('addSizePrice').addEventListener('click', () => {
   const sizePricePairsDiv = document.getElementById('sizePricePairs');
   const index = sizePricePairsDiv.querySelectorAll('.size-price-pair').length;
@@ -316,7 +328,14 @@ document.getElementById('itemForm').addEventListener('submit', (e) => {
   const form = e.target;
   const formData = new FormData(form);
   const category = formData.get('category');
-  console.log('Form data before processing:', Object.fromEntries(formData)); // Debug form data
+  const stock = formData.get('stock');
+  console.log('Form data before processing:', Object.fromEntries(formData));
+  // Validate stock
+  if (!stock || isNaN(stock) || Number(stock) < 0) {
+    alert('Please enter a valid stock quantity (non-negative integer).');
+    return;
+  }
+  formData.set('stock', Math.floor(Number(stock))); // Ensure stock is an integer
   if (category === 'Cakes') {
     // Process size-price pairs for cakes
     const priceObj = {};
@@ -347,7 +366,7 @@ document.getElementById('itemForm').addEventListener('submit', (e) => {
       return;
     }
     formData.set('price', Number(price).toFixed(2));
-    // Clear size-price inputs to avoid API issues
+    // Clear size-price inputs for non-cakes
     let index = 0;
     while (formData.get(`size_${index}`)) {
       formData.delete(`size_${index}`);
@@ -355,7 +374,7 @@ document.getElementById('itemForm').addEventListener('submit', (e) => {
       index++;
     }
   }
-  console.log('Form data after processing:', Object.fromEntries(formData)); // Debug final form data
+  console.log('Form data after processing:', Object.fromEntries(formData));
   const isEdit = !!document.getElementById('editItemId').value;
   if (isEdit) {
     updateMenuItem(formData, form);
@@ -383,6 +402,7 @@ document.querySelector('.search-bar').addEventListener('input', async (e) => {
       alert(`Failed to search menu items: ${menuItems.error || menuItems.message || 'Unknown error'}`);
       return;
     }
+    // Filter and display search results
     const tableBody = document.querySelector('#menuTable tbody');
     tableBody.innerHTML = '';
     menuItems
@@ -407,8 +427,8 @@ document.querySelector('.search-bar').addEventListener('input', async (e) => {
           <td>${item.category}</td>
           <td><img src="${item.image || 'https://via.placeholder.com/50'}" alt="${item.name}" class="menu-image enlarge-image"></td>
           <td>${priceDisplay}</td>
+          <td>${item.stock}</td>
           <td>${item.description || ''}</td>
-          <td>-</td>
           <td>
             <button class="btn btn-warning btn-sm edit-item" data-id="${item.menuId}">Edit</button>
             <button class="btn btn-danger btn-sm remove-item" data-id="${item.menuId}">Remove</button>
@@ -417,6 +437,7 @@ document.querySelector('.search-bar').addEventListener('input', async (e) => {
         row.innerHTML = rowHtml;
         tableBody.appendChild(row);
       });
+    // Re-attach event listeners for buttons
     document.querySelectorAll('.edit-item').forEach(button => {
       button.addEventListener('click', () => openEditModal(button.getAttribute('data-id')));
     });

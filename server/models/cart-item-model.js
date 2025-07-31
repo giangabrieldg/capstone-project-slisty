@@ -2,7 +2,8 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 const Cart = require('./cart-model');
-const MenuItem = require('./menu-item-model');
+const MenuItemModel = require('./menu-item-model');
+const MenuItem = MenuItemModel(sequelize, DataTypes);
 
 // Define CartItem model linked to Cart and MenuItem
 const CartItem = sequelize.define('CartItem', {
