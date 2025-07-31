@@ -1,65 +1,74 @@
-// Handle adding a product to the cart
 document.getElementById('addToCart').addEventListener('click', async () => {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    alert('Please log in to add items to your cart.');
+    window.location.href = '/public/customer/login.html'; // Adjust path to your login page
+    return;
+  }
+
   const urlParams = new URLSearchParams(window.location.search);
   const productId = urlParams.get('id');
   const quantity = parseInt(document.getElementById('quantityInput').value);
   const productName = document.getElementById('productName').textContent;
-  const productPriceElement = document.getElementById('productPrice');
-  const sizeContainer = document.getElementById('sizeContainer');
 
-  let price;
+  if (!quantity || quantity < 1) {
+    alert('Please enter a valid quantity.');
+    return;
+  }
+
   let selectedSize = null;
 
   try {
     const response = await fetch(`http://localhost:3000/api/menu/${productId}`);
-    const product = await response.json();
     if (!response.ok) {
-      alert('Failed to fetch product details.');
+      throw new Error(`Failed to fetch product details: ${response.statusText}`);
+    }
+    const product = await response.json();
+
+    // Check stock
+    if (product.stock < quantity) {
+      alert(`Sorry, only ${product.stock} items available in stock.`);
       return;
     }
 
     if (product.category === 'Cakes') {
-      // For cakes, get the selected size and its price
       const activeSizeButton = document.querySelector('.size-btn.active');
       if (!activeSizeButton) {
         alert('Please select a size.');
         return;
       }
       selectedSize = activeSizeButton.dataset.size;
-      price = Number(activeSizeButton.dataset.price);
-    } else {
-      // For non-cakes, use the single price
-      price = Number(product.price);
     }
 
-    // Create cart item object
     const cartItem = {
-      id: productId,
-      name: productName,
+      menuId: productId,
+      quantity,
       size: selectedSize,
-      price: price,
-      quantity: quantity,
-      image: product.image || '/assets/placeholder.jpg',
     };
 
-    // Retrieve or initialize cart from localStorage
-    let cart = JSON.parse(localStorage.getItem('cart')) || [];
-    const existingItemIndex = cart.findIndex(
-      item => item.id === productId && item.size === selectedSize
-    );
-    if (existingItemIndex >= 0) {
-      // Update quantity if item exists
-      cart[existingItemIndex].quantity += quantity;
-    } else {
-      // Add new item to cart
-      cart.push(cartItem);
+    // Send to backend
+    const cartResponse = await fetch('http://localhost:3000/api/cart/add', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(cartItem),
+    });
+
+    if (!cartResponse.ok) {
+      const errorData = await cartResponse.json();
+      throw new Error(errorData.message || `Failed to add to cart: ${cartResponse.statusText}`);
     }
 
-    // Save cart to localStorage
-    localStorage.setItem('cart', JSON.stringify(cart));
     alert(`${productName}${selectedSize ? ` (${selectedSize})` : ''} added to cart!`);
   } catch (error) {
     console.error('Error adding to cart:', error);
-    alert('Error adding item to cart.');
+    if (error.message.includes('Invalid or expired token')) {
+      alert('Your session has expired. Please log in again.');
+      window.location.href = '/public/customer/login.html'; // Adjust path to your login page
+    } else {
+      alert(`Error: ${error.message}`);
+    }
   }
 });
