@@ -6,6 +6,7 @@
     --background-color: #BAE3CA;
     --hover-color: #A8D9B0;
     --text-color: #2D2D2D;
+    --badge-color: #d9534f;
     --font-poppins: 'Poppins', sans-serif;
 }
 
@@ -59,6 +60,25 @@
 
 .icon-btn:hover svg {
     stroke: var(--primary-color);
+}
+
+/* Cart count badge styles */
+.cart-count-badge {
+    position: absolute;
+    top: 2px;
+    /* Align to the top edge of the parent */
+    left: 40%;
+    /* Center horizontally relative to the parent */
+    transform: translateX(70%);
+    background-color: var(--badge-color);
+    color: white;
+    font-size: 0.6rem;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 50%;
+    pointer-events: none;
+    user-select: none;
+    display: none;
 }
 
 /* Responsive adjustments for navbar*/
