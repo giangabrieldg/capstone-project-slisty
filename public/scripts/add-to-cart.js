@@ -61,7 +61,13 @@ document.getElementById('addToCart').addEventListener('click', async () => {
       throw new Error(errorData.message || `Failed to add to cart: ${cartResponse.statusText}`);
     }
 
-    alert(`${productName}${selectedSize ? ` (${selectedSize})` : ''} added to cart!`);
+alert(`${productName}${selectedSize ? ` (${selectedSize})` : ''} added to cart!`);
+
+// After successfully adding to cart, update the cart count badge
+if (typeof updateCartCount === 'function') {
+  updateCartCount();
+}
+
   } catch (error) {
     console.error('Error adding to cart:', error);
     if (error.message.includes('Invalid or expired token')) {
