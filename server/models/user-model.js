@@ -1,47 +1,48 @@
-// Import Sequelize
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 
-// Define the User model with userID as the primary key
 const User = sequelize.define('User', {
   userID: {
     type: DataTypes.INTEGER,
-    primaryKey: true, // Set userID as the primary key
-    autoIncrement: true, // Auto-increment for unique IDs
+    primaryKey: true,
+    autoIncrement: true,
   },
   email: {
     type: DataTypes.STRING,
     allowNull: false,
-    unique: true, // Ensure email is unique
-    validate: {
-      isEmail: true, // Validate email format
-    },
+    unique: true,
   },
   name: {
     type: DataTypes.STRING,
-    allowNull: true, // Allow null until verification
+    allowNull: true,
   },
   password: {
     type: DataTypes.STRING,
-    allowNull: true, // Allow null until verification
+    allowNull: true,
+  },
+  phone: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  address: {
+    type: DataTypes.STRING,
+    allowNull: true,
   },
   isVerified: {
     type: DataTypes.BOOLEAN,
-    defaultValue: false, // User starts unverified
+    defaultValue: false,
   },
   verificationToken: {
     type: DataTypes.STRING,
-    allowNull: true, // Stores JWT for email verification
+    allowNull: true,
   },
   userLevel: {
-    type: DataTypes.ENUM('Customer', 'Admin', 'Staff'), // Restrict to these values
-    defaultValue: 'Customer', // Default for sign-up users
-    allowNull: false, // Required field
+    type: DataTypes.ENUM('Customer', 'Staff', 'Admin'),
+    defaultValue: 'Customer',
   },
 }, {
-  timestamps: true, // Enable createdAt and updatedAt
-  tableName: 'Users', // Explicitly set table name to match SQL
+  tableName: 'Users',
+  timestamps: true,
 });
 
-// Export the User model
 module.exports = User;

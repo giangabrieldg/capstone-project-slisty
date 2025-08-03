@@ -1,5 +1,5 @@
 const express = require('express');
-const jwt = require('jsonwebtoken'); // Keep this single import
+const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const User = require('../models/user-model');
 const { sendVerificationEmail } = require('../utils/sendEmail');
@@ -74,18 +74,22 @@ router.get('/verify', async (req, res) => {
   }
 });
 
-// Route to complete registration with name and password
+// Route to complete registration with name, phone, address, and password
 router.post('/complete-registration', async (req, res) => {
-  const { name, password } = req.body;
+  const { name, phone, address, password } = req.body;
   const token = req.query.token; // Get token from query
 
-  if (!name || !password || !token) {
-    return res.status(400).json({ message: 'Name, password, and token are required' });
+  console.log('Complete registration request body:', req.body); // Debug log
+
+  if (!name || !address || !password || !token) {
+    return res.status(400).json({ message: 'Name, address, password, and token are required' });
   }
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    console.log('Decoded token:', decoded); // Debug log
     const user = await User.findByPk(decoded.userID);
+    console.log('Found user:', user ? 'Yes' : 'No'); // Debug log
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -96,7 +100,14 @@ router.post('/complete-registration', async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    await user.update({ name, password: hashedPassword });
+    console.log('Updating user with:', { name, phone, address }); // Debug log
+    await user.update({ 
+      name, 
+      phone: phone || null, 
+      address, 
+      password: hashedPassword 
+    });
+    console.log('User updated successfully'); // Debug log
 
     res.status(200).json({ message: 'Registration completed successfully' });
   } catch (error) {
@@ -139,12 +150,61 @@ router.post('/login', async (req, res) => {
       message: 'Login successful',
       token,
       user: {
-        name: user.name, // Include the user's name
-        userLevel: user.userLevel // Include userLevel for frontend redirection
+        name: user.name,
+        userLevel: user.userLevel
       }
     });
   } catch (error) {
     console.error('Error in login:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Route to fetch user profile data
+router.get('/profile', verifyToken, async (req, res) => {
+  try {
+    const user = await User.findByPk(req.user.userID);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.status(200).json({
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      address: user.address,
+      userLevel: user.userLevel
+    });
+  } catch (error) {
+    console.error('Error fetching profile:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Route to update user profile
+router.put('/profile/update', verifyToken, async (req, res) => {
+  const { name, phone, address } = req.body;
+
+  if (!name || !address) {
+    return res.status(400).json({ message: 'Name and address are required' });
+  }
+
+  try {
+    const user = await User.findByPk(req.user.userID);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Update user data (exclude email)
+    await user.update({
+      name,
+      phone: phone || null,
+      address
+    });
+
+    res.status(200).json({ message: 'Profile updated successfully' });
+  } catch (error) {
+    console.error('Error updating profile:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

@@ -52,6 +52,13 @@
     transform: translateX(5px);
 }
 
+.sidebar-item.active {
+    background-color: var(--secondary-color);
+    color: white;
+    transform: translateX(5px);
+}
+
+
 .search-input,
 .sort-select {
     border: 1px solid #ccc;
