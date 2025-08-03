@@ -37,6 +37,9 @@ function initializeActiveLink() {
   // Add click event listeners to toggle active class
   navLinks.forEach(link => {
     link.addEventListener("click", function (e) {
+      e.preventDefault(); // Prevent default link behavior
+      // Update URL hash
+      window.location.hash = this.getAttribute('href').substring(1);
       // Remove active class from all links
       navLinks.forEach(nav => nav.classList.remove("active"));
       // Add active class to clicked link
@@ -44,13 +47,20 @@ function initializeActiveLink() {
     });
   });
 
-  // Optional: Set active link based on current URL hash
-  const currentHash = window.location.hash || "#profile"; // Default to #profile if no hash
-  const activeLink = document.querySelector(`.sidebar-menu .nav-link[href="${currentHash}"]`);
-  if (activeLink) {
-    navLinks.forEach(nav => nav.classList.remove("active"));
-    activeLink.classList.add("active");
+  // Set active link based on current URL hash
+  function setActiveLink() {
+    const currentHash = window.location.hash || "#profile"; // Default to #profile if no hash
+    const activeLink = document.querySelector(`.sidebar-menu .nav-link[href="${currentHash}"]`);
+    if (activeLink) {
+      navLinks.forEach(nav => nav.classList.remove("active"));
+      activeLink.classList.add("active");
+    }
   }
+
+  // Set active link on hash change
+  window.addEventListener('hashchange', setActiveLink);
+  // Set initial active link
+  setActiveLink();
 }
 
 document.addEventListener("DOMContentLoaded", () => {

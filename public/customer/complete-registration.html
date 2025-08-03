@@ -29,6 +29,28 @@
             <input type="text" class="form-control" id="name" required />
           </div>
           <div class="mb-3">
+            <label for="phone" class="form-label">Phone Number</label>
+            <input
+              type="tel"
+              class="form-control"
+              id="phone"
+              placeholder="+639123456789"
+              maxlength="13"
+              inputmode="numeric"
+            />
+            <div class="invalid-feedback" id="phoneError"></div>
+          </div>
+          <div class="mb-3">
+            <label for="address" class="form-label">Address</label>
+            <textarea
+              class="form-control"
+              id="address"
+              rows="3"
+              required
+            ></textarea>
+            <div class="invalid-feedback" id="addressError"></div>
+          </div>
+          <div class="mb-3">
             <label for="password" class="form-label">Password</label>
             <input
               type="password"
@@ -53,11 +75,47 @@
       crossorigin="anonymous"
     ></script>
     <script>
+      function validateForm() {
+        let isValid = true;
+        const phone = document.getElementById("phone").value.trim();
+        const address = document.getElementById("address").value.trim();
+
+        // Clear previous errors
+        document.getElementById("phone").classList.remove("is-invalid");
+        document.getElementById("address").classList.remove("is-invalid");
+        document.getElementById("phoneError").textContent = "";
+        document.getElementById("addressError").textContent = "";
+
+        // Validate phone number format if provided
+        if (phone && !/^\+63\d{10}$|^09\d{9}$/.test(phone)) {
+          document.getElementById("phone").classList.add("is-invalid");
+          document.getElementById("phoneError").textContent =
+            "Enter a valid Philippine phone number (e.g., +639123456789 or 09123456789)";
+          isValid = false;
+        }
+
+        // Validate address
+        if (!address) {
+          document.getElementById("address").classList.add("is-invalid");
+          document.getElementById("addressError").textContent =
+            "Address is required";
+          isValid = false;
+        }
+
+        return isValid;
+      }
+
       document
         .getElementById("completeRegistrationForm")
         .addEventListener("submit", async (e) => {
           e.preventDefault();
+
+          // Validate form before submitting
+          if (!validateForm()) return;
+
           const name = document.getElementById("name").value;
+          const phone = document.getElementById("phone").value;
+          const address = document.getElementById("address").value;
           const password = document.getElementById("password").value;
 
           // Extract token from URL query parameters
@@ -71,6 +129,8 @@
 
           try {
             console.log("Sending token:", token); // Debug token
+            const requestData = { name, phone, address, password };
+            console.log("Sending request data:", requestData); // Debug request data
             const response = await fetch(
               `http://localhost:3000/api/auth/complete-registration?token=${token}`,
               {
@@ -78,10 +138,12 @@
                 headers: {
                   "Content-Type": "application/json",
                 },
-                body: JSON.stringify({ name, password }),
+                body: JSON.stringify(requestData),
               }
             );
+            console.log("Response status:", response.status); // Debug response status
             const data = await response.json();
+            console.log("Response data:", data); // Debug response data
             alert(data.message);
             if (response.ok) {
               window.location.href = "/public/customer/login.html";

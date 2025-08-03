@@ -3,11 +3,9 @@ function waitForIncludes(callback) {
   const checkIncludes = () => {
     const includes = document.querySelectorAll('[data-include-html]');
     if (includes.length === 0 || Array.from(includes).every(el => el.innerHTML.trim() !== '')) {
-      console.log('All includes loaded');
       callback();
     } else {
-      console.log('Waiting for includes to load...');
-      setTimeout(checkIncludes, 100); // Retry every 100ms
+      setTimeout(checkIncludes, 100);
     }
   };
   checkIncludes();
@@ -17,30 +15,24 @@ function waitForIncludes(callback) {
 async function fetchMenuItems() {
   try {
     const response = await fetch('http://localhost:3000/api/menu');
-    console.log('API Response Status:', response.status, response.statusText); // Debug: Log response status
     const menuItems = await response.json();
-    console.log('Fetched menu items:', menuItems); // Debug: Log fetched items
     if (!response.ok) {
-      console.error('Failed to fetch menu items:', menuItems.error || menuItems.message || 'Unknown error');
       document.getElementById('menuItems').innerHTML = `<p>Failed to load menu items: ${menuItems.error || 'Server error'}</p>`;
       return;
     }
     const menuItemsContainer = document.getElementById('menuItems');
     if (!menuItemsContainer) {
-      console.error('Menu items container (#menuItems) not found in DOM');
       document.body.innerHTML += '<p>Error: Menu container not found.</p>';
       return;
     }
     menuItemsContainer.innerHTML = '';
     if (menuItems.length === 0) {
-      console.log('No menu items returned from API');
       menuItemsContainer.innerHTML = '<p>No menu items available.</p>';
       return;
     }
     menuItems.forEach(item => {
       const col = document.createElement('div');
       col.className = 'col-12 col-sm-6 col-lg-4';
-      // Format price display based on category
       let priceDisplay = item.price;
       if (item.category === 'Cakes') {
         try {
@@ -54,7 +46,6 @@ async function fetchMenuItems() {
       } else {
         priceDisplay = `₱${Number(item.price).toFixed(2)}`;
       }
-      // Handle stock display and button state
       const stockDisplay = item.stock != null && item.stock > 0 ? item.stock : 'Out of Stock';
       const viewDetailsClass = item.stock != null && item.stock > 0 ? 'btn btn-primary' : 'btn btn-primary disabled';
       const rowHtml = `
@@ -73,27 +64,22 @@ async function fetchMenuItems() {
       menuItemsContainer.appendChild(col);
     });
   } catch (error) {
-    console.error('Error fetching menu items:', error.message, error.stack);
+    console.error('Error fetching menu items:', error.message);
     document.getElementById('menuItems').innerHTML = '<p>Error loading menu items. Please try again later.</p>';
   }
 }
 
-// Handle search functionality to filter menu items by name or category
+// Search functionality
 function setupSearch() {
   const searchInput = document.querySelector('.search-input');
-  if (!searchInput) {
-    console.warn('Search input (.search-input) not found in DOM');
-    return;
-  }
+  if (!searchInput) return;
+
   searchInput.addEventListener('input', async (e) => {
     const searchTerm = e.target.value.toLowerCase();
     try {
       const response = await fetch('http://localhost:3000/api/menu');
-      console.log('Search API Response Status:', response.status, response.statusText);
       const menuItems = await response.json();
-      console.log('Search results:', menuItems);
       if (!response.ok) {
-        console.error('Failed to search menu items:', menuItems.error || menuItems.message || 'Unknown error');
         document.getElementById('menuItems').innerHTML = `<p>Failed to load menu items: ${menuItems.error || 'Server error'}</p>`;
         return;
       }
@@ -140,28 +126,22 @@ function setupSearch() {
         menuItemsContainer.appendChild(col);
       });
     } catch (error) {
-      console.error('Error searching menu items:', error.message, error.stack);
       document.getElementById('menuItems').innerHTML = '<p>Error loading menu items.</p>';
     }
   });
 }
 
-// Handle sorting of menu items based on price or name
+// Sorting
 function setupSort() {
   const sortSelect = document.querySelector('.sort-select');
-  if (!sortSelect) {
-    console.warn('Sort select (.sort-select) not found in DOM');
-    return;
-  }
+  if (!sortSelect) return;
+
   sortSelect.addEventListener('change', async (e) => {
     const sortBy = e.target.value;
     try {
       const response = await fetch('http://localhost:3000/api/menu');
-      console.log('Sort API Response Status:', response.status, response.statusText);
       let menuItems = await response.json();
-      console.log('Sort results:', menuItems);
       if (!response.ok) {
-        console.error('Failed to sort menu items:', menuItems.error || menuItems.message || 'Unknown error');
         document.getElementById('menuItems').innerHTML = `<p>Failed to load menu items: ${menuItems.error || 'Server error'}</p>`;
         return;
       }
@@ -227,38 +207,37 @@ function setupSort() {
         menuItemsContainer.appendChild(col);
       });
     } catch (error) {
-      console.error('Error sorting menu items:', error.message, error.stack);
-      document.getElementById('menuItems').innerHTML = '<p>Error loading menu items.</p>';
+      document.getElementById('menuItems').innerHTML = '<p>Error sorting menu items.</p>';
     }
   });
 }
 
-// Handle category filtering to display items of a specific category
+// Filter by category
 function setupCategoryFilters() {
   const categoryFilters = document.querySelectorAll('.category-filter');
-  if (categoryFilters.length === 0) {
-    console.warn('Category filters (.category-filter) not found in DOM');
-    return;
-  }
   categoryFilters.forEach(link => {
     link.addEventListener('click', async (e) => {
       e.preventDefault();
-      const category = e.target.getAttribute('data-category') || '';
+      const selectedCategory = link.getAttribute('data-category');
+
+      // Update active class
+      categoryFilters.forEach(el => el.classList.remove('active'));
+      e.target.classList.add('active');
+
       try {
         const response = await fetch('http://localhost:3000/api/menu');
-        console.log('Category Filter API Response Status:', response.status, response.statusText);
         const menuItems = await response.json();
-        console.log('Category filter results:', menuItems);
         if (!response.ok) {
-          console.error('Failed to filter menu items:', menuItems.error || menuItems.message || 'Unknown error');
           document.getElementById('menuItems').innerHTML = `<p>Failed to load menu items: ${menuItems.error || 'Server error'}</p>`;
           return;
         }
+        const filteredItems = selectedCategory
+          ? menuItems.filter(item => item.category === selectedCategory)
+          : menuItems;
         const menuItemsContainer = document.getElementById('menuItems');
         menuItemsContainer.innerHTML = '';
-        const filteredItems = menuItems.filter(item => !category || item.category === category);
         if (filteredItems.length === 0) {
-          menuItemsContainer.innerHTML = '<p>No items in this category.</p>';
+          menuItemsContainer.innerHTML = '<p>No items found in this category.</p>';
           return;
         }
         filteredItems.forEach(item => {
@@ -294,24 +273,23 @@ function setupCategoryFilters() {
           col.innerHTML = rowHtml;
           menuItemsContainer.appendChild(col);
         });
-        categoryFilters.forEach(el => el.classList.remove('active'));
-        e.target.classList.add('active');
       } catch (error) {
-        console.error('Error filtering menu items:', error.message, error.stack);
         document.getElementById('menuItems').innerHTML = '<p>Error loading menu items.</p>';
       }
     });
   });
+
+  // Set "All" category active on initial load
+  const allCategoryLink = document.querySelector('.category-filter[data-category=""]');
+  if (allCategoryLink) {
+    allCategoryLink.classList.add('active');
+  }
 }
 
-// Initialize menu page after DOM and includes are loaded
-document.addEventListener('DOMContentLoaded', () => {
-  console.log('Menu page loaded, checking for includes');
-  waitForIncludes(() => {
-    console.log('Includes loaded, initializing menu');
-    fetchMenuItems();
-    setupSearch();
-    setupSort();
-    setupCategoryFilters();
-  });
+// Initialize the menu page
+waitForIncludes(() => {
+  fetchMenuItems();
+  setupSearch();
+  setupSort();
+  setupCategoryFilters();
 });

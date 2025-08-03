@@ -1,4 +1,5 @@
-document.addEventListener('DOMContentLoaded', async () => {
+// Function to load cart items - can be called from other pages
+async function loadCartItems() {
   const cartItemsContainer = document.getElementById('cartItemsContainer');
   const checkoutBtn = document.getElementById('checkoutBtn');
   const token = localStorage.getItem('token');
@@ -111,7 +112,8 @@ document.addEventListener('DOMContentLoaded', async () => {
           });
           if (response.ok) {
             alert('Item removed from cart');
-            document.dispatchEvent(new Event('DOMContentLoaded'));
+            // Reload cart items after removal
+            loadCartItems();
           } else {
             const result = await response.json();
             alert(`Failed to remove item: ${result.message}`);
@@ -136,4 +138,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     checkoutBtn.disabled = true;
   }
-});
+}
+
+// Also run on page load for backward compatibility
+document.addEventListener('DOMContentLoaded', loadCartItems);
