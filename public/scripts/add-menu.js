@@ -35,8 +35,12 @@ async function fetchMenuItems() {
       } else {
         priceDisplay = `₱${Number(item.price).toFixed(2)}`;
       }
+      // Format menu ID as M0001, M0002, etc.
+      const formattedMenuId = `M${item.menuId.toString().padStart(4, '0')}`;
+      
       // Create table row with stock column
       const rowHtml = `
+        <td>${formattedMenuId}</td>
         <td>${item.name}</td>
         <td>${item.category}</td>
         <td><img src="${item.image || 'https://via.placeholder.com/50'}" alt="${item.name}" class="menu-image enlarge-image"></td>
@@ -406,7 +410,13 @@ document.querySelector('.search-bar').addEventListener('input', async (e) => {
     const tableBody = document.querySelector('#menuTable tbody');
     tableBody.innerHTML = '';
     menuItems
-      .filter(item => item.name.toLowerCase().includes(searchTerm) || item.category.toLowerCase().includes(searchTerm))
+      .filter(item => {
+        // Format menu ID as M0001, M0002, etc.
+        const formattedMenuId = `M${item.menuId.toString().padStart(4, '0')}`;
+        return item.name.toLowerCase().includes(searchTerm) || 
+               item.category.toLowerCase().includes(searchTerm) ||
+               formattedMenuId.toLowerCase().includes(searchTerm);
+      })
       .forEach(item => {
         const row = document.createElement('tr');
         let priceDisplay = item.price;
@@ -422,7 +432,11 @@ document.querySelector('.search-bar').addEventListener('input', async (e) => {
         } else {
           priceDisplay = `₱${Number(item.price).toFixed(2)}`;
         }
+        // Format menu ID as M0001, M0002, etc.
+        const formattedMenuId = `M${item.menuId.toString().padStart(4, '0')}`;
+        
         const rowHtml = `
+          <td>${formattedMenuId}</td>
           <td>${item.name}</td>
           <td>${item.category}</td>
           <td><img src="${item.image || 'https://via.placeholder.com/50'}" alt="${item.name}" class="menu-image enlarge-image"></td>
