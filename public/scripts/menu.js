@@ -1,4 +1,4 @@
-// Wait for dynamic HTML includes (navbar, footer) to load before initializing
+// Wait for dynamic HTML includes (navbar, footer) to load
 function waitForIncludes(callback) {
   const checkIncludes = () => {
     const includes = document.querySelectorAll('[data-include-html]');
@@ -11,7 +11,7 @@ function waitForIncludes(callback) {
   checkIncludes();
 }
 
-// Fetch and display all menu items on the customer menu page
+// Fetch and display all menu items
 async function fetchMenuItems() {
   try {
     const response = await fetch('http://localhost:3000/api/menu');
@@ -33,19 +33,10 @@ async function fetchMenuItems() {
     menuItems.forEach(item => {
       const col = document.createElement('div');
       col.className = 'col-12 col-sm-6 col-lg-4';
-      let priceDisplay = item.price;
-      if (item.category === 'Cakes') {
-        try {
-          const priceObj = JSON.parse(item.price);
-          priceDisplay = Object.entries(priceObj)
-            .map(([size, price]) => `${size} - ₱${Number(price).toFixed(2)}`)
-            .join(', ');
-        } catch {
-          priceDisplay = 'Invalid price format';
-        }
-      } else {
-        priceDisplay = `₱${Number(item.price).toFixed(2)}`;
-      }
+      // Display sizes if hasSizes is true, otherwise show basePrice
+      let priceDisplay = item.hasSizes && item.sizes?.length > 0
+        ? item.sizes.map(size => `${size.sizeName} - ₱${Number(size.price).toFixed(2)}`).join(', ')
+        : `₱${Number(item.basePrice || 0).toFixed(2)}`;
       const stockDisplay = item.stock != null && item.stock > 0 ? item.stock : 'Out of Stock';
       const viewDetailsClass = item.stock != null && item.stock > 0 ? 'btn btn-primary' : 'btn btn-primary disabled';
       const rowHtml = `
@@ -69,7 +60,7 @@ async function fetchMenuItems() {
   }
 }
 
-// Search functionality
+// Set up search functionality
 function setupSearch() {
   const searchInput = document.querySelector('.search-input');
   if (!searchInput) return;
@@ -95,19 +86,9 @@ function setupSearch() {
       filteredItems.forEach(item => {
         const col = document.createElement('div');
         col.className = 'col-12 col-sm-6 col-lg-4';
-        let priceDisplay = item.price;
-        if (item.category === 'Cakes') {
-          try {
-            const priceObj = JSON.parse(item.price);
-            priceDisplay = Object.entries(priceObj)
-              .map(([size, price]) => `${size} - ₱${Number(price).toFixed(2)}`)
-              .join(', ');
-          } catch {
-            priceDisplay = 'Invalid price format';
-          }
-        } else {
-          priceDisplay = `₱${Number(item.price).toFixed(2)}`;
-        }
+        let priceDisplay = item.hasSizes && item.sizes?.length > 0
+          ? item.sizes.map(size => `${size.sizeName} - ₱${Number(size.price).toFixed(2)}`).join(', ')
+          : `₱${Number(item.basePrice || 0).toFixed(2)}`;
         const stockDisplay = item.stock != null && item.stock > 0 ? item.stock : 'Out of Stock';
         const viewDetailsClass = item.stock != null && item.stock > 0 ? 'btn btn-primary' : 'btn btn-primary disabled';
         const rowHtml = `
@@ -131,7 +112,7 @@ function setupSearch() {
   });
 }
 
-// Sorting
+// Set up sorting functionality
 function setupSort() {
   const sortSelect = document.querySelector('.sort-select');
   if (!sortSelect) return;
@@ -148,15 +129,17 @@ function setupSort() {
       switch (sortBy) {
         case 'price-asc':
           menuItems.sort((a, b) => {
-            const aPrice = a.category === 'Cakes' ? Math.min(...Object.values(JSON.parse(a.price))) : Number(a.price);
-            const bPrice = b.category === 'Cakes' ? Math.min(...Object.values(JSON.parse(b.price))) : Number(b.price);
+            // Sort by minimum price for sized items, or basePrice
+            const aPrice = a.hasSizes && a.sizes?.length > 0 ? Math.min(...a.sizes.map(s => Number(s.price))) : Number(a.basePrice || 0);
+            const bPrice = b.hasSizes && b.sizes?.length > 0 ? Math.min(...b.sizes.map(s => Number(s.price))) : Number(b.basePrice || 0);
             return aPrice - bPrice;
           });
           break;
         case 'price-desc':
           menuItems.sort((a, b) => {
-            const aPrice = a.category === 'Cakes' ? Math.max(...Object.values(JSON.parse(a.price))) : Number(a.price);
-            const bPrice = b.category === 'Cakes' ? Math.max(...Object.values(JSON.parse(b.price))) : Number(b.price);
+            // Sort by maximum price for sized items, or basePrice
+            const aPrice = a.hasSizes && a.sizes?.length > 0 ? Math.max(...a.sizes.map(s => Number(s.price))) : Number(a.basePrice || 0);
+            const bPrice = b.hasSizes && b.sizes?.length > 0 ? Math.max(...b.sizes.map(s => Number(s.price))) : Number(b.basePrice || 0);
             return bPrice - aPrice;
           });
           break;
@@ -176,19 +159,9 @@ function setupSort() {
       menuItems.forEach(item => {
         const col = document.createElement('div');
         col.className = 'col-12 col-sm-6 col-lg-4';
-        let priceDisplay = item.price;
-        if (item.category === 'Cakes') {
-          try {
-            const priceObj = JSON.parse(item.price);
-            priceDisplay = Object.entries(priceObj)
-              .map(([size, price]) => `${size} - ₱${Number(price).toFixed(2)}`)
-              .join(', ');
-          } catch {
-            priceDisplay = 'Invalid price format';
-          }
-        } else {
-          priceDisplay = `₱${Number(item.price).toFixed(2)}`;
-        }
+        let priceDisplay = item.hasSizes && item.sizes?.length > 0
+          ? item.sizes.map(size => `${size.sizeName} - ₱${Number(size.price).toFixed(2)}`).join(', ')
+          : `₱${Number(item.basePrice || 0).toFixed(2)}`;
         const stockDisplay = item.stock != null && item.stock > 0 ? item.stock : 'Out of Stock';
         const viewDetailsClass = item.stock != null && item.stock > 0 ? 'btn btn-primary' : 'btn btn-primary disabled';
         const rowHtml = `
@@ -212,7 +185,7 @@ function setupSort() {
   });
 }
 
-// Filter by category
+// Set up category filters
 function setupCategoryFilters() {
   const categoryFilters = document.querySelectorAll('.category-filter');
   categoryFilters.forEach(link => {
@@ -243,19 +216,9 @@ function setupCategoryFilters() {
         filteredItems.forEach(item => {
           const col = document.createElement('div');
           col.className = 'col-12 col-sm-6 col-lg-4';
-          let priceDisplay = item.price;
-          if (item.category === 'Cakes') {
-            try {
-              const priceObj = JSON.parse(item.price);
-              priceDisplay = Object.entries(priceObj)
-                .map(([size, price]) => `${size} - ₱${Number(price).toFixed(2)}`)
-                .join(', ');
-            } catch {
-              priceDisplay = 'Invalid price format';
-            }
-          } else {
-            priceDisplay = `₱${Number(item.price).toFixed(2)}`;
-          }
+          let priceDisplay = item.hasSizes && item.sizes?.length > 0
+            ? item.sizes.map(size => `${size.sizeName} - ₱${Number(size.price).toFixed(2)}`).join(', ')
+            : `₱${Number(item.basePrice || 0).toFixed(2)}`;
           const stockDisplay = item.stock != null && item.stock > 0 ? item.stock : 'Out of Stock';
           const viewDetailsClass = item.stock != null && item.stock > 0 ? 'btn btn-primary' : 'btn btn-primary disabled';
           const rowHtml = `
