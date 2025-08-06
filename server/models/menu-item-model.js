@@ -1,3 +1,4 @@
+// menu-item-model.js (updated)
 module.exports = (sequelize, DataTypes) => {
   const MenuItem = sequelize.define('MenuItem', {
     menuId: {
@@ -13,10 +14,6 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING,
       allowNull: false,
     },
-    price: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
     description: {
       type: DataTypes.TEXT,
     },
@@ -27,11 +24,23 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.BOOLEAN,
       defaultValue: true,
     },
+    hasSizes: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
+    basePrice: {
+      type: DataTypes.DECIMAL(10, 2),
+      defaultValue: 0.00,
+    },
     stock: {
       type: DataTypes.INTEGER,
       allowNull: false,
       defaultValue: 0,
-    },
+      validate: {
+        min: 0
+      }
+    }
   });
+
   return MenuItem;
 };
