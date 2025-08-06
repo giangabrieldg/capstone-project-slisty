@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { Op } = require('sequelize');
-const { Cart, CartItem, MenuItem } = require('../models'); // Import from models/index.js
+const { Cart, CartItem, MenuItem, ItemSize } = require('../models'); // Include ItemSize
 const verifyToken = require('../middleware/verifyToken');
 
 // Add item to cart
@@ -61,7 +61,10 @@ router.get('/', verifyToken, async (req, res) => {
     }
     const cartItems = await CartItem.findAll({
       where: { cartId: cart.cartId },
-      include: [{ model: MenuItem }],
+      include: [{
+        model: MenuItem,
+        include: [{ model: ItemSize, as: 'sizes', where: { isActive: true }, required: false }],
+      }],
     });
     return res.status(200).json({ cartItems });
   } catch (error) {
