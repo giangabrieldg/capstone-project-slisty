@@ -155,19 +155,33 @@
                       <option value="Drinks">Drinks</option>
                     </select>
                   </div>
+                  <div class="mb-3 form-check">
+                    <input
+                      type="checkbox"
+                      class="form-check-input"
+                      id="hasSizes"
+                      name="hasSizes"
+                    />
+                    <label class="form-check-label" for="hasSizes"
+                      >Has Sizes?</label
+                    >
+                  </div>
                   <div class="mb-3" id="sizesContainer" style="display: none">
                     <label for="sizePricePairs" class="form-label"
-                      >Sizes and Prices (for Cakes)</label
+                      >Sizes and Prices</label
                     >
                     <div id="sizePricePairs">
                       <div class="mb-2 size-price-pair">
-                        <div class="row">
-                          <div class="col-6">
-                            <input type="text" class="form-control"
-                            name="size_0" placeholder="Enter size (e.g., 6\")"
+                        <div class="row g-2 align-items-center">
+                          <div class="col-5">
+                            <input
+                              type="text"
+                              class="form-control"
+                              name="size_0"
+                              placeholder="Enter size (e.g., Small)"
                             />
                           </div>
-                          <div class="col-6">
+                          <div class="col-5">
                             <input
                               type="number"
                               class="form-control"
@@ -176,6 +190,14 @@
                               min="0"
                               placeholder="Enter price (₱)"
                             />
+                          </div>
+                          <div class="col-2">
+                            <button
+                              type="button"
+                              class="btn btn-sm btn-danger remove-size w-100"
+                            >
+                              <i class="bi bi-trash"></i>
+                            </button>
                           </div>
                         </div>
                       </div>
@@ -198,6 +220,7 @@
                       step="0.01"
                       min="0"
                       placeholder="Enter price"
+                      required
                     />
                   </div>
                   <div class="mb-3">
@@ -223,6 +246,13 @@
                       id="imageUpload"
                       name="image"
                       accept="image/*"
+                    />
+                    <img
+                      id="imagePreview"
+                      src=""
+                      alt="Image Preview"
+                      class="img-fluid mt-2"
+                      style="display: none; max-width: 200px"
                     />
                   </div>
                   <div class="mb-3">
@@ -273,6 +303,42 @@
                 />
               </div>
             </div>
+          </div>
+        </div>
+        <!-- Toast for success -->
+        <div
+          class="toast align-items-center text-white bg-success border-0 position-fixed bottom-0 end-0 m-3"
+          id="successToast"
+          role="alert"
+          aria-live="assertive"
+          aria-atomic="true"
+        >
+          <div class="d-flex">
+            <div class="toast-body" id="successToastMessage"></div>
+            <button
+              type="button"
+              class="btn-close btn-close-white me-2 m-auto"
+              data-bs-dismiss="toast"
+              aria-label="Close"
+            ></button>
+          </div>
+        </div>
+        <!-- Toast for error -->
+        <div
+          class="toast align-items-center text-white bg-danger border-0 position-fixed bottom-0 end-0 m-3"
+          id="errorToast"
+          role="alert"
+          aria-live="assertive"
+          aria-atomic="true"
+        >
+          <div class="d-flex">
+            <div class="toast-body" id="errorToastMessage"></div>
+            <button
+              type="button"
+              class="btn-close btn-close-white me-2 m-auto"
+              data-bs-dismiss="toast"
+              aria-label="Close"
+            ></button>
           </div>
         </div>
       </main>

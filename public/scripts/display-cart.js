@@ -57,6 +57,11 @@ async function loadCartItems() {
     }
 
     checkoutBtn.disabled = false;
+    
+    // Add click event listener for checkout button
+    checkoutBtn.addEventListener('click', function() {
+        window.location.href = '/public/customer/checkout.html';
+    });
 
     let html = `
       <table class="table table-hover">
