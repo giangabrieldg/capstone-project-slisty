@@ -1,3 +1,6 @@
+/**
+ * Middleware to verify JWT token and set req.user with userID, userLevel, and email
+ */
 const jwt = require('jsonwebtoken');
 const User = require('../models/user-model');
 require('dotenv').config();
@@ -11,7 +14,7 @@ const verifyToken = async (req, res, next) => {
     console.log('Token received from header:', token);
   } else {
     console.log('No token provided in Authorization header');
-    return res.status(401).json({ message: 'No token provided' });
+    return res.status(401).json({ success: false, message: 'No token provided' });
   }
 
   try {
@@ -21,14 +24,20 @@ const verifyToken = async (req, res, next) => {
     const user = await User.findByPk(decoded.userID);
     if (!user) {
       console.log('User not found for userID:', decoded.userID);
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ success: false, message: 'User not found' });
     }
 
-    req.user = { userID: decoded.userID, userLevel: decoded.userLevel };
+    // Include email in req.user
+    req.user = {
+      userID: decoded.userID,
+      userLevel: decoded.userLevel,
+      email: user.email // Add email from User model
+    };
+    console.log('req.user set:', req.user);
     next();
   } catch (error) {
     console.error('Token verification error:', error.message);
-    return res.status(401).json({ message: 'Invalid or expired token' });
+    return res.status(401).json({ success: false, message: 'Invalid or expired token' });
   }
 };
 
