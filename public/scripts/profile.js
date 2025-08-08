@@ -1,237 +1,288 @@
-// profile.js - scripts extracted from profile.html
-
-const API_BASE_URL = "http://localhost:3000"; // Change to 'https://slice-n-grind.onrender.com' for Render
-
-// Section management
-function showSection(sectionId) {
-  // Hide all sections
-  document.querySelectorAll('.main-content-section').forEach(section => {
-    section.style.display = 'none';
-  });
-  
-  // Show the requested section
-  const targetSection = document.getElementById(sectionId + '-section');
-  if (targetSection) {
-    targetSection.style.display = 'block';
-  }
-}
-
-// Handle hash changes
-function handleHashChange() {
-  const hash = window.location.hash.substring(1) || 'profile'; // Default to profile
-  showSection(hash);
-  
-  // Special handling for cart section to load cart items
-  if (hash === 'cart') {
-    // Trigger cart loading
-    if (typeof loadCartItems === 'function') {
-      loadCartItems();
-    }
-  }
-}
-
-// Initialize section visibility based on hash
-window.addEventListener('load', () => {
-  handleHashChange();
-  loadUserData();
-});
-
-// Listen for hash changes
-window.addEventListener('hashchange', handleHashChange);
-
-// Profile functions (existing code)
-async function loadUserData(attempt = 1, maxAttempts = 3, delay = 1000) {
-  try {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      console.error("No token found in localStorage");
-      window.location.href = "/public/customer/login.html";
-      return;
+/**
+ * Profile Page Manager
+ * Handles profile data fetching, updating, tab switching, cart display, and order history
+ */
+class ProfileManager {
+    constructor() {
+        this.token = localStorage.getItem('token');
+        this.init();
     }
 
-    const profileUrl = `${API_BASE_URL}/api/auth/profile`;
-    console.log(
-      `Fetching user data (attempt ${attempt}): ${profileUrl}, Token: ${token.substring(
-        0,
-        10
-      )}...`
-    );
+    /**
+     * Initialize profile page functionality
+     */
+    init() {
+        if (!this.token) {
+            window.location.href = '/public/customer/login.html';
+            return;
+        }
+        this.setupEventListeners();
+        this.loadProfile();
+        this.loadOrders(); // Load orders on initialization
 
-    const response = await fetch(profileUrl, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(
-        `Fetch failed: ${response.status} ${response.statusText} - ${errorText}`
-      );
-      if (response.status === 401) {
-        console.error("Unauthorized: Invalid or expired token");
-        localStorage.removeItem("token");
-        window.location.href = "/public/customer/login.html";
-        return;
-      }
-      throw new Error(
-        `Failed to fetch user data: ${response.status} ${response.statusText} - ${errorText}`
-      );
+        const hash = window.location.hash.substring(1);
+        const section = hash || 'profile';
+        this.showSection(section);
     }
 
-    const user = await response.json();
-    console.log("User data fetched:", user); // Debug: Check the full response
+    /**
+     * Setup event listeners for navigation and form interactions
+     */
+    setupEventListeners() {
+        // Tab navigation
+        document.querySelectorAll('.sidebar-menu .nav-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const section = link.getAttribute('href').substring(1);
+                this.showSection(section);
+            });
+        });
 
-    document.getElementById("userName").textContent =
-      user.name || "Not set";
-    document.getElementById("userEmail").textContent =
-      user.email || "Not set";
-    document.getElementById("userPhone").textContent =
-      user.phone || "Not set"; // Changed to 'phone'
-    document.getElementById("userAddress").textContent =
-      user.address || "Not set";
+        window.addEventListener('hashchange', () => {
+        const hash = window.location.hash.substring(1);
+        this.showSection(hash || 'profile');
+        });
 
-    document.getElementById("editName").value = user.name || "";
-    document.getElementById("editPhone").value = user.phone || ""; // Changed to 'phone'
-    document.getElementById("editAddress").value = user.address || "";
-  } catch (error) {
-    console.error(`Error loading user data (attempt ${attempt}):`, error);
-    if (attempt < maxAttempts) {
-      console.log(`Retrying... (${attempt + 1}/${maxAttempts})`);
-      await new Promise((resolve) => setTimeout(resolve, delay));
-      return loadUserData(attempt + 1, maxAttempts, delay * 2);
-    }
-    alert(
-      `Failed to load profile after ${maxAttempts} attempts: ${error.message}. Please try again or log in again.`
-    );
-    window.location.href = "/public/customer/login.html";
-  }
-}
+        // Edit profile button
+        const editBtn = document.getElementById('editBtn');
+        if (editBtn) {
+            editBtn.addEventListener('click', () => this.toggleEditForm(true));
+        }
 
-function toggleEditForm() {
-  const editForm = document.getElementById("editForm");
-  const editBtn = document.getElementById("editBtn");
-  const isEditing = editForm.style.display === "block";
+        // Cancel edit button
+        const cancelBtn = document.getElementById('cancelBtn');
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', () => this.toggleEditForm(false));
+        }
 
-  editForm.style.display = isEditing ? "none" : "block";
-  editBtn.textContent = isEditing ? "Edit Profile" : "Cancel Edit";
-  editBtn.classList.toggle("btn-outline-success", isEditing);
-  editBtn.classList.toggle("btn-outline-danger", !isEditing);
+        // Profile form submission
+        const profileForm = document.getElementById('profileForm');
+        if (profileForm) {
+            profileForm.addEventListener('submit', (e) => this.handleProfileSubmit(e));
+        }
 
-  document
-    .querySelectorAll(".form-control")
-    .forEach((input) => input.classList.remove("is-invalid"));
-  document
-    .querySelectorAll(".invalid-feedback")
-    .forEach((error) => (error.textContent = ""));
-}
-
-function validateForm() {
-  let isValid = true;
-  const name = document.getElementById("editName").value.trim();
-  const phone = document.getElementById("editPhone").value.trim();
-  const address = document.getElementById("editAddress").value.trim();
-
-  document
-    .querySelectorAll(".form-control")
-    .forEach((input) => input.classList.remove("is-invalid"));
-  document
-    .querySelectorAll(".invalid-feedback")
-    .forEach((error) => (error.textContent = ""));
-
-  if (!name) {
-    document.getElementById("editName").classList.add("is-invalid");
-    document.getElementById("nameError").textContent = "Name is required";
-    isValid = false;
-  }
-
-  if (phone && !/^\+63\d{10}$|^09\d{9}$/.test(phone)) {
-    document.getElementById("editPhone").classList.add("is-invalid");
-    document.getElementById("phoneError").textContent =
-      "Enter a valid Philippine phone number (e.g., +639123456789 or 09123456789)";
-    isValid = false;
-  }
-
-  if (!address) {
-    document.getElementById("editAddress").classList.add("is-invalid");
-    document.getElementById("addressError").textContent =
-      "Address is required";
-    isValid = false;
-  }
-
-  return isValid;
-}
-
-async function handleFormSubmit(event) {
-  event.preventDefault();
-  if (!validateForm()) return;
-
-  const userData = {
-    name: document.getElementById("editName").value.trim(),
-    phone: document.getElementById("editPhone").value.trim() || null, // Changed to 'phone'
-    address: document.getElementById("editAddress").value.trim(),
-  };
-  console.log("Sending update:", userData); // Debug: Check sent data
-  const token = localStorage.getItem("token");
-
-  try {
-    const response = await fetch(
-      `${API_BASE_URL}/api/auth/profile/update`,
-      {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(userData),
-      }
-    );
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || "Failed to update profile");
+        // Logout confirmation
+        const confirmLogoutBtn = document.getElementById('confirmLogoutBtn');
+        if (confirmLogoutBtn) {
+            confirmLogoutBtn.addEventListener('click', () => this.handleLogout());
+        }
     }
 
-    // Load updated user data from server
-    await loadUserData();
+    /**
+     * Show specific section and hide others
+     * @param {string} section - Section ID to display
+     */
+    showSection(section) {
+        document.querySelectorAll('.main-content-section').forEach(s => {
+            s.style.display = 'none';
+        });
+        const activeSection = document.getElementById(`${section}-section`);
+        if (activeSection) {
+            activeSection.style.display = 'block';
+        }
 
-    // Update localStorage with new user name
-    const newName = document.getElementById("editName").value.trim();
-    localStorage.setItem("userName", newName);
+        document.querySelectorAll('.sidebar-menu .nav-link').forEach(link => {
+            link.classList.remove('active');
+            if (link.getAttribute('href') === `#${section}`) {
+                link.classList.add('active');
+            }
+        });
+    }
 
-    toggleEditForm();
-    alert("Profile updated successfully!");
-  } catch (error) {
-    console.error("Error updating profile:", error);
-    alert(error.message || "Failed to update profile. Please try again.");
-  }
+    /**
+     * Load user profile data
+     */
+    async loadProfile() {
+        try {
+            const response = await fetch('http://localhost:3000/api/auth/profile', {
+                headers: { 'Authorization': `Bearer ${this.token}` }
+            });
+            if (!response.ok) throw new Error('Failed to load profile');
+            const data = await response.json();
+            this.renderProfile(data);
+        } catch (error) {
+            console.error('Error loading profile:', error);
+            alert('Error loading profile. Please log in again.');
+            window.location.href = '/public/customer/login.html';
+        }
+    }
+
+    /**
+     * Render profile data
+     * @param {Object} profile - Profile data
+     */
+    renderProfile(profile) {
+        document.getElementById('userName').textContent = profile.name || 'Not set';
+        document.getElementById('userEmail').textContent = profile.email || 'Not set';
+        document.getElementById('userPhone').textContent = profile.phone || 'Not set';
+        document.getElementById('userAddress').textContent = profile.address || 'Not set';
+    }
+
+    /**
+     * Load user orders
+     */
+    async loadOrders() {
+        try {
+            const response = await fetch('http://localhost:3000/api/orders/user/me', {
+                headers: { 
+                    'Authorization': `Bearer ${this.token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                // Try to get error details from response
+                let errorMsg = 'Failed to load orders';
+                try {
+                    const errorData = await response.json();
+                    errorMsg += `: ${errorData.message || JSON.stringify(errorData)}`;
+                } catch (e) {
+                    errorMsg += `: HTTP ${response.status}`;
+                }
+                throw new Error(errorMsg);
+            }
+            
+            const data = await response.json();
+            console.log('Orders data:', data); // Debug log
+            this.renderOrders(data.orders || []);
+            
+        } catch (error) {
+            console.error('Error loading orders:', error);
+            const ordersContent = document.querySelector('.orders-content');
+            if (ordersContent) {
+                ordersContent.innerHTML = `
+                    <div class="alert alert-danger">
+                        Error loading order history: ${error.message}
+                        <button class="btn btn-sm btn-secondary mt-2" onclick="profileManager.loadOrders()">
+                            Retry
+                        </button>
+                    </div>
+                `;
+            }
+        }
+    }
+
+    /**
+     * Render orders in the orders section
+     * @param {Array} orders - List of orders
+     */
+    renderOrders(orders) {
+        const ordersContent = document.querySelector('.orders-content');
+        if (!ordersContent) return;
+
+        if (orders.length === 0) {
+            ordersContent.innerHTML = '<p>No orders found.</p>';
+            return;
+        }
+
+        ordersContent.innerHTML = `
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Order ID</th>
+                            <th>Date</th>
+                            <th>Total</th>
+                            <th>Items</th>
+                            <th>Delivery</th>
+                            <th>Payment</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${orders.map(order => {
+                            // Parse items if it's a string
+                            const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+                            return `
+                                <tr>
+                                    <td>${order.orderId}</td>
+                                    <td>${new Date(order.createdAt).toLocaleDateString()}</td>
+                                    <td>₱${Number(order.total_amount).toFixed(2)}</td>
+                                    <td>
+                                        ${items.map(item => `
+                                            ${item.name}${item.size ? ` (${item.size})` : ''} x${item.quantity}
+                                        `).join('<br>')}
+                                    </td>
+                                    <td>${order.delivery_method}</td>
+                                    <td>${order.payment_method}</td>
+                                    <td>${order.status}</td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+    }
+
+    /**
+     * Toggle edit profile form visibility
+     * @param {boolean} show - Show or hide form
+     */
+    toggleEditForm(show) {
+        const editForm = document.getElementById('editForm');
+        const editBtn = document.getElementById('editBtn');
+        if (editForm && editBtn) {
+            editForm.style.display = show ? 'block' : 'none';
+            editBtn.style.display = show ? 'none' : 'block';
+            if (show) {
+                document.getElementById('editName').value = document.getElementById('userName').textContent;
+                document.getElementById('editPhone').value = document.getElementById('userPhone').textContent;
+                document.getElementById('editAddress').value = document.getElementById('userAddress').textContent === 'Not set' ? '' : document.getElementById('userAddress').textContent;
+            }
+        }
+    }
+
+    /**
+     * Handle profile form submission
+     * @param {Event} e - Form submission event
+     */
+    async handleProfileSubmit(e) {
+        e.preventDefault();
+        const name = document.getElementById('editName').value;
+        const phone = document.getElementById('editPhone').value;
+        const address = document.getElementById('editAddress').value;
+
+        // Basic validation
+        if (!name) {
+            document.getElementById('nameError').textContent = 'Name is required';
+            document.getElementById('editName').classList.add('is-invalid');
+            return;
+        }
+        if (phone && !/^\+639\d{9}$/.test(phone)) {
+            document.getElementById('phoneError').textContent = 'Invalid phone number format';
+            document.getElementById('editPhone').classList.add('is-invalid');
+            return;
+        }
+
+        try {
+            const response = await fetch('http://localhost:3000/api/auth/profile', {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${this.token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ name, phone, address })
+            });
+            if (!response.ok) throw new Error('Failed to update profile');
+            const data = await response.json();
+            this.renderProfile(data);
+            this.toggleEditForm(false);
+            alert('Profile updated successfully!');
+        } catch (error) {
+            console.error('Error updating profile:', error);
+            alert('Error updating profile. Please try again.');
+        }
+    }
+
+    /**
+     * Handle logout
+     */
+    handleLogout() {
+        localStorage.removeItem('token');
+        window.location.href = '/public/customer/login.html';
+    }
 }
 
-function logout() {
-  localStorage.removeItem("token");
-  localStorage.removeItem("userName");
-  localStorage.removeItem("userEmail");
-  window.location.href = "/public/customer/login.html";
-}
-
-// Event listeners for profile section
-document
-  .getElementById("editBtn")
-  .addEventListener("click", toggleEditForm);
-document
-  .getElementById("cancelBtn")
-  .addEventListener("click", toggleEditForm);
-document
-  .getElementById("profileForm")
-  .addEventListener("submit", handleFormSubmit);
-
-// Event listener for logout link
-document
-  .getElementById("logoutLink")
-  .addEventListener("click", function(e) {
-    e.preventDefault();
-    showSection('logout');
-    window.location.hash = 'logout';
-  });
-
-// Event listener for logout confirmation
-document
-  .getElementById("confirmLogoutBtn")
-  .addEventListener("click", logout);
+// Instantiate the manager
+const profileManager = new ProfileManager();

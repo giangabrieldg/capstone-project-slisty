@@ -46,6 +46,66 @@
         </div>
       </div>
     </div>
+    <div id="paymentStatus"></div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      const urlParams = new URLSearchParams(window.location.search);
+      const orderId = urlParams.get("orderId");
+      const isSandbox = urlParams.get("sandbox") === "true";
+
+      if (isSandbox) {
+        fetch("/api/payment/confirm-sandbox", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ orderId }),
+        }).then(() => {
+          alert("Sandbox payment confirmed!");
+        });
+      }
+
+      // Verify payment status when success page loads
+      document.addEventListener("DOMContentLoaded", async () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const orderId = urlParams.get("orderId");
+
+        // Only verify if this was a GCash payment
+        const paymentData = JSON.parse(
+          localStorage.getItem("currentPayment") || "{}"
+        );
+        if (paymentData.paymentId && paymentData.orderId === orderId) {
+          try {
+            const response = await fetch(
+              `/api/payment/verify-payment/${paymentData.paymentId}`
+            );
+            const result = await response.json();
+
+            if (!result.isPaid) {
+              // Show pending payment message
+              document.getElementById("paymentStatus").innerHTML = `
+                    <div class="alert alert-warning">
+                        <i class="fas fa-clock"></i> Waiting for payment confirmation...
+                        <button onclick="checkPayment()" class="btn btn-sm btn-primary ms-2">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </div>
+                `;
+            }
+
+            // Clear payment data after verification
+            localStorage.removeItem("currentPayment");
+          } catch (error) {
+            console.error("Payment verification failed:", error);
+          }
+        }
+      });
+
+      // Manual refresh function
+      window.checkPayment = async () => {
+        location.reload(); // Simple refresh - the DOMContentLoaded will verify again
+      };
+    </script>
   </body>
 </html>
