@@ -12,12 +12,25 @@ router.post('/add', verifyToken, async (req, res) => {
       return res.status(400).json({ message: 'Invalid menuId or quantity' });
     }
 
-    const menuItem = await MenuItem.findByPk(menuId);
+    const menuItem = await MenuItem.findByPk(menuId, {
+      include: [{ model: ItemSize, as: 'sizes', where: { isActive: true }, required: false }],
+    });
     if (!menuItem) {
       return res.status(404).json({ message: 'Menu item not found' });
     }
     if (menuItem.stock < quantity) {
       return res.status(400).json({ message: `Only ${menuItem.stock} items available in stock` });
+    }
+
+    // Validate size for items with hasSizes: true
+    if (menuItem.hasSizes && !size) {
+      return res.status(400).json({ message: 'Size is required for this item' });
+    }
+    if (menuItem.hasSizes && size) {
+      const validSize = menuItem.sizes.find(s => s.sizeName.trim().toLowerCase() === size.trim().toLowerCase());
+      if (!validSize) {
+        return res.status(400).json({ message: `Invalid size: ${size}` });
+      }
     }
 
     let cart = await Cart.findOne({ where: { userID: req.user.userID } });

@@ -2,7 +2,7 @@ document.getElementById('addToCart').addEventListener('click', async () => {
   const token = localStorage.getItem('token');
   if (!token) {
     alert('Please log in to add items to your cart.');
-    window.location.href = '/public/customer/login.html'; // Adjust path to your login page
+    window.location.href = '/public/customer/login.html';
     return;
   }
 
@@ -31,13 +31,20 @@ document.getElementById('addToCart').addEventListener('click', async () => {
       return;
     }
 
-    if (product.category === 'Cakes') {
+    // Check if item has sizes
+    if (product.hasSizes) {
       const activeSizeButton = document.querySelector('.size-btn.active');
       if (!activeSizeButton) {
         alert('Please select a size.');
         return;
       }
       selectedSize = activeSizeButton.dataset.size;
+      // Validate size against available sizes
+      const validSize = product.sizes.find(s => s.sizeName.trim().toLowerCase() === selectedSize.trim().toLowerCase());
+      if (!validSize) {
+        alert('Invalid size selected.');
+        return;
+      }
     }
 
     const cartItem = {
@@ -61,18 +68,18 @@ document.getElementById('addToCart').addEventListener('click', async () => {
       throw new Error(errorData.message || `Failed to add to cart: ${cartResponse.statusText}`);
     }
 
-alert(`${productName}${selectedSize ? ` (${selectedSize})` : ''} added to cart!`);
+    alert(`${productName}${selectedSize ? ` (${selectedSize})` : ''} added to cart!`);
 
-// After successfully adding to cart, update the cart count badge
-if (typeof updateCartCount === 'function') {
-  updateCartCount();
-}
+    // Update cart count badge
+    if (typeof updateCartCount === 'function') {
+      updateCartCount();
+    }
 
   } catch (error) {
     console.error('Error adding to cart:', error);
     if (error.message.includes('Invalid or expired token')) {
       alert('Your session has expired. Please log in again.');
-      window.location.href = '/public/customer/login.html'; // Adjust path to your login page
+      window.location.href = '/public/customer/login.html';
     } else {
       alert(`Error: ${error.message}`);
     }
