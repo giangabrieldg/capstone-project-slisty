@@ -21,6 +21,33 @@ class CheckoutManager {
         this.loadCustomerProfile();
         this.setupEventListeners();
         this.renderCheckoutForm();
+
+        window.addEventListener('beforeunload', (event) => {
+        if (sessionStorage.getItem('pendingPayment') && this.checkoutData.paymentMethod === 'gcash') {
+            event.preventDefault();
+            event.returnValue = 'You have a pending payment. Navigating away may cancel your order. Are you sure?';
+            }
+        });
+        // Clean up stale pending order/payment
+        const pendingPayment = sessionStorage.getItem('pendingPayment');
+        if (pendingPayment) {
+            const { timestamp } = JSON.parse(pendingPayment);
+            const now = Date.now();
+            const timeout = 30 * 60 * 1000; // 30 minutes
+            if (now - timestamp > timeout) {
+                sessionStorage.removeItem('pendingPayment');
+                sessionStorage.removeItem('pendingOrder');
+                console.log('Cleared stale pending payment/order');
+            }
+        }
+
+        // Add beforeunload listener for GCash payments
+        window.addEventListener('beforeunload', (event) => {
+            if (sessionStorage.getItem('pendingPayment') && this.checkoutData.paymentMethod === 'gcash') {
+                event.preventDefault();
+                event.returnValue = 'You have a pending payment. Navigating away may cancel your order. Are you sure?';
+            }
+        });
     }
 
     async loadCustomerProfile() {
@@ -446,133 +473,179 @@ class CheckoutManager {
     }
 
     async handleReturnFromPaymongo() {
-        const pendingPayment = sessionStorage.getItem('pendingPayment');
-        if (!pendingPayment) return;
+    const pendingPayment = sessionStorage.getItem('pendingPayment');
+    const pendingOrder = sessionStorage.getItem('pendingOrder');
+    if (!pendingPayment || !pendingOrder) return;
 
-        try {
-            const { orderId, paymentId } = JSON.parse(pendingPayment);
-            if (!orderId || !paymentId) {
-                console.warn('No orderId or paymentId found in pendingPayment');
-                sessionStorage.removeItem('pendingPayment');
-                return;
-            }
+    try {
+        const { paymentId } = JSON.parse(pendingPayment);
+        const orderData = JSON.parse(pendingOrder);
+        const token = localStorage.getItem('token');
+        if (!token) {
+            console.warn('No token found, redirecting to login');
+            window.location.href = '/public/customer/login.html';
+            return;
+        }
 
-            const token = localStorage.getItem('token');
-            if (!token) {
-                console.warn('No token found, redirecting to login');
-                window.location.href = '/public/customer/login.html';
-                return;
-            }
+        // Verify payment status
+        const response = await fetch(`/api/payments/verify-payment/${paymentId}`, {
+            method: 'GET',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const result = await response.json();
 
-            // Verify payment status
-            const response = await fetch(`/api/payments/verify/${orderId}`, {
-                method: 'GET',
-                headers: { 'Authorization': `Bearer ${token}` }
+        if (result.success && result.status === 'paid') {
+            // Create order
+            const orderResponse = await fetch('http://localhost:3000/api/orders/create', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    ...orderData,
+                    paymentId,
+                    status: 'paid',
+                    payment_verified: true
+                })
             });
-            const result = await response.json();
 
-            if (result.success && result.status === 'paid') {
-                // Update order status to 'paid' if not already updated
-                await fetch(`/api/orders/update/${orderId}`, {
-                    method: 'PUT',
+            if (!orderResponse.ok) {
+                const errorData = await orderResponse.json();
+                throw new Error(`Failed to create order: ${errorData.message || 'Unknown error'}`);
+            }
+
+            const orderResult = await orderResponse.json();
+            sessionStorage.removeItem('pendingPayment');
+            sessionStorage.removeItem('pendingOrder');
+            window.location.href = `/public/customer/success.html?orderId=${orderResult.orderId}`;
+        } else {
+            // Payment not completed, clear pending data
+            sessionStorage.removeItem('pendingPayment');
+            sessionStorage.removeItem('pendingOrder');
+            window.location.href = '/public/customer/failed.html';
+        }
+    } catch (error) {
+        console.error('Error handling return from Paymongo:', error);
+        sessionStorage.removeItem('pendingPayment');
+        sessionStorage.removeItem('pendingOrder');
+        alert('Error verifying payment status. Please try again.');
+        window.location.href = '/public/customer/failed.html';
+    }
+}
+
+    async placeOrder() {
+    if (this.cartItems.length === 0) {
+        alert('Your cart is empty. Please add items before placing an order.');
+        return;
+    }
+
+    const profile = this.customerProfile;
+    if (!profile.name || !profile.email || !profile.phone) {
+        alert('Please complete your profile (Name, Email, Phone) before placing an order.');
+        window.location.href = '/public/customer/profile.html';
+        return;
+    }
+    if (this.checkoutData.deliveryMethod === 'delivery' && !profile.address) {
+        alert('Please provide a delivery address in your profile for home delivery.');
+        window.location.href = '/public/customer/profile.html';
+        return;
+    }
+
+    if (!this.checkoutData.paymentMethod || !this.checkoutData.deliveryMethod) {
+        alert('Please select a payment and delivery method.');
+        return;
+    }
+
+    // Prepare order items
+    const orderItems = this.cartItems.map(item => ({
+        menuId: item.menuId,
+        name: item.name,
+        quantity: item.quantity,
+        price: item.price,
+        size: item.size || null,
+        sizeId: item.sizeId || null
+    }));
+
+    const totalAmount = orderItems.reduce((sum, item) => {
+        return sum + (Number(item.price) || 0) * (Number(item.quantity) || 0);
+    }, 0);
+
+    if (orderItems.length === 0 || totalAmount === 0) {
+        console.error('Order validation failed:', { items: orderItems, total: totalAmount });
+        alert('Cannot place order: No valid items or total amount is zero. Please check your cart.');
+        return;
+    }
+
+    try {
+        const token = localStorage.getItem('token');
+        if (!token) throw new Error('No authentication token found');
+
+        // Disable checkout button
+        const checkoutBtn = document.querySelector('.btn.btn-success.btn-lg.checkout-btn');
+        if (checkoutBtn) {
+            checkoutBtn.disabled = true;
+            checkoutBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+        }
+
+        // Store order details temporarily in sessionStorage
+        const orderRequestBody = {
+            items: orderItems,
+            totalAmount: totalAmount,
+            paymentMethod: this.checkoutData.paymentMethod,
+            deliveryMethod: this.checkoutData.deliveryMethod,
+            customerInfo: {
+                fullName: profile.name,
+                email: profile.email,
+                phone: profile.phone,
+                deliveryAddress: this.checkoutData.deliveryMethod === 'delivery' ? profile.address : null
+            }
+        };
+        sessionStorage.setItem('pendingOrder', JSON.stringify(orderRequestBody));
+
+        // Handle payment method specific flows
+        if (this.checkoutData.paymentMethod === 'gcash') {
+            try {
+                // Create GCash payment source
+                const paymentResponse = await fetch('/api/payment/create-gcash-source', {
+                    method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ status: 'paid' })
+                    body: JSON.stringify({
+                        amount: totalAmount * 100, // Convert to centavos
+                        description: `Pending Order`,
+                        items: orderItems,
+                        redirect: {
+                            success: `${window.location.origin}/public/customer/success.html`,
+                            failed: `${window.location.origin}/public/customer/failed.html`
+                        }
+                    })
                 });
-                sessionStorage.removeItem('pendingPayment');
-                window.location.href = `/public/customer/success.html?orderId=${orderId}`;
-            } else if (result.success && result.status !== 'paid') {
-                // Cancel the order if not paid
-                await this.cancelOrder(orderId);
-                sessionStorage.removeItem('pendingPayment');
-            }
-        } catch (error) {
-            console.error('Error handling return from Paymongo:', error);
-            sessionStorage.removeItem('pendingPayment');
-            alert('Error verifying payment status. Please try again.');
-        }
-    }
 
-    async placeOrder() {
-        if (this.cartItems.length === 0) {
-            alert('Your cart is empty. Please add items before placing an order.');
-            return;
-        }
-
-        const profile = this.customerProfile;
-        if (!profile.name || !profile.email || !profile.phone) {
-            alert('Please complete your profile (Name, Email, Phone) before placing an order.');
-            window.location.href = '/public/customer/profile.html';
-            return;
-        }
-        if (this.checkoutData.deliveryMethod === 'delivery' && !profile.address) {
-            alert('Please provide a delivery address in your profile for home delivery.');
-            window.location.href = '/public/customer/profile.html';
-            return;
-        }
-
-        if (!this.checkoutData.paymentMethod || !this.checkoutData.deliveryMethod) {
-            alert('Please select a payment and delivery method.');
-            return;
-        }
-
-        // Prepare order items with sizeId if available
-        const orderItems = this.cartItems.map(item => {
-            const orderItem = {
-                menuId: item.menuId,
-                name: item.name,
-                quantity: item.quantity,
-                price: item.price,
-                size: item.size || null
-            };
-
-            // Add sizeId if size is selected
-            if (item.sizeId) {
-                orderItem.sizeId = item.sizeId;
-            }
-
-            return orderItem;
-        });
-
-        const totalAmount = orderItems.reduce((sum, item) => {
-            return sum + (Number(item.price) || 0) * (Number(item.quantity) || 0);
-        }, 0);
-
-        if (orderItems.length === 0 || totalAmount === 0) {
-            console.error('Order validation failed:', { items: orderItems, total: totalAmount });
-            alert('Cannot place order: No valid items or total amount is zero. Please check your cart.');
-            return;
-        }
-
-        try {
-            const token = localStorage.getItem('token');
-            if (!token) throw new Error('No authentication token found');
-
-            // Disable checkout button to prevent duplicate submissions
-            const checkoutBtn = document.querySelector('.btn.btn-success.btn-lg.checkout-btn');
-            if (checkoutBtn) {
-                checkoutBtn.disabled = true;
-                checkoutBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-            }
-
-            const orderRequestBody = {
-                items: orderItems,
-                totalAmount: totalAmount,
-                paymentMethod: this.checkoutData.paymentMethod,
-                deliveryMethod: this.checkoutData.deliveryMethod,
-                customerInfo: {
-                    fullName: profile.name,
-                    email: profile.email,
-                    phone: profile.phone,
-                    deliveryAddress: this.checkoutData.deliveryMethod === 'delivery' ? profile.address : null
+                const paymentData = await paymentResponse.json();
+                if (!paymentResponse.ok) {
+                    throw new Error(paymentData.error || 'Payment processing failed');
                 }
-            };
 
-            console.log('Order request body:', JSON.stringify(orderRequestBody, null, 2));
+                // Store payment verification data
+                sessionStorage.setItem('pendingPayment', JSON.stringify({
+                    paymentId: paymentData.paymentId,
+                    timestamp: Date.now()
+                }));
 
-            // Create the order first
+                // Open Paymongo link in new tab
+                window.open(paymentData.checkoutUrl, '_blank');
+
+            } catch (error) {
+                console.error('Payment error:', error);
+                alert(`Payment error: ${error.message}`);
+                sessionStorage.removeItem('pendingOrder');
+                throw error;
+            }
+        } else {
+            // For cash payments, create order immediately
             const orderResponse = await fetch('http://localhost:3000/api/orders/create', {
                 method: 'POST',
                 headers: {
@@ -588,68 +661,23 @@ class CheckoutManager {
             }
 
             const orderData = await orderResponse.json();
-            const orderId = orderData.orderId;
+            sessionStorage.removeItem('pendingOrder');
+            window.location.href = `/public/customer/success.html?orderId=${orderData.orderId}`;
+        }
 
-            // Handle payment method specific flows
-            if (this.checkoutData.paymentMethod === 'gcash') {
-                try {
-                    // Create GCash payment source
-                    const paymentResponse = await fetch('/api/payment/create-gcash-source', {
-                        method: 'POST',
-                        headers: {
-                            'Authorization': `Bearer ${token}`,
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            amount: totalAmount * 100, // Convert to centavos
-                            description: `Order #${orderId}`,
-                            orderId: orderId,
-                            items: orderItems,
-                            redirect: {
-                                success: `${window.location.origin}/public/customer/success.html?orderId=${orderId}`,
-                                failed: `${window.location.origin}/public/customer/failed.html?orderId=${orderId}`
-                            }
-                        })
-                    });
+    } catch (error) {
+        console.error('Error placing order:', error);
+        alert(`Error placing order: ${error.message}. Please try again.`);
+        sessionStorage.removeItem('pendingOrder');
 
-                    const paymentData = await paymentResponse.json();
-                    
-                    if (!paymentResponse.ok) {
-                        throw new Error(paymentData.error || 'Payment processing failed');
-                    }
-
-                    // Store payment verification data
-                    sessionStorage.setItem('pendingPayment', JSON.stringify({
-                        orderId: paymentData.orderId,
-                        paymentId: paymentData.paymentId,
-                        timestamp: Date.now()
-                    }));
-
-                    // Open Paymongo link in new tab
-                    window.open(paymentData.checkoutUrl, '_blank');
-
-                } catch (error) {
-                    console.error('Payment error:', error);
-                    alert(`Payment error: ${error.message}`);
-                    throw error; // Re-throw to be caught by outer catch
-                }
-            } else {
-                // For cash payments, redirect to success page
-                window.location.href = `/public/customer/success.html?orderId=${orderId}`;
-            }
-
-        } catch (error) {
-            console.error('Error placing order:', error);
-            alert(`Error placing order: ${error.message}. Please try again.`);
-            
-            // Re-enable button if error occurs
-            const checkoutBtn = document.querySelector('.btn.btn-success.btn-lg.checkout-btn');
-            if (checkoutBtn) {
-                checkoutBtn.disabled = false;
-                checkoutBtn.innerHTML = '<i class="fas fa-check"></i> Place Order';
-            }
+        // Re-enable button
+        const checkoutBtn = document.querySelector('.btn.btn-success.btn-lg.checkout-btn');
+        if (checkoutBtn) {
+            checkoutBtn.disabled = false;
+            checkoutBtn.innerHTML = '<i class="fas fa-check"></i> Place Order';
         }
     }
+}
 
     // Method to cancel an order
     async cancelOrder(orderId) {

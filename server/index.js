@@ -93,6 +93,7 @@ try {
   app.use('/api/payment', paymentRoutes);
   app.use('/api/orders', orderRoutes);
   console.log('Routes registered successfully');
+
 } catch (error) {
   console.error('Error loading routes:', error.message, error.stack);
 }
@@ -117,3 +118,4 @@ app.use((req, res) => {
 
 // Start server
 app.listen(port, () => console.log(`Server running on port ${port}`));
+
