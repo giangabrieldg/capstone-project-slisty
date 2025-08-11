@@ -78,24 +78,26 @@ sequelize.sync({ force: false })
 
 // Backend Routes
 try {
-  const authRoutes = require('./routes/authRoutes');
-  const menuRoutes = require('./routes/menu');
-  const cartRoutes = require('./routes/cart');
-  const inquiriesRoutes = require('./routes/inquiriesRoutes');
-  const paymentRoutes = require('./routes/paymentRoutes');
-  const orderRoutes = require('./routes/orderRoutes');
+    const authRoutes = require('./routes/authRoutes');
+    const menuRoutes = require('./routes/menu');
+    const cartRoutes = require('./routes/cart');
+    const inquiriesRoutes = require('./routes/inquiriesRoutes');
+    const paymentRoutes = require('./routes/paymentRoutes');
+    const orderRoutes = require('./routes/orderRoutes');
+    const { cleanupAbandonedOrders } = require('./server-side-scripts/cleanup.js');
 
-  console.log('Registering routes...');
-  app.use('/api/inquiries', inquiriesRoutes);
-  app.use('/api/auth', authRoutes);
-  app.use('/api/menu', menuRoutes);
-  app.use('/api/cart', cartRoutes);
-  app.use('/api/payment', paymentRoutes);
-  app.use('/api/orders', orderRoutes);
-  console.log('Routes registered successfully');
+    console.log('Registering routes...');
+    app.use('/api/inquiries', inquiriesRoutes);
+    app.use('/api/auth', authRoutes);
+    app.use('/api/menu', menuRoutes);
+    app.use('/api/cart', cartRoutes);
+    app.use('/api/payment', paymentRoutes);
+    app.use('/api/orders', orderRoutes);
+    console.log('Routes registered successfully');
 
+    cleanupAbandonedOrders();
 } catch (error) {
-  console.error('Error loading routes:', error.message, error.stack);
+    console.error('Error loading routes or cleanup:', error.message, error.stack);
 }
 
 // Test route to check server status

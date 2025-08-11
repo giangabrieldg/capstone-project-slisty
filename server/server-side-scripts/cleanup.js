@@ -1,4 +1,5 @@
 const { Order, OrderItem } = require('../models');
+const { Op } = require('sequelize');
 
 async function cleanupAbandonedOrders() {
     try {
@@ -22,8 +23,5 @@ async function cleanupAbandonedOrders() {
     }
 }
 
-// Run every 10 minutes
 setInterval(cleanupAbandonedOrders, 10 * 60 * 1000);
-
-// Export for manual triggering if needed
 module.exports = { cleanupAbandonedOrders };
