@@ -248,57 +248,61 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
         }
 
         const event = JSON.parse(payload);
-        console.log('Received Paymongo webhook:', event.type);
+        console.log('Received Paymongo webhook:', event);
 
-        switch (event.type) {
-            case 'payment.paid':
-                const payment = event.data.attributes;
-                const metadata = payment.metadata || {};
-                const items = metadata.items || [];
+        if (event.data.type === 'payment.paid') {
+            const payment = event.data.attributes;
+            const metadata = payment.metadata || {};
+            const items = metadata.items || [];
 
-                // Create order
-                const order = await Order.create({
-                    userID: metadata.userId,
-                    total_amount: payment.amount / 100,
-                    status: 'paid',
-                    payment_id: payment.id,
-                    payment_verified: true,
-                    payment_method: 'gcash',
-                    delivery_method: items[0]?.deliveryMethod || 'pickup', // Default to pickup if not specified
-                    customer_name: payment.checkout?.name || 'Customer',
-                    customer_email: payment.checkout?.email,
-                    customer_phone: payment.checkout?.phone || 'Not provided',
-                    delivery_address: items[0]?.customerInfo?.deliveryAddress || null,
-                    items: items
-                });
+            // Check if order already exists
+            const existingOrder = await Order.findOne({
+                where: { payment_id: payment.id }
+            });
 
-                // Create OrderItems
-                await Promise.all(items.map(item =>
-                    OrderItem.create({
-                        orderId: order.orderId,
-                        menuId: item.menuId,
-                        sizeId: item.sizeId,
-                        quantity: item.quantity,
-                        price: item.price,
-                        item_name: item.name,
-                        size_name: item.size
-                    })
-                ));
+            if (existingOrder) {
+                console.log('Order already exists for payment:', payment.id);
+                return res.status(200).end();
+            }
 
-                // Clear cart
-                const cart = await Cart.findOne({ where: { userID: metadata.userId } });
-                if (cart) {
-                    await CartItem.destroy({ where: { cartId: cart.cartId } });
-                }
-                break;
+            // Create order
+            const order = await Order.create({
+                userID: metadata.userId,
+                total_amount: payment.amount / 100,
+                status: 'paid',
+                payment_id: payment.id,
+                payment_verified: true,
+                payment_method: 'gcash',
+                delivery_method: items[0]?.deliveryMethod || 'pickup',
+                customer_name: payment.checkout?.name || 'Customer',
+                customer_email: payment.checkout?.email,
+                customer_phone: payment.checkout?.phone || 'Not provided',
+                delivery_address: items[0]?.customerInfo?.deliveryAddress || null,
+                items: items
+            });
 
-            case 'payment.failed':
-                // No order to update since it’s not created yet
-                console.log('Payment failed, no order created:', event.data.id);
-                break;
+            // Create OrderItems
+            await Promise.all(items.map(item =>
+                OrderItem.create({
+                    orderId: order.orderId,
+                    menuId: item.menuId,
+                    sizeId: item.sizeId,
+                    quantity: item.quantity,
+                    price: item.price,
+                    item_name: item.name,
+                    size_name: item.size
+                })
+            ));
 
-            default:
-                console.log('Unhandled webhook event:', event.type);
+            // Clear cart
+            const cart = await Cart.findOne({ where: { userID: metadata.userId } });
+            if (cart) {
+                await CartItem.destroy({ where: { cartId: cart.cartId } });
+            }
+        } else if (event.data.type === 'payment.failed') {
+            console.log('Payment failed:', event.data.id);
+        } else {
+            console.log('Unhandled webhook event:', event.data.type);
         }
 
         res.status(200).end();
