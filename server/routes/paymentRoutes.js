@@ -3,7 +3,8 @@ const axios = require('axios');
 const crypto = require('crypto');
 const router = express.Router();
 const { PAYMONGO_SECRET_KEY, PAYMONGO_WEBHOOK_SECRET } = process.env;
-const { Order, OrderItem } = require('../models');
+const { Order, OrderItem, Cart, CartItem } = require('../models');
+const sequelize = require('../config/database');
 const verifyToken = require('../middleware/verifyToken');
 
 // Helper function to verify webhook signatures
@@ -31,11 +32,17 @@ router.post('/create-gcash-source', verifyToken, async (req, res) => {
             });
         }
 
-        // Validate amount
-        if (amount < 100 || amount > 10000000) {
+        // Validate amount is positive and meets minimum for GCash
+        if (amount <= 0) {
             return res.status(400).json({
                 success: false,
-                error: `Amount must be between ₱${(100/100).toFixed(2)} and ₱${(10000000/100).toFixed(2)}`
+                error: 'Amount must be greater than zero'
+            });
+        }
+        if (amount < 2000) {
+            return res.status(400).json({
+                success: false,
+                error: 'GCash payments require a minimum amount of Php 20.00'
             });
         }
 
@@ -59,7 +66,7 @@ router.post('/create-gcash-source', verifyToken, async (req, res) => {
                         },
                         metadata: {
                             userId: req.user.userID,
-                            items,
+                            items: items,
                             system: 'Slice N Grind'
                         }
                     }
@@ -98,6 +105,7 @@ router.post('/create-gcash-source', verifyToken, async (req, res) => {
         console.error('Paymongo GCash Error:', {
             message: error.message,
             response: error.response?.data,
+            status: error.response?.status,
             stack: error.stack
         });
 
@@ -117,7 +125,7 @@ router.post('/create-gcash-source', verifyToken, async (req, res) => {
             success: false,
             error: errorMessage,
             details: process.env.NODE_ENV === 'development' ?
-                (error.response?.data?.errors || error.message) : undefined
+                (error.response?.data || error.message) : undefined
         });
     }
 });
@@ -190,11 +198,14 @@ router.get('/verify/:orderId', verifyToken, async (req, res) => {
 
     // Update order status if paid
     if (isPaid) {
-      await order.update({
+    // Find and update the order
+    const order = await Order.findOne({ where: { payment_id: paymentId } });
+    if (order && order.status === 'pending_payment') {
+        await order.update({
         status: 'paid',
-        payment_verified: true,
-        payment_id: paymentData.id
-      });
+        payment_verified: true
+        });
+    }
     }
 
     res.json({
@@ -231,10 +242,11 @@ router.get('/verify/:orderId', verifyToken, async (req, res) => {
 /**
  * Paymongo Webhook Handler
  * - Verifies signatures in production
- * - Updates order status based on events
+ * - Updates order status and payment_verified based on events
  * - Handles payment.paid and payment.failed events
  */
 router.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+    let transaction;
     try {
         const signature = req.headers['paymongo-signature'];
         const payload = req.body.toString();
@@ -248,75 +260,96 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
         }
 
         const event = JSON.parse(payload);
-        console.log('Received Paymongo webhook:', event);
+        console.log('Received Paymongo webhook:', event.data.type);
 
         if (event.data.type === 'payment.paid') {
+            transaction = await sequelize.transaction();
             const payment = event.data.attributes;
             const metadata = payment.metadata || {};
             const items = metadata.items || [];
+            const userId = metadata.userId;
 
-            // Check if order already exists
-            const existingOrder = await Order.findOne({
-                where: { payment_id: payment.id }
+            // 1. Process Order
+            let order = await Order.findOne({
+                where: { payment_id: payment.id },
+                transaction
             });
 
-            if (existingOrder) {
-                console.log('Order already exists for payment:', payment.id);
-                return res.status(200).end();
+            if (order) {
+                if (order.status === 'pending_payment') {
+                    await order.update({
+                        status: 'processing',
+                        payment_verified: true
+                    }, { transaction });
+                    console.log(`Updated order ${order.orderId} to processing`);
+                }
+            } else {
+                order = await Order.create({
+                    userID: userId,
+                    total_amount: payment.amount / 100,
+                    status: 'processing',
+                    payment_id: payment.id,
+                    payment_verified: true,
+                    payment_method: 'gcash',
+                    delivery_method: items[0]?.deliveryMethod || 'pickup',
+                    customer_name: payment.checkout?.name || 'Customer',
+                    customer_email: payment.checkout?.email,
+                    customer_phone: payment.checkout?.phone || 'Not provided',
+                    delivery_address: items[0]?.customerInfo?.deliveryAddress || null,
+                    items: items
+                }, { transaction });
+
+                if (items.length > 0) {
+                    await OrderItem.bulkCreate(
+                        items.map(item => ({
+                            orderId: order.orderId,
+                            menuId: item.menuId,
+                            sizeId: item.sizeId,
+                            quantity: item.quantity,
+                            price: item.price,
+                            item_name: item.name,
+                            size_name: item.size
+                        })),
+                        { transaction }
+                    );
+                }
             }
 
-            // Create order
-            const order = await Order.create({
-                userID: metadata.userId,
-                total_amount: payment.amount / 100,
-                status: 'paid',
-                payment_id: payment.id,
-                payment_verified: true,
-                payment_method: 'gcash',
-                delivery_method: items[0]?.deliveryMethod || 'pickup',
-                customer_name: payment.checkout?.name || 'Customer',
-                customer_email: payment.checkout?.email,
-                customer_phone: payment.checkout?.phone || 'Not provided',
-                delivery_address: items[0]?.customerInfo?.deliveryAddress || null,
-                items: items
-            });
+            // 2. Enhanced Cart Clearing
+            if (userId) {
+                console.log(`Attempting to clear cart for user ${userId}`);
+                const cart = await Cart.findOne({ 
+                    where: { userID: userId },
+                    include: [{ model: CartItem }],
+                    transaction
+                });
 
-            // Create OrderItems
-            await Promise.all(items.map(item =>
-                OrderItem.create({
-                    orderId: order.orderId,
-                    menuId: item.menuId,
-                    sizeId: item.sizeId,
-                    quantity: item.quantity,
-                    price: item.price,
-                    item_name: item.name,
-                    size_name: item.size
-                })
-            ));
-
-            // Clear cart
-            const cart = await Cart.findOne({ where: { userID: metadata.userId } });
-            if (cart) {
-                await CartItem.destroy({ where: { cartId: cart.cartId } });
+                if (cart && cart.CartItems && cart.CartItems.length > 0) {
+                    await CartItem.destroy({
+                        where: { cartId: cart.cartId },
+                        transaction
+                    });
+                    console.log(`Cleared ${cart.CartItems.length} cart items`);
+                }
             }
-        } else if (event.data.type === 'payment.failed') {
-            console.log('Payment failed:', event.data.id);
-        } else {
-            console.log('Unhandled webhook event:', event.data.type);
+
+            await transaction.commit();
+            return res.status(200).end();
         }
 
         res.status(200).end();
     } catch (error) {
         console.error('Webhook processing error:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Webhook processing failed',
-            details: error.message
-        });
+        if (transaction) await transaction.rollback();
+        return res.status(200).json({ success: false });
     }
 });
-// Verify Payment Endpoint
-// This endpoint allows users to verify the status of a payment by its ID
+
+/**
+ * Verify Payment Endpoint
+ * - Verifies payment status with Paymongo
+ * - Returns payment status without updating order
+ */
 router.get('/verify-payment/:paymentId', verifyToken, async (req, res) => {
     try {
         const { paymentId } = req.params;
