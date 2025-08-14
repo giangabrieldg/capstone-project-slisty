@@ -64,6 +64,7 @@ router.post('/create-gcash-source', verifyToken, async (req, res) => {
                             success: redirect.success,
                             failed: redirect.failed
                         },
+                        payment_method_allowed: ['gcash'], //only allow GCash
                         metadata: {
                             userId: req.user.userID,
                             items: items,
