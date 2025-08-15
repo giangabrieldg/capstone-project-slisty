@@ -4,32 +4,26 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Product - Slice N Grind</title>
-    <!-- Bootstrap CSS for styling and layout -->
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css"
       rel="stylesheet"
       integrity="sha384-4Q6Gf2aSP4eDXB8Miphtr37CMZZQ5oXLH2yaXMJ2w8e2ZtHTl7GptT4jmndRuHDT"
       crossorigin="anonymous"
     />
-    <!-- Poppins font for typography -->
     <link
       href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
-    <!-- Custom styles for navbar, products, and footer -->
     <link rel="stylesheet" href="/styles/navbar.css" />
     <link rel="stylesheet" href="/styles/products.css" />
     <link rel="stylesheet" href="/styles/footer.css" />
   </head>
   <body>
-    <!-- Include navbar from external file -->
     <div data-include-html="/includes/navbar.html"></div>
 
-    <!-- Product details section -->
     <section class="py-5 product-section">
       <div class="container">
         <div class="row g-4 align-items-center">
-          <!-- Product image -->
           <div class="col-md-6">
             <div class="product-image-container">
               <img
@@ -40,19 +34,16 @@
               />
             </div>
           </div>
-          <!-- Product details -->
           <div class="col-md-6">
             <h1 class="h3 fw-normal text-dark mb-2" id="productName"></h1>
             <p class="price fw-lighter mb-2" id="productPrice"></p>
             <p class="text-muted mb-4" id="productDescription"></p>
 
-            <!-- Size selection for items with multiple sizes -->
             <div class="mb-4" id="sizeContainer">
               <label class="form-label text-dark">Size</label>
               <div class="d-flex gap-2" id="sizeButtons"></div>
             </div>
 
-            <!-- Quantity selector -->
             <div class="mb-4 d-flex align-items-center gap-3">
               <label class="form-label text-dark">Quantity</label>
               <div class="d-flex align-items-center border rounded">
@@ -74,17 +65,14 @@
             </div>
 
             <div class="separator-line mb-4"></div>
-            <!-- Add to cart button -->
             <button class="add-to-cart-btn" id="addToCart">Add to Cart</button>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Include footer from external file -->
     <div data-include-html="/includes/footer.html"></div>
 
-    <!-- Scripts for functionality -->
     <script src="/scripts/include-html.js"></script>
     <script src="/scripts/update-navbar.js"></script>
     <script src="/scripts/add-to-cart.js"></script>
@@ -94,7 +82,9 @@
       crossorigin="anonymous"
     ></script>
     <script>
-      // Fetch product details by ID from URL and display them
+      // Store product data globally for add-to-cart.js
+      let currentProduct = null;
+
       async function fetchProduct() {
         const urlParams = new URLSearchParams(window.location.search);
         const productId = urlParams.get("id");
@@ -106,7 +96,7 @@
           const product = await response.json();
 
           if (response.ok) {
-            // Populate product name, description, and image
+            currentProduct = product; // Store product data
             document.getElementById("productName").textContent = product.name;
             document.getElementById("productDescription").textContent =
               product.description || "";
@@ -117,13 +107,10 @@
             const productPrice = document.getElementById("productPrice");
             sizeButtons.innerHTML = "";
 
-            // Handle items with sizes
             if (product.hasSizes && product.sizes?.length > 0) {
-              // Show first size's price by default
               productPrice.textContent = `₱${Number(
                 product.sizes[0].price
               ).toFixed(2)}`;
-              // Create buttons for each size
               product.sizes.forEach((size, index) => {
                 const button = document.createElement("button");
                 button.type = "button";
@@ -133,8 +120,8 @@
                 ).toFixed(2)}`;
                 button.dataset.price = size.price;
                 button.dataset.size = size.sizeName;
+                button.dataset.stock = size.stock; // Add stock data
                 button.addEventListener("click", () => {
-                  // Update active button and price on click
                   document
                     .querySelectorAll(".size-btn")
                     .forEach((btn) => btn.classList.remove("active"));
@@ -147,21 +134,18 @@
               });
               document.getElementById("sizeContainer").style.display = "block";
             } else {
-              // Show base price for non-sized items
               productPrice.textContent = `₱${Number(
                 product.basePrice || 0
               ).toFixed(2)}`;
               document.getElementById("sizeContainer").style.display = "none";
             }
           } else {
-            // Handle not found
             document.getElementById("productName").textContent =
               "Product Not Found";
             document.getElementById("productPrice").textContent = "";
             document.getElementById("sizeContainer").style.display = "none";
           }
         } catch (error) {
-          // Handle fetch errors
           console.error("Error fetching product:", error);
           document.getElementById("productName").textContent =
             "Error Loading Product";
@@ -170,7 +154,6 @@
         }
       }
 
-      // Set up quantity controls
       function setupQuantityControls() {
         const quantityInput = document.getElementById("quantityInput");
         document.getElementById("decreaseQty").addEventListener("click", () => {
@@ -182,12 +165,10 @@
           quantityInput.value = value + 1;
         });
         quantityInput.addEventListener("input", () => {
-          // Ensure quantity is at least 1
           if (quantityInput.value < 1) quantityInput.value = 1;
         });
       }
 
-      // Initialize page
       document.addEventListener("DOMContentLoaded", () => {
         fetchProduct();
         setupQuantityControls();

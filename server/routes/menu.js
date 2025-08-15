@@ -17,55 +17,53 @@ const storage = multer.diskStorage({
 const upload = multer({ storage }); // Initialize Multer with storage configuration
 
 // POST route to create a new menu item
+// POST /api/menu
 router.post('/', verifyToken, upload.single('image'), async (req, res) => {
   try {
-    // Extract form data from request body
     const { name, category, description, stock, hasSizes, basePrice, sizes } = req.body;
-    // Construct image path if file is uploaded
     const image = req.file ? `/uploads/${req.file.filename}` : null;
     
-    // Create new menu item in database
+    // Create menu item - stock only matters if no sizes
     const menuItem = await MenuItem.create({
       name,
       category,
       description,
       image,
-      stock: parseInt(stock), // Convert stock to integer
-      isActive: true, // Set item as active
-      hasSizes: hasSizes === 'true', // Convert string to boolean
-      basePrice: hasSizes === 'true' ? 0.00 : parseFloat(basePrice) // Set base price or default to 0 if sizes are used
+      stock: hasSizes === 'true' ? 0 : parseInt(stock || 0), // Use 0 if no stock provided for sized items
+      isActive: true,
+      hasSizes: hasSizes === 'true',
+      basePrice: hasSizes === 'true' ? 0.00 : parseFloat(basePrice || 0)
     });
 
-    // Handle sizes if item has multiple sizes
+    // Handle sizes if needed
     if (hasSizes === 'true') {
-      const parsedSizes = JSON.parse(sizes || '[]'); // Parse sizes JSON or default to empty array
+      const parsedSizes = JSON.parse(sizes || '[]');
       if (parsedSizes.length > 0) {
-        // Bulk create size entries for the menu item
         await ItemSize.bulkCreate(
           parsedSizes.map(size => ({
             menuId: menuItem.menuId,
             sizeName: size.sizeName,
-            price: parseFloat(size.price), // Convert price to float
-            isActive: true // Set size as active
+            price: parseFloat(size.price || 0),
+            stock: parseInt(size.stock || 0), // Default to 0 if no stock provided
+            isActive: true
           }))
         );
       }
     }
 
-    // Fetch created item with associated sizes
+    // Fetch and return the created item
     const result = await MenuItem.findByPk(menuItem.menuId, {
       include: [{
         model: ItemSize,
         as: 'sizes',
-        where: { isActive: true }, // Only include active sizes
-        required: false // Include even if no sizes exist
+        attributes: ['sizeId', 'sizeName', 'price', 'stock'], // Include stock in response
+        where: { isActive: true },
+        required: false
       }]
     });
 
-    // Return created item
     res.status(201).json(result);
   } catch (error) {
-    // Log and return error response
     console.error('Error creating menu item:', error);
     res.status(400).json({ error: 'Failed to create menu item' });
   }
@@ -91,24 +89,23 @@ router.put('/:id', verifyToken, upload.single('image'), async (req, res) => {
       category,
       description,
       image,
-      stock: parseInt(stock), // Convert stock to integer
+      stock: hasSizes === 'true' ? 0 : parseInt(stock), // Convert stock to integer
       hasSizes: hasSizes === 'true', // Convert string to boolean
       basePrice: hasSizes === 'true' ? 0.00 : parseFloat(basePrice), // Set base price or default to 0
     });
 
     // Handle sizes update
     if (hasSizes === 'true') {
-      // Remove existing sizes
       await ItemSize.destroy({ where: { menuId: id } });
-      const parsedSizes = JSON.parse(sizes || '[]'); // Parse sizes JSON
+      const parsedSizes = JSON.parse(sizes || '[]');
       if (parsedSizes.length > 0) {
-        // Create new size entries
         await ItemSize.bulkCreate(
           parsedSizes.map(size => ({
             menuId: id,
             sizeName: size.sizeName,
-            price: parseFloat(size.price), // Convert price to float
-            isActive: true // Set size as active
+            price: parseFloat(size.price),
+            stock: parseInt(size.stock || stock), // Use size-specific stock or fallback
+            isActive: true
           }))
         );
       }
@@ -140,7 +137,7 @@ router.get('/', async (req, res) => {
         as: 'sizes',
         where: { isActive: true }, // Only active sizes
         required: false, // Include items without sizes
-        attributes: ['sizeId', 'sizeName', 'price'] // Select specific size fields
+        attributes: ['sizeId', 'sizeName', 'price', 'stock'] // Select specific size fields
       }],
       raw: false // Return Sequelize instances
     });
