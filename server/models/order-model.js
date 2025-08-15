@@ -46,6 +46,10 @@ module.exports = (sequelize, DataTypes) => {
         isIn: [['pickup', 'delivery']]
       }
     },
+    pickup_date: {
+        type: DataTypes.DATEONLY, // Store date only (YYYY-MM-DD)
+        allowNull: true
+    },
     payment_method: {
       type: DataTypes.STRING,
       allowNull: false,

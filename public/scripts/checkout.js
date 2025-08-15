@@ -8,10 +8,11 @@ class CheckoutManager {
         this.cartItems = []; // Array to store cart items
         this.customerProfile = {}; // Object to store customer profile data
         this.checkoutData = {
-            paymentMethod: 'cash', // Default payment method
+            paymentMethod: 'gcash', // Default payment method
             deliveryMethod: 'pickup', // Default delivery method
             customerInfo: {}, // Customer info for order
-            orderDetails: {} // Order details for submission
+            orderDetails: {}, // Order details for submission
+            pickupDate: null // Store selected pickup/delivery date
         };
         this.init(); // Initialize the checkout process
     }
@@ -241,17 +242,19 @@ class CheckoutManager {
      * Sets up event listeners for payment and delivery method changes.
      */
     setupEventListeners() {
-        console.log('Setting up event listeners...');
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', () => {
-                this.bindEvents();
-                this.renderCustomerInfo();
-            });
-        } else {
+    console.log('Setting up event listeners...');
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
             this.bindEvents();
             this.renderCustomerInfo();
-        }
+            this.initializeDatePicker(); // Call here
+        });
+    } else {
+        this.bindEvents();
+        this.renderCustomerInfo();
+        this.initializeDatePicker(); // Call here
     }
+}
 
     /**
      * Binds events to payment and delivery method radio buttons.
@@ -276,85 +279,110 @@ class CheckoutManager {
      * Renders the checkout form with payment and delivery options.
      */
     renderCheckoutForm() {
-        const checkoutForm = document.getElementById('checkoutForm');
-        if (!checkoutForm) return;
+    const checkoutForm = document.getElementById('checkoutForm');
+    if (!checkoutForm) return;
 
-        checkoutForm.innerHTML = `
-            <div class="card mb-4">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0"><i class="fas fa-credit-card"></i> Payment Method</h5>
+    checkoutForm.innerHTML = `
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-credit-card"></i> Payment Method</h5>
+            </div>
+            <div class="card-body">
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="paymentMethod" 
+                           id="cash" value="cash">
+                    <label class="form-check-label" for="cash">
+                        <i class="fas fa-money-bill-wave"></i> Cash on Delivery/Pickup
+                    </label>
                 </div>
-                <div class="card-body">
-                    <div class="form-check mb-3">
-                        <input class="form-check-input" type="radio" name="paymentMethod" 
-                               id="cash" value="cash" checked>
-                        <label class="form-check-label" for="cash">
-                            <i class="fas fa-money-bill-wave"></i> Cash on Delivery/Pickup
-                        </label>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" name="paymentMethod" 
-                               id="gcash" value="gcash">
-                        <label class="form-check-label" for="gcash">
-                            <i class="fas fa-mobile-alt"></i> GCash (PayMongo)
-                        </label>
-                    </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="paymentMethod" 
+                           id="gcash" value="gcash" checked>
+                    <label class="form-check-label" for="gcash">
+                        <i class="fas fa-mobile-alt"></i> GCash (PayMongo)
+                    </label>
                 </div>
             </div>
-            <div class="card mb-4">
-                <div class="card-header bg-info text-white">
-                    <h5 class="mb-0"><i class="fas fa-shipping-fast"></i> Delivery Method</h5>
+        </div>
+        <div class="card mb-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="fas fa-shipping-fast"></i> Delivery Method</h5>
+            </div>
+            <div class="card-body">
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="radio" name="deliveryMethod" 
+                           id="pickup" value="pickup" checked>
+                    <label class="form-check-label" for="pickup">
+                        <i class="fas fa-store"></i> Store Pickup
+                    </label>
                 </div>
-                <div class="card-body">
-                    <div class="form-check mb-3">
-                        <input class="form-check-input" type="radio" name="deliveryMethod" 
-                               id="pickup" value="pickup" checked>
-                        <label class="form-check-label" for="pickup">
-                            <i class="fas fa-store"></i> Store Pickup
-                        </label>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" name="deliveryMethod" 
-                               id="delivery" value="delivery">
-                        <label class="form-check-label" for="delivery">
-                            <i class="fas fa-truck"></i> Home Delivery
-                        </label>
-                    </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="deliveryMethod" 
+                           id="delivery" value="delivery">
+                    <label class="form-check-label" for="delivery">
+                        <i class="fas fa-truck"></i> Home Delivery
+                    </label>
+                </div>
+                <div class="mt-3" id="datePickerContainer">
+                    <label for="pickupDate" class="form-label">Select Pickup/Delivery Date:</label>
+                    <input type="text" class="form-control" id="pickupDate" placeholder="Select a date" readonly>
                 </div>
             </div>
-            <div class="card mb-4">
-                <div class="card-header bg-warning text-dark">
-                    <h5 class="mb-0"><i class="fas fa-user"></i> Customer Information</h5>
-                </div>
-                <div class="card-body" id="customerInfoContainer">
-                    <p>Loading profile information...</p>
+        </div>
+        <div class="card mb-4">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0"><i class="fas fa-user"></i> Customer Information</h5>
+            </div>
+            <div class="card-body" id="customerInfoContainer">
+                <p>Loading profile information...</p>
+            </div>
+        </div>
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="fas fa-list"></i> Order Summary</h5>
+            </div>
+            <div class="card-body">
+                <div id="cartSummary"></div>
+                <hr>
+                <div class="d-flex justify-content-between">
+                    <h5>Total:</h5>
+                    <h5 id="orderTotal">₱0.00</h5>
                 </div>
             </div>
-            <div class="card mb-4">
-                <div class="card-header bg-success text-white">
-                    <h5 class="mb-0"><i class="fas fa-list"></i> Order Summary</h5>
-                </div>
-                <div class="card-body">
-                    <div id="cartSummary"></div>
-                    <hr>
-                    <div class="d-flex justify-content-between">
-                        <h5>Total:</h5>
-                        <h5 id="orderTotal">₱0.00</h5>
-                    </div>
-                </div>
-            </div>
-            <div id="paymentStatusMessage" class="alert alert-info d-none mb-3">
-                <i class="fas fa-info-circle"></i> <span id="paymentStatusText">Processing payment...</span>
-            </div>
-            <div class="text-center">
-                <button type="button" class="btn btn-success btn-lg checkout-btn" onclick="checkoutManager.placeOrder()">
-                     <i class="fas fa-check"></i> Place Order
-                </button>
-            </div>
-        `;
-        this.handlePaymentMethodChange('cash');
-        this.handleDeliveryMethodChange('pickup');
+        </div>
+        <div id="paymentStatusMessage" class="alert alert-info d-none mb-3">
+            <i class="fas fa-info-circle"></i> <span id="paymentStatusText">Processing payment...</span>
+        </div>
+        <div class="text-center">
+            <button type="button" class="btn btn-success btn-lg checkout-btn" onclick="checkoutManager.placeOrder()">
+                 <i class="fas fa-check"></i> Place Order
+            </button>
+        </div>
+    `;
+    this.handlePaymentMethodChange('gcash');
+    this.handleDeliveryMethodChange('pickup');
+}
+    /**
+     * Initializes the Flatpickr datepicker for pickup/delivery date selection.
+     */
+    initializeDatePicker() {
+    const dateInput = document.getElementById('pickupDate');
+    if (dateInput) {
+        if (typeof flatpickr === 'undefined') {
+            console.error('Flatpickr is not loaded');
+            return;
+        }
+        flatpickr(dateInput, {
+            minDate: "today",
+            maxDate: new Date().fp_incr(7),
+            dateFormat: "Y-m-d",
+            onChange: (selectedDates, dateStr) => {
+                this.checkoutData.pickupDate = dateStr;
+                console.log('Selected date:', dateStr);
+            }
+        });
     }
+}
 
     /**
      * Renders the cart summary and total in the checkout form.
@@ -407,12 +435,20 @@ class CheckoutManager {
     handleDeliveryMethodChange(method) {
         this.checkoutData.deliveryMethod = method;
         console.log('Delivery method selected:', method);
+        const dateInput = document.getElementById('pickupDate');
+        if (dateInput) {
+            dateInput.disabled = !method; // Enable datepicker only if a method is selected
+            if (!method) this.checkoutData.pickupDate = null; // Clear date if no method
+        }
     }
 
     /**
      * Handles order placement and payment processing.
      */
     /**
+ * Handles order placement and payment processing.
+ */
+/**
  * Handles order placement and payment processing.
  */
 async placeOrder() {
@@ -434,6 +470,11 @@ async placeOrder() {
     if (this.checkoutData.deliveryMethod === 'delivery' && !profile.address) {
         alert('Please provide a delivery address in your profile for home delivery.');
         window.location.href = '/public/customer/profile.html';
+        return;
+    }
+
+    if (!this.checkoutData.pickupDate) {
+        alert('Please select a pickup or delivery date.');
         return;
     }
 
@@ -481,6 +522,7 @@ async placeOrder() {
             totalAmount: totalAmount,
             paymentMethod: this.checkoutData.paymentMethod,
             deliveryMethod: this.checkoutData.deliveryMethod,
+            pickupDate: this.checkoutData.pickupDate,
             customerInfo: {
                 fullName: profile.name,
                 email: profile.email,
@@ -491,9 +533,21 @@ async placeOrder() {
 
         sessionStorage.setItem('pendingOrder', JSON.stringify(orderRequestBody));
 
-        if (this.checkoutData.paymentMethod === 'gcash' && totalAmount * 100 >= 2000) {
-            console.log('Initiating GCash payment flow...');
+        if (this.checkoutData.paymentMethod === 'gcash') {
+            if (totalAmount * 100 < 2000) {
+                alert('GCash payments require a minimum amount of ₱20.00.');
+                if (checkoutBtn) {
+                    checkoutBtn.disabled = false;
+                    checkoutBtn.innerHTML = '<i class="fas fa-check"></i> Place Order';
+                }
+                if (statusMessage) {
+                    statusMessage.classList.add('d-none');
+                    statusMessage.classList.remove('show');
+                }
+                return;
+            }
 
+            console.log('Initiating GCash payment flow...');
             const successUrl = `${window.location.origin}/public/customer/success.html`;
             const failedUrl = `${window.location.origin}/public/customer/failed.html`;
 
@@ -559,32 +613,28 @@ async placeOrder() {
                 }
                 throw error;
             }
-        } else {
-            if (this.checkoutData.paymentMethod === 'gcash') {
-                console.log('Processing as cash payment due to amount below Php 20.00...');
-                alert('Orders below Php 20.00 will be processed as cash payments.');
-                orderRequestBody.paymentMethod = 'cash'; // Override to cash for low amounts
-            } else {
-                console.log('Processing as cash payment...');
-            }
-            const orderResponse = await fetch('http://localhost:3000/api/orders/create', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(orderRequestBody)
-            });
-
-            if (!orderResponse.ok) {
-                const errorData = await orderResponse.json();
-                throw new Error(errorData.message || 'Failed to create order');
-            }
-
-            const orderData = await orderResponse.json();
-            sessionStorage.removeItem('pendingOrder');
-            window.location.href = `/public/customer/success.html?orderId=${orderData.orderId}`;
+        } else if (this.checkoutData.paymentMethod === 'cash') {
+    const statusMessage = document.getElementById('paymentStatusMessage');
+        if (statusMessage) {
+            statusMessage.classList.remove('d-none');
+            statusMessage.classList.add('show');
+            document.getElementById('paymentStatusText').textContent = 
+                'Processing your cash order...';
         }
+        
+        const response = await fetch('/api/orders/create', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(orderRequestBody)
+        });
+        
+        if (!response.ok) throw new Error('Order creation failed');
+        const result = await response.json();
+        window.location.href = `/public/customer/success.html?orderId=${result.orderId}`;
+    }
 
     } catch (error) {
         console.error('Order placement failed:', error);
