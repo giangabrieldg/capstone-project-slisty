@@ -9,28 +9,31 @@ const verifyToken = require('../middleware/verifyToken');
  * - Creates order and order items
  * - Clears cart after successful creation
  */
+// In routes/orderRoutes.js - Modify the /create endpoint
 router.post('/create', verifyToken, async (req, res) => {
     const transaction = await sequelize.transaction();
     try {
-        const { items, totalAmount, paymentMethod, deliveryMethod, customerInfo } = req.body;
+        const { items, totalAmount, paymentMethod, deliveryMethod, pickupDate, customerInfo } = req.body;
 
         // Validation
-        if (!items || !totalAmount || !paymentMethod || !deliveryMethod || !customerInfo) {
+        if (!items || !totalAmount || !paymentMethod || !deliveryMethod || !customerInfo || !pickupDate) {
             await transaction.rollback();
             return res.status(400).json({
                 success: false,
                 message: 'Missing required fields'
             });
         }
-
-        // Create order
+        // Create order with appropriate initial status
         const order = await Order.create({
             userID: req.user.userID,
             total_amount: totalAmount,
+            // Set status based on payment method
             status: paymentMethod === 'gcash' ? 'pending_payment' : 'pending',
             payment_method: paymentMethod,
+            // Cash payments are automatically verified
             payment_verified: paymentMethod === 'cash',
             delivery_method: deliveryMethod,
+            pickup_date: pickupDate,
             customer_name: customerInfo.fullName,
             customer_email: customerInfo.email,
             customer_phone: customerInfo.phone,
@@ -38,6 +41,7 @@ router.post('/create', verifyToken, async (req, res) => {
             items: items
         }, { transaction });
 
+        // Rest of your code remains the same...
         // Create order items
         await Promise.all(items.map(item => 
             OrderItem.create({
@@ -74,8 +78,11 @@ router.post('/create', verifyToken, async (req, res) => {
         });
     }
 });
-
-// New GCash verification endpoint
+/**
+ * Verify GCash payment and update order
+ * - Creates or updates order based on payment verification
+ * - Clears cart after successful payment
+ */
 router.post('/verify-gcash-payment', verifyToken, async (req, res) => {
     let transaction;
     try {
@@ -99,6 +106,7 @@ router.post('/verify-gcash-payment', verifyToken, async (req, res) => {
                 payment_verified: true,
                 payment_id: paymentId,
                 delivery_method: orderData.deliveryMethod,
+                pickup_date: orderData.pickupDate, // Store the selected date
                 customer_name: orderData.customerInfo.fullName,
                 customer_email: orderData.customerInfo.email,
                 customer_phone: orderData.customerInfo.phone,
@@ -130,7 +138,8 @@ router.post('/verify-gcash-payment', verifyToken, async (req, res) => {
         else if (order.status === 'pending_payment') {
             await order.update({
                 status: 'processing',
-                payment_verified: true
+                payment_verified: true,
+                pickup_date: orderData.pickupDate // Update with selected date if provided
             }, { transaction });
 
             // Clear cart after updating order
