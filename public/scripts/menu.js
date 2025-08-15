@@ -33,12 +33,18 @@ async function fetchMenuItems() {
     menuItems.forEach(item => {
       const col = document.createElement('div');
       col.className = 'col-12 col-sm-6 col-lg-4';
-      // Display sizes if hasSizes is true, otherwise show basePrice
       let priceDisplay = item.hasSizes && item.sizes?.length > 0
         ? item.sizes.map(size => `${size.sizeName} - ₱${Number(size.price).toFixed(2)}`).join(', ')
         : `₱${Number(item.basePrice || 0).toFixed(2)}`;
-      const stockDisplay = item.stock != null && item.stock > 0 ? item.stock : 'Out of Stock';
-      const viewDetailsClass = item.stock != null && item.stock > 0 ? 'btn btn-primary' : 'btn btn-primary disabled';
+
+      // Display size-specific stock or single stock
+      const stockDisplay = item.hasSizes && item.sizes?.length > 0
+        ? item.sizes.map(size => `${size.sizeName}: ${size.stock}`).join(', ')
+        : item.stock != null && item.stock > 0 ? item.stock : 'Out of Stock';
+        
+      // Enable "View Details" only if at least one size has stock or single stock > 0
+      const hasStock = item.hasSizes ? item.sizes.some(size => size.stock > 0) : item.stock > 0;
+      const viewDetailsClass = hasStock ? 'btn btn-primary' : 'btn btn-primary disabled';
       const rowHtml = `
         <div class="card mb-4 shadow-sm">
           <img src="${item.image || 'https://via.placeholder.com/300'}" class="card-img-top" alt="${item.name || 'Unknown'}">
@@ -89,8 +95,11 @@ function setupSearch() {
         let priceDisplay = item.hasSizes && item.sizes?.length > 0
           ? item.sizes.map(size => `${size.sizeName} - ₱${Number(size.price).toFixed(2)}`).join(', ')
           : `₱${Number(item.basePrice || 0).toFixed(2)}`;
-        const stockDisplay = item.stock != null && item.stock > 0 ? item.stock : 'Out of Stock';
-        const viewDetailsClass = item.stock != null && item.stock > 0 ? 'btn btn-primary' : 'btn btn-primary disabled';
+        const stockDisplay = item.hasSizes && item.sizes?.length > 0
+          ? item.sizes.map(size => `${size.sizeName}: ${size.stock}`).join(', ')
+          : item.stock != null && item.stock > 0 ? item.stock : 'Out of Stock';
+        const hasStock = item.hasSizes ? item.sizes.some(size => size.stock > 0) : item.stock > 0;
+        const viewDetailsClass = hasStock ? 'btn btn-primary' : 'btn btn-primary disabled';
         const rowHtml = `
           <div class="card mb-4 shadow-sm">
             <img src="${item.image || 'https://via.placeholder.com/300'}" class="card-img-top" alt="${item.name || 'Unknown'}">
@@ -129,7 +138,6 @@ function setupSort() {
       switch (sortBy) {
         case 'price-asc':
           menuItems.sort((a, b) => {
-            // Sort by minimum price for sized items, or basePrice
             const aPrice = a.hasSizes && a.sizes?.length > 0 ? Math.min(...a.sizes.map(s => Number(s.price))) : Number(a.basePrice || 0);
             const bPrice = b.hasSizes && b.sizes?.length > 0 ? Math.min(...b.sizes.map(s => Number(s.price))) : Number(b.basePrice || 0);
             return aPrice - bPrice;
@@ -137,7 +145,6 @@ function setupSort() {
           break;
         case 'price-desc':
           menuItems.sort((a, b) => {
-            // Sort by maximum price for sized items, or basePrice
             const aPrice = a.hasSizes && a.sizes?.length > 0 ? Math.max(...a.sizes.map(s => Number(s.price))) : Number(a.basePrice || 0);
             const bPrice = b.hasSizes && b.sizes?.length > 0 ? Math.max(...b.sizes.map(s => Number(s.price))) : Number(b.basePrice || 0);
             return bPrice - aPrice;
@@ -162,8 +169,11 @@ function setupSort() {
         let priceDisplay = item.hasSizes && item.sizes?.length > 0
           ? item.sizes.map(size => `${size.sizeName} - ₱${Number(size.price).toFixed(2)}`).join(', ')
           : `₱${Number(item.basePrice || 0).toFixed(2)}`;
-        const stockDisplay = item.stock != null && item.stock > 0 ? item.stock : 'Out of Stock';
-        const viewDetailsClass = item.stock != null && item.stock > 0 ? 'btn btn-primary' : 'btn btn-primary disabled';
+        const stockDisplay = item.hasSizes && item.sizes?.length > 0
+          ? item.sizes.map(size => `${size.sizeName}: ${size.stock}`).join(', ')
+          : item.stock != null && item.stock > 0 ? item.stock : 'Out of Stock';
+        const hasStock = item.hasSizes ? item.sizes.some(size => size.stock > 0) : item.stock > 0;
+        const viewDetailsClass = hasStock ? 'btn btn-primary' : 'btn btn-primary disabled';
         const rowHtml = `
           <div class="card mb-4 shadow-sm">
             <img src="${item.image || 'https://via.placeholder.com/300'}" class="card-img-top" alt="${item.name || 'Unknown'}">
@@ -219,8 +229,11 @@ function setupCategoryFilters() {
           let priceDisplay = item.hasSizes && item.sizes?.length > 0
             ? item.sizes.map(size => `${size.sizeName} - ₱${Number(size.price).toFixed(2)}`).join(', ')
             : `₱${Number(item.basePrice || 0).toFixed(2)}`;
-          const stockDisplay = item.stock != null && item.stock > 0 ? item.stock : 'Out of Stock';
-          const viewDetailsClass = item.stock != null && item.stock > 0 ? 'btn btn-primary' : 'btn btn-primary disabled';
+          const stockDisplay = item.hasSizes && item.sizes?.length > 0
+            ? item.sizes.map(size => `${size.sizeName}: ${size.stock}`).join(', ')
+            : item.stock != null && item.stock > 0 ? item.stock : 'Out of Stock';
+          const hasStock = item.hasSizes ? item.sizes.some(size => size.stock > 0) : item.stock > 0;
+          const viewDetailsClass = hasStock ? 'btn btn-primary' : 'btn btn-primary disabled';
           const rowHtml = `
             <div class="card mb-4 shadow-sm">
               <img src="${item.image || 'https://via.placeholder.com/300'}" class="card-img-top" alt="${item.name || 'Unknown'}">

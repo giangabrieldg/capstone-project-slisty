@@ -168,27 +168,39 @@
                   </div>
                   <div class="mb-3" id="sizesContainer" style="display: none">
                     <label for="sizePricePairs" class="form-label"
-                      >Sizes and Prices</label
+                      >Sizes, Prices and Stock</label
                     >
                     <div id="sizePricePairs">
                       <div class="mb-2 size-price-pair">
                         <div class="row g-2 align-items-center">
-                          <div class="col-5">
+                          <div class="col-4">
                             <input
                               type="text"
                               class="form-control"
                               name="size_0"
-                              placeholder="Enter size (e.g., Small)"
+                              placeholder="Size (e.g., Small)"
+                              required
                             />
                           </div>
-                          <div class="col-5">
+                          <div class="col-3">
                             <input
                               type="number"
                               class="form-control"
                               name="price_0"
                               step="0.01"
                               min="0"
-                              placeholder="Enter price (₱)"
+                              placeholder="Price (₱)"
+                              required
+                            />
+                          </div>
+                          <div class="col-3">
+                            <input
+                              type="number"
+                              class="form-control"
+                              name="stock_0"
+                              min="0"
+                              placeholder="Stock"
+                              required
                             />
                           </div>
                           <div class="col-2">
@@ -223,7 +235,8 @@
                       required
                     />
                   </div>
-                  <div class="mb-3">
+                  <div class="mb-3" id="singleStockContainer">
+                    <!-- Add container for single stock -->
                     <label for="stock" class="form-label">Stock</label>
                     <input
                       type="number"

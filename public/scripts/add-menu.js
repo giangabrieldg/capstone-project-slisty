@@ -37,19 +37,22 @@ async function fetchMenuItems() {
 
 // Renders menu items into the table
 function renderMenuItems(menuItems) {
-  // Get table body element
   const tableBody = document.querySelector('#menuTable tbody');
-  tableBody.innerHTML = ''; // Clear existing content
-  
-  // Iterate over menu items to create table rows
+  tableBody.innerHTML = '';
+
   menuItems.forEach(item => {
     const row = document.createElement('tr');
-    // Format price display based on item properties
     const priceDisplay = formatPriceDisplay(item);
-    // Format menu ID with leading zeros
     const formattedMenuId = `M${item.menuId.toString().padStart(4, '0')}`;
-    
-    // Set row HTML with item details
+    // Format stock display similar to price
+    const stockDisplay = item.hasSizes && item.sizes?.length > 0
+      ? item.sizes.map(size => `${size.sizeName} - ${size.stock}`).join('<br>')
+      : item.stock != null ? item.stock : '0';
+    // Apply text-danger only if stock is 0 (or all size stocks are 0)
+    const isOutOfStock = item.hasSizes
+      ? item.sizes.every(size => size.stock === 0)
+      : item.stock === 0;
+
     row.innerHTML = `
       <td>${formattedMenuId}</td>
       <td>${item.name}</td>
@@ -61,8 +64,8 @@ function renderMenuItems(menuItems) {
         ${item.image ? `<small class="d-block">${item.image.split('/').pop()}</small>` : ''}
       </td>
       <td>${priceDisplay}</td>
-      <td class="${item.stock <= 0 ? 'text-danger fw-bold' : ''}">
-        ${item.stock}
+      <td class="${isOutOfStock ? 'text-danger fw-bold' : ''}">
+        ${stockDisplay}
       </td>
       <td class="text-truncate" style="max-width: 200px;" title="${item.description || ''}">
         ${item.description || ''}
@@ -81,7 +84,6 @@ function renderMenuItems(menuItems) {
     tableBody.appendChild(row);
   });
   
-  // Add event listeners to table buttons
   addTableEventListeners();
 }
 
@@ -284,25 +286,24 @@ async function openEditModal(menuId) {
 
 // Populates the edit form with item data
 function populateEditForm(item) {
-  // Set modal title and form fields
   document.getElementById('itemModalLabel').textContent = 'Edit Menu Item';
   document.getElementById('editItemId').value = item.menuId;
   document.getElementById('itemName').value = item.name;
   document.getElementById('category').value = item.category;
-  document.getElementById('stock').value = item.stock;
   document.getElementById('description').value = item.description || '';
   document.getElementById('hasSizes').checked = item.hasSizes;
-  
-  // Show/hide size inputs based on hasSizes
+
+  // Show/hide inputs and populate sizes if applicable
   showSizeInputs(item.hasSizes);
-  if (item.hasSizes && item.sizes?.length > 0) {
-    // Populate size inputs if available
-    populateSizeInputs(item.sizes);
+  if (item.hasSizes) {
+    populateSizeInputs(item.sizes || []);
+    document.getElementById('price').value = ''; // Clear single price
+    document.getElementById('stock').value = ''; // Clear single stock
   } else {
-    // Set base price if no sizes
     document.getElementById('price').value = item.basePrice || '';
+    document.getElementById('stock').value = item.stock || ''; // Set single stock
   }
-  
+
   // Display image preview if available
   const imagePreview = document.getElementById('imagePreview');
   if (item.image) {
@@ -315,21 +316,17 @@ function populateEditForm(item) {
 
 // Toggles visibility of size inputs
 function showSizeInputs(show) {
-  // Get relevant DOM elements
   const sizesContainer = document.getElementById('sizesContainer');
   const singlePriceContainer = document.getElementById('singlePriceContainer');
+  const singleStockContainer = document.getElementById('singleStockContainer'); // Add this
   const priceInput = document.getElementById('price');
-  const sizeInputs = document.querySelectorAll('#sizePricePairs input[name^="size_"]');
-  const priceSizeInputs = document.querySelectorAll('#sizePricePairs input[name^="price_"]');
-  
-  // Toggle visibility and required attributes
-  if (sizesContainer && singlePriceContainer && priceInput) {
-    sizesContainer.style.display = show ? 'block' : 'none';
-    singlePriceContainer.style.display = show ? 'none' : 'block';
-    priceInput.toggleAttribute('required', !show);
-    sizeInputs.forEach(input => input.toggleAttribute('required', show));
-    priceSizeInputs.forEach(input => input.toggleAttribute('required', show));
-  }
+  const stockInput = document.getElementById('stock'); // Add this
+
+  sizesContainer.style.display = show ? 'block' : 'none';
+  singlePriceContainer.style.display = show ? 'none' : 'block';
+  singleStockContainer.style.display = show ? 'none' : 'block'; // Toggle stock container
+  priceInput.toggleAttribute('required', !show);
+  stockInput.toggleAttribute('required', !show); // Toggle stock input required
 }
 
 // Populates size inputs for editing
@@ -344,15 +341,20 @@ function populateSizeInputs(sizes) {
     div.className = 'mb-2 size-price-pair';
     div.innerHTML = `
       <div class="row g-2 align-items-center">
-        <div class="col-5">
+        <div class="col-4">
           <input type="text" class="form-control" 
                  name="size_${index}" value="${size.sizeName}" 
-                 placeholder="Enter size (e.g., Small)" required />
+                 placeholder="Size (e.g., Small)" required />
         </div>
-        <div class="col-5">
+        <div class="col-3">
           <input type="number" class="form-control" 
                  name="price_${index}" value="${size.price}" 
-                 step="0.01" min="0" placeholder="Enter price (₱)" required />
+                 step="0.01" min="0" placeholder="Price (₱)" required />
+        </div>
+        <div class="col-3">
+          <input type="number" class="form-control" 
+                 name="stock_${index}" value="${size.stock}" 
+                 min="0" placeholder="Stock" required />
         </div>
         <div class="col-2">
           <button type="button" class="btn btn-sm btn-danger remove-size w-100">
@@ -402,14 +404,17 @@ function clearSizePricePairs(initialSize = false) {
     div.className = 'mb-2 size-price-pair';
     div.innerHTML = `
       <div class="row g-2 align-items-center">
-        <div class="col-5">
-          <input type="text" class="form-control" name="size_0" placeholder="Enter size (e.g., Small)" required />
+        <div class="col-4">
+          <input type="text" class="form-control" name="size_0" placeholder="Size (e.g., Small)" required />
         </div>
-        <div class="col-5">
-          <input type="number" class="form-control" name="price_0" step="0.01" min="0" placeholder="Enter price (₱)" required />
+        <div class="col-3">
+          <input type="number" class="form-control" name="price_0" step="0.01" min="0" placeholder="Price (₱)" required />
+        </div>
+        <div class="col-3">
+          <input type="number" class="form-control" name="stock_0" min="0" placeholder="Stock" required />
         </div>
         <div class="col-2">
-          <button type="button" class="btn btn-sm btn-danger remove-size w-100" disabled>
+          <button type="button" class="btn btn-sm btn-danger remove-size w-100">
             <i class="bi bi-trash"></i>
           </button>
         </div>
@@ -492,62 +497,68 @@ function handleFormSubmit(e) {
   e.preventDefault();
   const form = e.target;
   const formData = new FormData(form);
-  const stock = formData.get('stock');
   const hasSizes = formData.get('hasSizes') === 'on';
 
-  // Validate stock input
-  if (!stock || isNaN(stock) || stock < 0) {
-    showError('Validation Error', new Error('Please enter a valid stock quantity (non-negative number)'));
-    return;
-  }
-
+   // Always include hasSizes in form data
   formData.set('hasSizes', hasSizes.toString());
 
   // Handle sizes if enabled
-  if (hasSizes) {
+  // In handleFormSubmit function:
+ if (hasSizes) {
+    // For items with sizes, we'll use size-specific stock
     const sizes = [];
     const sizeInputs = document.querySelectorAll('input[name^="size_"]');
     const priceInputs = document.querySelectorAll('input[name^="price_"]');
+    const stockInputs = document.querySelectorAll('input[name^="stock_"]');
 
-    // Validate size and price inputs
-    if (sizeInputs.length !== priceInputs.length) {
-      showError('Validation Error', new Error('Mismatched size and price inputs'));
-      return;
-    }
-
-    let hasValidSizes = false;
+    // Validate all size inputs
     for (let index = 0; index < sizeInputs.length; index++) {
       const size = sizeInputs[index].value.trim();
       const price = priceInputs[index].value.trim();
-      if (!size || !price || isNaN(price) || Number(price) < 0) {
-        showError('Validation Error', new Error('Please enter valid sizes and prices for all sizes'));
+      const stock = stockInputs[index].value.trim();
+      
+      if (!size || !price || isNaN(price) || Number(price) < 0 || 
+          !stock || isNaN(stock) || Number(stock) < 0) {
+        showError('Validation Error', new Error('Please enter valid sizes, prices and stock for all sizes'));
         return;
       }
-      sizes.push({ sizeName: size, price: Number(price).toFixed(2) });
-      hasValidSizes = true;
+      
+      sizes.push({ 
+        sizeName: size, 
+        price: Number(price).toFixed(2),
+        stock: parseInt(stock)
+      });
+      
+      // Remove the size inputs from formData since we're sending as JSON
       formData.delete(`size_${index}`);
       formData.delete(`price_${index}`);
+      formData.delete(`stock_${index}`);
     }
-
-    // Ensure at least one size is provided
-    if (!hasValidSizes) {
-      showError('Validation Error', new Error('Please add at least one size'));
-      return;
-    }
+    
+    // Add sizes as JSON string
     formData.set('sizes', JSON.stringify(sizes));
+    
+    // Remove the main stock field for items with sizes
+    formData.delete('stock');
   } else {
-    // Validate single price input
+    // For items without sizes, validate the single price and stock
     const price = formData.get('price');
-    if (!price || isNaN(price) || Number(price) < 0) {
-      showError('Validation Error', new Error('Please enter a valid price'));
+    const stock = formData.get('stock');
+    
+    if (!price || isNaN(price) || Number(price) < 0 ||
+        !stock || isNaN(stock) || Number(stock) < 0) {
+      showError('Validation Error', new Error('Please enter valid price and stock'));
       return;
     }
+    
+    // Set base price and ensure we don't send sizes
     formData.set('basePrice', Number(price).toFixed(2));
     formData.delete('price');
+    formData.delete('sizes');
   }
 
   // Determine if editing or adding
-  const isEdit = !!document.getElementById('editItemId').value;
+   const isEdit = !!document.getElementById('editItemId').value;
   if (isEdit) {
     updateMenuItem(formData, form);
   } else {
@@ -598,28 +609,31 @@ function initializePage() {
 
   // Add click listener for adding size-price pair
   document.getElementById('addSizePrice').addEventListener('click', () => {
-    const sizePricePairsDiv = document.getElementById('sizePricePairs');
-    const index = sizePricePairsDiv.querySelectorAll('.size-price-pair').length;
-    const div = document.createElement('div');
-    div.className = 'mb-2 size-price-pair';
-    div.innerHTML = `
-      <div class="row g-2 align-items-center">
-        <div class="col-5">
-          <input type="text" class="form-control" name="size_${index}" placeholder="Enter size (e.g., Small)" required />
-        </div>
-        <div class="col-5">
-          <input type="number" class="form-control" name="price_${index}" step="0.01" min="0" placeholder="Enter price (₱)" required />
-        </div>
-        <div class="col-2">
-          <button type="button" class="btn btn-sm btn-danger remove-size w-100">
-            <i class="bi bi-trash"></i>
-          </button>
-        </div>
+  const sizePricePairsDiv = document.getElementById('sizePricePairs');
+  const index = sizePricePairsDiv.querySelectorAll('.size-price-pair').length;
+  const div = document.createElement('div');
+  div.className = 'mb-2 size-price-pair';
+  div.innerHTML = `
+    <div class="row g-2 align-items-center">
+      <div class="col-4">
+        <input type="text" class="form-control" name="size_${index}" placeholder="Size (e.g., Small)" required />
       </div>
-    `;
-    sizePricePairsDiv.appendChild(div);
-    addRemoveSizeListeners();
-  });
+      <div class="col-3">
+        <input type="number" class="form-control" name="price_${index}" step="0.01" min="0" placeholder="Price (₱)" required />
+      </div>
+      <div class="col-3">
+        <input type="number" class="form-control" name="stock_${index}" min="0" placeholder="Stock" required />
+      </div>
+      <div class="col-2">
+        <button type="button" class="btn btn-sm btn-danger remove-size w-100">
+          <i class="bi bi-trash"></i>
+        </button>
+      </div>
+    </div>
+  `;
+  sizePricePairsDiv.appendChild(div);
+  addRemoveSizeListeners();
+});
 
   // Add change listener for image upload
   document.getElementById('imageUpload').addEventListener('change', function(e) {
