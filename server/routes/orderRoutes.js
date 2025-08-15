@@ -6,16 +6,17 @@ const verifyToken = require('../middleware/verifyToken');
 
 /**
  * Create new order
+ * - Validates input data
  * - Creates order and order items
+ * - Reduces stock for each item (MenuItem for non-sized, ItemSize for sized)
  * - Clears cart after successful creation
  */
-// In routes/orderRoutes.js - Modify the /create endpoint
 router.post('/create', verifyToken, async (req, res) => {
     const transaction = await sequelize.transaction();
     try {
         const { items, totalAmount, paymentMethod, deliveryMethod, pickupDate, customerInfo } = req.body;
 
-        // Validation
+        // Validation: Ensure all required fields are provided
         if (!items || !totalAmount || !paymentMethod || !deliveryMethod || !customerInfo || !pickupDate) {
             await transaction.rollback();
             return res.status(400).json({
@@ -23,15 +24,14 @@ router.post('/create', verifyToken, async (req, res) => {
                 message: 'Missing required fields'
             });
         }
+
         // Create order with appropriate initial status
         const order = await Order.create({
             userID: req.user.userID,
             total_amount: totalAmount,
-            // Set status based on payment method
             status: paymentMethod === 'gcash' ? 'pending_payment' : 'pending',
             payment_method: paymentMethod,
-            // Cash payments are automatically verified
-            payment_verified: paymentMethod === 'cash',
+            payment_verified: paymentMethod === 'cash', // Cash payments are automatically verified
             delivery_method: deliveryMethod,
             pickup_date: pickupDate,
             customer_name: customerInfo.fullName,
@@ -41,10 +41,10 @@ router.post('/create', verifyToken, async (req, res) => {
             items: items
         }, { transaction });
 
-        // Rest of your code remains the same...
-        // Create order items
-        await Promise.all(items.map(item => 
-            OrderItem.create({
+        // Create order items and reduce stock
+        await Promise.all(items.map(async (item) => {
+            // Create order item
+            await OrderItem.create({
                 orderId: order.orderId,
                 menuId: item.menuId,
                 sizeId: item.sizeId,
@@ -52,11 +52,42 @@ router.post('/create', verifyToken, async (req, res) => {
                 price: item.price,
                 item_name: item.name,
                 size_name: item.size
-            }, { transaction })
-        ));
+            }, { transaction });
+
+            // Fetch menu item to check hasSizes
+            const menuItem = await MenuItem.findByPk(item.menuId, {
+                include: [{ model: ItemSize, as: 'sizes', where: { isActive: true }, required: false }],
+                transaction
+            });
+
+            if (!menuItem) {
+                throw new Error(`Menu item ${item.menuId} not found`);
+            }
+
+            // Reduce stock based on whether item has sizes
+            if (menuItem.hasSizes && item.size) {
+                const validSize = menuItem.sizes.find(
+                    s => s.sizeName.trim().toLowerCase() === item.size.trim().toLowerCase()
+                );
+                if (!validSize) {
+                    throw new Error(`Invalid size ${item.size} for menu item ${item.menuId}`);
+                }
+                if (validSize.stock < item.quantity) {
+                    throw new Error(`Insufficient stock for ${item.size} of ${item.name}`);
+                }
+                // Decrease stock for the selected size
+                await validSize.update({ stock: validSize.stock - item.quantity }, { transaction });
+            } else {
+                if (menuItem.stock < item.quantity) {
+                    throw new Error(`Insufficient stock for ${item.name}`);
+                }
+                // Decrease stock for non-sized item
+                await menuItem.update({ stock: menuItem.stock - item.quantity }, { transaction });
+            }
+        }));
 
         // Clear cart
-        const cart = await Cart.findOne({ where: { userID: req.user.userID } });
+        const cart = await Cart.findOne({ where: { userID: req.user.userID }, transaction });
         if (cart) {
             await CartItem.destroy({ where: { cartId: cart.cartId }, transaction });
         }
@@ -106,7 +137,7 @@ router.post('/verify-gcash-payment', verifyToken, async (req, res) => {
                 payment_verified: true,
                 payment_id: paymentId,
                 delivery_method: orderData.deliveryMethod,
-                pickup_date: orderData.pickupDate, // Store the selected date
+                pickup_date: orderData.pickupDate,
                 customer_name: orderData.customerInfo.fullName,
                 customer_email: orderData.customerInfo.email,
                 customer_phone: orderData.customerInfo.phone,
@@ -116,16 +147,50 @@ router.post('/verify-gcash-payment', verifyToken, async (req, res) => {
                 items: orderData.items
             }, { transaction });
 
-            // Create order items
-            await OrderItem.bulkCreate(orderData.items.map(item => ({
-                orderId: order.orderId,
-                menuId: item.menuId,
-                sizeId: item.sizeId,
-                quantity: item.quantity,
-                price: item.price,
-                item_name: item.name,
-                size_name: item.size
-            })), { transaction });
+            // Create order items and reduce stock
+            await Promise.all(orderData.items.map(async (item) => {
+                // Create order item
+                await OrderItem.create({
+                    orderId: order.orderId,
+                    menuId: item.menuId,
+                    sizeId: item.sizeId,
+                    quantity: item.quantity,
+                    price: item.price,
+                    item_name: item.name,
+                    size_name: item.size
+                }, { transaction });
+
+                // Fetch menu item to check hasSizes
+                const menuItem = await MenuItem.findByPk(item.menuId, {
+                    include: [{ model: ItemSize, as: 'sizes', where: { isActive: true }, required: false }],
+                    transaction
+                });
+
+                if (!menuItem) {
+                    throw new Error(`Menu item ${item.menuId} not found`);
+                }
+
+                // Reduce stock based on whether item has sizes
+                if (menuItem.hasSizes && item.size) {
+                    const validSize = menuItem.sizes.find(
+                        s => s.sizeName.trim().toLowerCase() === item.size.trim().toLowerCase()
+                    );
+                    if (!validSize) {
+                        throw new Error(`Invalid size ${item.size} for menu item ${item.menuId}`);
+                    }
+                    if (validSize.stock < item.quantity) {
+                        throw new Error(`Insufficient stock for ${item.size} of ${item.name}`);
+                    }
+                    // Decrease stock for the selected size
+                    await validSize.update({ stock: validSize.stock - item.quantity }, { transaction });
+                } else {
+                    if (menuItem.stock < item.quantity) {
+                        throw new Error(`Insufficient stock for ${item.name}`);
+                    }
+                    // Decrease stock for non-sized item
+                    await menuItem.update({ stock: menuItem.stock - item.quantity }, { transaction });
+                }
+            }));
 
             // Clear cart after order creation
             const cart = await Cart.findOne({ where: { userID: req.user.userID }, transaction });
@@ -133,14 +198,64 @@ router.post('/verify-gcash-payment', verifyToken, async (req, res) => {
                 await CartItem.destroy({ where: { cartId: cart.cartId }, transaction });
                 console.log(`Cleared cart for user ${req.user.userID}`);
             }
-        } 
-        // 2. Update existing pending order
-        else if (order.status === 'pending_payment') {
+        } else if (order.status === 'pending_payment') {
+            // Update existing pending order
             await order.update({
                 status: 'processing',
                 payment_verified: true,
                 pickup_date: orderData.pickupDate // Update with selected date if provided
             }, { transaction });
+
+            // Create order items and reduce stock
+            await Promise.all(orderData.items.map(async (item) => {
+                // Create order item (in case not already created)
+                const existingOrderItem = await OrderItem.findOne({
+                    where: { orderId: order.orderId, menuId: item.menuId, size_name: item.size },
+                    transaction
+                });
+                if (!existingOrderItem) {
+                    await OrderItem.create({
+                        orderId: order.orderId,
+                        menuId: item.menuId,
+                        sizeId: item.sizeId,
+                        quantity: item.quantity,
+                        price: item.price,
+                        item_name: item.name,
+                        size_name: item.size
+                    }, { transaction });
+                }
+
+                // Fetch menu item to check hasSizes
+                const menuItem = await MenuItem.findByPk(item.menuId, {
+                    include: [{ model: ItemSize, as: 'sizes', where: { isActive: true }, required: false }],
+                    transaction
+                });
+
+                if (!menuItem) {
+                    throw new Error(`Menu item ${item.menuId} not found`);
+                }
+
+                // Reduce stock based on whether item has sizes
+                if (menuItem.hasSizes && item.size) {
+                    const validSize = menuItem.sizes.find(
+                        s => s.sizeName.trim().toLowerCase() === item.size.trim().toLowerCase()
+                    );
+                    if (!validSize) {
+                        throw new Error(`Invalid size ${item.size} for menu item ${item.menuId}`);
+                    }
+                    if (validSize.stock < item.quantity) {
+                        throw new Error(`Insufficient stock for ${item.size} of ${item.name}`);
+                    }
+                    // Decrease stock for the selected size
+                    await validSize.update({ stock: validSize.stock - item.quantity }, { transaction });
+                } else {
+                    if (menuItem.stock < item.quantity) {
+                        throw new Error(`Insufficient stock for ${item.name}`);
+                    }
+                    // Decrease stock for non-sized item
+                    await menuItem.update({ stock: menuItem.stock - item.quantity }, { transaction });
+                }
+            }));
 
             // Clear cart after updating order
             const cart = await Cart.findOne({ where: { userID: req.user.userID }, transaction });
