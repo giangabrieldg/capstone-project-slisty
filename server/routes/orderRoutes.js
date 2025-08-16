@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const sequelize = require('../config/database');
-const { Order, Cart, CartItem, MenuItem, ItemSize, OrderItem } = require('../models');
+const { Order, Cart, CartItem, MenuItem, ItemSize, OrderItem, User } = require('../models');
 const verifyToken = require('../middleware/verifyToken');
 
 /**
@@ -109,6 +109,7 @@ router.post('/create', verifyToken, async (req, res) => {
         });
     }
 });
+
 /**
  * Verify GCash payment and update order
  * - Creates or updates order based on payment verification
@@ -278,6 +279,7 @@ router.post('/verify-gcash-payment', verifyToken, async (req, res) => {
         });
     }
 });
+
 /**
  * Get user orders with order items
  */
@@ -390,7 +392,7 @@ router.post('/cancel/:orderId', verifyToken, async (req, res) => {
         }
 
         if (order.status === 'pending_payment') {
-            await order.update({ status: 'canceled' });
+            await order.update({ status: 'cancelled' });
             await OrderItem.destroy({ where: { orderId: order.orderId } });
             return res.json({ success: true, message: 'Order canceled' });
         }
@@ -400,6 +402,94 @@ router.post('/cancel/:orderId', verifyToken, async (req, res) => {
         console.error('Error canceling order:', error);
         res.status(500).json({ success: false, message: 'Error canceling order' });
     }
+});
+
+/**
+ * Get all orders (admin and staff only)
+ * - Fetches orders with user and item details
+ * - Returns formatted data for frontend
+ */
+router.get('/admin/orders', verifyToken, async (req, res) => {
+  try {
+    if (!['admin', 'staff'].includes(req.user.userLevel.toLowerCase())) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Unauthorized: Admin or staff access required'
+      });
+    }
+
+    const orders = await Order.findAll({
+      include: [
+        // Use 'customer' instead of 'user' to match your association
+        { 
+          model: User, 
+          as: 'customer', 
+          attributes: ['userID', 'name', 'email'] 
+        },
+        { 
+          model: OrderItem, 
+          as: 'orderItems',
+          include: [
+            { model: MenuItem, attributes: ['name', 'image'] },
+            { model: ItemSize, attributes: ['sizeName', 'price'] }
+          ]
+        }
+      ],
+      order: [['createdAt', 'DESC']]
+    });
+
+    // Format the response
+    const formattedOrders = orders.map(order => ({
+      ...order.toJSON(),
+      // Update the reference from 'user' to 'customer'
+      user: order.customer ? {
+        userID: order.customer.userID,
+        name: order.customer.name,
+        email: order.customer.email
+      } : null,
+      items: order.orderItems.map(item => ({
+        menuId: item.menuId,
+        name: item.MenuItem?.name || 'Unknown',
+        size: item.ItemSize?.sizeName || null,
+        price: item.price,
+        quantity: item.quantity,
+        image: item.MenuItem?.image || null
+      }))
+    }));
+
+    res.json({ success: true, orders: formattedOrders });
+  } catch (error) {
+    console.error('Admin orders error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+/**
+ * Update order status (admin and staff only)
+ * - Validates status and updates order
+ */
+router.put('/admin/orders/:orderId', verifyToken, async (req, res) => {
+  const { status } = req.body;
+  try {
+    // Check if user is admin or staff
+    if (!['admin', 'staff'].includes(req.user.userLevel.toLowerCase()))  {
+      return res.status(403).json({ success: false, message: 'Unauthorized: Admin or staff access required' });
+    }
+    // Validate status
+    if (!['pending', 'pending_payment', 'processing', 'shipped', 'delivered', 'cancelled'].includes(status)) {
+      return res.status(400).json({ success: false, message: 'Invalid status' });
+    }
+    const order = await Order.findByPk(req.params.orderId);
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+    // Update status
+    await order.update({ status });
+    res.json({ success: true, message: 'Order status updated', order });
+  } catch (error) {
+    console.error('Error updating order status:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
 });
 
 module.exports = router;
