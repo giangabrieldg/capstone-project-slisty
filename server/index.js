@@ -59,6 +59,7 @@ async function createDefaultAdmin() {
         username: 'admin',
         userLevel: 'Admin',
         isVerified: true,
+        employeeID: 'E000'
       });
       console.log('Default admin user created:', adminEmail);
     } else {
