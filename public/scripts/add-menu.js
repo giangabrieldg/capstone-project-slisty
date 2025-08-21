@@ -686,24 +686,6 @@ function initializePage() {
       showError('Failed to search menu items', error);
     }
   }, 300));
-
-  // Add toggle listener for sidebar
-  document.querySelector('.sidebar-toggle').addEventListener('click', () => {
-    document.querySelector('.sidebar').classList.toggle('show');
-    document.body.classList.toggle('sidebar-visible');
-  });
-
-  // Add listener to close sidebar on outside click
-  document.addEventListener('click', (e) => {
-    if (window.innerWidth <= 992 &&
-        !document.querySelector('.sidebar').contains(e.target) &&
-        !document.querySelector('.sidebar-toggle').contains(e.target) &&
-        document.querySelector('.sidebar').classList.contains('show')) {
-      document.querySelector('.sidebar').classList.remove('show');
-      document.body.classList.remove('sidebar-visible');
-    }
-  });
-
   // Initial fetch of menu items
   fetchMenuItems();
 }
