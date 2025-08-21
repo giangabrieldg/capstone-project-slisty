@@ -2,13 +2,14 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const User = require('../models/user-model');
+const { Sequelize } = require('sequelize');
 const { sendVerificationEmail } = require('../utils/sendEmail');
 const verifyToken = require('../middleware/verifyToken');
 require('dotenv').config();
 
 const router = express.Router();
 
-// Route to submit email for verification
+// Route to submit email for customer signup
 router.post('/signup-email', async (req, res) => {
   const { email } = req.body;
 
@@ -39,7 +40,7 @@ router.post('/signup-email', async (req, res) => {
   }
 });
 
-// Route to verify email via token
+// Route to verify email via token for customer signup
 router.get('/verify', async (req, res) => {
   try {
     const token = req.query.token;
@@ -48,7 +49,6 @@ router.get('/verify', async (req, res) => {
       return res.status(401).json({ message: 'No token provided' });
     }
 
-    // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findByPk(decoded.userID);
 
@@ -74,12 +74,12 @@ router.get('/verify', async (req, res) => {
   }
 });
 
-// Route to complete registration with name, phone, address, and password
+// Route to complete customer registration
 router.post('/complete-registration', async (req, res) => {
   const { name, phone, address, password } = req.body;
-  const token = req.query.token; // Get token from query
+  const token = req.query.token;
 
-  console.log('Complete registration request body:', req.body); // Debug log
+  console.log('Complete registration request body:', req.body);
 
   if (!name || !address || !password || !token) {
     return res.status(400).json({ message: 'Name, address, password, and token are required' });
@@ -87,9 +87,9 @@ router.post('/complete-registration', async (req, res) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log('Decoded token:', decoded); // Debug log
+    console.log('Decoded token:', decoded);
     const user = await User.findByPk(decoded.userID);
-    console.log('Found user:', user ? 'Yes' : 'No'); // Debug log
+    console.log('Found user:', user ? 'Yes' : 'No');
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -100,14 +100,14 @@ router.post('/complete-registration', async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    console.log('Updating user with:', { name, phone, address }); // Debug log
+    console.log('Updating user with:', { name, phone, address });
     await user.update({ 
       name, 
       phone: phone || null, 
       address, 
       password: hashedPassword 
     });
-    console.log('User updated successfully'); // Debug log
+    console.log('User updated successfully');
 
     res.status(200).json({ message: 'Registration completed successfully' });
   } catch (error) {
@@ -116,7 +116,109 @@ router.post('/complete-registration', async (req, res) => {
   }
 });
 
-// Route to handle login
+// Route to create staff account (admin only) - USING COUNT APPROACH
+router.post('/create-staff', verifyToken, async (req, res) => {
+  // Check if user is admin
+  if (req.user.userLevel !== 'Admin') {
+    return res.status(403).json({ message: 'Access denied: Admins only' });
+  }
+
+  const { name, email, password, role } = req.body;
+
+  // Validate input
+  if (!name || !email || !password || !role) {
+    return res.status(400).json({ message: 'Name, email, password, and role are required' });
+  }
+
+  if (!['Staff', 'Admin'].includes(role)) {
+    return res.status(400).json({ message: 'Invalid role' });
+  }
+
+  try {
+    // Check for existing email
+    const existingUser = await User.findOne({ where: { email } });
+    if (existingUser) {
+      return res.status(400).json({ message: 'Email already registered' });
+    }
+
+    // Generate employee ID using count approach
+    const staffCount = await User.count({
+      where: { 
+        userLevel: ['Staff', 'Admin'],
+        employeeID: {
+          [Sequelize.Op.ne]: null
+        }
+      }
+    });
+
+    const newEmployeeID = `E${(staffCount + 1).toString().padStart(3, '0')}`;
+
+    // Hash password and create user
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = await User.create({
+      name,
+      email,
+      password: hashedPassword,
+      employeeID: newEmployeeID,
+      userLevel: role,
+      isVerified: true,
+      isArchived: false,
+    });
+
+    res.status(201).json({ 
+      message: 'Staff account created successfully',
+      user: { employeeID: user.employeeID, name, email, role: user.userLevel }
+    });
+  } catch (error) {
+    console.error('Error creating staff account:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Route to fetch all users for admin user management
+router.get('/users', verifyToken, async (req, res) => {
+  // Check if user is admin
+  if (req.user.userLevel !== 'Admin') {
+    return res.status(403).json({ message: 'Access denied: Admins only' });
+  }
+
+  try {
+    const users = await User.findAll({
+      where: { userLevel: ['Staff', 'Admin'] }, // Only fetch staff and admin users
+      attributes: ['userID', 'employeeID', 'name', 'email', 'userLevel', 'isArchived'],
+    });
+    res.status(200).json(users);
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Route to archive/unarchive a user
+router.put('/users/:id/archive', verifyToken, async (req, res) => {
+  // Check if user is admin
+  if (req.user.userLevel !== 'Admin') {
+    return res.status(403).json({ message: 'Access denied: Admins only' });
+  }
+
+  const { id } = req.params;
+  const { isArchived } = req.body;
+
+  try {
+    const user = await User.findByPk(id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    await user.update({ isArchived });
+    res.status(200).json({ message: `User ${isArchived ? 'archived' : 'unarchived'} successfully` });
+  } catch (error) {
+    console.error('Error updating archive status:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Route to handle login for all users
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
@@ -135,24 +237,39 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ message: 'Email not verified' });
     }
 
+    if (user.isArchived) {
+      return res.status(403).json({ message: 'Account is archived' });
+    }
+
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
       return res.status(401).json({ message: 'Invalid password' });
     }
 
-    // Generate a login token
+    // Generate login token
     const token = jwt.sign({ userID: user.userID, userLevel: user.userLevel }, process.env.JWT_SECRET, { expiresIn: '24h' });
     console.log('Login token generated:', token);
 
-    // Return user data including name and userLevel
+    // Determine redirect URL based on userLevel
+    let redirectUrl;
+    if (user.userLevel === 'Customer') {
+      redirectUrl = 'http://localhost:3000/public/customer/products.html';
+    } else if (user.userLevel === 'Staff') {
+      redirectUrl = 'http://localhost:3000/public/staff/staff.html';
+    } else if (user.userLevel === 'Admin') {
+      redirectUrl = 'http://localhost:3000/public/admin/admin-dashboard.html';
+    }
+
+    // Return user data and redirect URL
     res.status(200).json({
       message: 'Login successful',
       token,
       user: {
         name: user.name,
         userLevel: user.userLevel
-      }
+      },
+      redirectUrl
     });
   } catch (error) {
     console.error('Error in login:', error);
@@ -173,7 +290,8 @@ router.get('/profile', verifyToken, async (req, res) => {
       email: user.email,
       phone: user.phone,
       address: user.address,
-      userLevel: user.userLevel
+      userLevel: user.userLevel,
+      employeeID: user.employeeID
     });
   } catch (error) {
     console.error('Error fetching profile:', error);
@@ -195,7 +313,6 @@ router.put('/profile/update', verifyToken, async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Update user data (exclude email)
     await user.update({
       name,
       phone: phone || null,

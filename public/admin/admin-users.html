@@ -76,60 +76,10 @@
                 </tr>
               </thead>
               <tbody class="active-users">
-                <tr>
-                  <td>E001</td>
-                  <td>John Doe</td>
-                  <td>johndoe@cafe.com</td>
-                  <td>Staff</td>
-                  <td><span class="status active">Active</span></td>
-                  <td>
-                    <label class="archive-toggle">
-                      <input
-                        type="checkbox"
-                        class="archive-checkbox"
-                        data-user-name="John Doe"
-                      />
-                      <span class="toggle-slider"></span>
-                    </label>
-                  </td>
-                </tr>
-                <tr>
-                  <td>E002</td>
-                  <td>Jane Smith</td>
-                  <td>janesmith@cafe.com</td>
-                  <td>Manager</td>
-                  <td><span class="status active">Active</span></td>
-                  <td>
-                    <label class="archive-toggle">
-                      <input
-                        type="checkbox"
-                        class="archive-checkbox"
-                        data-user-name="Jane Smith"
-                      />
-                      <span class="toggle-slider"></span>
-                    </label>
-                  </td>
-                </tr>
+                <!-- Populated dynamically -->
               </tbody>
               <tbody class="archived-users" style="display: none">
-                <tr>
-                  <td>E003</td>
-                  <td>Mike Johnson</td>
-                  <td>mikejohnson@cafe.com</td>
-                  <td>Staff</td>
-                  <td><span class="status archived">Archived</span></td>
-                  <td>
-                    <label class="archive-toggle">
-                      <input
-                        type="checkbox"
-                        class="archive-checkbox"
-                        data-user-name="Mike Johnson"
-                        checked
-                      />
-                      <span class="toggle-slider"></span>
-                    </label>
-                  </td>
-                </tr>
+                <!-- Populated dynamically -->
               </tbody>
             </table>
           </div>
@@ -190,7 +140,7 @@
                     <label for="userRole" class="form-label">Role</label>
                     <select class="form-select" id="userRole" required>
                       <option value="Staff">Staff</option>
-                      <option value="Manager">Manager</option>
+                      <option value="Admin">Admin</option>
                     </select>
                   </div>
                   <button type="submit" class="btn btn-primary">
@@ -203,116 +153,9 @@
         </div>
       </main>
     </div>
-    <!-- Bootstrap JS and custom script -->
+    <!-- Bootstrap JS and custom scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/scripts/include-admin-sidebar.js"></script>
-    <script>
-      // Add new user functionality
-      document.getElementById("addUserForm").addEventListener("submit", (e) => {
-        e.preventDefault();
-        const name = document.getElementById("userName").value;
-        const email = document.getElementById("userEmail").value;
-        const password = document.getElementById("userPassword").value;
-        const role = document.getElementById("userRole").value;
-        const tbody = document.querySelector(".active-users");
-        const newRow = document.createElement("tr");
-        newRow.innerHTML = `
-          <td>${name}</td>
-          <td>${email}</td>
-          <td>${role}</td>
-          <td><span class="status active">Active</span></td>
-          <td>
-            <label class="archive-toggle">
-              <input type="checkbox" class="archive-checkbox" data-user-name="${name}">
-              <span class="toggle-slider"></span>
-            </label>
-          </td>
-        `;
-        tbody.appendChild(newRow);
-        addArchiveToggleListener(newRow.querySelector(".archive-checkbox"));
-        const modal = bootstrap.Modal.getInstance(
-          document.getElementById("addUserModal")
-        );
-        modal.hide();
-        document.getElementById("addUserForm").reset();
-        alert(`User ${name} added successfully!`);
-      });
-
-      // Archive toggle functionality
-      function addArchiveToggleListener(checkbox) {
-        checkbox.addEventListener("change", () => {
-          const userName = checkbox.getAttribute("data-user-name");
-          const row = checkbox.closest("tr");
-          const statusSpan = row.querySelector(".status");
-          if (checkbox.checked) {
-            statusSpan.className = "status archived";
-            statusSpan.textContent = "Archived";
-            document.querySelector(".archived-users").appendChild(row);
-            alert(`User ${userName} archived!`);
-          } else {
-            statusSpan.className = "status active";
-            statusSpan.textContent = "Active";
-            document.querySelector(".active-users").appendChild(row);
-            alert(`User ${userName} unarchived!`);
-          }
-        });
-      }
-
-      // Add listeners to existing checkboxes
-      document
-        .querySelectorAll(".archive-checkbox")
-        .forEach(addArchiveToggleListener);
-
-      // View switch functionality
-      document.querySelectorAll(".view-link").forEach((link) => {
-        link.addEventListener("click", (e) => {
-          e.preventDefault();
-          document
-            .querySelectorAll(".view-link")
-            .forEach((l) => l.classList.remove("active"));
-          link.classList.add("active");
-          const view = link.getAttribute("data-view");
-          document.querySelector(".active-users").style.display =
-            view === "active" ? "table-row-group" : "none";
-          document.querySelector(".archived-users").style.display =
-            view === "archived" ? "table-row-group" : "none";
-        });
-      });
-
-      // Search functionality
-      document.querySelector(".search-bar").addEventListener("input", (e) => {
-        const searchTerm = e.target.value.toLowerCase();
-        document.querySelectorAll("tbody tr").forEach((row) => {
-          const name = row.cells[0].textContent.toLowerCase();
-          const email = row.cells[1].textContent.toLowerCase();
-          row.style.display =
-            name.includes(searchTerm) || email.includes(searchTerm)
-              ? ""
-              : "none";
-        });
-      });
-
-      // Sidebar toggle functionality
-      const sidebarToggle = document.querySelector(".sidebar-toggle");
-      const sidebar = document.querySelector(".sidebar");
-      const body = document.body;
-
-      sidebarToggle.addEventListener("click", () => {
-        sidebar.classList.toggle("show");
-        body.classList.toggle("sidebar-visible");
-      });
-
-      document.addEventListener("click", (e) => {
-        if (
-          window.innerWidth <= 992 &&
-          !sidebar.contains(e.target) &&
-          !sidebarToggle.contains(e.target) &&
-          sidebar.classList.contains("show")
-        ) {
-          sidebar.classList.remove("show");
-          body.classList.remove("sidebar-visible");
-        }
-      });
-    </script>
+    <script src="/scripts/admin-users.js"></script>
   </body>
 </html>
