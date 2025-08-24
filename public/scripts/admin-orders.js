@@ -167,8 +167,8 @@ class AdminOrdersManager {
   }
 
   /**
-   * Applies search and filter functionality
-   */
+ * Applies search and filter functionality
+ */
   applyFilters() {
     const searchTerm = document.querySelector('.search-bar').value.toLowerCase();
     const selectedDate = document.getElementById('datePicker').value;
@@ -183,7 +183,8 @@ class AdminOrdersManager {
       const rowStatus = order.status.toLowerCase();
       const rowPaymentStatus = order.payment_verified ? 'paid' : 'unpaid';
 
-      const dateMatch = !selectedDate || rowOrderDate >= selectedDate;
+      // Exact date match: only include orders from the selected date
+      const dateMatch = !selectedDate || rowOrderDate === selectedDate;
       const searchMatch = orderId.includes(searchTerm) || customerName.includes(searchTerm) || amount.includes(searchTerm);
       const statusMatch = !status || rowStatus === status;
       const paymentStatusMatch = !paymentStatus || rowPaymentStatus === paymentStatus;
