@@ -105,11 +105,10 @@
               // Redirect based on userLevel
               const isLocalhost = window.location.hostname === "localhost";
               const redirectBase = isLocalhost ? "/public" : ""; // Adjust for Render's static site paths
-              if (
-                data.user?.userLevel === "Admin" ||
-                data.user?.userLevel === "Staff"
-              ) {
+              if (data.user?.userLevel === "Admin") {
                 window.location.href = `${redirectBase}/admin/admin-dashboard.html`;
+              } else if (data.user?.userLevel === "Staff") {
+                window.location.href = `${redirectBase}/staff/staff-dashboard.html`;
               } else {
                 window.location.href = `${redirectBase}/index.html`;
               }
