@@ -26,6 +26,10 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/helpers/RectAreaLightHelper.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/RGBELoader.js"></script>
 
+    <!-- Draco decoder + new GLTFLoader that can read Draco -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+
     <!-- Custom CSS -->
     <link rel="stylesheet" href="/styles/customize-wizard.css" />
     <link rel="stylesheet" href="/styles/navbar.css" />
@@ -206,6 +210,7 @@
               >
                 Edit all choices
               </button>
+              <button onclick="submitOrder()">Submit Custom Cake</button>
             </div>
           </div>
 

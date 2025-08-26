@@ -11,14 +11,14 @@ const User = require('./models/user-model.js');
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Configure CORS to allow both localhost and frontend Render URL
+// Configure CORS
 app.use(cors({
   origin: [
     'http://localhost:3000',
-    'https://slice-n-grind.onrender.com'
+    'https://slice-n-grind.onrender.com',
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  credentials: true
+  credentials: true,
 }));
 
 app.use(bodyParser.json({ limit: '10mb' }));
@@ -34,8 +34,12 @@ app.use('/includes', express.static(path.join(__dirname, '../public/includes')))
 app.use('/Uploads', express.static(path.join(__dirname, '../Uploads')));
 
 const uploadDir = path.join(__dirname, '../Uploads');
+const customCakeUploadDir = path.join(__dirname, '../Uploads/custom-cakes');
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir);
+}
+if (!fs.existsSync(customCakeUploadDir)) {
+  fs.mkdirSync(customCakeUploadDir, { recursive: true });
 }
 
 const sequelize = require('./config/database');
@@ -59,7 +63,7 @@ async function createDefaultAdmin() {
         username: 'admin',
         userLevel: 'Admin',
         isVerified: true,
-        employeeID: 'E000'
+        employeeID: 'E000',
       });
       console.log('Default admin user created:', adminEmail);
     } else {
@@ -79,29 +83,31 @@ sequelize.sync({ force: false })
 
 // Backend Routes
 try {
-    const authRoutes = require('./routes/authRoutes');
-    const menuRoutes = require('./routes/menu');
-    const cartRoutes = require('./routes/cart');
-    const inquiriesRoutes = require('./routes/inquiriesRoutes');
-    const paymentRoutes = require('./routes/paymentRoutes');
-    const orderRoutes = require('./routes/orderRoutes');
-    const { cleanupAbandonedOrders } = require('./server-side-scripts/cleanup.js');
+  const authRoutes = require('./routes/authRoutes');
+  const menuRoutes = require('./routes/menu');
+  const cartRoutes = require('./routes/cart');
+  const inquiriesRoutes = require('./routes/inquiriesRoutes');
+  const paymentRoutes = require('./routes/paymentRoutes');
+  const orderRoutes = require('./routes/orderRoutes');
+  const customCakeRoutes = require('./routes/customCakeRoutes');
+  const { cleanupAbandonedOrders } = require('./server-side-scripts/cleanup.js');
 
-    console.log('Registering routes...');
-    app.use('/api/inquiries', inquiriesRoutes);
-    app.use('/api/auth', authRoutes);
-    app.use('/api/menu', menuRoutes);
-    app.use('/api/cart', cartRoutes);
-    app.use('/api/payment', paymentRoutes);
-    app.use('/api/orders', orderRoutes);
-    console.log('Routes registered successfully');
+  console.log('Registering routes...');
+  app.use('/api/inquiries', inquiriesRoutes);
+  app.use('/api/auth', authRoutes);
+  app.use('/api/menu', menuRoutes);
+  app.use('/api/cart', cartRoutes);
+  app.use('/api/payment', paymentRoutes);
+  app.use('/api/orders', orderRoutes);
+  app.use('/api/custom-cake', customCakeRoutes);
+  console.log('Routes registered successfully');
 
-    cleanupAbandonedOrders();
+  cleanupAbandonedOrders();
 } catch (error) {
-    console.error('Error loading routes or cleanup:', error.message, error.stack);
+  console.error('Error loading routes or cleanup:', error.message, error.stack);
 }
 
-// Test route to check server status
+// Test route
 app.get('/', (req, res) => {
   console.log('GET / called');
   res.json({ message: 'Backend is running!' });
@@ -121,4 +127,3 @@ app.use((req, res) => {
 
 // Start server
 app.listen(port, () => console.log(`Server running on port ${port}`));
-

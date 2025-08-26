@@ -1,53 +1,77 @@
-
 const express = require('express');
 const router = express.Router();
 const { Op } = require('sequelize');
-const { Cart, CartItem, MenuItem, ItemSize } = require('../models');
+const { Cart, CartItem, MenuItem, ItemSize, CustomCakeOrder } = require('../models');
 const verifyToken = require('../middleware/verifyToken');
 
-// POST /api/cart/add - Add item to cart
+// POST /api/cart/add - Add item or custom cake to cart
 router.post('/add', verifyToken, async (req, res) => {
   try {
-    // Extract menuId, quantity, and size from request body
-    const { menuId, quantity, size } = req.body;
+    // Extract menuId, customCakeId, quantity, and size from request body
+    const { menuId, customCakeId, quantity, size } = req.body;
     // Validate input
-    if (!menuId || !quantity || quantity < 1) {
-      return res.status(400).json({ message: 'Invalid menuId or quantity' });
+    if (!menuId && !customCakeId) {
+      return res.status(400).json({ message: 'Either menuId or customCakeId is required' });
     }
-
-    // Fetch menu item with associated sizes (if any)
-    const menuItem = await MenuItem.findByPk(menuId, {
-      include: [{ model: ItemSize, as: 'sizes', where: { isActive: true }, required: false }],
-    });
-    if (!menuItem) {
-      return res.status(404).json({ message: 'Menu item not found' });
+    if (!quantity || quantity < 1) {
+      return res.status(400).json({ message: 'Invalid quantity' });
     }
 
     let selectedStock = null;
     let validSize = null;
+    let itemData = {};
 
-    // Validate stock based on whether the item has sizes
-    if (menuItem.hasSizes) {
-      // Size is required for items with hasSizes: true
-      if (!size) {
-        return res.status(400).json({ message: 'Size is required for this item' });
+    // Handle custom cake
+    if (customCakeId) {
+      const customCake = await CustomCakeOrder.findByPk(customCakeId);
+      if (!customCake) {
+        return res.status(404).json({ message: 'Custom cake order not found' });
       }
-      // Find the selected size in the sizes array
-      validSize = menuItem.sizes.find(s => s.sizeName.trim().toLowerCase() === size.trim().toLowerCase());
-      if (!validSize) {
-        return res.status(400).json({ message: `Invalid size: ${size}` });
+      if (customCake.status !== 'Feasible') {
+        return res.status(400).json({ message: 'Custom cake order must be Feasible to add to cart' });
       }
-      // Get stock for the selected size
-      selectedStock = validSize.stock;
-      // Validate stock against requested quantity
-      if (selectedStock < quantity) {
-        return res.status(400).json({ message: `Only ${selectedStock} items available for ${size}` });
-      }
+      itemData = {
+        name: `Custom Cake (${customCake.size})`,
+        price: customCake.price,
+        image: customCake.imageUrl || null,
+      };
+      selectedStock = 1; // Custom cakes have a stock of 1
     } else {
-      // For non-sized items, use the main stock field
-      selectedStock = menuItem.stock || 0;
-      if (selectedStock < quantity) {
-        return res.status(400).json({ message: `Only ${selectedStock} items available in stock` });
+      // Handle regular menu item
+      const menuItem = await MenuItem.findByPk(menuId, {
+        include: [{ model: ItemSize, as: 'sizes', where: { isActive: true }, required: false }],
+      });
+      if (!menuItem) {
+        return res.status(404).json({ message: 'Menu item not found' });
+      }
+      // Validate stock based on whether the item has sizes
+      if (menuItem.hasSizes) {
+        if (!size) {
+          return res.status(400).json({ message: 'Size is required for this item' });
+        }
+        validSize = menuItem.sizes.find(s => s.sizeName.trim().toLowerCase() === size.trim().toLowerCase());
+        if (!validSize) {
+          return res.status(400).json({ message: `Invalid size: ${size}` });
+        }
+        selectedStock = validSize.stock;
+        if (selectedStock < quantity) {
+          return res.status(400).json({ message: `Only ${selectedStock} items available for ${size}` });
+        }
+        itemData = {
+          name: menuItem.name,
+          price: validSize.price,
+          image: menuItem.image || null,
+        };
+      } else {
+        selectedStock = menuItem.stock || 0;
+        if (selectedStock < quantity) {
+          return res.status(400).json({ message: `Only ${selectedStock} items available in stock` });
+        }
+        itemData = {
+          name: menuItem.name,
+          price: menuItem.price,
+          image: menuItem.image || null,
+        };
       }
     }
 
@@ -57,9 +81,15 @@ router.post('/add', verifyToken, async (req, res) => {
       cart = await Cart.create({ userID: req.user.userID });
     }
 
-    // Check if the item (with same size) already exists in cart
+    // Check if the item (with same size or customCakeId) already exists in cart
     let cartItem = await CartItem.findOne({
-      where: { cartId: cart.cartId, menuId, size: size || null },
+      where: {
+        cartId: cart.cartId,
+        [Op.or]: [
+          { menuId: menuId || null, size: size || null },
+          { customCakeId: customCakeId || null },
+        ],
+      },
     });
 
     if (cartItem) {
@@ -67,9 +97,11 @@ router.post('/add', verifyToken, async (req, res) => {
       const newQuantity = cartItem.quantity + quantity;
       if (selectedStock < newQuantity) {
         return res.status(400).json({
-          message: menuItem.hasSizes
-            ? `Only ${selectedStock} items available for ${size}`
-            : `Only ${selectedStock} items available in stock`,
+          message: customCakeId
+            ? 'Only one custom cake order can be added'
+            : menuItem.hasSizes
+              ? `Only ${selectedStock} items available for ${size}`
+              : `Only ${selectedStock} items available in stock`,
         });
       }
       cartItem.quantity = newQuantity;
@@ -78,16 +110,18 @@ router.post('/add', verifyToken, async (req, res) => {
       // Create new cart item
       cartItem = await CartItem.create({
         cartId: cart.cartId,
-        menuId,
+        menuId: menuId || null,
+        customCakeId: customCakeId || null,
         quantity,
         size: size || null,
+        name: itemData.name,
+        price: itemData.price,
+        image: itemData.image,
       });
     }
 
-    // Return success response
     return res.status(200).json({ message: 'Item added to cart', cartItem });
   } catch (error) {
-    // Handle server errors
     console.error('Add to cart error:', error);
     return res.status(500).json({ message: 'Server error' });
   }
@@ -96,22 +130,52 @@ router.post('/add', verifyToken, async (req, res) => {
 // GET /api/cart - Retrieve cart items for the authenticated user
 router.get('/', verifyToken, async (req, res) => {
   try {
-    // Find user's cart
     const cart = await Cart.findOne({ where: { userID: req.user.userID } });
     if (!cart) {
       return res.status(200).json({ cartItems: [] });
     }
-    // Fetch all cart items with associated menu item and sizes
     const cartItems = await CartItem.findAll({
       where: { cartId: cart.cartId },
-      include: [{
-        model: MenuItem,
-        include: [{ model: ItemSize, as: 'sizes', where: { isActive: true }, required: false }],
-      }],
+      include: [
+        {
+          model: MenuItem,
+          include: [{ model: ItemSize, as: 'sizes', where: { isActive: true }, required: false }],
+        },
+        {
+          model: CustomCakeOrder,
+        },
+      ],
     });
-    return res.status(200).json({ cartItems });
+    const formattedItems = cartItems.map(item => ({
+      cartItemId: item.cartItemId,
+      menuId: item.menuId,
+      customCakeId: item.customCakeId,
+      quantity: item.quantity,
+      size: item.size,
+      name: item.name,
+      price: item.price,
+      image: item.image,
+      customCakeDetails: item.CustomCakeOrder ? {
+        size: item.CustomCakeOrder.size,
+        cakeColor: item.CustomCakeOrder.cakeColor,
+        icingStyle: item.CustomCakeOrder.icingStyle,
+        icingColor: item.CustomCakeOrder.icingColor,
+        filling: item.CustomCakeOrder.filling,
+        bottomBorder: item.CustomCakeOrder.bottomBorder,
+        topBorder: item.CustomCakeOrder.topBorder,
+        bottomBorderColor: item.CustomCakeOrder.bottomBorderColor,
+        topBorderColor: item.CustomCakeOrder.topBorderColor,
+        decorations: item.CustomCakeOrder.decorations,
+        flowerType: item.CustomCakeOrder.flowerType,
+        customText: item.CustomCakeOrder.customText,
+        messageChoice: item.CustomCakeOrder.messageChoice,
+        toppingsColor: item.CustomCakeOrder.toppingsColor,
+        imageUrl: item.CustomCakeOrder.imageUrl,
+        status: item.CustomCakeOrder.status,
+      } : null,
+    }));
+    return res.status(200).json({ cartItems: formattedItems });
   } catch (error) {
-    // Handle server errors
     console.error('Get cart error:', error);
     return res.status(500).json({ message: 'Server error' });
   }
@@ -120,45 +184,49 @@ router.get('/', verifyToken, async (req, res) => {
 // PUT /api/cart/update - Update cart item quantity
 router.put('/update', verifyToken, async (req, res) => {
   try {
-    // Extract cartItemId and quantity from request body
     const { cartItemId, quantity } = req.body;
     if (!cartItemId || !quantity || quantity < 1) {
       return res.status(400).json({ message: 'Invalid cartItemId or quantity' });
     }
-    // Find cart item
-    const cartItem = await CartItem.findByPk(cartItemId);
+    const cartItem = await CartItem.findByPk(cartItemId, {
+      include: [
+        { model: MenuItem, include: [{ model: ItemSize, as: 'sizes', where: { isActive: true }, required: false }] },
+        { model: CustomCakeOrder },
+      ],
+    });
     if (!cartItem) {
       return res.status(404).json({ message: 'Cart item not found' });
     }
-    // Find associated menu item
-    const menuItem = await MenuItem.findByPk(cartItem.menuId, {
-      include: [{ model: ItemSize, as: 'sizes', where: { isActive: true }, required: false }],
-    });
-    // Validate stock based on whether the item has sizes
     let selectedStock = null;
-    if (menuItem.hasSizes && cartItem.size) {
-      const validSize = menuItem.sizes.find(
-        s => s.sizeName.trim().toLowerCase() === cartItem.size.trim().toLowerCase()
-      );
-      if (!validSize) {
-        return res.status(400).json({ message: `Invalid size: ${cartItem.size}` });
-      }
-      selectedStock = validSize.stock;
-      if (selectedStock < quantity) {
-        return res.status(400).json({ message: `Only ${selectedStock} items available for ${cartItem.size}` });
+    if (cartItem.customCakeId) {
+      selectedStock = 1; // Custom cakes have a stock of 1
+      if (quantity > 1) {
+        return res.status(400).json({ message: 'Only one custom cake order can be added' });
       }
     } else {
-      selectedStock = menuItem.stock || 0;
-      if (selectedStock < quantity) {
-        return res.status(400).json({ message: `Only ${selectedStock} items available in stock` });
+      const menuItem = cartItem.MenuItem;
+      if (menuItem.hasSizes && cartItem.size) {
+        const validSize = menuItem.sizes.find(
+          s => s.sizeName.trim().toLowerCase() === cartItem.size.trim().toLowerCase()
+        );
+        if (!validSize) {
+          return res.status(400).json({ message: `Invalid size: ${cartItem.size}` });
+        }
+        selectedStock = validSize.stock;
+        if (selectedStock < quantity) {
+          return res.status(400).json({ message: `Only ${selectedStock} items available for ${cartItem.size}` });
+        }
+      } else {
+        selectedStock = menuItem.stock || 0;
+        if (selectedStock < quantity) {
+          return res.status(400).json({ message: `Only ${selectedStock} items available in stock` });
+        }
       }
     }
-    // Update cart item quantity
     cartItem.quantity = quantity;
     await cartItem.save();
     return res.status(200).json({ message: 'Cart item updated', cartItem });
   } catch (error) {
-    // Handle server errors
     console.error('Update cart item error:', error);
     return res.status(500).json({ message: 'Server error' });
   }
@@ -167,21 +235,17 @@ router.put('/update', verifyToken, async (req, res) => {
 // DELETE /api/cart/remove - Remove item from cart
 router.delete('/remove', verifyToken, async (req, res) => {
   try {
-    // Extract cartItemId from request body
     const { cartItemId } = req.body;
     if (!cartItemId) {
       return res.status(400).json({ message: 'Invalid cartItemId' });
     }
-    // Find cart item
     const cartItem = await CartItem.findByPk(cartItemId);
     if (!cartItem) {
       return res.status(404).json({ message: 'Cart item not found' });
     }
-    // Remove cart item
     await cartItem.destroy();
     return res.status(200).json({ message: 'Cart item removed' });
   } catch (error) {
-    // Handle server errors
     console.error('Remove cart item error:', error);
     return res.status(500).json({ message: 'Server error' });
   }

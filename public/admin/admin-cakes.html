@@ -50,76 +50,20 @@
           <div class="table-responsive">
             <table class="table table-hover">
               <thead>
+                <!-- admin-cakes.html - Update the table headers and modal -->
                 <tr>
                   <th>Order ID</th>
                   <th>Customer Name</th>
                   <th>Customization Details</th>
-                  <th>Image Reference</th>
+                  <th>Reference Image</th>
+                  <th>3D Design</th>
+                  <!-- New column -->
                   <th>Status</th>
                   <th>Action</th>
                 </tr>
               </thead>
               <tbody class="cake-orders">
-                <tr>
-                  <td>CC001</td>
-                  <td>Juan Dela Cruz</td>
-                  <td>Chocolate cake, 6x3, blue frosting, superhero theme</td>
-                  <td>
-                    <a
-                      href="#"
-                      class="view-image"
-                      data-bs-toggle="modal"
-                      data-bs-target="#imageModal"
-                      >View</a
-                    >
-                  </td>
-                  <td><span class="status pending">Pending Review</span></td>
-                  <td>
-                    <select
-                      class="form-select status-select"
-                      data-order-id="CC001"
-                    >
-                      <option value="Pending Review" selected>
-                        Pending Review
-                      </option>
-                      <option value="Feasible">Feasible</option>
-                      <option value="Not Feasible">Not Feasible</option>
-                    </select>
-                    <button class="btn btn-primary btn-sm update-status">
-                      Update
-                    </button>
-                  </td>
-                </tr>
-                <tr>
-                  <td>CC002</td>
-                  <td>Maria Santos</td>
-                  <td>Vanilla cake, 8x3, floral design, pink icing</td>
-                  <td>
-                    <a
-                      href="#"
-                      class="view-image"
-                      data-bs-toggle="modal"
-                      data-bs-target="#imageModal"
-                      >View</a
-                    >
-                  </td>
-                  <td><span class="status not-feasible">Not Feasible</span></td>
-                  <td>
-                    <select
-                      class="form-select status-select"
-                      data-order-id="CC002"
-                    >
-                      <option value="Pending Review">Pending Review</option>
-                      <option value="Feasible">Feasible</option>
-                      <option value="Not Feasible" selected>
-                        Not Feasible
-                      </option>
-                    </select>
-                    <button class="btn btn-primary btn-sm update-status">
-                      Update
-                    </button>
-                  </td>
-                </tr>
+                <!-- Rows will be populated by JavaScript -->
               </tbody>
             </table>
           </div>
@@ -134,9 +78,7 @@
           <div class="modal-dialog modal-lg">
             <div class="modal-content">
               <div class="modal-header">
-                <h5 class="modal-title" id="imageModalLabel">
-                  Image Reference
-                </h5>
+                <h5 class="modal-title" id="imageModalLabel">Image</h5>
                 <button
                   type="button"
                   class="btn-close"
@@ -204,6 +146,7 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/scripts/include-admin-sidebar.js"></script>
+    <script src="/scripts/admin-cake.js"></script>
     <script>
       // Status update functionality
       document.querySelectorAll(".update-status").forEach((button) => {

@@ -12,7 +12,12 @@ const verifyToken = async (req, res, next) => {
   if (authHeader && authHeader.startsWith('Bearer ')) {
     token = authHeader.split(' ')[1];
     console.log('Token received from header:', token);
-  } else {
+  } 
+  // Check for token in query parameter (for file uploads with FormData)
+  else if (req.query.token) {
+    token = req.query.token;
+    console.log('Token received from query parameter:', token);
+  }else {
     console.log('No token provided in Authorization header');
     return res.status(401).json({ success: false, message: 'No token provided' });
   }

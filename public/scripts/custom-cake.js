@@ -1,6 +1,4 @@
-// Enhanced JavaScript with better functionality
-let scene, camera, renderer, cake
-const container = document.getElementById("canvas-container")
+// Configuration object for cake customization
 const config = {
   size: "small",
   cakeColor: "#8B4513",
@@ -16,14 +14,16 @@ const config = {
   customText: "",
   messageChoice: "none",
   toppingsColor: "#FFFFFF",
-}
+};
 
+// Colors for cake filling
 const fillingColors = {
   strawberry: "#B70824",
   bavarian: "#F1E7C3",
   none: "#FFFFFF",
-}
+};
 
+// Pricing structure for cake sizes and fillings
 const pricing = {
   base: {
     small: 850,
@@ -35,10 +35,11 @@ const pricing = {
     strawberry: 150,
     bavarian: 150,
   },
-}
+};
 
-let currentWizardStep = 1
-const totalWizardSteps = 8
+// Wizard step tracking
+let currentWizardStep = 1;
+const totalWizardSteps = 8;
 const stepNames = [
   "",
   "Size",
@@ -49,26 +50,28 @@ const stepNames = [
   "Top Border",
   "Custom Message",
   "Decorations",
-]
+];
 
-// =============== GUIDED TOUR SYSTEM ===============
+// Three.js global variables
+let scene, camera, renderer, cake;
+const container = document.getElementById("canvas-container");
+
+// Guided Tour System for user onboarding
 class GuidedTour {
   constructor() {
-    this.currentStep = 0
-    this.isActive = false
+    this.currentStep = 0;
+    this.isActive = false;
     this.steps = [
       {
         target: "#cakeViewer",
         title: "Welcome to Cake Customizer!",
-        content:
-          "This is your 3D cake preview. You can rotate and view your cake design in real-time as you make customizations.",
+        content: "This is your 3D cake preview. You can rotate and view your cake design in real-time as you make customizations.",
         position: "right",
       },
       {
         target: "#sizeOptions",
         title: "Choose Your Cake Size",
-        content:
-          "Start by selecting the perfect size for your occasion. Each size shows servings and pricing to help you decide.",
+        content: "Start by selecting the perfect size for your occasion. Each size shows servings and pricing to help you decide.",
         position: "left",
       },
       {
@@ -122,8 +125,7 @@ class GuidedTour {
       {
         target: "#messageOptions",
         title: "Personal Message",
-        content:
-          'Make it personal! Add a custom message to your cake. If you choose "Add custom message", please type your message before the tour continues.',
+        content: "Make it personal! Add a custom message to your cake. If you choose 'Add custom message', please type your message before the tour continues.",
         position: "left",
         waitForInput: true,
       },
@@ -133,954 +135,930 @@ class GuidedTour {
         content: "Add beautiful decorations to make your cake extra special - flowers, balloons, or toppings.",
         position: "left",
       },
-    ]
-    this.overlay = document.getElementById("tourOverlay")
-    this.highlight = document.getElementById("tourHighlight")
-    this.tooltip = document.getElementById("tourTooltip")
-    this.tooltipHeader = document.getElementById("tourTooltipHeader")
-    this.tooltipContent = document.getElementById("tourTooltipContent")
-    this.stepCounter = document.getElementById("tourStepCounter")
-    this.startBtn = document.getElementById("tourStartBtn")
-    this.bindEvents()
+    ];
+    this.overlay = document.getElementById("tourOverlay");
+    this.highlight = document.getElementById("tourHighlight");
+    this.tooltip = document.getElementById("tourTooltip");
+    this.tooltipHeader = document.getElementById("tourTooltipHeader");
+    this.tooltipContent = document.getElementById("tourTooltipContent");
+    this.stepCounter = document.getElementById("tourStepCounter");
+    this.startBtn = document.getElementById("tourStartBtn");
+    this.bindEvents();
   }
 
+  // Bind event listeners for tour interactions
   bindEvents() {
-    this.startBtn.addEventListener("click", () => this.startTour())
+    this.startBtn.addEventListener("click", () => this.startTour());
     this.overlay.addEventListener("click", (e) => {
       if (e.target === this.overlay) {
-        this.nextStep()
+        this.nextStep();
       }
-    })
-    // Modified click handler to not auto-advance on message step with custom input
+    });
     document.addEventListener("click", (e) => {
       if (this.isActive && !this.tooltip.contains(e.target) && e.target !== this.startBtn) {
-        const currentStep = this.steps[this.currentStep]
-        // Don't auto-advance if we're on message step and user selected custom message but hasn't typed
+        const currentStep = this.steps[this.currentStep];
         if (
           currentStep &&
           currentStep.target === "#messageOptions" &&
           config.messageChoice === "custom" &&
           document.getElementById("customTextWalmart").value.trim() === ""
         ) {
-          return // Don't advance
+          return;
         }
-        this.nextStep()
+        this.nextStep();
       }
-    })
+    });
   }
 
+  // Start the guided tour
   startTour() {
-    this.isActive = true
-    this.currentStep = 0
-    this.startBtn.classList.add("hidden")
-    this.overlay.classList.add("active")
-    // Ensure we're in step view, not summary view
+    this.isActive = true;
+    this.currentStep = 0;
+    this.startBtn.classList.add("hidden");
+    this.overlay.classList.add("active");
     if (document.getElementById("orderSummaryView").style.display !== "none") {
-      showFirstStep()
+      showFirstStep();
     }
-    this.showStep()
+    this.showStep();
   }
 
+  // Position the highlight box around the target element
   positionHighlight(target) {
-    const rect = target.getBoundingClientRect()
-    const scrollTop = window.pageYOffset || document.documentElement.scrollTop
-    const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft
-    this.highlight.style.top = rect.top + scrollTop - 8 + "px"
-    this.highlight.style.left = rect.left + scrollLeft - 8 + "px"
-    this.highlight.style.width = rect.width + 16 + "px"
-    this.highlight.style.height = rect.height + 16 + "px"
-    this.highlight.style.display = "block"
+    const rect = target.getBoundingClientRect();
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+    this.highlight.style.top = rect.top + scrollTop - 8 + "px";
+    this.highlight.style.left = rect.left + scrollLeft - 8 + "px";
+    this.highlight.style.width = rect.width + 16 + "px";
+    this.highlight.style.height = rect.height + 16 + "px";
+    this.highlight.style.display = "block";
   }
 
+  // Position the tooltip relative to the target element
   positionTooltip(target, step) {
-    const rect = target.getBoundingClientRect()
-    const scrollTop = window.pageYOffset || document.documentElement.scrollTop
-    const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft
-
-    // Show tooltip first to get dimensions
-    this.tooltip.style.display = "block"
-    this.tooltip.style.visibility = "hidden"
-    const tooltipRect = this.tooltip.getBoundingClientRect()
-    this.tooltip.style.visibility = "visible"
-    let top, left
-    let arrowClass = ""
-    // Reset arrow classes
-    this.tooltip.className = "tour-tooltip"
-    const viewportWidth = window.innerWidth
-    const viewportHeight = window.innerHeight
+    const rect = target.getBoundingClientRect();
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+    this.tooltip.style.display = "block";
+    this.tooltip.style.visibility = "hidden";
+    const tooltipRect = this.tooltip.getBoundingClientRect();
+    this.tooltip.style.visibility = "visible";
+    let top, left;
+    let arrowClass = "";
+    this.tooltip.className = "tour-tooltip";
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
     switch (step.position) {
       case "right":
-        top = rect.top + scrollTop + rect.height / 2 - tooltipRect.height / 2
-        left = rect.right + scrollLeft + 20
-        arrowClass = "arrow-left"
-
-        // Ensure it doesn't go off screen
+        top = rect.top + scrollTop + rect.height / 2 - tooltipRect.height / 2;
+        left = rect.right + scrollLeft + 20;
+        arrowClass = "arrow-left";
         if (left + tooltipRect.width > viewportWidth - 10) {
-          left = rect.left + scrollLeft - tooltipRect.width - 20
-          arrowClass = "arrow-right"
+          left = rect.left + scrollLeft - tooltipRect.width - 20;
+          arrowClass = "arrow-right";
         }
-        break
+        break;
       case "left":
-        top = rect.top + scrollTop + rect.height / 2 - tooltipRect.height / 2
-        left = rect.left + scrollLeft - tooltipRect.width - 20
-        arrowClass = "arrow-right"
-
-        // Ensure it doesn't go off screen
+        top = rect.top + scrollTop + rect.height / 2 - tooltipRect.height / 2;
+        left = rect.left + scrollLeft - tooltipRect.width - 20;
+        arrowClass = "arrow-right";
         if (left < 10) {
-          left = rect.right + scrollLeft + 20
-          arrowClass = "arrow-left"
+          left = rect.right + scrollLeft + 20;
+          arrowClass = "arrow-left";
         }
-        break
+        break;
       case "bottom":
-        top = rect.bottom + scrollTop + 20
-        left = rect.left + scrollLeft + rect.width / 2 - tooltipRect.width / 2
-        arrowClass = "arrow-top"
-        break
+        top = rect.bottom + scrollTop + 20;
+        left = rect.left + scrollLeft + rect.width / 2 - tooltipRect.width / 2;
+        arrowClass = "arrow-top";
+        break;
       case "top":
-        top = rect.top + scrollTop - tooltipRect.height - 20
-        left = rect.left + scrollLeft + rect.width / 2 - tooltipRect.width / 2
-        arrowClass = "arrow-bottom"
-        break
+        top = rect.top + scrollTop - tooltipRect.height - 20;
+        left = rect.left + scrollLeft + rect.width / 2 - tooltipRect.width / 2;
+        arrowClass = "arrow-bottom";
+        break;
     }
-    // Ensure tooltip stays within viewport bounds
-    if (left < 10) left = 10
-    if (left + tooltipRect.width > viewportWidth - 10) left = viewportWidth - tooltipRect.width - 10
-    if (top < 10) top = 10
+    if (left < 10) left = 10;
+    if (left + tooltipRect.width > viewportWidth - 10) left = viewportWidth - tooltipRect.width - 10;
+    if (top < 10) top = 10;
     if (top + tooltipRect.height > viewportHeight + scrollTop - 10) {
-      top = viewportHeight + scrollTop - tooltipRect.height - 10
+      top = viewportHeight + scrollTop - tooltipRect.height - 10;
     }
-    this.tooltip.style.top = top + "px"
-    this.tooltip.style.left = left + "px"
-    this.tooltip.classList.add(arrowClass)
+    this.tooltip.style.top = top + "px";
+    this.tooltip.style.left = left + "px";
+    this.tooltip.classList.add(arrowClass);
   }
 
+  // Show the current tour step
   showStep() {
-    const step = this.steps[this.currentStep]
-    let target = document.querySelector(step.target)
-    // Special handling for border color sections - skip if no border selected
+    const step = this.steps[this.currentStep];
+    let target = document.querySelector(step.target);
     if (step.target.includes("bottomBorderColorSection") && config.bottomBorder === "none") {
-      this.nextStep()
-      return
+      this.nextStep();
+      return;
     }
-
     if (step.target.includes("topBorderColorSection") && config.topBorder === "none") {
-      this.nextStep()
-      return
+      this.nextStep();
+      return;
     }
-    // Special handling for color sections that might be hidden
     if (!target || (target.style && target.style.display === "none")) {
-      // For border color sections, show them temporarily during tour
       if (step.target.includes("BorderColorSection")) {
         if (step.target.includes("bottom") && config.bottomBorder !== "none") {
-          document.querySelector('#bottomBorderOptions .border-option-walmart[data-border="beads"]').click()
-          target = document.querySelector(step.target + " .color-options-walmart")
+          document.querySelector('#bottomBorderOptions .border-option-walmart[data-border="beads"]').click();
+          target = document.querySelector(step.target + " .color-options-walmart");
         } else if (step.target.includes("top") && config.topBorder !== "none") {
-          document.querySelector('#topBorderOptions .border-option-walmart[data-border="beads"]').click()
-          target = document.querySelector(step.target + " .color-options-walmart")
+          document.querySelector('#topBorderOptions .border-option-walmart[data-border="beads"]').click();
+          target = document.querySelector(step.target + " .color-options-walmart");
         }
       }
     }
     if (!target) {
-      this.nextStep()
-      return
+      this.nextStep();
+      return;
     }
-    // For custom message step, check if user selected custom message and wait for input
     if (step.target === "#messageOptions" && config.messageChoice === "custom") {
-      const customInput = document.getElementById("customTextWalmart")
+      const customInput = document.getElementById("customTextWalmart");
       if (customInput && customInput.value.trim() === "") {
-        // Wait for user to type something
         const inputHandler = () => {
           if (customInput.value.trim() !== "") {
-            customInput.removeEventListener("input", inputHandler)
-            setTimeout(() => this.nextStep(), 1000) // Auto advance after 1 second of typing
+            customInput.removeEventListener("input", inputHandler);
+            setTimeout(() => this.nextStep(), 1000);
           }
-        }
-        customInput.addEventListener("input", inputHandler)
-        // Don't proceed automatically, wait for user input
+        };
+        customInput.addEventListener("input", inputHandler);
       }
     }
-    // Rest of the existing showStep logic...
-    // Navigate to the appropriate wizard step if needed - ONLY when step changes
     const stepMapping = {
-      0: 1, // Welcome - stay on size
+      0: 1, // Welcome
       1: 1, // Size
       2: 2, // Flavor
       3: 3, // Icing styles
-      4: 3, // Icing colors - STAY on step 3
+      4: 3, // Icing colors
       5: 4, // Filling
       6: 5, // Bottom border options
-      7: 5, // Bottom border colors - STAY on step 5
+      7: 5, // Bottom border colors
       8: 6, // Top border options
-      9: 6, // Top border colors - STAY on step 6
+      9: 6, // Top border colors
       10: 7, // Message
       11: 8, // Decorations
-    }
-    const wizardStep = stepMapping[this.currentStep]
+    };
+    const wizardStep = stepMapping[this.currentStep];
     if (wizardStep && currentWizardStep !== wizardStep) {
-      goToStep(wizardStep)
+      goToStep(wizardStep);
     }
-    // Position highlight
-    this.positionHighlight(target)
-    // Position tooltip
-    this.positionTooltip(target, step)
-    // Update content
-    this.tooltipHeader.textContent = step.title
-    this.tooltipContent.textContent = step.content
-    this.stepCounter.textContent = `${this.currentStep + 1} of ${this.steps.length}`
-
-    // Ensure tooltip is visible
-    this.tooltip.style.display = "block"
+    this.positionHighlight(target);
+    this.positionTooltip(target, step);
+    this.tooltipHeader.textContent = step.title;
+    this.tooltipContent.textContent = step.content;
+    this.stepCounter.textContent = `${this.currentStep + 1} of ${this.steps.length}`;
+    this.tooltip.style.display = "block";
   }
 
+  // Move to the next tour step
   nextStep() {
-    this.currentStep++
+    this.currentStep++;
     if (this.currentStep >= this.steps.length) {
-      this.endTour()
+      this.endTour();
     } else {
-      // Add small delay to prevent positioning issues
-      setTimeout(() => {
-        this.showStep()
-      }, 100)
+      setTimeout(() => this.showStep(), 100);
     }
   }
 
+  // End the guided tour
   endTour() {
-    this.isActive = false
-    this.overlay.classList.remove("active")
-    this.highlight.style.display = "none"
-    this.tooltip.style.display = "none"
-    this.startBtn.classList.remove("hidden")
-    this.currentStep = 0
+    this.isActive = false;
+    this.overlay.classList.remove("active");
+    this.highlight.style.display = "none";
+    this.tooltip.style.display = "none";
+    this.startBtn.classList.remove("hidden");
+    this.currentStep = 0;
   }
 }
 
-// Initialize tour system
-let guidedTour
-// =============== END GUIDED TOUR SYSTEM ===============
+// Initialize guided tour
+let guidedTour;
 
+// Show the order summary view
 function showOrderSummary() {
-  document.getElementById("orderSummaryView").style.display = "block"
-  document.querySelector(".step-content").style.display = "none"
-  document.querySelector(".step-navigation").style.display = "none"
-  updateOrderSummary()
+  document.getElementById("orderSummaryView").style.display = "block";
+  document.querySelector(".step-content").style.display = "none";
+  document.querySelector(".step-navigation").style.display = "none";
+  updateOrderSummary();
 }
 
+// Show the first wizard step
 function showFirstStep() {
-  document.getElementById("orderSummaryView").style.display = "none"
-  document.querySelector(".step-content").style.display = "block"
-  document.querySelector(".step-navigation").style.display = "flex"
-  goToStep(1)
+  document.getElementById("orderSummaryView").style.display = "none";
+  document.querySelector(".step-content").style.display = "block";
+  document.querySelector(".step-navigation").style.display = "flex";
+  goToStep(1);
 }
 
+// Navigate to a specific wizard step
 function goToStep(stepNumber) {
-  currentWizardStep = stepNumber
-  showStep(stepNumber)
-  document.getElementById("orderSummaryView").style.display = "none"
-  document.querySelector(".step-content").style.display = "block"
-  document.querySelector(".step-navigation").style.display = "flex"
+  currentWizardStep = stepNumber;
+  showStep(stepNumber);
+  document.getElementById("orderSummaryView").style.display = "none";
+  document.querySelector(".step-content").style.display = "block";
+  document.querySelector(".step-navigation").style.display = "flex";
 }
 
+// Show the specified wizard step
 function showStep(stepNumber) {
-  // Hide all steps
   document.querySelectorAll(".step-section").forEach((section) => {
-    section.classList.remove("active")
-  })
-  // Show current step
-  document.getElementById(`step-${stepNumber}`).classList.add("active")
-  // Handle flower sub-options visibility
-  const flowerSubOptions = document.getElementById("flowerSubOptions")
+    section.classList.remove("active");
+  });
+  document.getElementById(`step-${stepNumber}`).classList.add("active");
+  const flowerSubOptions = document.getElementById("flowerSubOptions");
   if (stepNumber === 8 && config.decorations === "flowers") {
-    flowerSubOptions.style.display = "flex"
+    flowerSubOptions.style.display = "flex";
   } else {
-    flowerSubOptions.style.display = "none"
+    flowerSubOptions.style.display = "none";
   }
-  // Handle toppings color section visibility
-  const toppingsColorSection = document.getElementById("toppingsColorSection")
+  const toppingsColorSection = document.getElementById("toppingsColorSection");
   if (stepNumber === 8 && config.decorations === "toppings") {
-    toppingsColorSection.style.display = "block"
+    toppingsColorSection.style.display = "block";
   } else {
-    toppingsColorSection.style.display = "none"
+    toppingsColorSection.style.display = "none";
   }
-  // Update navigation
-  const prevBtn = document.getElementById("prevBtn")
-  const nextBtn = document.getElementById("nextBtn")
-  const nextStepName = document.getElementById("nextStepName")
-  prevBtn.style.display = stepNumber === 1 ? "none" : "block"
+  const prevBtn = document.getElementById("prevBtn");
+  const nextBtn = document.getElementById("nextBtn");
+  const nextStepName = document.getElementById("nextStepName");
+  prevBtn.style.display = stepNumber === 1 ? "none" : "block";
   if (stepNumber === totalWizardSteps) {
-    nextBtn.textContent = "Done"
-    nextBtn.className = "nav-btn"
-    nextBtn.onclick = showOrderSummary
-    nextStepName.textContent = ""
+    nextBtn.textContent = "Done";
+    nextBtn.className = "nav-btn";
+    nextBtn.onclick = showOrderSummary;
+    nextStepName.textContent = "";
   } else {
-    nextBtn.innerHTML = "→"
-    nextBtn.className = "nav-btn"
-    nextBtn.onclick = nextStep
-    nextStepName.textContent = stepNames[stepNumber + 1]
+    nextBtn.innerHTML = "→";
+    nextBtn.className = "nav-btn";
+    nextBtn.onclick = nextStep;
+    nextStepName.textContent = stepNames[stepNumber + 1];
   }
 }
 
+// Move to the next wizard step
 function nextStep() {
   if (currentWizardStep < totalWizardSteps) {
-    currentWizardStep++
-    showStep(currentWizardStep)
+    currentWizardStep++;
+    showStep(currentWizardStep);
   } else {
-    showOrderSummary()
+    showOrderSummary();
   }
 }
 
+// Move to the previous wizard step
 function prevStep() {
   if (currentWizardStep > 1) {
-    currentWizardStep--
-    showStep(currentWizardStep)
+    currentWizardStep--;
+    showStep(currentWizardStep);
   }
 }
 
+// Update the order summary display
 function updateOrderSummary() {
   const sizeLabels = {
     small: '6" Round',
     medium: '8" Round',
     large: '10" Round',
-  }
-  document.getElementById("summarySize").textContent = sizeLabels[config.size]
-  document.getElementById("summarySizePrice").innerHTML = `<strong>₱${pricing.base[config.size].toFixed(2)}</strong>`
-  document.getElementById("summaryFlavor").textContent = config.cakeColor === "#8B4513" ? "Chocolate" : "White"
-  const icingStyle = config.icingStyle === "buttercream" ? "Buttercreme" : "Whipped"
-  const icingColorName = document.getElementById("selectedColorName").textContent
-  document.getElementById("summaryIcing").textContent = `${icingStyle} - ${icingColorName}`
-  // Handle filling
+  };
+  document.getElementById("summarySize").textContent = sizeLabels[config.size];
+  document.getElementById("summarySizePrice").innerHTML = `<strong>₱${pricing.base[config.size].toFixed(2)}</strong>`;
+  document.getElementById("summaryFlavor").textContent = config.cakeColor === "#8B4513" ? "Chocolate" : "White";
+  const icingStyle = config.icingStyle === "buttercream" ? "Buttercream" : "Whipped";
+  const icingColorName = document.getElementById("selectedColorName").textContent;
+  document.getElementById("summaryIcing").textContent = `${icingStyle} - ${icingColorName}`;
   const fillingNames = {
     none: "None",
     strawberry: "Strawberry",
     bavarian: "Bavarian Creme",
-  }
-  document.getElementById("summaryFilling").textContent = fillingNames[config.filling]
-  const fillingPriceElement = document.getElementById("summaryFillingPrice")
+  };
+  document.getElementById("summaryFilling").textContent = fillingNames[config.filling];
+  const fillingPriceElement = document.getElementById("summaryFillingPrice");
   if (config.filling !== "none") {
-    fillingPriceElement.innerHTML = `<strong>+₱${pricing.fillings[config.filling].toFixed(2)}</strong>`
-    fillingPriceElement.style.display = "block"
+    fillingPriceElement.innerHTML = `<strong>+₱${pricing.fillings[config.filling].toFixed(2)}</strong>`;
+    fillingPriceElement.style.display = "block";
   } else {
-    fillingPriceElement.style.display = "none"
+    fillingPriceElement.style.display = "none";
   }
-  // Handle borders
-  const bottomBorderItem = document.getElementById("summaryBottomBorderItem")
+  const bottomBorderItem = document.getElementById("summaryBottomBorderItem");
   if (config.bottomBorder !== "none") {
-    bottomBorderItem.style.display = "flex"
-    const borderName = config.bottomBorder.charAt(0).toUpperCase() + config.bottomBorder.slice(1)
-    const borderColorName = document.getElementById("selectedBottomBorderColorName").textContent
-    document.getElementById("summaryBottomBorder").textContent = `${borderName} - ${borderColorName}`
+    bottomBorderItem.style.display = "flex";
+    const borderName = config.bottomBorder.charAt(0).toUpperCase() + config.bottomBorder.slice(1);
+    const borderColorName = document.getElementById("selectedBottomBorderColorName").textContent;
+    document.getElementById("summaryBottomBorder").textContent = `${borderName} - ${borderColorName}`;
   } else {
-    bottomBorderItem.style.display = "none"
+    bottomBorderItem.style.display = "none";
   }
-  const topBorderItem = document.getElementById("summaryTopBorderItem")
+  const topBorderItem = document.getElementById("summaryTopBorderItem");
   if (config.topBorder !== "none") {
-    topBorderItem.style.display = "flex"
-    const borderName = config.topBorder.charAt(0).toUpperCase() + config.topBorder.slice(1)
-    const borderColorName = document.getElementById("selectedTopBorderColorName").textContent
-    document.getElementById("summaryTopBorder").textContent = `${borderName} - ${borderColorName}`
+    topBorderItem.style.display = "flex";
+    const borderName = config.topBorder.charAt(0).toUpperCase() + config.topBorder.slice(1);
+    const borderColorName = document.getElementById("selectedTopBorderColorName").textContent;
+    document.getElementById("summaryTopBorder").textContent = `${borderName} - ${borderColorName}`;
   } else {
-    topBorderItem.style.display = "none"
+    topBorderItem.style.display = "none";
   }
-  // Handle message
-  const messageItem = document.getElementById("summaryMessageItem")
+  const messageItem = document.getElementById("summaryMessageItem");
   if (config.customText && config.messageChoice === "custom") {
-    messageItem.style.display = "flex"
-    document.getElementById("summaryMessage").textContent = `"${config.customText}"`
+    messageItem.style.display = "flex";
+    document.getElementById("summaryMessage").textContent = `"${config.customText}"`;
   } else {
-    messageItem.style.display = "none"
+    messageItem.style.display = "none";
   }
-  // Handle decorations
-  const decorationsItem = document.getElementById("summaryDecorationsItem")
+  const decorationsItem = document.getElementById("summaryDecorationsItem");
   if (config.decorations !== "none") {
-    decorationsItem.style.display = "flex"
-    let decorationText = ""
+    decorationsItem.style.display = "flex";
+    let decorationText = "";
     if (config.decorations === "flowers") {
       const flowerNames = {
         daisies: "Daisies",
         buttonRoses: "Button Roses",
-      }
-      decorationText = `Flowers (${flowerNames[config.flowerType] || "None"})`
+      };
+      decorationText = `Flowers (${flowerNames[config.flowerType] || "None"})`;
     } else if (config.decorations === "toppings") {
-      const toppingsColorName = document.getElementById("selectedToppingsColorName").textContent
-      decorationText = `Toppings (${toppingsColorName})`
+      const toppingsColorName = document.getElementById("selectedToppingsColorName").textContent;
+      decorationText = `Toppings (${toppingsColorName})`;
     } else {
       const decorationNames = {
         balloons: "Balloons",
-      }
-      decorationText = decorationNames[config.decorations]
+      };
+      decorationText = decorationNames[config.decorations];
     }
-    document.getElementById("summaryDecorations").textContent = decorationText
+    document.getElementById("summaryDecorations").textContent = decorationText;
   } else {
-    decorationsItem.style.display = "none"
+    decorationsItem.style.display = "none";
   }
-  // Update total
-  const total = pricing.base[config.size] + pricing.fillings[config.filling]
-  document.getElementById("summaryTotal").innerHTML = `<strong>₱${total.toFixed(2)}</strong>`
+  const total = pricing.base[config.size] + pricing.fillings[config.filling];
+  document.getElementById("summaryTotal").innerHTML = `<strong>₱${total.toFixed(2)}</strong>`;
 }
 
+// Save the 3D cake design as an image
 function saveDesignImage() {
   if (!renderer || !scene || !camera) {
-    alert("3D model not ready. Please wait a moment and try again.")
-    return
+    alert("3D model not ready. Please wait a moment and try again.");
+    return;
   }
   try {
-    renderer.render(scene, camera)
-    const canvas = renderer.domElement
-    const dataURL = canvas.toDataURL("image/png")
-    const link = document.createElement("a")
-    link.download = `cake-design-${Date.now()}.png`
-    link.href = dataURL
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    alert("🎨 Design image saved successfully!")
+    renderer.render(scene, camera);
+    const canvas = renderer.domElement;
+    const dataURL = canvas.toDataURL("image/png");
+    const link = document.createElement("a");
+    link.download = `cake-design-${Date.now()}.png`;
+    link.href = dataURL;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    alert("🎨 Design image saved successfully!");
   } catch (error) {
-    console.error("Error saving design:", error)
-    alert("Sorry, there was an error saving your design. Please try again.")
+    console.error("Error saving design:", error);
+    alert("Sorry, there was an error saving your design. Please try again.");
   }
 }
 
+// Submit the custom cake order to the backend
+async function submitOrder() {
+  const imageUpload = document.getElementById("imageUpload");
+  const formData = new FormData();
+
+  const token = localStorage.getItem('token');
+
+   if (!token) {
+    alert('Please log in to submit a custom cake order');
+    window.location.href = '/public/customer/login.html';
+    return;
+  }
+
+  // Capture 3D design as image
+  let designImageDataUrl = null;
+  try {
+    renderer.render(scene, camera);
+    const canvas = renderer.domElement;
+    designImageDataUrl = canvas.toDataURL("image/png");
+    
+    // Convert data URL to blob for file upload
+    const response = await fetch(designImageDataUrl);
+    const blob = await response.blob();
+    formData.append("designImage", blob, "cake-design.png");
+  } catch (error) {
+    console.error("Error capturing 3D design:", error);
+    // Continue without design image if capture fails
+    alert("Could not capture 3D design image, but order will still be submitted");
+  }
+
+  formData.append("size", config.size);
+  formData.append("cakeColor", config.cakeColor);
+  formData.append("icingStyle", config.icingStyle);
+  formData.append("icingColor", config.icingColor);
+  formData.append("filling", config.filling);
+  formData.append("bottomBorder", config.bottomBorder);
+  formData.append("topBorder", config.topBorder);
+  formData.append("bottomBorderColor", config.bottomBorderColor);
+  formData.append("topBorderColor", config.topBorderColor);
+  formData.append("decorations", config.decorations);
+  formData.append("flowerType", config.flowerType);
+  formData.append("customText", config.customText);
+  formData.append("messageChoice", config.messageChoice);
+  formData.append("toppingsColor", config.toppingsColor);
+  formData.append("price", pricing.base[config.size] + pricing.fillings[config.filling]);
+
+  if (imageUpload.files[0]) {
+    formData.append("referenceImage", imageUpload.files[0]);
+  }
+
+  try {
+    // Send token as query parameter for FormData requests
+    const response = await fetch(`/api/custom-cake/create?token=${encodeURIComponent(token)}`, {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+
+    const result = await response.json();
+    alert("🎂 Custom cake order submitted successfully! Awaiting admin review.");
+    // Reset the form
+    config.size = "small";
+    config.cakeColor = "#8B4513";
+    config.icingStyle = "buttercream";
+    config.icingColor = "#FFFFFF";
+    config.filling = "none";
+    config.bottomBorder = "none";
+    config.topBorder = "none";
+    config.bottomBorderColor = "#FFFFFF";
+    config.topBorderColor = "#FFFFFF";
+    config.decorations = "none";
+    config.flowerType = "none";
+    config.customText = "";
+    config.messageChoice = "none";
+    config.toppingsColor = "#FFFFFF";
+    document.getElementById("imageUpload").value = "";
+    document.getElementById("uploadedImage").style.display = "none";
+    document.getElementById("uploadArea").style.display = "block";
+    updateCake();
+    updateOrderSummary();
+    showFirstStep();
+  } catch (error) {
+    console.error("Error submitting order:", error);
+    alert("Sorry, there was an error submitting your order. Please try again.");
+  }
+}
+
+// Add the custom cake to the cart (after admin approval)
+async function addToCart() {
+  alert("🛒 Please submit your custom cake order for admin review. Once approved, you can add it to your cart from the 'My Custom Orders' page.");
+}
+
+// Redirect to checkout page
 function checkout() {
-  const sizeLabels = {
-    small: { label: '6"', servings: 12 },
-    medium: { label: '8"', servings: 16 },
-    large: { label: '10"', servings: 24 },
-  }
-  const sizeInfo = sizeLabels[config.size]
-  const total = pricing.base[config.size] + pricing.fillings[config.filling]
-  alert(
-    `🛒 Proceeding to checkout...\n\n` +
-      `Your custom cake:\n` +
-      `Size: ${sizeInfo.label} (${sizeInfo.servings} servings)\n` +
-      `Flavor: ${config.cakeColor === "#8B4513" ? "Chocolate" : "White"}\n` +
-      `Total: ₱${total.toFixed(2)}\n\n` +
-      `Redirecting to payment page...`,
-  )
+  alert("🛒 Please submit your custom cake order for admin review. Once approved, you can add it to your cart and proceed to checkout from the 'My Custom Orders' page.");
 }
 
-function addToCart() {
-  const sizeLabels = {
-    small: { label: '6"', servings: 12 },
-    medium: { label: '8"', servings: 16 },
-    large: { label: '10"', servings: 24 },
-  }
-  const sizeInfo = sizeLabels[config.size]
-  const total = pricing.base[config.size] + pricing.fillings[config.filling]
-  alert(
-    `🛒 Added to cart!\n\n` +
-      `Size: ${sizeInfo.label} (${sizeInfo.servings} servings)\n` +
-      `Flavor: ${config.cakeColor === "#8B4513" ? "Chocolate" : "White"}\n` +
-      `Icing: ${config.icingStyle === "buttercream" ? "Buttercream" : "Whipped Cream"}\n` +
-      `Filling: ${config.filling === "strawberry" ? "Strawberry" : config.filling === "bavarian" ? "Bavarian Crème" : "None"}\n` +
-      `${config.customText ? `Message: "${config.customText}"\n` : ""}` +
-      `${config.decorations !== "none" ? `Decorations: ${config.decorations === "flowers" ? `Flowers (${config.flowerType === "daisies" ? "Daisies" : "Button Roses"})` : config.decorations === "toppings" ? `Toppings (${document.getElementById("selectedToppingsColorName").textContent})` : config.decorations}\n` : ""}` +
-      `\nTotal: ₱${total.toFixed(2)}`,
-  )
-}
-
-// Add event listeners for the new Walmart-style options
-document.addEventListener("DOMContentLoaded", () => {
-  // Initialize guided tour
-  guidedTour = new GuidedTour()
-
-  // Ensure tour highlight is hidden on page load to prevent unwanted rectangle display
-  const tourHighlight = document.getElementById("tourHighlight")
-  if (tourHighlight) {
-    tourHighlight.style.display = "none"
-  }
-
-  // Size options
-  document.querySelectorAll(".size-option-walmart").forEach((el) =>
-    el.addEventListener("click", () => {
-      document.querySelectorAll(".size-option-walmart").forEach((o) => o.classList.remove("active"))
-      el.classList.add("active")
-      config.size = el.dataset.size
-      updateCake()
-      updateOrderSummary()
-    }),
-  )
-  // Flavor options
-  document.querySelectorAll(".flavor-option-walmart").forEach((el) =>
-    el.addEventListener("click", () => {
-      document.querySelectorAll(".flavor-option-walmart").forEach((o) => o.classList.remove("active"))
-      el.classList.add("active")
-      config.cakeColor = el.dataset.color
-      updateCake()
-      updateOrderSummary()
-    }),
-  )
-  // Icing options
-  document.querySelectorAll(".icing-style-option").forEach((el) =>
-    el.addEventListener("click", () => {
-      document.querySelectorAll(".icing-style-option").forEach((o) => o.classList.remove("active"))
-      el.classList.add("active")
-      config.icingStyle = el.dataset.icing.toLowerCase().replace(" ", "")
-      updateOrderSummary()
-    }),
-  )
-  // Color options
-  document.querySelectorAll(".color-options-walmart .color-option-walmart").forEach((c) =>
-    c.addEventListener("click", () => {
-      const parent = c.closest(".color-options-walmart")
-      const borderType = parent.dataset.borderType
-      if (borderType === "bottom") {
-        parent.querySelectorAll(".color-option-walmart").forEach((o) => o.classList.remove("active"))
-        c.classList.add("active")
-        config.bottomBorderColor = c.dataset.color
-        document.getElementById("selectedBottomBorderColorName").textContent = c.dataset.name
-        updateCake()
-      } else if (borderType === "top") {
-        parent.querySelectorAll(".color-option-walmart").forEach((o) => o.classList.remove("active"))
-        c.classList.add("active")
-        config.topBorderColor = c.dataset.color
-        document.getElementById("selectedTopBorderColorName").textContent = c.dataset.name
-        updateCake()
-      } else {
-        parent.querySelectorAll(".color-option-walmart").forEach((o) => o.classList.remove("active"))
-        c.classList.add("active")
-        config.icingColor = c.dataset.color
-        updateCake()
-        document.getElementById("selectedColorName").textContent = c.dataset.name
-      }
-      updateOrderSummary()
-    }),
-  )
-  // Toppings color options
-  document.querySelectorAll(".toppings-color-option").forEach((c) =>
-    c.addEventListener("click", () => {
-      document.querySelectorAll(".toppings-color-option").forEach((o) => o.classList.remove("active"))
-      c.classList.add("active")
-      config.toppingsColor = c.dataset.color
-      document.getElementById("selectedToppingsColorName").textContent = c.dataset.name
-      updateCake()
-      updateOrderSummary()
-    }),
-  )
-  // Filling options
-  document.querySelectorAll(".filling-option-walmart").forEach((el) =>
-    el.addEventListener("click", () => {
-      document.querySelectorAll(".filling-option-walmart").forEach((o) => o.classList.remove("active"))
-      el.classList.add("active")
-      config.filling = el.dataset.filling
-      updateCake()
-      updateOrderSummary()
-    }),
-  )
-  // Bottom border options
-  document.querySelectorAll("#step-5 .border-option-walmart").forEach((el) =>
-    el.addEventListener("click", () => {
-      document.querySelectorAll("#step-5 .border-option-walmart").forEach((o) => o.classList.remove("active"))
-      el.classList.add("active")
-      config.bottomBorder = el.dataset.border
-      const colorSection = document.getElementById("bottomBorderColorSection")
-      if (config.bottomBorder !== "none") {
-        colorSection.style.display = "block"
-      } else {
-        colorSection.style.display = "none"
-      }
-      updateCake()
-      updateOrderSummary()
-    }),
-  )
-  // Top border options
-  document.querySelectorAll("#step-6 .border-option-walmart").forEach((el) =>
-    el.addEventListener("click", () => {
-      document.querySelectorAll("#step-6 .border-option-walmart").forEach((o) => o.classList.remove("active"))
-      el.classList.add("active")
-      config.topBorder = el.dataset.border
-      const colorSection = document.getElementById("topBorderColorSection")
-      if (config.topBorder !== "none") {
-        colorSection.style.display = "block"
-      } else {
-        colorSection.style.display = "none"
-      }
-      updateCake()
-      updateOrderSummary()
-    }),
-  )
-  // Message options
-  document.querySelectorAll(".message-option-walmart").forEach((option) => {
-    option.addEventListener("click", function () {
-      document.querySelectorAll(".message-option-walmart").forEach((o) => o.classList.remove("active"))
-      this.classList.add("active")
-      config.messageChoice = this.dataset.message
-      if (this.dataset.message === "none") {
-        config.customText = ""
-        document.getElementById("customTextWalmart").value = ""
-        document.getElementById("charCountWalmart").textContent = "0"
-      }
-      updateOrderSummary()
-    })
-  })
-  // Decoration options
-  document.querySelectorAll(".decoration-option-walmart").forEach((el) =>
-    el.addEventListener("click", () => {
-      document.querySelectorAll(".decoration-option-walmart").forEach((o) => o.classList.remove("active"))
-      el.classList.add("active")
-      config.decorations = el.dataset.decoration
-      const flowerSubOptions = document.getElementById("flowerSubOptions")
-      const toppingsColorSection = document.getElementById("toppingsColorSection")
-
-      if (config.decorations === "flowers") {
-        flowerSubOptions.style.display = "flex"
-        toppingsColorSection.style.display = "none"
-        if (!document.querySelector(".flower-option-walmart.active")) {
-          document.querySelector('.flower-option-walmart[data-flower-type="daisies"]').classList.add("active")
-          config.flowerType = "daisies"
-        }
-      } else if (config.decorations === "toppings") {
-        flowerSubOptions.style.display = "none"
-        toppingsColorSection.style.display = "block"
-      } else {
-        flowerSubOptions.style.display = "none"
-        toppingsColorSection.style.display = "none"
-        document.querySelectorAll(".flower-option-walmart").forEach((o) => o.classList.remove("active"))
-        config.flowerType = "none"
-      }
-      updateCake()
-      updateOrderSummary()
-    }),
-  )
-  // Flower sub-options
-  document.querySelectorAll(".flower-option-walmart").forEach((el) =>
-    el.addEventListener("click", () => {
-      document.querySelectorAll(".flower-option-walmart").forEach((o) => o.classList.remove("active"))
-      el.classList.add("active")
-      config.flowerType = el.dataset.flowerType
-      updateCake()
-      updateOrderSummary()
-    }),
-  )
-  // Custom text
-  document.getElementById("customTextWalmart").addEventListener("input", (e) => {
-    const charCount = document.getElementById("charCountWalmart")
-    charCount.textContent = e.target.value.length
-    config.customText = e.target.value
-    updateOrderSummary()
-  })
-  // Initialize - start with step content visible, order summary hidden
-  document.getElementById("orderSummaryView").style.display = "none"
-  document.querySelector(".step-content").style.display = "block"
-  document.querySelector(".step-navigation").style.display = "flex"
-  showStep(1)
-  init()
-  // Upload functionality
-  const uploadArea = document.getElementById("uploadArea")
-  const imageUpload = document.getElementById("imageUpload")
-  const uploadedImageDiv = document.getElementById("uploadedImage")
-  const previewImage = document.getElementById("previewImage")
-  uploadArea.addEventListener("click", () => {
-    imageUpload.click()
-  })
-  uploadArea.addEventListener("dragover", (e) => {
-    e.preventDefault()
-    uploadArea.style.borderColor = "var(--primary-color)"
-    uploadArea.style.backgroundColor = "rgba(44, 144, 69, 0.05)"
-  })
-  uploadArea.addEventListener("dragleave", () => {
-    uploadArea.style.borderColor = "#d0d0d0"
-    uploadArea.style.backgroundColor = "#fafafa"
-  })
-  uploadArea.addEventListener("drop", (e) => {
-    e.preventDefault()
-    uploadArea.style.borderColor = "#d0d0d0"
-    uploadArea.style.backgroundColor = "#fafafa"
-    const files = e.dataTransfer.files
-    if (files.length > 0 && files[0].type.startsWith("image/")) {
-      handleImageUpload(files[0])
-    }
-  })
-  imageUpload.addEventListener("change", (e) => {
-    if (e.target.files.length > 0) {
-      handleImageUpload(e.target.files[0])
-    }
-  })
-  function handleImageUpload(file) {
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      previewImage.src = e.target.result
-      uploadedImageDiv.style.display = "block"
-      uploadArea.style.display = "none"
-    }
-    reader.readAsDataURL(file)
-  }
-  function removeUploadedImage() {
-    uploadedImageDiv.style.display = "none"
-    uploadArea.style.display = "block"
-    imageUpload.value = ""
-  }
-  window.removeUploadedImage = removeUploadedImage
-})
-
+// Update the 3D cake model based on configuration
 function updateCake() {
-  if (!cake) return
-  // Bottom border logic with immediate color update
+  if (!cake) return;
   if (config.bottomBorder === "beads" && cake.bottomBeadsMesh) {
-    cake.bottomBeadsMesh.visible = true
+    cake.bottomBeadsMesh.visible = true;
     cake.bottomBeadsMesh.traverse((child) => {
       if (child.isMesh && child.material) {
-        const hexColor = Number.parseInt(config.bottomBorderColor.replace("#", "0x"))
-        child.material.color.setHex(hexColor)
+        const hexColor = Number.parseInt(config.bottomBorderColor.replace("#", "0x"));
+        child.material.color.setHex(hexColor);
       }
-    })
+    });
   } else if (cake.bottomBeadsMesh) {
-    cake.bottomBeadsMesh.visible = false
+    cake.bottomBeadsMesh.visible = false;
   }
   if (config.bottomBorder === "shells" && cake.bottomShellsMesh) {
-    cake.bottomShellsMesh.visible = true
+    cake.bottomShellsMesh.visible = true;
     cake.bottomShellsMesh.traverse((child) => {
       if (child.isMesh && child.material) {
-        const hexColor = Number.parseInt(config.bottomBorderColor.replace("#", "0x"))
-        child.material.color.setHex(hexColor)
+        const hexColor = Number.parseInt(config.bottomBorderColor.replace("#", "0x"));
+        child.material.color.setHex(hexColor);
       }
-    })
+    });
   } else if (cake.bottomShellsMesh) {
-    cake.bottomShellsMesh.visible = false
+    cake.bottomShellsMesh.visible = false;
   }
-  // Top border logic with immediate color update
   if (config.topBorder === "beads" && cake.topBeadsMesh) {
-    cake.topBeadsMesh.visible = true
+    cake.topBeadsMesh.visible = true;
     cake.topBeadsMesh.traverse((child) => {
       if (child.isMesh && child.material) {
-        const hexColor = Number.parseInt(config.topBorderColor.replace("#", "0x"))
-        child.material.color.setHex(hexColor)
+        const hexColor = Number.parseInt(config.topBorderColor.replace("#", "0x"));
+        child.material.color.setHex(hexColor);
       }
-    })
+    });
   } else if (cake.topBeadsMesh) {
-    cake.topBeadsMesh.visible = false
+    cake.topBeadsMesh.visible = false;
   }
   if (config.topBorder === "shells" && cake.topShellsMesh) {
-    cake.topShellsMesh.visible = true
+    cake.topShellsMesh.visible = true;
     cake.topShellsMesh.traverse((child) => {
       if (child.isMesh && child.material) {
-        const hexColor = Number.parseInt(config.topBorderColor.replace("#", "0x"))
-        child.material.color.setHex(hexColor)
+        const hexColor = Number.parseInt(config.topBorderColor.replace("#", "0x"));
+        child.material.color.setHex(hexColor);
       }
-    })
+    });
   } else if (cake.topShellsMesh) {
-    cake.topShellsMesh.visible = false
+    cake.topShellsMesh.visible = false;
   }
-  const hexCake = Number.parseInt(config.cakeColor.replace("#", "0x"))
-  if (cake.bottomSpongeMesh) cake.bottomSpongeMesh.material.color.setHex(hexCake)
-  if (cake.topSpongeMesh) cake.topSpongeMesh.material.color.setHex(hexCake)
-  const hexIce = Number.parseInt(config.icingColor.replace("#", "0x"))
-  if (cake.mainCakeMesh) cake.mainCakeMesh.material.color.setHex(hexIce)
-  const fillColor = fillingColors[config.filling] || "#FFFFFF"
-  const hexFills = Number.parseInt(fillColor.replace("#", "0x"))
-  if (cake.fillingMesh) cake.fillingMesh.material.color.setHex(hexFills)
-  // Hide all decoration meshes first
-  if (cake.balloonsMesh) cake.balloonsMesh.visible = false
-  if (cake.toppingsMesh) cake.toppingsMesh.visible = false
-  if (cake.daisiesMesh) cake.daisiesMesh.visible = false
-  if (cake.buttonRosesMesh) cake.buttonRosesMesh.visible = false
-  // Show selected decoration
+  const hexCake = Number.parseInt(config.cakeColor.replace("#", "0x"));
+  if (cake.bottomSpongeMesh) cake.bottomSpongeMesh.material.color.setHex(hexCake);
+  if (cake.topSpongeMesh) cake.topSpongeMesh.material.color.setHex(hexCake);
+  const hexIce = Number.parseInt(config.icingColor.replace("#", "0x"));
+  if (cake.mainCakeMesh) cake.mainCakeMesh.material.color.setHex(hexIce);
+  const fillColor = fillingColors[config.filling] || "#FFFFFF";
+  const hexFills = Number.parseInt(fillColor.replace("#", "0x"));
+  if (cake.fillingMesh) cake.fillingMesh.material.color.setHex(hexFills);
+  if (cake.balloonsMesh) cake.balloonsMesh.visible = false;
+  if (cake.toppingsMesh) cake.toppingsMesh.visible = false;
+  if (cake.daisiesMesh) cake.daisiesMesh.visible = false;
+  if (cake.buttonRosesMesh) cake.buttonRosesMesh.visible = false;
   if (config.decorations === "balloons" && cake.balloonsMesh) {
-    cake.balloonsMesh.visible = true
+    cake.balloonsMesh.visible = true;
   } else if (config.decorations === "toppings" && cake.toppingsMesh) {
-    cake.toppingsMesh.visible = true
-    // Apply toppings color
+    cake.toppingsMesh.visible = true;
     cake.toppingsMesh.traverse((child) => {
       if (child.isMesh && child.material) {
-        const hexColor = Number.parseInt(config.toppingsColor.replace("#", "0x"))
-        child.material.color.setHex(hexColor)
+        const hexColor = Number.parseInt(config.toppingsColor.replace("#", "0x"));
+        child.material.color.setHex(hexColor);
       }
-    })
+    });
   } else if (config.decorations === "flowers") {
     if (config.flowerType === "daisies" && cake.daisiesMesh) {
-      cake.daisiesMesh.visible = true
+      cake.daisiesMesh.visible = true;
     } else if (config.flowerType === "buttonRoses" && cake.buttonRosesMesh) {
-      cake.buttonRosesMesh.visible = true
+      cake.buttonRosesMesh.visible = true;
     }
   }
 }
 
-// Make functions global
-window.nextStep = nextStep
-window.prevStep = prevStep
-window.goToStep = goToStep
-window.showFirstStep = showFirstStep
-window.addToCart = addToCart
-window.saveDesignImage = saveDesignImage
-window.checkout = checkout
-
+// Initialize Three.js scene and load models
 function init() {
-  const THREE = window.THREE // Declare THREE variable
-  scene = new THREE.Scene()
-  scene.background = new THREE.Color("#f5f1e9")
-  THREE.RectAreaLightUniformsLib.init()
-  camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 1000)
-  camera.position.set(0, 0.2, 1.0)
-  camera.lookAt(0, 0, 0)
-  renderer = new THREE.WebGLRenderer({ antialias: true })
-  renderer.shadowMap.enabled = true
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap
-  renderer.setSize(container.clientWidth, container.clientHeight)
-  container.appendChild(renderer.domElement)
+  const THREE = window.THREE;
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color("#f5f1e9");
+  THREE.RectAreaLightUniformsLib.init();
+  camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 1000);
+  camera.position.set(0, 0.2, 1.0);
+  camera.lookAt(0, 0, 0);
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.setSize(container.clientWidth, container.clientHeight);
+  container.appendChild(renderer.domElement);
   window.addEventListener("resize", () => {
-    const width = container.clientWidth
-    const height = container.clientHeight
-    camera.aspect = width / height
-    camera.updateProjectionMatrix()
-    renderer.setSize(width, height)
-  })
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.1)
-  scene.add(ambientLight)
-  const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.7)
-  scene.add(hemisphereLight)
-  const dirLight = new THREE.DirectionalLight(0xffffff, 1)
-  dirLight.position.set(1.5, 2, 1)
-  dirLight.castShadow = true
-  dirLight.shadow.mapSize.width = 1024
-  dirLight.shadow.mapSize.height = 1024
-  dirLight.shadow.camera.near = 0.5
-  dirLight.shadow.camera.far = 500
-  dirLight.shadow.camera.left = -1
-  dirLight.shadow.camera.right = 1
-  dirLight.shadow.camera.top = 1
-  dirLight.shadow.camera.bottom = -1
-  scene.add(dirLight)
-  createCake()
-  addMouseControls()
-  animate()
+    const width = container.clientWidth;
+    const height = container.clientHeight;
+    camera.aspect = width / height;
+    camera.updateProjectionMatrix();
+    renderer.setSize(width, height);
+  });
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.1);
+  scene.add(ambientLight);
+  const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.7);
+  scene.add(hemisphereLight);
+  const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+  dirLight.position.set(1.5, 2, 1);
+  dirLight.castShadow = true;
+  dirLight.shadow.mapSize.width = 1024;
+  dirLight.shadow.mapSize.height = 1024;
+  dirLight.shadow.camera.near = 0.5;
+  dirLight.shadow.camera.far = 500;
+  dirLight.shadow.camera.left = -1;
+  dirLight.shadow.camera.right = 1;
+  dirLight.shadow.camera.top = 1;
+  dirLight.shadow.camera.bottom = -1;
+  scene.add(dirLight);
+  createCake();
+  addMouseControls();
+  animate();
   setTimeout(() => {
-    document.getElementById("loadingScreen").classList.add("hidden")
-  }, 800)
+    document.getElementById("loadingScreen").classList.add("hidden");
+  }, 800);
 }
+
+// Load and configure the 3D cake model
+const dracoLoader = new window.THREE.DRACOLoader()
+dracoLoader.setDecoderPath("https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/libs/draco/")
+
+const loader = new window.THREE.GLTFLoader()
+loader.setDRACOLoader(dracoLoader)
 
 function createCake() {
   if (cake) scene.remove(cake)
-  const THREE = window.THREE // Declare THREE variable
-  new THREE.GLTFLoader().load(
-    "/models/mainCake.glb",
+
+  loader.load(
+    "/models/compressed_mainCake.glb",
     (gltf) => {
       cake = gltf.scene
+
       cake.traverse((obj) => {
-        if (obj.isMesh && !cake.mainCakeMesh) {
-          cake.mainCakeMesh = obj
-        }
-        if (obj.name === "bottomBeadsBorder") {
-          cake.bottomBeadsBorderMesh = obj
-          obj.visible = false
-        }
-        if (obj.name === "topBeadsBorder") {
-          cake.topBeadsBorderMesh = obj
-          obj.visible = false
-        }
-        if (obj.name === "bottomShellsBorder") {
-          cake.bottomShellsBorderMesh = obj
-          obj.visible = false
-        }
-        if (obj.name === "topShellsBorder") {
-          cake.topShellsBorderMesh = obj
-          obj.visible = false
-        }
         if (obj.isMesh) {
-          obj.material.envMapIntensity = 0.5
-          obj.material.needsUpdate = true
-          if (obj.isMesh && obj.material) {
-            obj.material.envMapIntensity = 1.5
-            obj.material.roughness = 0.6
-            obj.material.metalness = 0.1
-            obj.material.needsUpdate = true
-          }
           if (obj.name === "BottomSponge") cake.bottomSpongeMesh = obj
           if (obj.name === "TopSponge") cake.topSpongeMesh = obj
           if (obj.name === "Filling") cake.fillingMesh = obj
+          if (obj.name === "mainCake") cake.mainCakeMesh = obj
+
+          if (obj.name === "bottomBeadsBorder") cake.bottomBeadsBorderMesh = obj
+          if (obj.name === "topBeadsBorder") cake.topBeadsBorderMesh = obj
+          if (obj.name === "bottomShellsBorder") cake.bottomShellsBorderMesh = obj
+          if (obj.name === "topShellsBorder") cake.topShellsBorderMesh = obj
+
+          obj.material.envMapIntensity = 1.5
+          obj.material.roughness = 0.6
+          obj.material.metalness = 0.1
+          obj.material.needsUpdate = true
         }
       })
-      cake.position.y = 0
-      scene.add(cake)
+
       cake.scale.set(0.27, 0.27, 0.27)
       cake.position.set(0, 0.05, 0.2)
-      new THREE.GLTFLoader().load("/models/bottomBeadsBorder.glb", (bottomBeadsGltf) => {
-        const bottomBeads = bottomBeadsGltf.scene
-        bottomBeads.visible = false
-        cake.add(bottomBeads)
-        cake.bottomBeadsMesh = bottomBeads
-      })
-      new THREE.GLTFLoader().load("/models/bottomShellsBorder.glb", (bottomShellsGltf) => {
-        const bottomShells = bottomShellsGltf.scene
-        bottomShells.visible = false
-        cake.add(bottomShells)
-        cake.bottomShellsMesh = bottomShells
-      })
-      new THREE.GLTFLoader().load("/models/topBeadsBorder.glb", (topBeadsGltf) => {
-        const topBeads = topBeadsGltf.scene
-        topBeads.visible = false
-        cake.add(topBeads)
-        cake.topBeadsMesh = topBeads
-      })
-      new THREE.GLTFLoader().load("/models/topShellsBorder.glb", (topShellsGltf) => {
-        const topShells = topShellsGltf.scene
-        topShells.visible = false
-        cake.add(topShells)
-        cake.topShellsMesh = topShells
-      })
-      // Load new decoration models
-      new THREE.GLTFLoader().load("/models/Balloons.glb", (gltf) => {
-        cake.balloonsMesh = gltf.scene
-        cake.balloonsMesh.visible = false
-        cake.add(cake.balloonsMesh)
-      })
-      new THREE.GLTFLoader().load("/models/Toppings.glb", (gltf) => {
-        cake.toppingsMesh = gltf.scene
-        cake.toppingsMesh.visible = false
-        cake.add(cake.toppingsMesh)
-      })
-      new THREE.GLTFLoader().load("/models/Daisies.glb", (gltf) => {
-        cake.daisiesMesh = gltf.scene
-        cake.daisiesMesh.visible = false
-        cake.add(cake.daisiesMesh)
-      })
-      new THREE.GLTFLoader().load("/models/buttonRoses.glb", (gltf) => {
-        cake.buttonRosesMesh = gltf.scene
-        cake.buttonRosesMesh.visible = false
-        cake.add(cake.buttonRosesMesh)
-      })
+      scene.add(cake)
+
+      const loadMesh = (file, propName, visible = false) =>
+        loader.load(`/models/compressed_${file}.glb`, (g) => {
+          const m = g.scene
+          m.visible = visible
+          cake.add(m)
+          cake[propName] = m
+        })
+
+      // borders
+      loadMesh("bottomBeadsBorder", "bottomBeadsMesh")
+      loadMesh("bottomShellsBorder", "bottomShellsMesh")
+      loadMesh("topBeadsBorder", "topBeadsMesh")
+      loadMesh("topShellsBorder", "topShellsMesh")
+
+      // decorations
+      loadMesh("Balloons", "balloonsMesh")
+      loadMesh("Toppings", "toppingsMesh")
+      loadMesh("Daisies", "daisiesMesh")
+      loadMesh("buttonRoses", "buttonRosesMesh")
+
       updateCake()
     },
     undefined,
-    (err) => console.error(err),
+    (err) => console.error("Draco/GLB load error:", err),
   )
 }
 
+// Add mouse controls for rotating the cake
 function addMouseControls() {
-  let down = false,
-    x0 = 0,
-    y0 = 0,
-    tx = 0,
-    ty = 0,
-    cx = 0,
-    cy = 0
+  let down = false, x0 = 0, y0 = 0, tx = 0, ty = 0, cx = 0, cy = 0;
   container.addEventListener("mousedown", (e) => {
-    down = true
-    x0 = e.clientX
-    y0 = e.clientY
-  })
-  container.addEventListener("mouseup", () => (down = false))
+    down = true;
+    x0 = e.clientX;
+    y0 = e.clientY;
+  });
+  container.addEventListener("mouseup", () => (down = false));
   container.addEventListener("mousemove", (e) => {
-    if (!down) return
-    const dx = e.clientX - x0,
-      dy = e.clientY - y0
-    tx += dx * 0.01
-    ty += dy * 0.01
-    x0 = e.clientX
-    y0 = e.clientY
-  })
-  container.addEventListener("contextmenu", (e) => e.preventDefault())
-  container.addEventListener("wheel", (e) => e.preventDefault())
-  ;(function loop() {
-    cx += (tx - cx) * 0.1
-    cy += (ty - cy) * 0.1
+    if (!down) return;
+    const dx = e.clientX - x0, dy = e.clientY - y0;
+    tx += dx * 0.01;
+    ty += dy * 0.01;
+    x0 = e.clientX;
+    y0 = e.clientY;
+  });
+  container.addEventListener("contextmenu", (e) => e.preventDefault());
+  container.addEventListener("wheel", (e) => e.preventDefault());
+  (function loop() {
+    cx += (tx - cx) * 0.1;
+    cy += (ty - cy) * 0.1;
     if (cake) {
-      cake.rotation.y = cx
-      cake.rotation.x = cy
+      cake.rotation.y = cx;
+      cake.rotation.x = cy;
     }
-    requestAnimationFrame(loop)
-  })()
+    requestAnimationFrame(loop);
+  })();
 }
 
+// Animate the 3D scene
 function animate() {
-  requestAnimationFrame(animate)
-  camera.lookAt(0, 0, 0)
-  renderer.render(scene, camera)
+  requestAnimationFrame(animate);
+  camera.lookAt(0, 0, 0);
+  renderer.render(scene, camera);
 }
+
+// Event listeners for DOM interactions
+document.addEventListener("DOMContentLoaded", () => {
+  guidedTour = new GuidedTour();
+  document.getElementById("tourHighlight").style.display = "none";
+  document.querySelectorAll(".size-option-walmart").forEach((el) =>
+    el.addEventListener("click", () => {
+      document.querySelectorAll(".size-option-walmart").forEach((o) => o.classList.remove("active"));
+      el.classList.add("active");
+      config.size = el.dataset.size;
+      updateCake();
+      updateOrderSummary();
+    })
+  );
+  document.querySelectorAll(".flavor-option-walmart").forEach((el) =>
+    el.addEventListener("click", () => {
+      document.querySelectorAll(".flavor-option-walmart").forEach((o) => o.classList.remove("active"));
+      el.classList.add("active");
+      config.cakeColor = el.dataset.color;
+      updateCake();
+      updateOrderSummary();
+    })
+  );
+  document.querySelectorAll(".icing-style-option").forEach((el) =>
+    el.addEventListener("click", () => {
+      document.querySelectorAll(".icing-style-option").forEach((o) => o.classList.remove("active"));
+      el.classList.add("active");
+      config.icingStyle = el.dataset.icing.toLowerCase().replace(" ", "");
+      updateOrderSummary();
+    })
+  );
+  document.querySelectorAll(".color-options-walmart .color-option-walmart").forEach((c) =>
+    c.addEventListener("click", () => {
+      const parent = c.closest(".color-options-walmart");
+      const borderType = parent.dataset.borderType;
+      if (borderType === "bottom") {
+        parent.querySelectorAll(".color-option-walmart").forEach((o) => o.classList.remove("active"));
+        c.classList.add("active");
+        config.bottomBorderColor = c.dataset.color;
+        document.getElementById("selectedBottomBorderColorName").textContent = c.dataset.name;
+        updateCake();
+      } else if (borderType === "top") {
+        parent.querySelectorAll(".color-option-walmart").forEach((o) => o.classList.remove("active"));
+        c.classList.add("active");
+        config.topBorderColor = c.dataset.color;
+        document.getElementById("selectedTopBorderColorName").textContent = c.dataset.name;
+        updateCake();
+      } else {
+        parent.querySelectorAll(".color-option-walmart").forEach((o) => o.classList.remove("active"));
+        c.classList.add("active");
+        config.icingColor = c.dataset.color;
+        document.getElementById("selectedColorName").textContent = c.dataset.name;
+        updateCake();
+      }
+      updateOrderSummary();
+    })
+  );
+  document.querySelectorAll(".toppings-color-option").forEach((c) =>
+    c.addEventListener("click", () => {
+      document.querySelectorAll(".toppings-color-option").forEach((o) => o.classList.remove("active"));
+      c.classList.add("active");
+      config.toppingsColor = c.dataset.color;
+      document.getElementById("selectedToppingsColorName").textContent = c.dataset.name;
+      updateCake();
+      updateOrderSummary();
+    })
+  );
+  document.querySelectorAll(".filling-option-walmart").forEach((el) =>
+    el.addEventListener("click", () => {
+      document.querySelectorAll(".filling-option-walmart").forEach((o) => o.classList.remove("active"));
+      el.classList.add("active");
+      config.filling = el.dataset.filling;
+      updateCake();
+      updateOrderSummary();
+    })
+  );
+  document.querySelectorAll("#step-5 .border-option-walmart").forEach((el) =>
+    el.addEventListener("click", () => {
+      document.querySelectorAll("#step-5 .border-option-walmart").forEach((o) => o.classList.remove("active"));
+      el.classList.add("active");
+      config.bottomBorder = el.dataset.border;
+      const colorSection = document.getElementById("bottomBorderColorSection");
+      if (config.bottomBorder !== "none") {
+        colorSection.style.display = "block";
+      } else {
+        colorSection.style.display = "none";
+      }
+      updateCake();
+      updateOrderSummary();
+    })
+  );
+  document.querySelectorAll("#step-6 .border-option-walmart").forEach((el) =>
+    el.addEventListener("click", () => {
+      document.querySelectorAll("#step-6 .border-option-walmart").forEach((o) => o.classList.remove("active"));
+      el.classList.add("active");
+      config.topBorder = el.dataset.border;
+      const colorSection = document.getElementById("topBorderColorSection");
+      if (config.topBorder !== "none") {
+        colorSection.style.display = "block";
+      } else {
+        colorSection.style.display = "none";
+      }
+      updateCake();
+      updateOrderSummary();
+    })
+  );
+  document.querySelectorAll(".message-option-walmart").forEach((option) =>
+    option.addEventListener("click", function () {
+      document.querySelectorAll(".message-option-walmart").forEach((o) => o.classList.remove("active"));
+      this.classList.add("active");
+      config.messageChoice = this.dataset.message;
+      if (this.dataset.message === "none") {
+        config.customText = "";
+        document.getElementById("customTextWalmart").value = "";
+        document.getElementById("charCountWalmart").textContent = "0";
+      }
+      updateOrderSummary();
+    })
+  );
+  document.querySelectorAll(".decoration-option-walmart").forEach((el) =>
+    el.addEventListener("click", () => {
+      document.querySelectorAll(".decoration-option-walmart").forEach((o) => o.classList.remove("active"));
+      el.classList.add("active");
+      config.decorations = el.dataset.decoration;
+      const flowerSubOptions = document.getElementById("flowerSubOptions");
+      const toppingsColorSection = document.getElementById("toppingsColorSection");
+      if (config.decorations === "flowers") {
+        flowerSubOptions.style.display = "flex";
+        toppingsColorSection.style.display = "none";
+        if (!document.querySelector(".flower-option-walmart.active")) {
+          document.querySelector('.flower-option-walmart[data-flower-type="daisies"]').classList.add("active");
+          config.flowerType = "daisies";
+        }
+      } else if (config.decorations === "toppings") {
+        flowerSubOptions.style.display = "none";
+        toppingsColorSection.style.display = "block";
+      } else {
+        flowerSubOptions.style.display = "none";
+        toppingsColorSection.style.display = "none";
+        document.querySelectorAll(".flower-option-walmart").forEach((o) => o.classList.remove("active"));
+        config.flowerType = "none";
+      }
+      updateCake();
+      updateOrderSummary();
+    })
+  );
+  document.querySelectorAll(".flower-option-walmart").forEach((el) =>
+    el.addEventListener("click", () => {
+      document.querySelectorAll(".flower-option-walmart").forEach((o) => o.classList.remove("active"));
+      el.classList.add("active");
+      config.flowerType = el.dataset.flowerType;
+      updateCake();
+      updateOrderSummary();
+    })
+  );
+  document.getElementById("customTextWalmart").addEventListener("input", (e) => {
+    const charCount = document.getElementById("charCountWalmart");
+    charCount.textContent = e.target.value.length;
+    config.customText = e.target.value;
+    updateOrderSummary();
+  });
+  const uploadArea = document.getElementById("uploadArea");
+  const imageUpload = document.getElementById("imageUpload");
+  const uploadedImageDiv = document.getElementById("uploadedImage");
+  const previewImage = document.getElementById("previewImage");
+  uploadArea.addEventListener("click", () => {
+    imageUpload.click();
+  });
+  uploadArea.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    uploadArea.style.borderColor = "var(--primary-color)";
+    uploadArea.style.backgroundColor = "rgba(44, 144, 69, 0.05)";
+  });
+  uploadArea.addEventListener("dragleave", () => {
+    uploadArea.style.borderColor = "#d0d0d0";
+    uploadArea.style.backgroundColor = "#fafafa";
+  });
+  uploadArea.addEventListener("drop", (e) => {
+    e.preventDefault();
+    uploadArea.style.borderColor = "#d0d0d0";
+    uploadArea.style.backgroundColor = "#fafafa";
+    const files = e.dataTransfer.files;
+    if (files.length > 0 && files[0].type.startsWith("image/")) {
+      handleImageUpload(files[0]);
+    }
+  });
+  imageUpload.addEventListener("change", (e) => {
+    if (e.target.files.length > 0) {
+      handleImageUpload(e.target.files[0]);
+    }
+  });
+  function handleImageUpload(file) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      previewImage.src = e.target.result;
+      uploadedImageDiv.style.display = "block";
+      uploadArea.style.display = "none";
+    };
+    reader.readAsDataURL(file);
+  }
+  window.removeUploadedImage = function () {
+    uploadedImageDiv.style.display = "none";
+    uploadArea.style.display = "block";
+    imageUpload.value = "";
+  };
+  document.getElementById("orderSummaryView").style.display = "none";
+  document.querySelector(".step-content").style.display = "block";
+  document.querySelector(".step-navigation").style.display = "flex";
+  showStep(1);
+  init();
+});
+
+// Expose functions globally
+window.nextStep = nextStep;
+window.prevStep = prevStep;
+window.goToStep = goToStep;
+window.showFirstStep = showFirstStep;
+window.addToCart = addToCart;
+window.saveDesignImage = saveDesignImage;
+window.checkout = checkout;
+window.submitOrder = submitOrder;

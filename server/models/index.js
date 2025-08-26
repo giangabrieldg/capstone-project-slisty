@@ -9,6 +9,7 @@ const Cart = require('./cart-model')(sequelize, DataTypes);
 const CartItem = require('./cart-item-model')(sequelize, DataTypes);
 const Order = require('./order-model')(sequelize, DataTypes);
 const OrderItem = require('./order-item-model')(sequelize, DataTypes);
+const CustomCakeOrder = require('./custom-cake-model');
 
 // MenuItem ↔ ItemSize
 MenuItem.hasMany(ItemSize, { foreignKey: 'menuId', as: 'sizes' });
@@ -36,6 +37,18 @@ OrderItem.belongsTo(MenuItem, { foreignKey: 'menuId' });
 ItemSize.hasMany(OrderItem, { foreignKey: 'sizeId' });
 OrderItem.belongsTo(ItemSize, { foreignKey: 'sizeId' });
 
+// User ↔ CustomCakeOrder
+User.hasMany(CustomCakeOrder, { foreignKey: 'userID', as: 'customCakeOrders' });
+CustomCakeOrder.belongsTo(User, { foreignKey: 'userID', as: 'customer' });
+
+// CartItem ↔ CustomCakeOrder
+CustomCakeOrder.hasMany(CartItem, { foreignKey: 'customCakeId' });
+CartItem.belongsTo(CustomCakeOrder, { foreignKey: 'customCakeId' });
+
+// OrderItem ↔ CustomCakeOrder
+CustomCakeOrder.hasMany(OrderItem, { foreignKey: 'customCakeId' });
+OrderItem.belongsTo(CustomCakeOrder, { foreignKey: 'customCakeId' });
+
 module.exports = {
   sequelize,
   User,
@@ -45,4 +58,5 @@ module.exports = {
   CartItem,
   Order,
   OrderItem,
+  CustomCakeOrder,
 };
