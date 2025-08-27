@@ -28,6 +28,8 @@ document.getElementById('addToCart').addEventListener('click', async () => {
   let selectedSize = null;
   let selectedStock = null;
 
+  console.log('Adding to cart:', { productId, quantity, size: selectedSize });
+
   try {
     // Fetch product details from the backend
     const response = await fetch(`http://localhost:3000/api/menu/${productId}`);

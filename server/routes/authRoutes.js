@@ -1,6 +1,7 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
+const { OAuth2Client } = require('google-auth-library');
 const User = require('../models/user-model');
 const { Sequelize } = require('sequelize');
 const { sendVerificationEmail } = require('../utils/sendEmail');
@@ -8,6 +9,63 @@ const verifyToken = require('../middleware/verifyToken');
 require('dotenv').config();
 
 const router = express.Router();
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+// Route to verify Google ID token
+router.post('/google', async (req, res) => {
+  const { idToken } = req.body;
+
+  try {
+    const ticket = await googleClient.verifyIdToken({
+      idToken,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+
+    let user = await User.findOne({ where: { googleID: payload.sub } });
+    if (!user) {
+      user = await User.findOne({ where: { email: payload.email } });
+      if (user) {
+        // Link existing user with Google ID
+        await user.update({ googleID: payload.sub, isVerified: true });
+      } else {
+        // Create new customer user
+        user = await User.create({
+          googleID: payload.sub,
+          email: payload.email,
+          name: payload.name,
+          isVerified: true,
+          userLevel: 'Customer',
+          isArchived: false,
+        });
+      }
+    }
+
+    if (user.isArchived) {
+      return res.status(403).json({ message: 'Account is archived' });
+    }
+
+    const token = jwt.sign(
+      { userID: user.userID, userLevel: user.userLevel },
+      process.env.JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    res.status(200).json({
+      message: 'Google login successful',
+      token,
+      user: {
+        name: user.name,
+        userLevel: user.userLevel,
+        email: user.email,
+      },
+      redirectUrl: `${process.env.BASE_URL || 'http://localhost:3000'}/public/customer/products.html`,
+    });
+  } catch (error) {
+    console.error('Error in Google login:', error);
+    res.status(401).json({ message: 'Invalid Google token' });
+  }
+});
 
 // Route to submit email for customer signup
 router.post('/signup-email', async (req, res) => {
@@ -44,7 +102,7 @@ router.post('/signup-email', async (req, res) => {
 router.get('/verify', async (req, res) => {
   try {
     const token = req.query.token;
-    console.log('Token received in /verify route:', token); // Log token for debugging
+    console.log('Token received in /verify route:', token);
     if (!token) {
       return res.status(401).json({ message: 'No token provided' });
     }
@@ -116,16 +174,14 @@ router.post('/complete-registration', async (req, res) => {
   }
 });
 
-// Route to create staff account (admin only) - USING COUNT APPROACH
+// Route to create staff account (admin only)
 router.post('/create-staff', verifyToken, async (req, res) => {
-  // Check if user is admin
   if (req.user.userLevel !== 'Admin') {
     return res.status(403).json({ message: 'Access denied: Admins only' });
   }
 
   const { name, email, password, role } = req.body;
 
-  // Validate input
   if (!name || !email || !password || !role) {
     return res.status(400).json({ message: 'Name, email, password, and role are required' });
   }
@@ -135,13 +191,11 @@ router.post('/create-staff', verifyToken, async (req, res) => {
   }
 
   try {
-    // Check for existing email
     const existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
       return res.status(400).json({ message: 'Email already registered' });
     }
 
-    // Generate employee ID using count approach
     const staffCount = await User.count({
       where: { 
         userLevel: ['Staff', 'Admin'],
@@ -153,7 +207,6 @@ router.post('/create-staff', verifyToken, async (req, res) => {
 
     const newEmployeeID = `E${(staffCount + 1).toString().padStart(3, '0')}`;
 
-    // Hash password and create user
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await User.create({
       name,
@@ -177,14 +230,13 @@ router.post('/create-staff', verifyToken, async (req, res) => {
 
 // Route to fetch all users for admin user management
 router.get('/users', verifyToken, async (req, res) => {
-  // Check if user is admin
   if (req.user.userLevel !== 'Admin') {
     return res.status(403).json({ message: 'Access denied: Admins only' });
   }
 
   try {
     const users = await User.findAll({
-      where: { userLevel: ['Staff', 'Admin'] }, // Only fetch staff and admin users
+      where: { userLevel: ['Staff', 'Admin'] },
       attributes: ['userID', 'employeeID', 'name', 'email', 'userLevel', 'isArchived'],
     });
     res.status(200).json(users);
@@ -196,7 +248,6 @@ router.get('/users', verifyToken, async (req, res) => {
 
 // Route to archive/unarchive a user
 router.put('/users/:id/archive', verifyToken, async (req, res) => {
-  // Check if user is admin
   if (req.user.userLevel !== 'Admin') {
     return res.status(403).json({ message: 'Access denied: Admins only' });
   }
@@ -247,11 +298,9 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ message: 'Invalid password' });
     }
 
-    // Generate login token
     const token = jwt.sign({ userID: user.userID, userLevel: user.userLevel }, process.env.JWT_SECRET, { expiresIn: '24h' });
     console.log('Login token generated:', token);
 
-    // Determine redirect URL based on userLevel
     let redirectUrl;
     if (user.userLevel === 'Customer') {
       redirectUrl = 'http://localhost:3000/public/customer/products.html';
@@ -261,7 +310,6 @@ router.post('/login', async (req, res) => {
       redirectUrl = 'http://localhost:3000/public/admin/admin-dashboard.html';
     }
 
-    // Return user data and redirect URL
     res.status(200).json({
       message: 'Login successful',
       token,

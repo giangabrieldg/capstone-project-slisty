@@ -42,21 +42,6 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING,
       allowNull: true,
     },
-    name: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-    price: {
-      type: DataTypes.DECIMAL(10, 2),
-      allowNull: false,
-      validate: {
-        min: 0,
-      },
-    },
-    image: {
-      type: DataTypes.STRING,
-      allowNull: true,
-    },
   }, {
     tableName: 'CartItems',
     timestamps: true,

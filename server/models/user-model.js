@@ -13,6 +13,11 @@ const User = sequelize.define('User', {
     allowNull: true,
     unique: true, // Ensure unique employee IDs for staff/admin
   },
+  googleID: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    unique: true, // Store Google user ID
+  },
   email: {
     type: DataTypes.STRING,
     allowNull: false,

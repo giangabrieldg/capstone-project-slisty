@@ -17,6 +17,7 @@
     <link rel="stylesheet" href="/styles/navbar.css" />
     <link rel="stylesheet" href="/styles/login.css" />
     <link rel="stylesheet" href="/styles/footer.css" />
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
   </head>
   <body>
     <!-- Navbar -->
@@ -48,15 +49,22 @@
         </div>
         <button type="submit" class="btn btn-login btn-lg mb-3">Login</button>
         <div class="separator mb-3">or</div>
-        <button type="button" class="btn btn-google mb-3">
-          <img
-            src="https://www.google.com/favicon.ico"
-            alt="Google"
-            width="20"
-            height="20"
-          />
-          Continue with Google
-        </button>
+        <div
+          id="g_id_onload"
+          data-client_id="945626597878-mf6ng844kvtp0bgsnt4fhq85br5sclso.apps.googleusercontent.com"
+          data-callback="handleGoogleSignIn"
+          data-auto_prompt="false"
+        ></div>
+        <button
+          type="button"
+          class="btn btn-google mb-3 g_id_signin"
+          data-type="standard"
+          data-shape="rectangular"
+          data-theme="outline"
+          data-text="signin_with"
+          data-size="large"
+          data-logo_alignment="left"
+        ></button>
         <div class="text-center text-muted">
           <a href="/public/customer/signup-email.html">No account? Sign Up</a> |
           <a href="#">Forgot Password</a>
@@ -75,6 +83,40 @@
           ? "http://localhost:3000"
           : "https://slice-n-grind.onrender.com";
 
+      // Handle Google Sign-In
+      window.handleGoogleSignIn = async function (response) {
+        try {
+          const res = await fetch(`${BASE_URL}/api/auth/google`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ idToken: response.credential }),
+          });
+
+          const data = await res.json();
+          console.log("Google login response:", data);
+
+          if (res.ok) {
+            localStorage.setItem("token", data.token);
+            localStorage.setItem(
+              "userName",
+              data.user.name || data.user.email.split("@")[0] || "User"
+            );
+            localStorage.setItem("userEmail", data.user.email);
+            localStorage.setItem("userLevel", data.user.userLevel);
+
+            const isLocalhost = window.location.hostname === "localhost";
+            const redirectBase = isLocalhost ? "/public" : "";
+            window.location.href = `${redirectBase}/index.html`;
+          } else {
+            alert(data.message || "Google login failed");
+          }
+        } catch (error) {
+          console.error("Error during Google login:", error);
+          alert("An error occurred during Google login. Please try again.");
+        }
+      };
+
+      // Handle email/password login
       document
         .getElementById("loginForm")
         .addEventListener("submit", async (e) => {
@@ -104,7 +146,7 @@
 
               // Redirect based on userLevel
               const isLocalhost = window.location.hostname === "localhost";
-              const redirectBase = isLocalhost ? "/public" : ""; // Adjust for Render's static site paths
+              const redirectBase = isLocalhost ? "/public" : "";
               if (data.user?.userLevel === "Admin") {
                 window.location.href = `${redirectBase}/admin/admin-dashboard.html`;
               } else if (data.user?.userLevel === "Staff") {

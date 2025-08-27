@@ -1,4 +1,6 @@
-// Load and display cart items for the logged-in user
+/**
+ * Loads and displays cart items for the logged-in user.
+ */
 async function loadCartItems() {
   const cartItemsContainer = document.getElementById('cartItemsContainer');
   const checkoutBtn = document.getElementById('checkoutBtn');
@@ -29,34 +31,16 @@ async function loadCartItems() {
 
     const data = await response.json();
     console.log('Cart items response:', JSON.stringify(data.cartItems, null, 2));
+
+    // Map cart items to display format using formatted fields from API
     const cartItems = data.cartItems.map(item => {
-      const menuItem = item.MenuItem || {};
-      let price = 0;
-      // Handle price based on hasSizes
-      if (menuItem.hasSizes && item.size && Array.isArray(menuItem.sizes)) {
-        // Normalize size for comparison (case-insensitive, trim spaces)
-        const normalizedSize = item.size?.trim().toLowerCase();
-        const selectedSize = menuItem.sizes.find(
-          s => s.sizeName?.trim().toLowerCase() === normalizedSize
-        );
-        if (selectedSize) {
-          price = parseFloat(selectedSize.price) || 0;
-          console.log(`Found size ${item.size} for ${menuItem.name}: ₱${price}`);
-        } else {
-          console.warn(`Size ${item.size} not found in sizes for ${menuItem.name}`, menuItem.sizes);
-        }
-      } else {
-        // Parse basePrice as a number, handling string input
-        price = parseFloat(String(menuItem.basePrice)) || 0;
-        console.log(`Using basePrice for ${menuItem.name}: ₱${price}`);
-      }
       return {
         cartItemId: item.cartItemId,
-        name: menuItem.name || 'Unknown',
-        size: item.size || 'N/A',
-        price,
+        name: item.name || 'Unknown', // Use API-provided name
+        size: item.size || 'N/A', // Use API-provided size
+        price: parseFloat(item.price) || 0, // Use API-provided price
         quantity: item.quantity,
-        image: menuItem.image || 'https://via.placeholder.com/300',
+        image: item.image || 'https://via.placeholder.com/300', // Use API-provided image
       };
     });
 
@@ -67,7 +51,8 @@ async function loadCartItems() {
       return;
     }
 
-    checkoutBtn.disabled = false;
+    // Disable checkout if any item is invalid
+    checkoutBtn.disabled = cartItems.some(item => item.name === 'Unknown' || item.price === 0);
 
     // Add checkout button event listener
     checkoutBtn.addEventListener('click', function() {
@@ -91,6 +76,7 @@ async function loadCartItems() {
         <tbody>
     `;
 
+    // Render each cart item
     cartItems.forEach(item => {
       const price = parseFloat(item.price) || 0;
       const total = (price * item.quantity).toFixed(2);
