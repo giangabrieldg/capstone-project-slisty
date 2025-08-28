@@ -270,85 +270,78 @@ class CheckoutManager {
 
     checkoutForm.innerHTML = `
       <div class="card mb-4">
-        <div class="card-header bg-primary text-white">
-          <h5 class="mb-0"><i class="fas fa-credit-card"></i> Payment Method</h5>
+        <div class="card-header" style="background-color: #2c9045; color: white;">
+          <h4 class="mb-0">Checkout</h4>
         </div>
         <div class="card-body">
-          <div class="form-check">
+          <!-- Payment Method Section -->
+          <h5 class="mb-3"><i class="fas fa-credit-card"></i> Payment Method</h5>
+          <div class="form-check mb-2">
             <input class="form-check-input" type="radio" name="paymentMethod" 
                    id="cash" value="cash">
             <label class="form-check-label" for="cash">
               <i class="fas fa-money-bill-wave"></i> Cash on Delivery/Pickup
             </label>
           </div>
-          <div class="form-check">
+          <div class="form-check mb-4">
             <input class="form-check-input" type="radio" name="paymentMethod" 
                    id="gcash" value="gcash" checked>
             <label class="form-check-label" for="gcash">
               <i class="fas fa-mobile-alt"></i> GCash (PayMongo)
             </label>
           </div>
-        </div>
-      </div>
-      <div class="card mb-4">
-        <div class="card-header bg-info text-white">
-          <h5 class="mb-0"><i class="fas fa-shipping-fast"></i> Delivery Method</h5>
-        </div>
-        <div class="card-body">
-          <div class="form-check mb-3">
+
+          <!-- Delivery Method Section -->
+          <h5 class="mb-3"><i class="fas fa-shipping-fast"></i> Delivery Method</h5>
+          <div class="form-check mb-2">
             <input class="form-check-input" type="radio" name="deliveryMethod" 
                    id="pickup" value="pickup" checked>
             <label class="form-check-label" for="pickup">
               <i class="fas fa-store"></i> Store Pickup
             </label>
           </div>
-          <div class="form-check">
+          <div class="form-check mb-2">
             <input class="form-check-input" type="radio" name="deliveryMethod" 
                    id="delivery" value="delivery">
             <label class="form-check-label" for="delivery">
               <i class="fas fa-truck"></i> Home Delivery
             </label>
           </div>
-          <div class="mt-3" id="datePickerContainer">
+          <div class="mt-3 mb-4" id="datePickerContainer">
             <label for="pickupDate" class="form-label">Select Pickup/Delivery Date:</label>
             <input type="text" class="form-control" id="pickupDate" placeholder="Select a date" readonly>
           </div>
-        </div>
-      </div>
-      <div class="card mb-4">
-        <div class="card-header bg-warning text-dark">
-          <h5 class="mb-0"><i class="fas fa-user"></i> Customer Information</h5>
-        </div>
-        <div class="card-body" id="customerInfoContainer">
-          <p>Loading profile information...</p>
-        </div>
-      </div>
-      <div class="card mb-4">
-        <div class="card-header bg-success text-white">
-          <h5 class="mb-0"><i class="fas fa-list"></i> Order Summary</h5>
-        </div>
-        <div class="card-body">
+
+          <!-- Customer Information Section -->
+          <h5 class="mb-3"><i class="fas fa-user"></i> Customer Information</h5>
+          <div class="mb-4" id="customerInfoContainer">
+            <p>Loading profile information...</p>
+          </div>
+
+          <!-- Order Summary Section -->
+          <h5 class="mb-3"><i class="fas fa-list"></i> Order Summary</h5>
           <div id="cartSummary"></div>
           <hr>
-          <div class="d-flex justify-content-between">
+          <div class="d-flex justify-content-between mb-4">
             <h5>Total:</h5>
             <h5 id="orderTotal">₱0.00</h5>
           </div>
+
+          <!-- Payment Status and Place Order -->
+          <div id="paymentStatusMessage" class="alert alert-info d-none mb-3">
+            <i class="fas fa-info-circle"></i> <span id="paymentStatusText">Processing payment...</span>
+          </div>
+          <div class="text-center">
+            <button type="button" class="btn btn-success btn-lg checkout-btn" onclick="checkoutManager.placeOrder()">
+              <i class="fas fa-check"></i> Place Order
+            </button>
+          </div>
         </div>
-      </div>
-      <div id="paymentStatusMessage" class="alert alert-info d-none mb-3">
-        <i class="fas fa-info-circle"></i> <span id="paymentStatusText">Processing payment...</span>
-      </div>
-      <div class="text-center">
-        <button type="button" class="btn btn-success btn-lg checkout-btn" onclick="checkoutManager.placeOrder()">
-          <i class="fas fa-check"></i> Place Order
-        </button>
       </div>
     `;
     this.handlePaymentMethodChange('gcash');
     this.handleDeliveryMethodChange('pickup');
-  }
-
+}
   /**
    * Initializes the Flatpickr datepicker for pickup/delivery date selection.
    */

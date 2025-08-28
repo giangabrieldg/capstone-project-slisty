@@ -72,6 +72,30 @@
       </form>
     </div>
 
+    <!-- Toast Container -->
+    <div
+      class="toast-container position-fixed bottom-0 end-0 p-3"
+      style="z-index: 1055"
+    >
+      <div
+        id="errorToast"
+        class="toast align-items-center text-white bg-danger border-0"
+        role="alert"
+        aria-live="assertive"
+        aria-atomic="true"
+      >
+        <div class="d-flex">
+          <div class="toast-body"></div>
+          <button
+            type="button"
+            class="btn-close btn-close-white me-2 m-auto"
+            data-bs-dismiss="toast"
+            aria-label="Close"
+          ></button>
+        </div>
+      </div>
+    </div>
+
     <!-- Footer -->
     <div data-include-html="/includes/footer.html"></div>
     <script src="/scripts/update-navbar.js"></script>
@@ -82,6 +106,14 @@
         window.location.hostname === "localhost"
           ? "http://localhost:3000"
           : "https://slice-n-grind.onrender.com";
+
+      // Function to show toast notification
+      function showToast(message) {
+        const toast = document.getElementById("errorToast");
+        toast.querySelector(".toast-body").textContent = message;
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+      }
 
       // Handle Google Sign-In
       window.handleGoogleSignIn = async function (response) {
@@ -108,11 +140,11 @@
             const redirectBase = isLocalhost ? "/public" : "";
             window.location.href = `${redirectBase}/index.html`;
           } else {
-            alert(data.message || "Google login failed");
+            showToast(data.message || "Google login failed");
           }
         } catch (error) {
           console.error("Error during Google login:", error);
-          alert("An error occurred during Google login. Please try again.");
+          showToast("An error occurred during Google login. Please try again.");
         }
       };
 
@@ -155,11 +187,11 @@
                 window.location.href = `${redirectBase}/index.html`;
               }
             } else {
-              alert(data.message || "Login failed");
+              showToast(data.message || "Login failed");
             }
           } catch (error) {
             console.error("Error during login:", error);
-            alert("An error occurred. Please try again later.");
+            showToast("An error occurred. Please try again later.");
           }
         });
     </script>

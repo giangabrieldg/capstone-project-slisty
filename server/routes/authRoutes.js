@@ -59,11 +59,74 @@ router.post('/google', async (req, res) => {
         userLevel: user.userLevel,
         email: user.email,
       },
-      redirectUrl: `${process.env.BASE_URL || 'http://localhost:3000'}/public/customer/products.html`,
+      redirectUrl: `${process.env.BASE_URL || 'http://localhost:3000'}/public/index.html`,
     });
   } catch (error) {
     console.error('Error in Google login:', error);
     res.status(401).json({ message: 'Invalid Google token' });
+  }
+});
+
+// Route to handle login for all users
+router.post('/login', async (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ message: 'Email and password are required' });
+  }
+
+  try {
+    const user = await User.findOne({ where: { email } });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (!user.isVerified) {
+      return res.status(400).json({ message: 'Email not verified' });
+    }
+
+    if (user.isArchived) {
+      return res.status(403).json({ message: 'Account is archived' });
+    }
+
+    if (!user.password) {
+      return res.status(400).json({ message: 'This account uses Google Sign-In. Please use "Continue with Google".' });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Incorrect username or password' });
+    }
+
+    const token = jwt.sign(
+      { userID: user.userID, userLevel: user.userLevel },
+      process.env.JWT_SECRET || 'default-secret', // Fallback secret
+      { expiresIn: '24h' }
+    );
+
+    let redirectUrl;
+    if (user.userLevel === 'Customer') {
+      redirectUrl = `${process.env.BASE_URL || 'http://localhost:3000'}/public/index.html`;
+    } else if (user.userLevel === 'Staff') {
+      redirectUrl = `${process.env.BASE_URL || 'http://localhost:3000'}/public/staff/staff.html`;
+    } else if (user.userLevel === 'Admin') {
+      redirectUrl = `${process.env.BASE_URL || 'http://localhost:3000'}/public/admin/admin-dashboard.html`;
+    }
+
+    res.status(200).json({
+      message: 'Login successful',
+      token,
+      user: {
+        name: user.name,
+        userLevel: user.userLevel,
+      },
+      redirectUrl,
+    });
+  } catch (error) {
+    console.error('Error in login:', error.message, error.stack);
+    res.status(500).json({ message: 'Server error', details: error.message });
   }
 });
 
@@ -265,62 +328,6 @@ router.put('/users/:id/archive', verifyToken, async (req, res) => {
     res.status(200).json({ message: `User ${isArchived ? 'archived' : 'unarchived'} successfully` });
   } catch (error) {
     console.error('Error updating archive status:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
-// Route to handle login for all users
-router.post('/login', async (req, res) => {
-  const { email, password } = req.body;
-
-  if (!email || !password) {
-    return res.status(400).json({ message: 'Email and password are required' });
-  }
-
-  try {
-    const user = await User.findOne({ where: { email } });
-
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    if (!user.isVerified) {
-      return res.status(400).json({ message: 'Email not verified' });
-    }
-
-    if (user.isArchived) {
-      return res.status(403).json({ message: 'Account is archived' });
-    }
-
-    const isMatch = await bcrypt.compare(password, user.password);
-
-    if (!isMatch) {
-      return res.status(401).json({ message: 'Invalid password' });
-    }
-
-    const token = jwt.sign({ userID: user.userID, userLevel: user.userLevel }, process.env.JWT_SECRET, { expiresIn: '24h' });
-    console.log('Login token generated:', token);
-
-    let redirectUrl;
-    if (user.userLevel === 'Customer') {
-      redirectUrl = 'http://localhost:3000/public/customer/products.html';
-    } else if (user.userLevel === 'Staff') {
-      redirectUrl = 'http://localhost:3000/public/staff/staff.html';
-    } else if (user.userLevel === 'Admin') {
-      redirectUrl = 'http://localhost:3000/public/admin/admin-dashboard.html';
-    }
-
-    res.status(200).json({
-      message: 'Login successful',
-      token,
-      user: {
-        name: user.name,
-        userLevel: user.userLevel
-      },
-      redirectUrl
-    });
-  } catch (error) {
-    console.error('Error in login:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
