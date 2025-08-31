@@ -51,9 +51,6 @@
             >
               Filter
             </button>
-            <button id="exportExcel" class="btn btn-primary">
-              <i class="bi bi-file-earmark-excel"></i> Export to Excel
-            </button>
           </div>
         </div>
         <div class="orders-payments-table">
@@ -64,8 +61,8 @@
                   <th>Order ID</th>
                   <th>Customer Name</th>
                   <th>Order Date</th>
+                  <th>Deliver/Pickup Date</th>
                   <th>Amount</th>
-                  <th>Payment Method</th>
                   <th>Order Details</th>
                   <th>Delivery Method</th>
                   <th>Status</th>
@@ -118,6 +115,16 @@
                     <option value="unpaid">Unpaid</option>
                     <option value="paid">Paid</option>
                   </select>
+                </div>
+                <div class="mb-3">
+                  <label for="filterPickupDate" class="form-label"
+                    >Pickup/Delivery Date</label
+                  >
+                  <input
+                    type="date"
+                    class="form-control"
+                    id="filterPickupDate"
+                  />
                 </div>
                 <button class="btn btn-primary" id="applyFilter">
                   Apply Filter

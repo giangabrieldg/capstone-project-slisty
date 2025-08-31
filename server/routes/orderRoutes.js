@@ -437,10 +437,12 @@ router.get('/admin/reports', verifyToken, checkAdminOrStaff, async (req, res) =>
         total_amount: parseFloat(order.total_amount) || 0,
         status: order.status,
         order_date: order.createdAt,
+        pickup_date: order.pickup_date || null,
         payment_method: order.payment_method || 'unknown',
         delivery_method: order.delivery_method || 'unknown',
         items: order.orderItems.map(item => ({
             name: item.customCakeId ? `Custom Cake (${item.CustomCakeOrder?.size})` : item.MenuItem?.name || item.item_name,
+            size: item.size_name || item.CustomCakeOrder?.size || null,
             quantity: parseInt(item.quantity) || 0,
             price: parseFloat(item.price) || 0,
             customCakeId: item.customCakeId
