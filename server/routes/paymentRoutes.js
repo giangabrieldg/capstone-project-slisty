@@ -16,9 +16,9 @@ const verifyWebhookSignature = (signature, payload, secret) => {
 
 /**
  * Create GCash payment source
- * - Validates order exists and belongs to user
- * - Prevents duplicate payments
- * - Handles Paymongo API errors properly
+ * Validates order exists and belongs to user
+ * Prevents duplicate payments
+ * Handles Paymongo API errors properly
  */
 router.post('/create-gcash-source', verifyToken, async (req, res) => {
     try {
@@ -133,9 +133,9 @@ router.post('/create-gcash-source', verifyToken, async (req, res) => {
 
 /**
  * Payment Verification Endpoint
- * - Verifies payment status with Paymongo
- * - Updates order status if paid
- * - Handles various error scenarios
+ * Verifies payment status with Paymongo
+ * Updates order status if paid
+ * Handles various error scenarios
  */
 router.get('/verify/:orderId', verifyToken, async (req, res) => {
   try {
@@ -242,9 +242,9 @@ router.get('/verify/:orderId', verifyToken, async (req, res) => {
 
 /**
  * Paymongo Webhook Handler
- * - Verifies signatures in production
- * - Updates order status and payment_verified based on events
- * - Handles payment.paid and payment.failed events
+ * Verifies signatures in production
+ * Updates order status and payment_verified based on events
+ * Handles payment.paid and payment.failed events
  */
 router.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
     let transaction;
@@ -348,8 +348,8 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
 
 /**
  * Verify Payment Endpoint
- * - Verifies payment status with Paymongo
- * - Returns payment status without updating order
+ * Verifies payment status with Paymongo
+ * Returns payment status without updating order
  */
 router.get('/verify-payment/:paymentId', verifyToken, async (req, res) => {
     try {

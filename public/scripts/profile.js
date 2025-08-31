@@ -49,6 +49,30 @@ class ProfileManager {
             editBtn.addEventListener('click', () => this.toggleEditForm(true));
         }
 
+        // Edit phone input formatting
+        const editPhone = document.getElementById('editPhone');
+        if (editPhone) {
+            editPhone.addEventListener('input', (e) => {
+                let value = e.target.value.replace(/\D/g, '');
+                
+                // Format as Philippine number
+                if (value.startsWith('63')) {
+                    value = '+' + value;
+                } else if (value.startsWith('0')) {
+                    value = value;
+                } else if (value.length > 0) {
+                    value = '+63' + value;
+                }
+                
+                // Limit to 13 characters for +639171234567 format
+                if (value.length > 13) {
+                    value = value.substring(0, 13);
+                }
+                
+                e.target.value = value;
+            });
+        }
+
         // Cancel edit button
         const cancelBtn = document.getElementById('cancelBtn');
         if (cancelBtn) {
@@ -238,42 +262,59 @@ class ProfileManager {
      * @param {Event} e - Form submission event
      */
     async handleProfileSubmit(e) {
-        e.preventDefault();
-        const name = document.getElementById('editName').value;
-        const phone = document.getElementById('editPhone').value;
-        const address = document.getElementById('editAddress').value;
+    e.preventDefault();
+    const name = document.getElementById('editName').value;
+    const phone = document.getElementById('editPhone').value;
+    const address = document.getElementById('editAddress').value;
 
-        // Basic validation
-        if (!name) {
-            document.getElementById('nameError').textContent = 'Name is required';
-            document.getElementById('editName').classList.add('is-invalid');
-            return;
-        }
-        if (phone && !/^\+639\d{9}$/.test(phone)) {
-            document.getElementById('phoneError').textContent = 'Invalid phone number format';
-            document.getElementById('editPhone').classList.add('is-invalid');
-            return;
-        }
+    // Clear previous errors
+    document.getElementById('nameError').textContent = '';
+    document.getElementById('phoneError').textContent = '';
+    document.getElementById('editName').classList.remove('is-invalid');
+    document.getElementById('editPhone').classList.remove('is-invalid');
 
-        try {
-            const response = await fetch('http://localhost:3000/api/auth/profile', {
-                method: 'PUT',
-                headers: {
-                    'Authorization': `Bearer ${this.token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ name, phone, address })
-            });
-            if (!response.ok) throw new Error('Failed to update profile');
-            const data = await response.json();
-            this.renderProfile(data);
-            this.toggleEditForm(false);
-            alert('Profile updated successfully!');
-        } catch (error) {
-            console.error('Error updating profile:', error);
-            alert('Error updating profile. Please try again.');
-        }
+    // Basic validation
+    let isValid = true;
+    
+    if (!name) {
+        document.getElementById('nameError').textContent = 'Name is required';
+        document.getElementById('editName').classList.add('is-invalid');
+        isValid = false;
     }
+    
+    // Improved Philippine phone number validation
+    if (phone && !/^(\+63|0)9\d{9}$/.test(phone)) {
+        document.getElementById('phoneError').textContent = 'Please enter a valid Philippine phone number (e.g., +639171234567 or 09171234567)';
+        document.getElementById('editPhone').classList.add('is-invalid');
+        isValid = false;
+    }
+
+    if (!isValid) return;
+
+    try {
+        const response = await fetch('http://localhost:3000/api/auth/profile/update', {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${this.token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ name, phone, address })
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Failed to update profile');
+        }
+        
+        const data = await response.json();
+        this.renderProfile(data);
+        this.toggleEditForm(false);
+        alert('Profile updated successfully!');
+    } catch (error) {
+        console.error('Error updating profile:', error);
+        alert(`Error updating profile: ${error.message}`);
+    }
+}
 
     /**
      * Handle logout

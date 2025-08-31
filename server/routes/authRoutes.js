@@ -205,6 +205,11 @@ router.post('/complete-registration', async (req, res) => {
   if (!name || !address || !password || !token) {
     return res.status(400).json({ message: 'Name, address, password, and token are required' });
   }
+  
+  // Validate Philippine phone number format if provided
+  if (phone && !/^(\+63|0)9\d{9}$/.test(phone)) {
+    return res.status(400).json({ message: 'Please enter a valid Philippine phone number (e.g., +639171234567 or 09171234567)' });
+  }
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -374,7 +379,14 @@ router.put('/profile/update', verifyToken, async (req, res) => {
       address
     });
 
-    res.status(200).json({ message: 'Profile updated successfully' });
+    // Return the updated user data instead of just a message
+    res.status(200).json({
+      message: 'Profile updated successfully',
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      address: user.address
+    });
   } catch (error) {
     console.error('Error updating profile:', error);
     res.status(500).json({ message: 'Server error' });
