@@ -77,13 +77,12 @@ renderOrders(orders) {
   tbody.innerHTML = orders.map(order => {
     const statusMap = {
       pending: 'Pending',
-      pending_payment: 'Pending Payment',
+      pending_payment: 'Pending Payment', 
       processing: 'In Progress',
       shipped: 'Ready for Delivery',
       delivered: 'Completed',
       cancelled: 'Cancelled'
     };
-    
     const paymentStatus = order.payment_method === 'cash' ? (order.status === 'delivered' ? 'paid' : 'unpaid') : (order.payment_verified ? 'paid' : 'unpaid');
     const paymentMethod = order.payment_method === 'gcash' ? 'GCash' : 'Cash';
 
@@ -131,7 +130,6 @@ renderOrders(orders) {
           ` : ''}
           <select class="status-select" data-order-id="${order.orderId}">
             <option value="pending" ${order.status === 'pending' ? 'selected' : ''}>Pending</option>
-            <option value="pending_payment" ${order.status === 'pending_payment' ? 'selected' : ''}>Pending Payment</option>
             <option value="processing" ${order.status === 'processing' ? 'selected' : ''}>In Progress</option>
             <option value="shipped" ${order.status === 'shipped' ? 'selected' : ''}>Ready for Delivery</option>
             <option value="delivered" ${order.status === 'delivered' ? 'selected' : ''}>Completed</option>
@@ -222,7 +220,7 @@ renderOrders(orders) {
     const dateMatch = !selectedDate || rowOrderDate === selectedDate;
     const pickupDateMatch = !selectedPickupDate || rowPickupDate === selectedPickupDate;
     const searchMatch = orderId.includes(searchTerm) || customerName.includes(searchTerm) || amount.includes(searchTerm);
-    const statusMatch = !status || rowStatus === status;
+    const statusMatch = !status || order.status_key === status;
     const paymentStatusMatch = !paymentStatus || rowPaymentStatus === paymentStatus;
 
     return dateMatch && pickupDateMatch && searchMatch && statusMatch && paymentStatusMatch;

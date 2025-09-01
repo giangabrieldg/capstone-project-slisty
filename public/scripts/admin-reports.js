@@ -232,13 +232,13 @@ function updateSalesTable(orders) {
         <div class="delivery-method small text-muted">Delivery: ${deliveryMethod}</div>
       </div>
     `;
-
+    
     row.innerHTML = `
       <td>#${order.orderId}</td> 
       <td>${customerDetails}</td>
       <td>PHP ${totalAmount.toFixed(2)}</td>
       <td>${items}</td>
-      <td><span class="status ${order.status.toLowerCase()}">${order.status}</span></td>
+      <td><span class="status ${order.status_key.toLowerCase()}">${order.status}</span></td>
       <td>${orderDate}</td>
     `;
     tableBody.appendChild(row);

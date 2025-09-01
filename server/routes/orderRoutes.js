@@ -13,6 +13,21 @@ const checkAdminOrStaff = (req, res, next) => {
   next();
 };
 
+// Status mapping function
+const statusMap = {
+  pending: 'Pending',
+  pending_payment: 'Pending Payment',
+  processing: 'In Progress',
+  shipped: 'Ready for Delivery',
+  delivered: 'Completed',
+  cancelled: 'Cancelled'
+};
+
+// Helper function to format status
+function formatStatus(status) {
+  return statusMap[status] || status;
+}
+
 // Helper function to create order items and update stock
 const createOrderItems = async (orderId, items, transaction) => {
   await Promise.all(items.map(async (item) => {
@@ -402,6 +417,123 @@ router.get('/admin/orders', verifyToken, checkAdminOrStaff, async (req, res) => 
   }
 });
 
+// GET /api/orders/admin/dashboard - Get dashboard data for today
+router.get('/admin/dashboard', verifyToken, checkAdminOrStaff, async (req, res) => {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const todayStart = new Date(today);
+    const todayEnd = new Date(today + ' 23:59:59');
+
+    // Get today's orders
+    const todaysOrders = await Order.findAll({
+      where: {
+        createdAt: { [Op.between]: [todayStart, todayEnd] }
+      },
+      include: [{
+        model: OrderItem,
+        as: 'orderItems',
+        include: [
+          { model: MenuItem, attributes: ['name'] },
+          { model: CustomCakeOrder, attributes: ['size'] }
+        ]
+      }],
+      order: [['createdAt', 'DESC']]
+    });
+
+    // Get today's new customers (users created today)
+    const newCustomers = await User.findAll({
+      where: {
+        createdAt: { [Op.between]: [todayStart, todayEnd] }
+      }
+    });
+
+    // Get pending custom cake orders for notifications
+    const pendingCustomCakes = await CustomCakeOrder.findAll({
+      where: {
+        status: 'Pending',
+        createdAt: { [Op.between]: [todayStart, todayEnd] }
+      },
+      limit: 10
+    });
+
+    // Get new orders in the last 30 minutes for notifications
+    const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
+    const newOrders = await Order.findAll({
+      where: {
+        createdAt: { [Op.gte]: thirtyMinutesAgo }
+      },
+      include: [{
+        model: OrderItem,
+        as: 'orderItems',
+        attributes: ['item_name']
+      }],
+      order: [['createdAt', 'DESC']],
+      limit: 10
+    });
+
+    // Calculate summary statistics
+    const totalRevenue = todaysOrders.reduce((sum, order) => sum + parseFloat(order.total_amount), 0);
+    const customCakeOrders = todaysOrders.filter(order => 
+      order.orderItems.some(item => item.customCakeId)
+    ).length;
+
+    // Format orders for response
+    function formatOrderId(orderId) {
+      return 'ORD' + orderId.toString().padStart(3, '0');
+    }
+
+    const formattedOrders = todaysOrders.map(order => ({
+      orderId: formatOrderId(order.orderId),
+      customer_name: order.customer_name,
+      customer_email: order.customer_email,
+      total_amount: parseFloat(order.total_amount) || 0,
+      status: formatStatus(order.status), 
+      status_key: order.status, 
+      order_date: order.createdAt,
+      pickup_date: order.pickup_date,
+      payment_method: order.payment_method || 'unknown',
+      delivery_method: order.delivery_method || 'unknown',
+      items: order.orderItems.map(item => ({
+        name: item.customCakeId ? `Custom Cake (${item.CustomCakeOrder?.size})` : item.MenuItem?.name || item.item_name,
+        size: item.size_name || item.CustomCakeOrder?.size || null,
+        quantity: parseInt(item.quantity) || 0,
+        price: parseFloat(item.price) || 0,
+        customCakeId: item.customCakeId
+      }))
+    }));
+
+    // Format new orders for notifications
+    const formattedNewOrders = newOrders.map(order => ({
+      orderId: formatOrderId(order.orderId),
+      customer_name: order.customer_name,
+      items: order.orderItems.map(item => item.item_name).join(', '),
+      time: order.createdAt
+    }));
+
+    res.json({
+      success: true,
+      summary: {
+        total_revenue: totalRevenue,
+        total_orders: todaysOrders.length,
+        custom_cake_orders: customCakeOrders,
+        new_customers: newCustomers.length
+      },
+      orders: formattedOrders,
+      notifications: {
+        new_orders: formattedNewOrders.length,
+        pending_custom_cakes: pendingCustomCakes.length,
+        total: formattedNewOrders.length + pendingCustomCakes.length
+      },
+      new_orders: formattedNewOrders,
+      pending_custom_cakes: pendingCustomCakes
+    });
+
+  } catch (error) {
+    console.error('Dashboard error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
 // GET /api/orders/admin/reports - Get sales reports data for admin dashboard
 router.get('/admin/reports', verifyToken, checkAdminOrStaff, async (req, res) => {
   try {
@@ -432,10 +564,11 @@ router.get('/admin/reports', verifyToken, checkAdminOrStaff, async (req, res) =>
 
     // Format orders for response
     const formattedOrders = orders.map(order => ({
-        orderId: formatOrderId(order.orderId),  // Use the formatted order ID
+        orderId: formatOrderId(order.orderId), 
         customer_name: order.customer_name,
         total_amount: parseFloat(order.total_amount) || 0,
-        status: order.status,
+        status: formatStatus(order.status), 
+        status_key: order.status, 
         order_date: order.createdAt,
         pickup_date: order.pickup_date || null,
         payment_method: order.payment_method || 'unknown',

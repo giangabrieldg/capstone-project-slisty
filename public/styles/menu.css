@@ -58,7 +58,6 @@
     transform: translateX(5px);
 }
 
-
 .search-input,
 .sort-select {
     border: 1px solid #ccc;
@@ -83,9 +82,10 @@
     overflow: hidden;
     padding: 1rem;
     width: 100%;
-    /* Ensure cards take full width of their column */
+    height: 100%;
+    display: flex;
+    flex-direction: column;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-
 }
 
 .card:hover {
@@ -93,55 +93,112 @@
     transform: translateY(-5px);
 }
 
-.menu-img {
-    object-fit: cover;
+.menu-image-wrapper {
+    position: relative;
     width: 100%;
-    height: 100%;
+    height: 250px;
+    overflow: hidden;
     border-radius: 8px 8px 0 0;
 }
 
-.image-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
+.card-img-top {
     width: 100%;
     height: 100%;
-    background: rgba(255, 255, 255, 0.3);
-    border-radius: 8px;
+    object-fit: cover;
+    object-position: center;
+    border-radius: 8px 8px 0 0;
+}
+
+.card-body {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 1rem;
+}
+
+.card-title {
+    font-family: var(--font-poppins);
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: #333;
+}
+
+.card-text.price,
+.card-text.stock {
+    white-space: nowrap;
+    font-family: var(--font-poppins);
+    font-size: 0.95rem;
+    color: #444;
+    margin-bottom: 0.5rem;
+}
+
+.card-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+/* New button styles */
+.btn-primary {
+    background-color: var(--primary-color);
+    border: none;
+    border-radius: 6px;
+    padding: 0.5rem 1rem;
+    font-family: var(--font-poppins);
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: white;
+    text-align: center;
+    text-decoration: none;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    align-self: flex-start;
+    /* Align button to start for clean look */
+}
+
+.btn-primary:hover {
+    background-color: #247A3A;
+    /* Slightly darker shade of primary color for hover */
+    transform: translateY(-2px);
+}
+
+.btn-primary.disabled {
+    background-color: #B0B0B0;
+    /* Use footer-text-color for disabled state */
+    color: #E0E0E0;
+    cursor: not-allowed;
+    transform: none;
+    /* No transform on disabled hover */
 }
 
 .menu-section .row {
     display: flex;
-    align-items: flex-start;
-    /* Align sidebar and cards at the top */
+    align-items: stretch;
 }
 
 @media (min-width: 992px) {
     .col-lg-4 {
         flex: 0 0 30%;
-        /* Adjust column width to 30% for better spacing */
         max-width: 30%;
+        display: flex;
     }
 
     .menu-image-wrapper {
-        aspect-ratio: 1 / 1;
-        /* Square aspect ratio for larger screens */
+        height: 250px;
     }
 
     .menu-card {
         margin-bottom: 1.5rem;
-        /* Consistent spacing between cards */
     }
 
     .row {
         margin-left: -0.75rem;
-        /* Reduce default Bootstrap gutter */
         margin-right: -0.75rem;
     }
 
     .col-lg-4 {
         padding-left: 0.75rem;
-        /* Adjust padding to match reduced gutter */
         padding-right: 0.75rem;
     }
 }
@@ -158,6 +215,10 @@
 
     .sort-select {
         min-width: 120px;
+    }
+
+    .menu-image-wrapper {
+        height: 200px;
     }
 }
 
@@ -184,8 +245,7 @@
     }
 
     .menu-image-wrapper {
-        aspect-ratio: 1 / 1;
-        /* Square aspect ratio for tablets */
+        height: 180px;
     }
 
     .menu-name {
@@ -203,8 +263,7 @@
     }
 
     .menu-image-wrapper {
-        aspect-ratio: 1 / 1;
-        /* Square aspect ratio for phones */
+        height: 160px;
     }
 
     .menu-name {

@@ -227,27 +227,24 @@ body {
     text-transform: capitalize;
 }
 
-.status.in-progress,
-.status.pending,
-.status.pending_payment {
-    background-color: #fff3cd;
-    color: #856404;
+.status.pending {
+    background-color: #e2e3e5;
+    color: #383d41;
 }
 
-.status.completed,
 .status.shipped {
-    background-color: #d4edda;
-    color: #155724;
-}
-
-.status.processing {
     background-color: #cce5ff;
     color: #004085;
 }
 
+.status.processing {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
 .status.delivered {
-    background-color: #d1ecf1;
-    color: #0c5460;
+    background-color: #d4edda;
+    color: #155724;
 }
 
 .status.cancelled {

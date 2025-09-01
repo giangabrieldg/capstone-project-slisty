@@ -24,19 +24,29 @@ function renderMenuItems(menuItems, container) {
     let priceDisplay = item.hasSizes && item.sizes?.length > 0
       ? item.sizes.map(size => `${size.sizeName} - ₱${Number(size.price).toFixed(2)}`).join(', ')
       : `₱${Number(item.basePrice || 0).toFixed(2)}`;
-    const stockDisplay = item.hasSizes && item.sizes?.length > 0
+    let stockDisplay = item.hasSizes && item.sizes?.length > 0
       ? item.sizes.map(size => `${size.sizeName}: ${size.stock}`).join(', ')
       : item.stock != null && item.stock > 0 ? item.stock : 'Out of Stock';
     const hasStock = item.hasSizes ? item.sizes.some(size => size.stock > 0) : item.stock > 0;
     const viewDetailsClass = hasStock ? 'btn btn-primary' : 'btn btn-primary disabled';
+    
+    // Use a fallback image with 3:2 aspect ratio
+    const imageSrc = item.image && item.image.trim() !== ''
+      ? item.image
+      : 'https://via.placeholder.com/600x400?text=No+Image'; // Matches 3:2 aspect ratio
+
     const rowHtml = `
       <div class="card mb-4 shadow-sm">
-        <img src="${item.image || 'https://via.placeholder.com/300'}" class="card-img-top" alt="${item.name || 'Unknown'}">
+        <div class="menu-image-wrapper">
+          <img src="${imageSrc}" class="card-img-top" alt="${item.name || 'Unknown'}">
+        </div>
         <div class="card-body">
           <h5 class="card-title">${item.name || 'Unknown Item'}</h5>
-          <p class="card-text">${item.description || 'No description available'}</p>
-          <p class="card-text"><strong>Price: ${priceDisplay}</strong></p>
-          <p class="card-text"><strong>Stock: ${stockDisplay}</strong></p>
+          <p class="card-text description">${item.description || 'No description available'}</p>
+          <div class="card-details">
+            <p class="card-text price"><strong>Price:</strong> ${priceDisplay}</p>
+            <p class="card-text stock"><strong>Stock:</strong> ${stockDisplay}</p>
+          </div>
           <a href="/public/customer/products.html?id=${item.menuId || ''}" class="${viewDetailsClass}">View Details</a>
         </div>
       </div>
