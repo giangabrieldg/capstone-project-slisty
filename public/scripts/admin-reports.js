@@ -156,7 +156,7 @@ async function updateReports(startDate, endDate) {
 
 // Update summary cards
 function updateSummaryCards(summary) {
-  currentSummaryData = summary; // Store the summary data globally
+  currentSummaryData = summary;
   
   const cards = [
     { id: "totalOrders", value: summary?.total_orders || 0 },
@@ -205,10 +205,9 @@ function updateSalesTable(orders) {
         
         return `${item.name}<br>${sizeInfo}Qty: ${quantity} - PHP ${(price * quantity).toFixed(2)}`;
       })
-      .join("<br><br>");  // Add more spacing between items
+      .join("<br><br>"); 
 
     const orderDate = new Date(order.order_date).toLocaleDateString();
-    // CHANGE THIS LINE: use order.pickup_date instead of order.pickup_date
     const pickupDate = order.pickup_date ? new Date(order.pickup_date).toLocaleDateString() : 'Not set';
 
     // Safely convert total_amount to number

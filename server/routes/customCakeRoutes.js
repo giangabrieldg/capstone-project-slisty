@@ -1,3 +1,8 @@
+/**
+ * For handling custom cake order API endpoints
+ * Supports creating, retrieving, and updating custom cake orders
+ */
+
 const express = require('express');
 const router = express.Router();
 const { CustomCakeOrder, User } = require('../models');

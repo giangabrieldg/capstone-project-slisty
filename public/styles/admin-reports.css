@@ -1,25 +1,14 @@
-/* Define CSS variables for consistent theming */
 :root {
     --primary-color: #2c9045;
-    /* Primary brand color */
     --secondary-color: #e6f3ea;
-    /* Light background for cards */
     --background-color: #ffffff;
-    /* Main background */
     --secondary-background-color: #f5f1e9;
-    /* Secondary background */
     --hover-color: #0f5e23;
-    /* Sidebar hover state */
     --text-color: #2d2d2d;
-    /* Primary text color */
     --secondary-text-color: #5e5d5d;
-    /* Secondary text color */
     --white-text-color: #f9f6ee;
-    /* Text color for sidebar */
     --font-poppins: "Poppins", sans-serif;
-    /* Main font */
     --font-baloo: "Baloo 2", sans-serif;
-    /* Heading font */
 }
 
 /* Base body styles */

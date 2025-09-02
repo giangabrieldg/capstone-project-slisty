@@ -1,4 +1,7 @@
-// Import required dependencies
+/**
+ * For handling inquiries API endpoints
+ * Supports submitting, retrieving, and replying to inquiries
+ */
      const express = require('express');
      const router = express.Router();
      const Inquiry = require('../models/inquiry-model');
@@ -7,7 +10,6 @@
      const { sendInquiryConfirmationEmail, sendInquiryReplyEmail } = require('../utils/sendEmail');
      require('dotenv').config();
 
-     // Debug: Log native fetch to verify availability
      console.log('Native fetch available:', typeof fetch);
 
      // Middleware to restrict routes to Admin or Staff users

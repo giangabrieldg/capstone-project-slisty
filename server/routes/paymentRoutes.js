@@ -14,12 +14,7 @@ const verifyWebhookSignature = (signature, payload, secret) => {
   return signature === hmac.digest('hex');
 };
 
-/**
- * Create GCash payment source
- * Validates order exists and belongs to user
- * Prevents duplicate payments
- * Handles Paymongo API errors properly
- */
+// Post /api/payment/create-gcash-source - Create a GCash payment source with Paymongo
 router.post('/create-gcash-source', verifyToken, async (req, res) => {
     try {
         const { amount, description, items, redirect } = req.body;
@@ -131,12 +126,7 @@ router.post('/create-gcash-source', verifyToken, async (req, res) => {
     }
 });
 
-/**
- * Payment Verification Endpoint
- * Verifies payment status with Paymongo
- * Updates order status if paid
- * Handles various error scenarios
- */
+// GET /api/payment/verify/:orderId - Verify payment status and update order if needed
 router.get('/verify/:orderId', verifyToken, async (req, res) => {
   try {
     const { orderId } = req.params;
@@ -240,12 +230,7 @@ router.get('/verify/:orderId', verifyToken, async (req, res) => {
   }
 });
 
-/**
- * Paymongo Webhook Handler
- * Verifies signatures in production
- * Updates order status and payment_verified based on events
- * Handles payment.paid and payment.failed events
- */
+// Post /api/payment/webhook - Handle Paymongo webhooks
 router.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
     let transaction;
     try {
@@ -270,7 +255,6 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
             const items = metadata.items || [];
             const userId = metadata.userId;
 
-            // 1. Process Order
             let order = await Order.findOne({
                 where: { payment_id: payment.id },
                 transaction
@@ -316,7 +300,6 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
                 }
             }
 
-            // 2. Enhanced Cart Clearing
             if (userId) {
                 console.log(`Attempting to clear cart for user ${userId}`);
                 const cart = await Cart.findOne({ 
@@ -346,11 +329,7 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
     }
 });
 
-/**
- * Verify Payment Endpoint
- * Verifies payment status with Paymongo
- * Returns payment status without updating order
- */
+// GET /api/payment/verify-payment/:paymentId - Verify payment status by payment ID
 router.get('/verify-payment/:paymentId', verifyToken, async (req, res) => {
     try {
         const { paymentId } = req.params;

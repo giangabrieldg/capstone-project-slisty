@@ -1,24 +1,14 @@
-/* Define CSS variables for consistent theming */
 :root {
     --primary-color: #2c9045;
-    /* Primary brand color */
     --secondary-color: #e6f3ea;
-    /* Light background for cards */
     --background-color: #ffffff;
-    /* Main background */
     --secondary-background-color: #f5f1e9;
-    /* Secondary background */
     --text-color: #2d2d2d;
-    /* Primary text color */
     --hover-color: #0f5e23;
     --secondary-text-color: #5e5d5d;
-    /* Secondary text color */
     --white-text-color: #f9f6ee;
-    /* Text color for sidebar */
     --font-poppins: "Poppins", sans-serif;
-    /* Main font */
     --font-baloo: "Baloo 2", sans-serif;
-    /* Heading font */
 }
 
 /* Base body styles */
@@ -36,32 +26,6 @@ body {
     padding: 30px;
     width: calc(100% - 250px);
     transition: margin-left 0.3s ease-in-out, width 0.3s ease-in-out;
-}
-
-/* Responsive adjustments for medium and smaller screens */
-@media (max-width: 992px) {
-    .content {
-        margin-left: 0;
-        width: 100%;
-        padding: 20px;
-    }
-
-    body.sidebar-visible .content {
-        margin-left: 250px;
-        width: calc(100% - 250px);
-    }
-}
-
-/* Responsive adjustments for small screens */
-@media (max-width: 576px) {
-    .content {
-        padding: 15px;
-    }
-
-    body.sidebar-visible .content {
-        margin-left: 200px;
-        width: calc(100% - 200px);
-    }
 }
 
 /* Orders and Payments header */
@@ -160,7 +124,7 @@ body {
     font-size: 0.85rem;
 }
 
-/*--------------Status badge styling ---------------*/
+/*Status badge styling */
 .status {
     padding: 6px 12px;
     border-radius: 20px;
@@ -279,5 +243,31 @@ body {
     .confirm-payment {
         width: 100%;
         margin-bottom: 5px;
+    }
+}
+
+/* Responsive adjustments for medium and smaller screens */
+@media (max-width: 992px) {
+    .content {
+        margin-left: 0;
+        width: 100%;
+        padding: 20px;
+    }
+
+    body.sidebar-visible .content {
+        margin-left: 250px;
+        width: calc(100% - 250px);
+    }
+}
+
+/* Responsive adjustments for small screens */
+@media (max-width: 576px) {
+    .content {
+        padding: 15px;
+    }
+
+    body.sidebar-visible .content {
+        margin-left: 200px;
+        width: calc(100% - 200px);
     }
 }

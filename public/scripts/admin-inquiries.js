@@ -1,4 +1,4 @@
-// Wait for the DOM to be fully loaded
+
 document.addEventListener('DOMContentLoaded', () => {
   // Get DOM elements for inquiries table and filters
   const inquiriesTableBody = document.querySelector('#inquiriesTable tbody');

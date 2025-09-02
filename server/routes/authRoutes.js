@@ -1,3 +1,8 @@
+/**
+ * For handling user authentication API endpoints
+ * Supports creating, verifying, authenticating, and updating users account
+ */
+
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');

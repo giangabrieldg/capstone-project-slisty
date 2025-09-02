@@ -57,7 +57,6 @@ document.getElementById('addToCart').addEventListener('click', async () => {
       }
       // Get stock for the selected size
       selectedStock = validSize.stock;
-      // Validate stock against requested quantity
       if (selectedStock < quantity) {
         alert(`Sorry, only ${selectedStock} items available for ${selectedSize}.`);
         return;

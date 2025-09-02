@@ -297,11 +297,11 @@ function populateEditForm(item) {
   showSizeInputs(item.hasSizes);
   if (item.hasSizes) {
     populateSizeInputs(item.sizes || []);
-    document.getElementById('price').value = ''; // Clear single price
-    document.getElementById('stock').value = ''; // Clear single stock
+    document.getElementById('price').value = ''; 
+    document.getElementById('stock').value = ''; 
   } else {
     document.getElementById('price').value = item.basePrice || '';
-    document.getElementById('stock').value = item.stock || ''; // Set single stock
+    document.getElementById('stock').value = item.stock || ''; 
   }
 
   // Display image preview if available
@@ -318,22 +318,22 @@ function populateEditForm(item) {
 function showSizeInputs(show) {
   const sizesContainer = document.getElementById('sizesContainer');
   const singlePriceContainer = document.getElementById('singlePriceContainer');
-  const singleStockContainer = document.getElementById('singleStockContainer'); // Add this
+  const singleStockContainer = document.getElementById('singleStockContainer'); 
   const priceInput = document.getElementById('price');
-  const stockInput = document.getElementById('stock'); // Add this
+  const stockInput = document.getElementById('stock'); 
 
   sizesContainer.style.display = show ? 'block' : 'none';
   singlePriceContainer.style.display = show ? 'none' : 'block';
-  singleStockContainer.style.display = show ? 'none' : 'block'; // Toggle stock container
+  singleStockContainer.style.display = show ? 'none' : 'block'; 
   priceInput.toggleAttribute('required', !show);
-  stockInput.toggleAttribute('required', !show); // Toggle stock input required
+  stockInput.toggleAttribute('required', !show); 
 }
 
 // Populates size inputs for editing
 function populateSizeInputs(sizes) {
   // Get size input container
   const sizePricePairsDiv = document.getElementById('sizePricePairs');
-  sizePricePairsDiv.innerHTML = ''; // Clear existing inputs
+  sizePricePairsDiv.innerHTML = ''; 
   
   // Create input fields for each size
   sizes.forEach((size, index) => {
@@ -454,7 +454,6 @@ function clearSizeInputs() {
 
 // Sets loading state for UI elements
 function setLoadingState(isLoading, message = '') {
-  // Update save button state
   const saveButton = document.getElementById('saveItem');
   if (saveButton) {
     saveButton.disabled = isLoading;
@@ -471,7 +470,6 @@ function setLoadingState(isLoading, message = '') {
 
 // Displays success toast notification
 function showSuccess(message) {
-  // Show toast with success message
   const toast = new bootstrap.Toast(document.getElementById('successToast'));
   const toastMessage = document.getElementById('successToastMessage');
   if (toastMessage) {
@@ -482,7 +480,6 @@ function showSuccess(message) {
 
 // Displays error toast notification
 function showError(title, error) {
-  // Log and show error message
   console.error(title, error);
   const errorToast = new bootstrap.Toast(document.getElementById('errorToast'));
   const errorToastMessage = document.getElementById('errorToastMessage');

@@ -11,6 +11,8 @@
     --light-green: #E6F0E6;
 }
 
+/* main section styles */
+
 .menu-section {
     background-color: var(--bg-color);
     padding: 3rem 0;
@@ -23,6 +25,7 @@
     font-weight: 500;
 }
 
+/* menu sidebar styles */
 .sidebar {
     border-radius: 8px;
     padding: 1.5rem;
@@ -73,6 +76,8 @@
 .sort-select {
     min-width: 150px;
 }
+
+/* item cards styles */
 
 .card {
     border: none;
@@ -154,22 +159,18 @@
     text-decoration: none;
     transition: background-color 0.3s ease, transform 0.2s ease;
     align-self: flex-start;
-    /* Align button to start for clean look */
 }
 
 .btn-primary:hover {
     background-color: #247A3A;
-    /* Slightly darker shade of primary color for hover */
     transform: translateY(-2px);
 }
 
 .btn-primary.disabled {
     background-color: #B0B0B0;
-    /* Use footer-text-color for disabled state */
     color: #E0E0E0;
     cursor: not-allowed;
     transform: none;
-    /* No transform on disabled hover */
 }
 
 .menu-section .row {

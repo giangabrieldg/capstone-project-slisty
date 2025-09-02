@@ -1,10 +1,14 @@
+/**
+ * For handling cart-related API endpoints.
+ * 
+ */
 // Import required dependencies
 const express = require('express');
 const router = express.Router();
-const { MenuItem, ItemSize } = require('../models'); // Import database models
-const multer = require('multer'); // Middleware for handling file uploads
-const path = require('path'); // Utility for handling file paths
-const verifyToken = require('../middleware/verifyToken'); // Middleware for JWT authentication
+const { MenuItem, ItemSize } = require('../models'); 
+const multer = require('multer'); 
+const path = require('path'); 
+const verifyToken = require('../middleware/verifyToken'); 
 
 // Configure Multer for file storage
 const storage = multer.diskStorage({
@@ -16,8 +20,7 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage }); // Initialize Multer with storage configuration
 
-// POST route to create a new menu item
-// POST /api/menu
+// POST /api/menu - route to create a new menu item
 router.post('/', verifyToken, upload.single('image'), async (req, res) => {
   try {
     const { name, category, description, stock, hasSizes, basePrice, sizes } = req.body;

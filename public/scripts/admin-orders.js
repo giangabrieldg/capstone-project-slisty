@@ -1,5 +1,5 @@
 /**
- * AdminOrdersManager handles fetching, updating, and filtering orders for admin/staff
+ * handles fetching, updating, and filtering orders for admin/staff
  */
 class AdminOrdersManager {
   constructor() {
@@ -7,9 +7,7 @@ class AdminOrdersManager {
     this.init();
   }
 
-  /**
-   * Initializes event listeners and fetches orders
-   */
+  // initializes event listeners and fetches orders
   init() {
     document.addEventListener('DOMContentLoaded', () => {
       this.fetchUserInfo();
@@ -18,9 +16,7 @@ class AdminOrdersManager {
     });
   }
 
-  /**
-   * Fetches user info to display in sidebar
-   */
+  // Fetches user info to display in sidebar
   async fetchUserInfo() {
     const token = localStorage.getItem('token');
     try {
@@ -37,9 +33,7 @@ class AdminOrdersManager {
     }
   }
 
-  /**
-   * Fetches orders from backend
-   */
+  // Fetches orders from backend
   async fetchOrders() {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -61,15 +55,10 @@ class AdminOrdersManager {
       alert('Failed to load orders: ' + error.message);
     }
   }
+  
 
-  /**
-   * Renders orders in the table
-   * @param {Array} orders - Array of order objects
-   */
-/**
- * Renders orders in the table
- * @param {Array} orders - Array of order objects
- */
+// @param {Array} orders - Array of order objects
+// Renders orders in the table
 renderOrders(orders) {
   const tbody = document.getElementById('ordersTableBody');
   if (!tbody) return;
@@ -142,9 +131,7 @@ renderOrders(orders) {
   }).join('');
 }
 
-  /**
-   * Sets up event listeners for search, filter, and actions
-   */
+  // Sets up event listeners for search, filter, and actions
   setupEventListeners() {
   // Search
   document.querySelector('.search-bar').addEventListener('input', () => this.applyFilters());
@@ -193,13 +180,12 @@ renderOrders(orders) {
   });
 }
 
-  /**
- * Applies search and filter functionality
- */
+
+  //Applies search and filter functionality
   applyFilters() {
   const searchTerm = document.querySelector('.search-bar').value.toLowerCase();
   const selectedDate = document.getElementById('datePicker').value;
-  const selectedPickupDate = document.getElementById('filterPickupDate').value; // Add this input to your filter modal
+  const selectedPickupDate = document.getElementById('filterPickupDate').value;
   const status = document.getElementById('filterStatus').value.toLowerCase();
   const paymentStatus = document.getElementById('filterPaymentStatus').value.toLowerCase();
 
@@ -228,10 +214,9 @@ renderOrders(orders) {
 
   this.renderOrders(filteredOrders);
 }
-  /**
-   * Confirms payment for an order
-   * @param {string} orderId - Order ID
-   */
+ 
+  // Confirms payment for an order
+  // @param {string} orderId - Order ID
   async confirmPayment(orderId) {
     const token = localStorage.getItem('token');
     try {
@@ -253,10 +238,8 @@ renderOrders(orders) {
     }
   }
 
-  /**
-   * Updates order status
-   * @param {string} orderId - Order ID
-   */
+  // Updates order status
+  // @param {string} orderId - Order ID
   async updateOrderStatus(orderId) {
     const select = document.querySelector(`.status-select[data-order-id="${orderId}"]`);
     const newStatus = select.value;

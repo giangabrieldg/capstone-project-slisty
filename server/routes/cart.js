@@ -1,16 +1,15 @@
 /**
- * Express router for handling cart-related API endpoints.
+ * For handling cart-related API endpoints.
  * Supports adding, retrieving, updating, and removing cart items, including custom cakes.
  */
+
 const express = require('express');
 const router = express.Router();
 const { Op } = require('sequelize');
 const { Cart, CartItem, MenuItem, ItemSize, CustomCakeOrder } = require('../models');
 const verifyToken = require('../middleware/verifyToken');
 
-/**
- * POST /api/cart/add - Add item or custom cake to cart.
- */
+// POST /api/cart/add - Add item or custom cake to cart.
 router.post('/add', verifyToken, async (req, res) => {
   try {
     const { menuId, customCakeId, quantity, size } = req.body;
@@ -111,9 +110,8 @@ router.post('/add', verifyToken, async (req, res) => {
   }
 });
 
-/**
- * GET /api/cart - Retrieve cart items for the authenticated user.
- */
+
+// GET /api/cart - Retrieve cart items for the authenticated user
 router.get('/', verifyToken, async (req, res) => {
   try {
     // Find user's cart
@@ -166,7 +164,7 @@ router.get('/', verifyToken, async (req, res) => {
         quantity: item.quantity,
         size: item.size,
         name: item.MenuItem ? item.MenuItem.name : item.CustomCakeOrder ? `Custom Cake (${item.CustomCakeOrder.size})` : 'Unknown',
-        price: price.toFixed(2), // Ensure price is included and formatted as string
+        price: price.toFixed(2),
         image: item.MenuItem ? item.MenuItem.image : item.CustomCakeOrder?.imageUrl || 'https://via.placeholder.com/300',
         customCakeDetails: item.CustomCakeOrder ? {
           size: item.CustomCakeOrder.size,
@@ -195,9 +193,7 @@ router.get('/', verifyToken, async (req, res) => {
   }
 });
 
-/**
- * PUT /api/cart/update - Update cart item quantity.
- */
+// PUT /api/cart/update - Update cart item quantity.
 router.put('/update', verifyToken, async (req, res) => {
   try {
     const { cartItemId, quantity } = req.body;
@@ -248,9 +244,8 @@ router.put('/update', verifyToken, async (req, res) => {
   }
 });
 
-/**
- * DELETE /api/cart/remove - Remove item from cart.
- */
+
+// DELETE /api/cart/remove - Remove item from cart.
 router.delete('/remove', verifyToken, async (req, res) => {
   try {
     const { cartItemId } = req.body;
