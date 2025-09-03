@@ -26,16 +26,25 @@ function includeAdminSidebar() {
   });
 }
 
-function initializeAdminSidebar(container) {
+async function initializeAdminSidebar(container) {
   const toggleButton = document.querySelector(".sidebar-toggle");
   const sidebar = container.querySelector(".sidebar");
   const navLinks = container.querySelectorAll(".sidebar-nav .nav-item");
+  const token = localStorage.getItem("token");
+
+  // Validate token on page load
+  if (!token || !(await validateToken())) {
+    localStorage.clear();
+    sessionStorage.clear();
+    window.location.href = "/public/customer/login.html";
+    return;
+  }
 
   // Sidebar toggle (for mobile)
   if (toggleButton && sidebar) {
     toggleButton.addEventListener("click", () => {
       sidebar.classList.toggle("show");
-      document.body.classList.toggle("sidebar-visible"); // Sync with admin-menu.css
+      document.body.classList.toggle("sidebar-visible");
       console.log("Sidebar toggled, show class:", sidebar.classList.contains("show"));
     });
   } else {
@@ -74,12 +83,30 @@ function initializeAdminSidebar(container) {
   if (logoutLink) {
     logoutLink.addEventListener("click", (e) => {
       e.preventDefault();
-      localStorage.removeItem("token");
+      localStorage.clear();
       sessionStorage.clear();
+      window.history.pushState(null, null, '/public/customer/login.html');
       window.location.href = "/public/customer/login.html";
+      window.addEventListener('popstate', () => {
+        window.location.href = '/public/customer/login.html';
+      });
     });
   } else {
     console.warn("Logout link not found.");
+  }
+}
+
+// Validate token with server
+async function validateToken() {
+  const token = localStorage.getItem("token");
+  try {
+    const response = await fetch('http://localhost:3000/api/auth/profile', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    return response.ok;
+  } catch (error) {
+    console.error('Token validation failed:', error);
+    return false;
   }
 }
 

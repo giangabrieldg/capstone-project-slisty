@@ -11,18 +11,43 @@ class ProfileManager {
     /**
      * Initialize profile page functionality
      */
-    init() {
+    async init() {
         if (!this.token) {
             window.location.href = '/public/customer/login.html';
             return;
         }
+        
+        // Validate token with server before proceeding
+        const isValid = await this.validateToken();
+        if (!isValid) {
+            localStorage.removeItem('token');
+            window.location.href = '/public/customer/login.html';
+            return;
+        }
+
         this.setupEventListeners();
         this.loadProfile();
-        this.loadOrders(); // Load orders on initialization
-
+        this.loadOrders();
+        
         const hash = window.location.hash.substring(1);
         const section = hash || 'profile';
         this.showSection(section);
+    }
+
+    /**
+     * Validate token with server
+     * @returns {Promise<boolean>} - Whether the token is valid
+     */
+    async validateToken() {
+        try {
+            const response = await fetch('http://localhost:3000/api/auth/profile', {
+                headers: { 'Authorization': `Bearer ${this.token}` }
+            });
+            return response.ok;
+        } catch (error) {
+            console.error('Token validation failed:', error);
+            return false;
+        }
     }
 
     /**
@@ -39,8 +64,8 @@ class ProfileManager {
         });
 
         window.addEventListener('hashchange', () => {
-        const hash = window.location.hash.substring(1);
-        this.showSection(hash || 'profile');
+            const hash = window.location.hash.substring(1);
+            this.showSection(hash || 'profile');
         });
 
         // Edit profile button
@@ -55,7 +80,6 @@ class ProfileManager {
             editPhone.addEventListener('input', (e) => {
                 let value = e.target.value.replace(/\D/g, '');
                 
-                // Format as Philippine number
                 if (value.startsWith('63')) {
                     value = '+' + value;
                 } else if (value.startsWith('0')) {
@@ -64,7 +88,6 @@ class ProfileManager {
                     value = '+63' + value;
                 }
                 
-                // Limit to 13 characters for +639171234567 format
                 if (value.length > 13) {
                     value = value.substring(0, 13);
                 }
@@ -155,7 +178,6 @@ class ProfileManager {
             });
             
             if (!response.ok) {
-                // Try to get error details from response
                 let errorMsg = 'Failed to load orders';
                 try {
                     const errorData = await response.json();
@@ -167,7 +189,7 @@ class ProfileManager {
             }
             
             const data = await response.json();
-            console.log('Orders data:', data); // Debug log
+            console.log('Orders data:', data);
             this.renderOrders(data.orders || []);
             
         } catch (error) {
@@ -215,7 +237,6 @@ class ProfileManager {
                     </thead>
                     <tbody>
                         ${orders.map(order => {
-                            // Parse items if it's a string
                             const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
                             return `
                                 <tr>
@@ -262,66 +283,71 @@ class ProfileManager {
      * @param {Event} e - Form submission event
      */
     async handleProfileSubmit(e) {
-    e.preventDefault();
-    const name = document.getElementById('editName').value;
-    const phone = document.getElementById('editPhone').value;
-    const address = document.getElementById('editAddress').value;
+        e.preventDefault();
+        const name = document.getElementById('editName').value;
+        const phone = document.getElementById('editPhone').value;
+        const address = document.getElementById('editAddress').value;
 
-    // Clear previous errors
-    document.getElementById('nameError').textContent = '';
-    document.getElementById('phoneError').textContent = '';
-    document.getElementById('editName').classList.remove('is-invalid');
-    document.getElementById('editPhone').classList.remove('is-invalid');
+        document.getElementById('nameError').textContent = '';
+        document.getElementById('phoneError').textContent = '';
+        document.getElementById('editName').classList.remove('is-invalid');
+        document.getElementById('editPhone').classList.remove('is-invalid');
 
-    // Basic validation
-    let isValid = true;
-    
-    if (!name) {
-        document.getElementById('nameError').textContent = 'Name is required';
-        document.getElementById('editName').classList.add('is-invalid');
-        isValid = false;
-    }
-    
-    // Improved Philippine phone number validation
-    if (phone && !/^(\+63|0)9\d{9}$/.test(phone)) {
-        document.getElementById('phoneError').textContent = 'Please enter a valid Philippine phone number (e.g., +639171234567 or 09171234567)';
-        document.getElementById('editPhone').classList.add('is-invalid');
-        isValid = false;
-    }
-
-    if (!isValid) return;
-
-    try {
-        const response = await fetch('http://localhost:3000/api/auth/profile/update', {
-            method: 'PUT',
-            headers: {
-                'Authorization': `Bearer ${this.token}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ name, phone, address })
-        });
+        let isValid = true;
         
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Failed to update profile');
+        if (!name) {
+            document.getElementById('nameError').textContent = 'Name is required';
+            document.getElementById('editName').classList.add('is-invalid');
+            isValid = false;
         }
         
-        const data = await response.json();
-        this.renderProfile(data);
-        this.toggleEditForm(false);
-        alert('Profile updated successfully!');
-    } catch (error) {
-        console.error('Error updating profile:', error);
-        alert(`Error updating profile: ${error.message}`);
+        if (phone && !/^(\+63|0)9\d{9}$/.test(phone)) {
+            document.getElementById('phoneError').textContent = 'Please enter a valid Philippine phone number (e.g., +639171234567 or 09171234567)';
+            document.getElementById('editPhone').classList.add('is-invalid');
+            isValid = false;
+        }
+
+        if (!isValid) return;
+
+        try {
+            const response = await fetch('http://localhost:3000/api/auth/profile/update', {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${this.token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ name, phone, address })
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Failed to update profile');
+            }
+            
+            const data = await response.json();
+            this.renderProfile(data);
+            this.toggleEditForm(false);
+            alert('Profile updated successfully!');
+        } catch (error) {
+            console.error('Error updating profile:', error);
+            alert(`Error updating profile: ${error.message}`);
+        }
     }
-}
 
     /**
      * Handle logout
      */
     handleLogout() {
         localStorage.removeItem('token');
+        // Clear all localStorage to prevent any residual data
+        localStorage.clear();
+        // Prevent back button from showing cached page
+        window.history.pushState(null, null, '/public/customer/login.html');
         window.location.href = '/public/customer/login.html';
+        // Add event listener to prevent back navigation
+        window.addEventListener('popstate', () => {
+            window.location.href = '/public/customer/login.html';
+        });
     }
 }
 

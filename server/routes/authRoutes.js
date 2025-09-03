@@ -16,6 +16,14 @@ require('dotenv').config();
 const router = express.Router();
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
+// Middleware to set cache-control headers for protected routes
+const setNoCacheHeaders = (req, res, next) => {
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  next();
+};
+
 // Route to verify Google ID token
 router.post('/google', async (req, res) => {
   const { idToken } = req.body;
@@ -31,10 +39,8 @@ router.post('/google', async (req, res) => {
     if (!user) {
       user = await User.findOne({ where: { email: payload.email } });
       if (user) {
-        // Link existing user with Google ID
         await user.update({ googleID: payload.sub, isVerified: true });
       } else {
-        // Create new customer user
         user = await User.create({
           googleID: payload.sub,
           email: payload.email,
@@ -107,7 +113,7 @@ router.post('/login', async (req, res) => {
 
     const token = jwt.sign(
       { userID: user.userID, userLevel: user.userLevel },
-      process.env.JWT_SECRET || 'default-secret', // Fallback secret
+      process.env.JWT_SECRET || 'default-secret',
       { expiresIn: '24h' }
     );
 
@@ -211,7 +217,6 @@ router.post('/complete-registration', async (req, res) => {
     return res.status(400).json({ message: 'Name, address, password, and token are required' });
   }
   
-  // Validate Philippine phone number format if provided
   if (phone && !/^(\+63|0)9\d{9}$/.test(phone)) {
     return res.status(400).json({ message: 'Please enter a valid Philippine phone number (e.g., +639171234567 or 09171234567)' });
   }
@@ -248,7 +253,7 @@ router.post('/complete-registration', async (req, res) => {
 });
 
 // Route to create staff account (admin only)
-router.post('/create-staff', verifyToken, async (req, res) => {
+router.post('/create-staff', verifyToken, setNoCacheHeaders, async (req, res) => {
   if (req.user.userLevel !== 'Admin') {
     return res.status(403).json({ message: 'Access denied: Admins only' });
   }
@@ -302,7 +307,7 @@ router.post('/create-staff', verifyToken, async (req, res) => {
 });
 
 // Route to fetch all users for admin user management
-router.get('/users', verifyToken, async (req, res) => {
+router.get('/users', verifyToken, setNoCacheHeaders, async (req, res) => {
   if (req.user.userLevel !== 'Admin') {
     return res.status(403).json({ message: 'Access denied: Admins only' });
   }
@@ -320,7 +325,7 @@ router.get('/users', verifyToken, async (req, res) => {
 });
 
 // Route to archive/unarchive a user
-router.put('/users/:id/archive', verifyToken, async (req, res) => {
+router.put('/users/:id/archive', verifyToken, setNoCacheHeaders, async (req, res) => {
   if (req.user.userLevel !== 'Admin') {
     return res.status(403).json({ message: 'Access denied: Admins only' });
   }
@@ -343,7 +348,7 @@ router.put('/users/:id/archive', verifyToken, async (req, res) => {
 });
 
 // Route to fetch user profile data
-router.get('/profile', verifyToken, async (req, res) => {
+router.get('/profile', verifyToken, setNoCacheHeaders, async (req, res) => {
   try {
     const user = await User.findByPk(req.user.userID);
     if (!user) {
@@ -365,7 +370,7 @@ router.get('/profile', verifyToken, async (req, res) => {
 });
 
 // Route to update user profile
-router.put('/profile/update', verifyToken, async (req, res) => {
+router.put('/profile/update', verifyToken, setNoCacheHeaders, async (req, res) => {
   const { name, phone, address } = req.body;
 
   if (!name || !address) {
@@ -384,7 +389,6 @@ router.put('/profile/update', verifyToken, async (req, res) => {
       address
     });
 
-    // Return the updated user data instead of just a message
     res.status(200).json({
       message: 'Profile updated successfully',
       name: user.name,
