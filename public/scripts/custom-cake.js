@@ -510,7 +510,7 @@ function saveDesignImage() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    alert("🎨 Design image saved successfully!");
+    alert("Design image saved successfully!");
   } catch (error) {
     console.error("Error saving design:", error);
     alert("Sorry, there was an error saving your design. Please try again.");
@@ -579,7 +579,7 @@ async function submitOrder() {
     }
 
     const result = await response.json();
-    alert("🎂 Custom cake order submitted successfully! Awaiting admin review.");
+    alert("Custom cake order submitted successfully! Awaiting admin review.");
     // Reset the form
     config.size = "small";
     config.cakeColor = "#8B4513";
@@ -609,12 +609,12 @@ async function submitOrder() {
 
 // Add the custom cake to the cart (after admin approval)
 async function addToCart() {
-  alert("🛒 Please submit your custom cake order for admin review. Once approved, you can add it to your cart from the 'My Custom Orders' page.");
+  alert("Please submit your custom cake order for admin review. Once approved, you can add it to your cart from the 'My Custom Orders' page.");
 }
 
 // Redirect to checkout page
 function checkout() {
-  alert("🛒 Please submit your custom cake order for admin review. Once approved, you can add it to your cart and proceed to checkout from the 'My Custom Orders' page.");
+  alert("Please submit your custom cake order for admin review. Once approved, you can add it to your cart and proceed to checkout from the 'My Custom Orders' page.");
 }
 
 // Update the 3D cake model based on configuration

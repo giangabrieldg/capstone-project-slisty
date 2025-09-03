@@ -240,12 +240,14 @@ body {
     font-family: var(--font-poppins);
 }
 
-.primary-btn {
+.primary-btn,
+.submit-btn {
     background: var(--primary-color);
     color: white;
 }
 
-.primary-btn:hover {
+.primary-btn:hover,
+.submit-btn:hover {
     background: #237a3c;
 }
 
