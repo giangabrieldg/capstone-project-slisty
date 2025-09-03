@@ -325,7 +325,7 @@ class AdminDashboard {
 
     // Refresh button
     const refreshBtn = document.createElement("button");
-    refreshBtn.className = "btn btn-sm btn-outline-primary ms-3";
+    refreshBtn.className = "btn btn-sm btn-outline-primary ms-3 custom-outline-green";
     refreshBtn.innerHTML =
       '<i class="bi bi-arrow-clockwise"></i> Refresh';
     refreshBtn.addEventListener("click", () => this.loadDashboardData());

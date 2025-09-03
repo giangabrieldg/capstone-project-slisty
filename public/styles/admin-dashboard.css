@@ -74,6 +74,17 @@ body {
     margin: 0;
 }
 
+.custom-outline-green {
+    color: var(--primary-color);
+    border: 1px solid var(--primary-color);
+    background-color: transparent;
+}
+
+.custom-outline-green:hover {
+    background-color: var(--primary-color);
+    color: white;
+}
+
 /* Notification icon styling */
 .notification {
     position: relative;
