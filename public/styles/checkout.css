@@ -1,0 +1,65 @@
+:root {
+    --primary-color: #2C9045;
+    --secondary-color: #BCE4CC;
+    --background-color: #FFFBF0;
+    --secondary-background-color: #F5F1E9;
+    --sidebar-hover-color: #106826;
+    --text-color: #2D2D2D;
+    --secondary-text-color: #5e5d5d;
+    --white-text-color: #F9F6EE;
+    --font-poppins: 'Poppins', sans-serif;
+    --font-baloo: 'Baloo 2', sans-serif;
+}
+
+body {
+    font-family: "Poppins", sans-serif;
+    background-color: #f8f9fa;
+}
+
+.card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    margin-bottom: 1.5rem;
+}
+
+.card-header {
+    font-weight: 600;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+    background-color: #247A3A;
+    border-color: #247A3A;
+}
+
+.btn-success {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.container {
+    max-width: 1000px;
+    margin-top: 30px;
+}
+
+.form-check-input:checked {
+    background-color: var(--primary-color);
+    border-color: #198754;
+}
+
+.list-group-item {
+    border-left: none;
+    border-right: none;
+}
+
+#paymentStatusMessage {
+    transition: all 0.3s ease;
+}
+
+#paymentStatusMessage.show {
+    display: block !important;
+}
