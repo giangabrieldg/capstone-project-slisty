@@ -13,6 +13,11 @@ const { sendVerificationEmail } = require('../utils/sendEmail');
 const verifyToken = require('../middleware/verifyToken');
 require('dotenv').config();
 
+const BACKEND_URL = process.env.NODE_ENV === 'production' 
+  ? process.env.BASE_URL              // https://capstone-project-slisty.onrender.com
+  : process.env.CLIENT_URL_LOCAL;     // http://localhost:3000
+
+
 const router = express.Router();
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -63,15 +68,17 @@ router.post('/google', async (req, res) => {
     );
 
     res.status(200).json({
-      message: 'Google login successful',
-      token,
-      user: {
-        name: user.name,
-        userLevel: user.userLevel,
-        email: user.email,
-      },
-      redirectUrl: `${process.env.BASE_URL || 'http://localhost:3000'}/public/index.html`,
-    });
+    message: 'Google login successful',
+    token,
+    user: {
+      name: user.name,
+      userLevel: user.userLevel,
+      email: user.email,
+    },
+    redirectUrl: user.userLevel === 'Admin'
+      ? `${BACKEND_URL}/admin/admin-dashboard.html`
+      : `${BACKEND_URL}/customer/index.html`,
+  });
   } catch (error) {
     console.error('Error in Google login:', error);
     res.status(401).json({ message: 'Invalid Google token' });
@@ -117,29 +124,37 @@ router.post('/login', async (req, res) => {
       { expiresIn: '24h' }
     );
 
-    let redirectUrl;
+     let redirectUrl;
     if (user.userLevel === 'Customer') {
-      redirectUrl = `${process.env.BASE_URL || 'http://localhost:3000'}/public/index.html`;
+      redirectUrl = `${BACKEND_URL}/customer/index.html`;
     } else if (user.userLevel === 'Staff') {
-      redirectUrl = `${process.env.BASE_URL || 'http://localhost:3000'}/public/staff/staff.html`;
+      redirectUrl = `${BACKEND_URL}/staff/staff.html`;
     } else if (user.userLevel === 'Admin') {
-      redirectUrl = `${process.env.BASE_URL || 'http://localhost:3000'}/public/admin/admin-dashboard.html`;
+      redirectUrl = `${BACKEND_URL}/admin/admin-dashboard.html`;
     }
 
     res.status(200).json({
-      message: 'Login successful',
-      token,
-      user: {
-        name: user.name,
-        userLevel: user.userLevel,
-      },
-      redirectUrl,
-    });
+    message: 'Login successful',
+    token,
+    user: {
+      name: user.name,
+      userLevel: user.userLevel,
+    },
+    redirectUrl,
+    env: {
+      nodeEnv: process.env.NODE_ENV,
+      baseUrl: BACKEND_URL
+    }
+  });
   } catch (error) {
-    console.error('Error in login:', error.message, error.stack);
-    res.status(500).json({ message: 'Server error', details: error.message });
+        logError('login', error);
+    res.status(500).json({ 
+      message: 'Server error', 
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined 
+    });
   }
 });
+
 
 // Route to submit email for customer signup
 router.post('/signup-email', async (req, res) => {
@@ -197,8 +212,12 @@ router.get('/verify', async (req, res) => {
     const newToken = jwt.sign({ userID: user.userID }, process.env.JWT_SECRET, { expiresIn: '24h' });
     console.log('New token generated for completion:', newToken);
 
-    const redirectUrl = `http://localhost:3000/public/customer/complete-registration.html?userID=${user.userID}&token=${newToken}`;
-    console.log('Redirecting to:', redirectUrl);
+    const redirectUrl = `${BACKEND_URL}/customer/complete-registration.html?userID=${user.userID}&token=${newToken}`;
+    console.log('Verification redirect:', {
+      env: process.env.NODE_ENV,
+      baseUrl: BACKEND_URL,
+      redirectUrl
+    });
     res.redirect(redirectUrl);
   } catch (error) {
     console.error('Error in verify:', error);

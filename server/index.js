@@ -12,13 +12,24 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 // Configure CORS
+const allowedOrigins = [
+  process.env.CLIENT_URL_LOCAL,    // http://localhost:3000
+  process.env.CLIENT_URL_PROD,     // https://slice-n-grind.onrender.com
+  process.env.BASE_URL,            // https://capstone-project-slisty.onrender.com
+  'http://localhost:5000'
+];
+
 app.use(cors({
-  origin: [
-    'http://localhost:3000',
-    'https://slice-n-grind.onrender.com',
-  ],
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  origin: function(origin, callback) {
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      console.log('Blocked by CORS:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
+  optionsSuccessStatus: 200
 }));
 
 app.use(bodyParser.json({ limit: '10mb' }));
@@ -74,12 +85,20 @@ async function createDefaultAdmin() {
   }
 }
 
-sequelize.sync({ force: false })
+sequelize.sync({ force: false, alter: process.env.NODE_ENV !== 'production' })
   .then(() => {
-    console.log('Database synced successfully');
-    createDefaultAdmin();
+    console.log(`Database synced (${process.env.NODE_ENV} mode)`);
+    if (process.env.NODE_ENV === 'production') {
+      createDefaultAdmin();
+    }
   })
-  .catch(err => console.error('Sync error:', err.message, err.stack));
+  .catch(err => {
+    console.error('Database sync error:', {
+      message: err.message,
+      stack: err.stack,
+      timestamp: new Date().toISOString()
+    });
+  });
 
 // Backend Routes
 try {
@@ -114,15 +133,35 @@ app.get('/', (req, res) => {
 });
 
 // Error handling middleware
+// Update error handling middleware
 app.use((err, req, res, next) => {
-  console.error('General error:', err.message, err.stack);
-  res.status(500).json({ error: err.message });
+  console.error('Error details:', {
+    message: err.message,
+    stack: err.stack,
+    path: req.path,
+    method: req.method,
+    timestamp: new Date().toISOString()
+  });
+  
+  res.status(err.status || 500).json({
+    error: process.env.NODE_ENV === 'production' 
+      ? 'Internal server error' 
+      : err.message
+  });
 });
 
 // 404 handler
 app.use((req, res) => {
   console.log(`404 - Unmatched route: ${req.method} ${req.url}`);
   res.status(404).json({ message: 'Route not found' });
+});
+
+
+console.log('Environment:', {
+  NODE_ENV: process.env.NODE_ENV,
+  BASE_URL: process.env.BASE_URL,
+  CLIENT_URL_PROD: process.env.CLIENT_URL_PROD,
+  PORT: port
 });
 
 // Start server
