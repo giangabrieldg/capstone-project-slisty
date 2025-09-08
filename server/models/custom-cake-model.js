@@ -113,6 +113,7 @@ const CustomCakeOrder = sequelize.define('CustomCakeOrder', {
   tableName: 'CustomCakeOrders',
   timestamps: true,
   comment: 'Stores custom cake order details and status',
+  constraints: false
 });
 
 module.exports = CustomCakeOrder;
