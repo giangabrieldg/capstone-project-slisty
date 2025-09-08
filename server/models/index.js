@@ -12,8 +12,17 @@ const OrderItem = require('./order-item-model')(sequelize, DataTypes);
 const CustomCakeOrder = require('./custom-cake-model');
 
 // MenuItem ↔ ItemSize
-MenuItem.hasMany(ItemSize, { foreignKey: 'menuId', as: 'sizes' });
-ItemSize.belongsTo(MenuItem, { foreignKey: 'menuId', as: 'menuItem' });
+MenuItem.hasMany(ItemSize, { 
+  foreignKey: 'menuId', 
+  as: 'sizes',
+  constraints: false  // ← ADD THIS
+});
+
+ItemSize.belongsTo(MenuItem, { 
+  foreignKey: 'menuId', 
+  as: 'menuItem',
+  constraints: false  // ← ADD THIS
+});
 
 // Cart ↔ CartItem
 Cart.hasMany(CartItem, { foreignKey: 'cartId' });
