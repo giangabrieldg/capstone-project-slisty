@@ -25,38 +25,38 @@ ItemSize.belongsTo(MenuItem, {
 });
 
 // Cart ↔ CartItem
-Cart.hasMany(CartItem, { foreignKey: 'cartId' });
-CartItem.belongsTo(Cart, { foreignKey: 'cartId' });
-CartItem.belongsTo(MenuItem, { foreignKey: 'menuId' });
-MenuItem.hasMany(CartItem, { foreignKey: 'menuId' });
+Cart.hasMany(CartItem, { foreignKey: 'cartId', constraints: false});
+CartItem.belongsTo(Cart, { foreignKey: 'cartId', constraints: false });
+CartItem.belongsTo(MenuItem, { foreignKey: 'menuId', constraints: false});
+MenuItem.hasMany(CartItem, { foreignKey: 'menuId', constraints: false});
 
 // User ↔ Order
-User.hasMany(Order, { foreignKey: 'userID', as: 'orders' });
-Order.belongsTo(User, { foreignKey: 'userID', as: 'customer' });
+User.hasMany(Order, { foreignKey: 'userID', as: 'orders', constraints: false});
+Order.belongsTo(User, { foreignKey: 'userID', as: 'customer', constraints: false});
 
 // Order ↔ OrderItem
-Order.hasMany(OrderItem, { foreignKey: 'orderId', as: 'orderItems' });
-OrderItem.belongsTo(Order, { foreignKey: 'orderId' });
+Order.hasMany(OrderItem, { foreignKey: 'orderId', as: 'orderItems', constraints: false });
+OrderItem.belongsTo(Order, { foreignKey: 'orderId', constraints: false });
 
 // MenuItem ↔ OrderItem
-MenuItem.hasMany(OrderItem, { foreignKey: 'menuId' });
-OrderItem.belongsTo(MenuItem, { foreignKey: 'menuId' });
+MenuItem.hasMany(OrderItem, { foreignKey: 'menuId', constraints: false });
+OrderItem.belongsTo(MenuItem, { foreignKey: 'menuId', constraints: false });
 
 // ItemSize ↔ OrderItem
-ItemSize.hasMany(OrderItem, { foreignKey: 'sizeId' });
-OrderItem.belongsTo(ItemSize, { foreignKey: 'sizeId' });
+ItemSize.hasMany(OrderItem, { foreignKey: 'sizeId', constraints: false });
+OrderItem.belongsTo(ItemSize, { foreignKey: 'sizeId', constraints: false });
 
 // User ↔ CustomCakeOrder
-User.hasMany(CustomCakeOrder, { foreignKey: 'userID', as: 'customCakeOrders' });
-CustomCakeOrder.belongsTo(User, { foreignKey: 'userID', as: 'customer' });
+User.hasMany(CustomCakeOrder, { foreignKey: 'userID', as: 'customCakeOrders', constraints: false });
+CustomCakeOrder.belongsTo(User, { foreignKey: 'userID', as: 'customer', constraints: false });
 
 // CartItem ↔ CustomCakeOrder
-CustomCakeOrder.hasMany(CartItem, { foreignKey: 'customCakeId' });
-CartItem.belongsTo(CustomCakeOrder, { foreignKey: 'customCakeId' });
+CustomCakeOrder.hasMany(CartItem, { foreignKey: 'customCakeId', constraints: false });
+CartItem.belongsTo(CustomCakeOrder, { foreignKey: 'customCakeId', constraints: false });
 
 // OrderItem ↔ CustomCakeOrder
-CustomCakeOrder.hasMany(OrderItem, { foreignKey: 'customCakeId' });
-OrderItem.belongsTo(CustomCakeOrder, { foreignKey: 'customCakeId' });
+CustomCakeOrder.hasMany(OrderItem, { foreignKey: 'customCakeId', constraints: false });
+OrderItem.belongsTo(CustomCakeOrder, { foreignKey: 'customCakeId', constraints: false });
 
 module.exports = {
   sequelize,
