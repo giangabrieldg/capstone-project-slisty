@@ -421,4 +421,21 @@ router.put('/profile/update', verifyToken, setNoCacheHeaders, async (req, res) =
   }
 });
 
+// Add this temporary route to authRoutes.js for testing
+router.post('/create-test-user', async (req, res) => {
+  try {
+    const hashedPassword = await bcrypt.hash('test123', 10);
+    const user = await User.create({
+      email: 'test@example.com',
+      password: hashedPassword,
+      name: 'Test User',
+      isVerified: true,
+      userLevel: 'Customer'
+    });
+    res.json({ message: 'Test user created', email: 'test@example.com', password: 'test123' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;

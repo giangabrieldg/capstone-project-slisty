@@ -85,7 +85,7 @@ async function createDefaultAdmin() {
   }
 }
 
-sequelize.sync({ force: false, alter: process.env.NODE_ENV !== 'production' })
+sequelize.sync({ force: true })
   .then(() => {
     console.log(`Database synced (${process.env.NODE_ENV} mode)`);
     if (process.env.NODE_ENV === 'production') {
