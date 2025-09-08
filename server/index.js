@@ -121,7 +121,8 @@ try {
   app.use('/api/custom-cake', customCakeRoutes);
   console.log('Routes registered successfully');
 
-  cleanupAbandonedOrders();
+  //cleanupAbandonedOrders();
+  
 } catch (error) {
   console.error('Error loading routes or cleanup:', error.message, error.stack);
 }
