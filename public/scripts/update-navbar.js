@@ -1,10 +1,5 @@
 // update-navbar.js
 
-// Dynamic BASE_URL for local and production
-const BASE_URL = window.location.hostname === "localhost"
-  ? "http://localhost:3000"
-  : "https://capstone-project-slisty.onrender.com";
-
 // Function to fetch cart item count from API and update the badge
 async function updateCartCount() {
   const token = localStorage.getItem("token");
