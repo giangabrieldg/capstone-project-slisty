@@ -85,7 +85,7 @@ async function createDefaultAdmin() {
   }
 }
 
-sequelize.sync({ force: true })
+  sequelize.sync({ force: false })
   .then(() => {
     console.log(`Database synced (${process.env.NODE_ENV} mode)`);
     if (process.env.NODE_ENV === 'production') {
@@ -93,10 +93,10 @@ sequelize.sync({ force: true })
     }
   })
   .catch(err => {
-    console.error('Database sync error:', {
+    console.error('Sync error:', {
       message: err.message,
       stack: err.stack,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   });
 
