@@ -76,8 +76,8 @@ router.post('/google', async (req, res) => {
       email: user.email,
     },
     redirectUrl: user.userLevel === 'Admin'
-      ? `${BACKEND_URL}/admin/admin-dashboard.html`
-      : `${BACKEND_URL}/customer/index.html`,
+      ? `${BACKEND_URL}/public/admin/admin-dashboard.html`
+      : `${BACKEND_URL}/public/index.html`,
   });
   } catch (error) {
     console.error('Error in Google login:', error);
@@ -130,7 +130,7 @@ router.post('/login', async (req, res) => {
     } else if (user.userLevel === 'Staff') {
       redirectUrl = `${BACKEND_URL}/staff/staff.html`;
     } else if (user.userLevel === 'Admin') {
-      redirectUrl = `${BACKEND_URL}/admin/admin-dashboard.html`;
+      redirectUrl = `${BACKEND_URL}/public/admin/admin-dashboard.html`;
     }
 
     res.status(200).json({

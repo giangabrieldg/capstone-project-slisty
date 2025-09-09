@@ -12,10 +12,6 @@ const CustomCakeOrder = sequelize.define('CustomCakeOrder', {
   userID: {
     type: DataTypes.INTEGER,
     allowNull: false,
-    references: {
-      model: 'Users',
-      key: 'userID',
-    },
     comment: 'Foreign key linking to the User who placed the order',
   },
   size: {
