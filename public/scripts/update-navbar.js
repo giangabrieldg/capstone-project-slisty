@@ -1,5 +1,10 @@
 // update-navbar.js
 
+// Dynamic BASE_URL for local and production
+const BASE_URL = window.location.hostname === "localhost"
+  ? "http://localhost:3000"
+  : "https://capstone-project-slisty.onrender.com";
+
 // Function to fetch cart item count from API and update the badge
 async function updateCartCount() {
   const token = localStorage.getItem("token");
@@ -10,14 +15,14 @@ async function updateCartCount() {
   }
 
   try {
-    const response = await fetch('http://localhost:3000/api/cart', {
+    const response = await fetch(`${BASE_URL}/api/cart`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
     });
 
     if (!response.ok) {
-      console.warn("Failed to fetch cart items for count.");
+      console.warn("Failed to fetch cart items for count:", response.status);
       cartCountBadge.style.display = "none";
       return;
     }

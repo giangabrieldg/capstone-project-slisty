@@ -32,8 +32,13 @@ async function initializeAdminSidebar(container) {
   const navLinks = container.querySelectorAll(".sidebar-nav .nav-item");
   const token = localStorage.getItem("token");
 
+  // Dynamic BASE_URL for local and production
+  const BASE_URL = window.location.hostname === "localhost"
+    ? "http://localhost:3000"
+    : "https://capstone-project-slisty.onrender.com";
+
   // Validate token on page load
-  if (!token || !(await validateToken())) {
+  if (!token || !(await validateToken(BASE_URL))) {
     localStorage.clear();
     sessionStorage.clear();
     window.location.href = "/public/customer/login.html";
@@ -97,12 +102,15 @@ async function initializeAdminSidebar(container) {
 }
 
 // Validate token with server
-async function validateToken() {
+async function validateToken(BASE_URL) {
   const token = localStorage.getItem("token");
   try {
-    const response = await fetch('http://localhost:3000/api/auth/profile', {
+    const response = await fetch(`${BASE_URL}/api/auth/profile`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
+    if (!response.ok) {
+      console.warn("Token validation failed with status:", response.status);
+    }
     return response.ok;
   } catch (error) {
     console.error('Token validation failed:', error);
