@@ -110,6 +110,7 @@ try {
   const orderRoutes = require('./routes/orderRoutes');
   const customCakeRoutes = require('./routes/customCakeRoutes');
   const { cleanupAbandonedOrders } = require('./server-side-scripts/cleanup.js');
+  const faqRoutes = require('./routes/faqRoutes');
 
   console.log('Registering routes...');
   app.use('/api/inquiries', inquiriesRoutes);
@@ -119,7 +120,9 @@ try {
   app.use('/api/payment', paymentRoutes);
   app.use('/api/orders', orderRoutes);
   app.use('/api/custom-cake', customCakeRoutes);
+  app.use('/api/faqs', faqRoutes);
   console.log('Routes registered successfully');
+  
 
   //cleanupAbandonedOrders();
   

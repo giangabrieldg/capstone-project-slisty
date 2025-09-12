@@ -10,14 +10,14 @@ async function updateCartCount() {
   }
 
   try {
-    const response = await fetch(`${BASE_URL}/api/cart`, {
+    const response = await fetch('http://localhost:3000/api/cart', {
       headers: {
         Authorization: `Bearer ${token}`,
       },
     });
 
     if (!response.ok) {
-      console.warn("Failed to fetch cart items for count:", response.status);
+      console.warn("Failed to fetch cart items for count.");
       cartCountBadge.style.display = "none";
       return;
     }

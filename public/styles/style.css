@@ -340,6 +340,88 @@ img.img-fluid.rounded {
     margin: 15px 0;
 }
 
+/* FAQ Section */
+.faq-section {
+    background-color: var(--secodary-background-color);
+    padding: 4rem 0;
+}
+
+.faq-title {
+    font-size: 2.5rem;
+    font-family: var(--font-baloo);
+    color: var(--primary-color);
+    font-weight: 600;
+    text-align: center;
+}
+
+.faq-text {
+    font-size: 1rem;
+    font-family: var(--font-poppins);
+    color: var(--secondary-text-color);
+    font-weight: lighter;
+    line-height: 1.6;
+    text-align: center;
+}
+
+.accordion-item {
+    background-color: transparent;
+    border: none;
+    border-bottom: 1px solid var(--secondary-color);
+    border-radius: 0;
+}
+
+.accordion-button {
+    font-family: var(--font-poppins);
+    font-weight: 500;
+    font-size: 1.1rem;
+    color: var(--text-color);
+    background-color: transparent;
+    padding: 1.25rem;
+    transition: all 0.3s ease;
+}
+
+.accordion-button:not(.collapsed) {
+    color: var(--primary-color);
+    background-color: var(--sidebar-hover-color);
+    box-shadow: none;
+}
+
+.accordion-button:focus {
+    box-shadow: none;
+    border-color: transparent;
+}
+
+.accordion-body {
+    font-family: var(--font-poppins);
+    font-size: 1rem;
+    color: var(--text-color);
+    line-height: 1.8;
+    padding: 1.25rem;
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Responsive adjustments for FAQ section */
+@media (max-width: 768px) {
+    .faq-title {
+        font-size: 2rem;
+    }
+
+    .faq-text {
+        font-size: 0.9rem;
+    }
+
+    .accordion-button {
+        font-size: 1rem;
+        padding: 1rem;
+    }
+
+    .accordion-body {
+        font-size: 0.9rem;
+        padding: 1rem;
+    }
+}
+
+
 /* Responsive adjustments for navbar */
 @media (min-width: 992px) {
 

@@ -126,9 +126,9 @@ router.post('/login', async (req, res) => {
 
      let redirectUrl;
     if (user.userLevel === 'Customer') {
-      redirectUrl = `${BACKEND_URL}/customer/index.html`;
+      redirectUrl = `${BACKEND_URL}/public/index.html`;
     } else if (user.userLevel === 'Staff') {
-      redirectUrl = `${BACKEND_URL}/staff/staff.html`;
+      redirectUrl = `${BACKEND_URL}public/staff/staff.html`;
     } else if (user.userLevel === 'Admin') {
       redirectUrl = `${BACKEND_URL}/public/admin/admin-dashboard.html`;
     }
