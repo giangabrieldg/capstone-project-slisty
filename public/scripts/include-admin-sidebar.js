@@ -37,13 +37,20 @@ async function initializeAdminSidebar(container) {
     ? "http://localhost:3000"
     : "https://capstone-project-slisty.onrender.com";
 
+  // Validate user data
+  const userData = await validateToken(BASE_URL);
+  console.log("User data from API:", userData);
+  console.log("Token exists:", !!localStorage.getItem("token"));
+
   // Validate token on page load
-  if (!token || !(await validateToken(BASE_URL))) {
+  if (!token || !userData)  {
     localStorage.clear();
     sessionStorage.clear();
     window.location.href = "/public/customer/login.html";
     return;
   }
+
+   updateUserInfo(container, userData);
 
   // Sidebar toggle (for mobile)
   if (toggleButton && sidebar) {
@@ -108,13 +115,28 @@ async function validateToken(BASE_URL) {
     const response = await fetch(`${BASE_URL}/api/auth/profile`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
+    const userData = await response.json();
     if (!response.ok) {
       console.warn("Token validation failed with status:", response.status);
+      return userData
     }
-    return response.ok;
+    console.log("Token validation succeeded with status:", response.status);
+    return userData;
   } catch (error) {
     console.error('Token validation failed:', error);
-    return false;
+    return null;
+  }
+}
+
+function updateUserInfo(container, userData) {
+  const userNameElement = container.querySelector("#userName");
+  const userRoleElement = container.querySelector("#userRole");
+
+  if (userNameElement && userData.name) {
+    userNameElement.textContent = userData.name;
+  }
+  if (userRoleElement && userData.userLevel) {
+    userRoleElement.textContent = userData.userLevel;
   }
 }
 
