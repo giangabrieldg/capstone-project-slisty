@@ -13,9 +13,9 @@ const { sendVerificationEmail } = require('../utils/sendEmail');
 const verifyToken = require('../middleware/verifyToken');
 require('dotenv').config();
 
-const BACKEND_URL = process.env.NODE_ENV === 'production' 
-  ? process.env.BASE_URL              // https://capstone-project-slisty.onrender.com
-  : process.env.CLIENT_URL_LOCAL;     // http://localhost:3000
+const FRONTEND_URL = process.env.NODE_ENV === 'production'
+  ? process.env.CLIENT_URL_PROD // https://slice-n-grind.onrender.com
+  : process.env.CLIENT_URL_LOCAL; // http://localhost:3000
 
 
 const router = express.Router();
@@ -76,8 +76,8 @@ router.post('/google', async (req, res) => {
       email: user.email,
     },
     redirectUrl: user.userLevel === 'Admin'
-      ? `${BACKEND_URL}/public/admin/admin-dashboard.html`
-      : `${BACKEND_URL}/public/index.html`,
+      ? `${FRONTEND_URL}/public/admin/admin-dashboard.html`
+      : `${FRONTEND_URL}/public/index.html`,
   });
   } catch (error) {
     console.error('Error in Google login:', error);
@@ -126,11 +126,11 @@ router.post('/login', async (req, res) => {
 
      let redirectUrl;
     if (user.userLevel === 'Customer') {
-      redirectUrl = `${BACKEND_URL}/public/index.html`;
+      redirectUrl = `${FRONTEND_URL}/public/index.html`;
     } else if (user.userLevel === 'Staff') {
-      redirectUrl = `${BACKEND_URL}public/staff/staff.html`;
+      redirectUrl = `${FRONTEND_URL}public/staff/staff.html`;
     } else if (user.userLevel === 'Admin') {
-      redirectUrl = `${BACKEND_URL}/public/admin/admin-dashboard.html`;
+      redirectUrl = `${FRONTEND_URL}/public/admin/admin-dashboard.html`;
     }
 
     res.status(200).json({
@@ -143,7 +143,7 @@ router.post('/login', async (req, res) => {
     redirectUrl,
     env: {
       nodeEnv: process.env.NODE_ENV,
-      baseUrl: BACKEND_URL
+      baseUrl: FRONTEND_URL
     }
   });
   } catch (error) {
@@ -212,10 +212,10 @@ router.get('/verify', async (req, res) => {
     const newToken = jwt.sign({ userID: user.userID }, process.env.JWT_SECRET, { expiresIn: '24h' });
     console.log('New token generated for completion:', newToken);
 
-    const redirectUrl = `${BACKEND_URL}/customer/complete-registration.html?userID=${user.userID}&token=${newToken}`;
+    const redirectUrl = `${FRONTEND_URL}/customer/complete-registration.html?userID=${user.userID}&token=${newToken}`;
     console.log('Verification redirect:', {
       env: process.env.NODE_ENV,
-      baseUrl: BACKEND_URL,
+      baseUrl: FRONTEND_URL,
       redirectUrl
     });
     res.redirect(redirectUrl);
