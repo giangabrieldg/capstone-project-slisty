@@ -59,7 +59,7 @@ function updateNavbarAndGreeting() {
   if (token) {
     userCartContainer.style.display = "block";
     userProfileContainer.style.display = "block";
-    userProfileLink.href = "/public/customer/profile.html";
+    userProfileLink.href = "add/customer/profile.html";
     if (userNameSpan) userNameSpan.textContent = localStorage.getItem("userName") || "User Profile";
     // Update profile.html content if on that page
     if (window.location.pathname.includes("profile.html")) {
