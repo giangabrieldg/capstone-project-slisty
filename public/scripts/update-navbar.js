@@ -71,7 +71,7 @@ function updateNavbarAndGreeting() {
   } else {
     userCartContainer.style.display = "none";
     userProfileContainer.style.display = "block";
-    userProfileLink.href = "/public/customer/login.html";
+    userProfileLink.href = "/customer/login.html";
     if (userNameSpan) userNameSpan.textContent = "User Profile";
     if (window.location.pathname.includes("profile.html")) {
       document.getElementById("userName").textContent = "Guest";
