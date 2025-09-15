@@ -71,7 +71,7 @@
           window.location.hostname === "localhost" ||
           window.location.hostname === "127.0.0.1"
             ? "http://localhost:3000/api/auth/signup-email"
-            : "https://your-production-domain.com/api/auth/signup-email", // Replace with your actual production URL
+            : "https://capstone-project-slisty.onrender.com/api/auth/signup-email",
       };
 
       // Get the form element
@@ -103,11 +103,11 @@
           // If successful
           if (response.ok) {
             signupEmailForm.reset();
-            //redirect or update UI to inform user to check email
+            // Update UI to inform user to check email
             document.querySelector(".card-body").innerHTML = `
-            <h2 class="text-center">Check Your Email</h2>
-            <p class="text-center">A verification link has been sent to ${email}. Please check your inbox (and spam folder) to continue.</p>
-          `;
+          <h2 class="text-center">Check Your Email</h2>
+          <p class="text-center">A verification link has been sent to ${email}. Please check your inbox (and spam folder) to continue.</p>
+        `;
           }
         } catch (error) {
           // Handle network or server errors

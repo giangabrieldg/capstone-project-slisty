@@ -81,6 +81,15 @@
       crossorigin="anonymous"
     ></script>
     <script>
+      // Environment-based configuration
+      const isLocalhost =
+        window.location.hostname === "localhost" ||
+        window.location.hostname === "127.0.0.1";
+      const API_URL = isLocalhost
+        ? "http://localhost:3000/api/auth/complete-registration"
+        : "https://capstone-project-slisty.onrender.com/api/auth/complete-registration";
+      const PUBLIC_PREFIX = isLocalhost ? "/public" : "";
+
       function validateForm() {
         let isValid = true;
         const phone = document.getElementById("phone").value.trim();
@@ -137,22 +146,19 @@
             console.log("Sending token:", token); // Debug token
             const requestData = { name, phone, address, password };
             console.log("Sending request data:", requestData); // Debug request data
-            const response = await fetch(
-              `http://localhost:3000/api/auth/complete-registration?token=${token}`,
-              {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify(requestData),
-              }
-            );
+            const response = await fetch(`${API_URL}?token=${token}`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(requestData),
+            });
             console.log("Response status:", response.status); // Debug response status
             const data = await response.json();
             console.log("Response data:", data); // Debug response data
             alert(data.message);
             if (response.ok) {
-              window.location.href = "/public/customer/login.html";
+              window.location.href = `${PUBLIC_PREFIX}/customer/login.html`;
             } else {
               if (data.message === "Invalid or expired token") {
                 alert(
