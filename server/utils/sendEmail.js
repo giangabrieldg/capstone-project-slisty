@@ -14,8 +14,13 @@ const transporter = nodemailer.createTransport({
 
 // Send email verification link to new users
 const sendVerificationEmail = async (email, token) => {
+  // Determine the base URL based on environment
+  const baseUrl = process.env.NODE_ENV === 'production' 
+    ? process.env.CLIENT_URL_PROD 
+    : process.env.CLIENT_URL_LOCAL;
+
   // Construct verification URL with token
-  const verificationUrl = `http://localhost:3000/api/auth/verify?token=${token}`;
+  const verificationUrl = `${baseUrl}/api/auth/verify?token=${token}`;
   
   // Define email content with branded styling
   const mailOptions = {

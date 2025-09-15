@@ -66,13 +66,13 @@
     ></script>
     <script>
       // Environment-based configuration
-      const isLocalhost =
-        window.location.hostname === "localhost" ||
-        window.location.hostname === "127.0.0.1";
-      const BASE_URL = isLocalhost
-        ? "http://localhost:3000"
-        : "https://capstone-project-slisty.onrender.com";
-      const PUBLIC_PREFIX = isLocalhost ? "/public" : "";
+      const config = {
+        API_URL:
+          window.location.hostname === "localhost" ||
+          window.location.hostname === "127.0.0.1"
+            ? "http://localhost:3000/api/auth/signup-email"
+            : "https://capstone-project-slisty.onrender.com/api/auth/signup-email", // Replace with your Render backend URL
+      };
 
       // Get the form element
       const signupEmailForm = document.getElementById("signupEmailForm");
@@ -82,17 +82,11 @@
         event.preventDefault(); // Prevent default form submission
 
         // Get email input value
-        const email = document.getElementById("email").value.trim();
-
-        // Client-side validation
-        if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
-          alert("Please enter a valid email address.");
-          return;
-        }
+        const email = document.getElementById("email").value;
 
         try {
           // Send POST request to backend signup-email endpoint
-          const response = await fetch(`${BASE_URL}/api/auth/signup-email`, {
+          const response = await fetch(config.API_URL, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -102,7 +96,6 @@
 
           // Parse response
           const data = await response.json();
-          console.log("Signup response:", data); // Debug the response
 
           // Show response message
           alert(data.message);
@@ -110,11 +103,11 @@
           // If successful
           if (response.ok) {
             signupEmailForm.reset();
-            // Update UI to inform user to check email
+            //redirect or update UI to inform user to check email
             document.querySelector(".card-body").innerHTML = `
-          <h2 class="text-center">Check Your Email</h2>
-          <p class="text-center">A verification link has been sent to ${email}. Please check your inbox (and spam folder) to continue.</p>
-        `;
+            <h2 class="text-center">Check Your Email</h2>
+            <p class="text-center">A verification link has been sent to ${email}. Please check your inbox (and spam folder) to continue.</p>
+          `;
           }
         } catch (error) {
           // Handle network or server errors
