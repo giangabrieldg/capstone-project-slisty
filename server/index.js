@@ -35,15 +35,6 @@ app.use(cors({
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
 
-// Static file serving
-app.use('/public', express.static(path.join(__dirname, '../public')));
-app.use('/styles', express.static(path.join(__dirname, '../public/styles')));
-app.use('/scripts', express.static(path.join(__dirname, '../public/scripts')));
-app.use('/assets', express.static(path.join(__dirname, '../public/assets')));
-app.use('/models', express.static(path.join(__dirname, '../public/models')));
-app.use('/includes', express.static(path.join(__dirname, '../public/includes')));
-app.use('/Uploads', express.static(path.join(__dirname, '../Uploads')));
-
 const uploadDir = path.join(__dirname, '../Uploads');
 const customCakeUploadDir = path.join(__dirname, '../Uploads/custom-cakes');
 if (!fs.existsSync(uploadDir)) {
