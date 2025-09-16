@@ -116,11 +116,18 @@
     <script src="/scripts/include-html.js"></script>
 
     <script>
-      const isLocalhost = window.location.hostname === "localhost";
-      const BASE_URL = isLocalhost
-        ? "http://localhost:3000"
-        : "https://capstone-project-slisty.onrender.com";
-      const PUBLIC_PREFIX = isLocalhost ? "/public" : "";
+      const BASE_URL =
+        window.location.hostname === "localhost"
+          ? "http://localhost:3000"
+          : "https://capstone-project-slisty.onrender.com";
+
+      // Function to show toast notification
+      function showToast(message) {
+        const toast = document.getElementById("errorToast");
+        toast.querySelector(".toast-body").textContent = message;
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+      }
 
       // Handle Google Sign-In
       window.handleGoogleSignIn = async function (response) {
@@ -129,7 +136,7 @@
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ idToken: response.credential }),
-            credentials: "include",
+            credentials: "include", // Add this for cookies
           });
 
           const data = await res.json();
@@ -144,8 +151,8 @@
             localStorage.setItem("userEmail", data.user.email);
             localStorage.setItem("userLevel", data.user.userLevel);
 
-            // Use dynamic path based on environment
-            window.location.href = `${PUBLIC_PREFIX}${data.redirectUrl}`;
+            // Use data.redirectUrl from backend
+            window.location.href = data.redirectUrl;
           } else {
             showToast(data.message || "Google login failed");
           }
@@ -168,7 +175,7 @@
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ email, password }),
-              credentials: "include",
+              credentials: "include", // Add this for cookies
             });
 
             const data = await response.json();
@@ -183,8 +190,8 @@
               localStorage.setItem("userEmail", email);
               localStorage.setItem("userLevel", data.user?.userLevel);
 
-              // Use dynamic path based on environment
-              window.location.href = `${PUBLIC_PREFIX}${data.redirectUrl}`;
+              // Use redirectUrl from backend
+              window.location.href = data.redirectUrl;
             } else {
               showToast(data.message || "Login failed");
             }
