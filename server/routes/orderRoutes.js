@@ -7,7 +7,8 @@ const { Op } = require('sequelize');
 
 // Middleware to check admin/staff permissions
 const checkAdminOrStaff = (req, res, next) => {
-  if (!['admin', 'staff'].includes(req.user.userLevel.toLowerCase())) {
+  const userLevel = req.user.userLevel.toLowerCase();
+  if (!['admin', 'staff'].includes(userLevel)) {
     return res.status(403).json({ success: false, message: 'Unauthorized: Admin or staff access required' });
   }
   next();
