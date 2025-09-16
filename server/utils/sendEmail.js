@@ -9,7 +9,12 @@ const transporter = nodemailer.createTransport({
   auth: {
     user: process.env.EMAIL_USER, // Gmail address from .env
     pass: process.env.EMAIL_PASS, // Gmail app-specific password from .env
+  },// Add these options
+  tls: {
+    rejectUnauthorized: false
   },
+  secure: true,
+  port: 465
 });
 
 // Send email verification link to new users
@@ -20,6 +25,10 @@ const sendVerificationEmail = async (email, token) => {
     : (process.env.CLIENT_URL_LOCAL || 'http://localhost:3000');
 
   console.log('Email verification baseUrl:', baseUrl);
+  console.log('Environment:', process.env.NODE_ENV);
+console.log('Email user exists:', !!process.env.EMAIL_USER);
+console.log('JWT secret exists:', !!process.env.JWT_SECRET);
+  
 
   // Construct verification URL with token
   const verificationUrl = `${baseUrl}/api/auth/verify?token=${token}`;

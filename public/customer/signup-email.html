@@ -116,6 +116,48 @@
           alert("An error occurred. Please try again later.");
         }
       });
+
+      // Add loading state
+      signupEmailForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        const email = document.getElementById("email").value;
+        const submitBtn = document.querySelector('button[type="submit"]');
+        const originalText = submitBtn.textContent;
+
+        // Show loading state
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Sending...";
+
+        try {
+          const response = await fetch(config.API_URL, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ email }),
+          });
+
+          const data = await response.json();
+
+          if (response.ok) {
+            signupEmailForm.reset();
+            document.querySelector(".card-body").innerHTML = `
+        <h2 class="text-center">Check Your Email</h2>
+        <p class="text-center">A verification link has been sent to ${email}. Please check your inbox (and spam folder) to continue.</p>
+      `;
+          } else {
+            alert(data.message);
+          }
+        } catch (error) {
+          console.error("Error submitting email:", error);
+          alert("An error occurred. Please try again later.");
+        } finally {
+          // Reset button state
+          submitBtn.disabled = false;
+          submitBtn.textContent = originalText;
+        }
+      });
     </script>
   </body>
 </html>
