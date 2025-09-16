@@ -18,8 +18,10 @@ const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // Define FRONTEND_URL based on environment
 const FRONTEND_URL = process.env.NODE_ENV === 'production'
-  ? process.env.CLIENT_URL_PROD // e.g., https://slice-n-grind.onrender.com
-  : process.env.CLIENT_URL_LOCAL; // e.g., http://localhost:3000
+  ? (process.env.CLIENT_URL_PROD || 'https://slice-n-grind.onrender.com')
+  : (process.env.CLIENT_URL_LOCAL || 'http://localhost:3000');
+
+console.log('FRONTEND_URL set to:', FRONTEND_URL);
 
 // Middleware to set cache-control headers for protected routes
 const setNoCacheHeaders = (req, res, next) => {

@@ -49,9 +49,7 @@
         </form>
         <p class="text-center mt-3">
           Already have an account?
-          <a href="/public/customer/login.html" class="text-decoration-none"
-            >Log in</a
-          >
+          <a href="/customer/login.html" class="text-decoration-none">Log in</a>
         </p>
       </div>
     </div>
@@ -66,12 +64,15 @@
     ></script>
     <script>
       // Environment-based configuration
+      const isLocalhost =
+        window.location.hostname === "localhost" ||
+        window.location.hostname === "127.0.0.1";
+      const BASE_URL = isLocalhost
+        ? "http://localhost:3000"
+        : "https://capstone-project-slisty.onrender.com";
+
       const config = {
-        API_URL:
-          window.location.hostname === "localhost" ||
-          window.location.hostname === "127.0.0.1"
-            ? "http://localhost:3000/api/auth/signup-email"
-            : "https://capstone-project-slisty.onrender.com/api/auth/signup-email", // Replace with your Render backend URL
+        API_URL: `${BASE_URL}/api/auth/signup-email`,
       };
 
       // Get the form element
