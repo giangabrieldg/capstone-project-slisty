@@ -10,7 +10,7 @@ async function updateCartCount() {
   }
 
   try {
-    const response = await fetch('http://localhost:3000/api/cart', {
+    const response = await fetch(`${window.BASE_URL}/api/cart`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -53,26 +53,27 @@ function updateNavbarAndGreeting() {
 
   if (!userCartContainer || !userProfileContainer || !userProfileLink) {
     console.warn("Navbar elements not found. Make sure navbar is loaded.");
-    return; // Exit if critical elements are missing
+    return;
   }
 
   if (token) {
     userCartContainer.style.display = "block";
     userProfileContainer.style.display = "block";
-    userProfileLink.href = "add/customer/profile.html";
+    userProfileLink.href = window.getFullPath("/customer/profile.html");
     if (userNameSpan) userNameSpan.textContent = localStorage.getItem("userName") || "User Profile";
-    // Update profile.html content if on that page
+    
     if (window.location.pathname.includes("profile.html")) {
       document.getElementById("userName").textContent = localStorage.getItem("userName") || "Guest";
       document.getElementById("userEmail").textContent = localStorage.getItem("userEmail") || "Not set";
     }
-    // Update cart count badge
+    
     updateCartCount();
   } else {
     userCartContainer.style.display = "none";
     userProfileContainer.style.display = "block";
-    userProfileLink.href = "/customer/login.html";
+    userProfileLink.href = window.getFullPath("/customer/login.html");
     if (userNameSpan) userNameSpan.textContent = "User Profile";
+    
     if (window.location.pathname.includes("profile.html")) {
       document.getElementById("userName").textContent = "Guest";
       document.getElementById("userEmail").textContent = "Not logged in";
@@ -82,7 +83,11 @@ function updateNavbarAndGreeting() {
 
 // Ensure function runs after DOM and includes are loaded
 document.addEventListener("DOMContentLoaded", () => {
+  console.log("updateNavbarAndGreeting running");
   updateNavbarAndGreeting();
 });
 
-document.addEventListener('html-includes-loaded', updateNavbarAndGreeting);
+document.addEventListener('html-includes-loaded', () => {
+  console.log("html-includes-loaded triggered");
+  updateNavbarAndGreeting();
+});

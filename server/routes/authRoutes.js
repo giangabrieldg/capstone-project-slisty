@@ -13,13 +13,13 @@ const { sendVerificationEmail } = require('../utils/sendEmail');
 const verifyToken = require('../middleware/verifyToken');
 require('dotenv').config();
 
-const FRONTEND_URL = process.env.NODE_ENV === 'production'
-  ? process.env.CLIENT_URL_PROD // https://slice-n-grind.onrender.com
-  : process.env.CLIENT_URL_LOCAL; // http://localhost:3000
-
-
 const router = express.Router();
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+// Define FRONTEND_URL based on environment
+const FRONTEND_URL = process.env.NODE_ENV === 'production'
+  ? process.env.CLIENT_URL_PROD // e.g., https://slice-n-grind.onrender.com
+  : process.env.CLIENT_URL_LOCAL; // e.g., http://localhost:3000
 
 // Middleware to set cache-control headers for protected routes
 const setNoCacheHeaders = (req, res, next) => {
@@ -68,17 +68,17 @@ router.post('/google', async (req, res) => {
     );
 
     res.status(200).json({
-    message: 'Google login successful',
-    token,
-    user: {
-      name: user.name,
-      userLevel: user.userLevel,
-      email: user.email,
-    },
-    redirectUrl: user.userLevel === 'Admin'
-      ? `${FRONTEND_URL}/admin/admin-dashboard.html`
-      : `${FRONTEND_URL}/index.html`,
-  });
+      message: 'Google login successful',
+      token,
+      user: {
+        name: user.name,
+        userLevel: user.userLevel,
+        email: user.email,
+      },
+      redirectUrl: user.userLevel === 'Admin'
+        ? '/admin/admin-dashboard.html'
+        : '/index.html',
+    });
   } catch (error) {
     console.error('Error in Google login:', error);
     res.status(401).json({ message: 'Invalid Google token' });
@@ -124,37 +124,36 @@ router.post('/login', async (req, res) => {
       { expiresIn: '24h' }
     );
 
-     let redirectUrl;
+    let redirectUrl;
     if (user.userLevel === 'Customer') {
-      redirectUrl = `${FRONTEND_URL}/index.html`;
+      redirectUrl = '/index.html';
     } else if (user.userLevel === 'Staff') {
-      redirectUrl = `${FRONTEND_URL}/staff/staff.html`;
+      redirectUrl = '/staff/staff.html';
     } else if (user.userLevel === 'Admin') {
-      redirectUrl = `${FRONTEND_URL}/admin/admin-dashboard.html`;
+      redirectUrl = '/admin/admin-dashboard.html';
     }
 
     res.status(200).json({
-    message: 'Login successful',
-    token,
-    user: {
-      name: user.name,
-      userLevel: user.userLevel,
-    },
-    redirectUrl,
-    env: {
-      nodeEnv: process.env.NODE_ENV,
-      baseUrl: FRONTEND_URL
-    }
-  });
+      message: 'Login successful',
+      token,
+      user: {
+        name: user.name,
+        userLevel: user.userLevel,
+      },
+      redirectUrl,
+      env: {
+        nodeEnv: process.env.NODE_ENV,
+        baseUrl: FRONTEND_URL
+      }
+    });
   } catch (error) {
-        logError('login', error);
+    console.error('Error in login:', error);
     res.status(500).json({ 
       message: 'Server error', 
       details: process.env.NODE_ENV === 'development' ? error.message : undefined 
     });
   }
 });
-
 
 // Route to submit email for customer signup
 router.post('/signup-email', async (req, res) => {
@@ -212,13 +211,13 @@ router.get('/verify', async (req, res) => {
     const newToken = jwt.sign({ userID: user.userID }, process.env.JWT_SECRET, { expiresIn: '24h' });
     console.log('New token generated for completion:', newToken);
 
-    const redirectUrl = `${FRONTEND_URL}/customer/complete-registration.html?userID=${user.userID}&token=${newToken}`;
+    const redirectUrl = `/customer/complete-registration.html?userID=${user.userID}&token=${newToken}`;
     console.log('Verification redirect:', {
       env: process.env.NODE_ENV,
       baseUrl: FRONTEND_URL,
-      redirectUrl
+      redirectUrl: `${FRONTEND_URL}${redirectUrl}`
     });
-    res.redirect(redirectUrl);
+    res.redirect(`${FRONTEND_URL}${redirectUrl}`);
   } catch (error) {
     console.error('Error in verify:', error);
     res.status(500).json({ message: 'Server error' });
@@ -421,7 +420,7 @@ router.put('/profile/update', verifyToken, setNoCacheHeaders, async (req, res) =
   }
 });
 
-// Add this temporary route to authRoutes.js for testing
+// Temporary route for testing
 router.post('/create-test-user', async (req, res) => {
   try {
     const hashedPassword = await bcrypt.hash('test123', 10);

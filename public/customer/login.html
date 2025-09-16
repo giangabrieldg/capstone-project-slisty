@@ -31,6 +31,7 @@
     <link rel="stylesheet" href="/styles/navbar.css" />
     <link rel="stylesheet" href="/styles/login.css" />
     <link rel="stylesheet" href="/styles/footer.css" />
+    <script src="/public/scripts/path-config.js"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
   </head>
   <body>
@@ -116,16 +117,18 @@
     <script src="/scripts/include-html.js"></script>
 
     <script>
-      const isLocalhost = window.location.hostname === "localhost";
-      const BASE_URL = isLocalhost
-        ? "http://localhost:3000"
-        : "https://capstone-project-slisty.onrender.com";
-      const PUBLIC_PREFIX = isLocalhost ? "/public" : "";
+      // Show toast notification
+      function showToast(message) {
+        const toast = document.getElementById("errorToast");
+        toast.querySelector(".toast-body").textContent = message;
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+      }
 
       // Handle Google Sign-In
       window.handleGoogleSignIn = async function (response) {
         try {
-          const res = await fetch(`${BASE_URL}/api/auth/google`, {
+          const res = await fetch(`${window.BASE_URL}/api/auth/google`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ idToken: response.credential }),
@@ -144,8 +147,11 @@
             localStorage.setItem("userEmail", data.user.email);
             localStorage.setItem("userLevel", data.user.userLevel);
 
-            // Use dynamic path based on environment
-            window.location.href = `${PUBLIC_PREFIX}${data.redirectUrl}`;
+            // Use window.getFullPath for the redirect URL
+            const redirectUrl = `${window.BASE_URL}${window.getFullPath(
+              data.redirectUrl
+            )}`;
+            window.location.href = redirectUrl;
           } else {
             showToast(data.message || "Google login failed");
           }
@@ -164,7 +170,7 @@
           const password = document.getElementById("password").value;
 
           try {
-            const response = await fetch(`${BASE_URL}/api/auth/login`, {
+            const response = await fetch(`${window.BASE_URL}/api/auth/login`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ email, password }),
@@ -183,8 +189,11 @@
               localStorage.setItem("userEmail", email);
               localStorage.setItem("userLevel", data.user?.userLevel);
 
-              // Use dynamic path based on environment
-              window.location.href = `${PUBLIC_PREFIX}${data.redirectUrl}`;
+              // Use window.getFullPath for the redirect URL
+              const redirectUrl = `${window.BASE_URL}${window.getFullPath(
+                data.redirectUrl
+              )}`;
+              window.location.href = redirectUrl;
             } else {
               showToast(data.message || "Login failed");
             }
