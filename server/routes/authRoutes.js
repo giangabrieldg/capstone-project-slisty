@@ -178,36 +178,42 @@ router.post('/signup-email', async (req, res) => {
       if (existingUser.isVerified) {
         return res.status(400).json({ message: 'Email already registered and verified' });
       } else {
-        // If user exists but not verified, resend verification email
-        const token = jwt.sign({ userID: existingUser.userID, email: existingUser.email }, process.env.JWT_SECRET, {
-          expiresIn: '1h',
-        });
+        // Resend verification email
+        const token = jwt.sign(
+          { userID: existingUser.userID, email: existingUser.email },
+          process.env.JWT_SECRET,
+          { expiresIn: '1h' }
+        );
         await existingUser.update({ verificationToken: token });
         await sendVerificationEmail(email, token);
         return res.status(200).json({ message: 'Verification email resent' });
       }
     }
 
-    // Create new user if email doesn't exist
+    // Create new user
     const user = await User.create({ email, isVerified: false, userLevel: 'Customer' });
-    const token = jwt.sign({ userID: user.userID, email: user.email }, process.env.JWT_SECRET, {
-      expiresIn: '1h',
-    });
+    const token = jwt.sign(
+      { userID: user.userID, email: user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' }
+    );
 
     await user.update({ verificationToken: token });
     await sendVerificationEmail(email, token);
 
     res.status(200).json({ message: 'Verification email sent' });
-    
   } catch (error) {
-    console.error('Error in signup-email:', error);
-    
-    // Handle duplicate entry error specifically
+    console.error('Error in signup-email:', {
+      message: error.message,
+      stack: error.stack,
+      email,
+    });
+
     if (error.name === 'SequelizeUniqueConstraintError' || error.code === 'ER_DUP_ENTRY') {
       return res.status(400).json({ message: 'Email already registered' });
     }
-    
-    res.status(500).json({ message: 'Server error' });
+
+    res.status(500).json({ message: `Server error: ${error.message}` });
   }
 });
 

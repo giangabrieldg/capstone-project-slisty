@@ -8,40 +8,33 @@ const transporter = nodemailer.createTransport({
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
-  // Production-optimized settings
-  pool: true,
-  maxConnections: 5,
-  maxMessages: 10,
   secure: true,
   port: 465,
-  tls: {
-    rejectUnauthorized: false
-  }
 });
 
 // Verify connection on startup
 transporter.verify((error, success) => {
   if (error) {
-    console.log('Email transporter failed:', error);
+    console.error('Email transporter failed:', error);
   } else {
-    console.log('Email transporter ready for production');
+    console.log('Email transporter ready');
   }
 });
 
 // Send email verification link to new users
 const sendVerificationEmail = async (email, token) => {
-  // Dynamic URL configuration for production
-  const backendUrl = process.env.NODE_ENV === 'production'
-    ? process.env.BASE_URL_PROD || 'https://capstone-project-slisty.onrender.com'
-    : process.env.BASE_URL_LOCAL || 'http://localhost:3000';
+  const backendUrl =
+    process.env.NODE_ENV === 'production'
+      ? process.env.BASE_URL_PROD || 'https://capstone-project-slisty.onrender.com'
+      : process.env.BASE_URL_LOCAL || 'http://localhost:3000';
 
   const verificationUrl = `${backendUrl}/api/auth/verify?token=${token}`;
-  
-  console.log('Production email sending to:', email);
+
+  console.log('Sending email to:', email);
   console.log('Using backend URL:', backendUrl);
 
   const mailOptions = {
-    from: process.env.EMAIL_USER,
+    from: `"Slice N Grind" <${process.env.EMAIL_USER}>`,
     to: email,
     subject: 'Verify Your Email - Slice N Grind',
     html: `
@@ -57,11 +50,15 @@ const sendVerificationEmail = async (email, token) => {
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log(`Production email sent to ${email}`);
+    console.log(`Verification email sent to ${email}`);
     return true;
   } catch (error) {
-    console.error('Production email error:', error);
-    throw new Error('Failed to send verification email');
+    console.error('Error sending verification email:', {
+      message: error.message,
+      stack: error.stack,
+      email,
+    });
+    throw new Error(`Failed to send verification email: ${error.message}`);
   }
 };
 
