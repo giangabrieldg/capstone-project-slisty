@@ -63,65 +63,65 @@
       crossorigin="anonymous"
     ></script>
     <script>
-      // Environment-based configuration
       const isLocalhost =
         window.location.hostname === "localhost" ||
         window.location.hostname === "127.0.0.1";
       const BASE_URL = isLocalhost
         ? "http://localhost:3000"
         : "https://capstone-project-slisty.onrender.com";
+      const config = { API_URL: `${BASE_URL}/api/auth/signup-email` };
 
-      const config = {
-        API_URL: `${BASE_URL}/api/auth/signup-email`,
-      };
-
-      // Get the form element
       const signupEmailForm = document.getElementById("signupEmailForm");
       const submitBtn = document.querySelector('button[type="submit"]');
       const originalText = submitBtn.textContent;
+      let isSubmitting = false;
 
-      // Single submit event listener
       signupEmailForm.addEventListener("submit", async (event) => {
-        event.preventDefault(); // Prevent default form submission
+        event.preventDefault();
 
-        // Get email input value
-        const email = document.getElementById("email").value;
+        if (isSubmitting) return;
+        isSubmitting = true;
 
-        // Show loading state
+        const email = document.getElementById("email").value.trim();
         submitBtn.disabled = true;
         submitBtn.textContent = "Sending...";
 
         try {
-          // Send POST request to backend signup-email endpoint
           const response = await fetch(config.API_URL, {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ email }),
           });
 
-          // Parse response
+          // Check if response is OK before parsing JSON
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(errorText || `Server error: ${response.status}`);
+          }
+
           const data = await response.json();
 
-          // Show response message
-          alert(data.message);
-
-          // If successful
           if (response.ok) {
             signupEmailForm.reset();
-            // Update UI to inform user to check email
             document.querySelector(".card-body").innerHTML = `
           <h2 class="text-center">Check Your Email</h2>
-          <p class="text-center">A verification link has been sent to ${email}. Please check your inbox (and spam folder) to continue.</p>
+          <p class="text-center">A verification link has been sent to ${email}. Please check your inbox (and spam folder).</p>
         `;
+          } else {
+            alert(data.message || "Failed to send verification email");
           }
         } catch (error) {
-          // Handle network or server errors
           console.error("Error submitting email:", error);
-          alert("An error occurred. Please try again later.");
+
+          // Try to parse JSON error message
+          try {
+            const errorData = JSON.parse(error.message);
+            alert(errorData.message || "An error occurred. Please try again.");
+          } catch {
+            alert(error.message || "An error occurred. Please try again.");
+          }
         } finally {
-          // Reset button state
+          isSubmitting = false;
           submitBtn.disabled = false;
           submitBtn.textContent = originalText;
         }

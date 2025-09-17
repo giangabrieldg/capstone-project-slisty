@@ -1,47 +1,45 @@
-// Import nodemailer for sending emails
 const nodemailer = require('nodemailer');
-// Load environment variables from .env
 require('dotenv').config();
 
-// Configure Nodemailer transporter for Gmail SMTP
+// Enhanced transporter configuration for production
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
-  // Add these for better reliability
+  // Production-optimized settings
   pool: true,
-  maxConnections: 1,
+  maxConnections: 5,
+  maxMessages: 10,
+  secure: true,
+  port: 465,
   tls: {
     rejectUnauthorized: false
   }
 });
 
-// Verify transporter on startup
-transporter.verify(function(error, success) {
+// Verify connection on startup
+transporter.verify((error, success) => {
   if (error) {
-    console.log('Email transporter error:', error);
+    console.log('Email transporter failed:', error);
   } else {
-    console.log('Email transporter is ready');
+    console.log('Email transporter ready for production');
   }
 });
 
 // Send email verification link to new users
 const sendVerificationEmail = async (email, token) => {
-  // Use environment-based URL configuration
+  // Dynamic URL configuration for production
   const backendUrl = process.env.NODE_ENV === 'production'
-    ? 'https://capstone-project-slisty.onrender.com'
-    : 'http://localhost:3000'; // Your backend port
+    ? process.env.BASE_URL_PROD || 'https://capstone-project-slisty.onrender.com'
+    : process.env.BASE_URL_LOCAL || 'http://localhost:3000';
 
-  // Construct verification URL with token
   const verificationUrl = `${backendUrl}/api/auth/verify?token=${token}`;
   
-  console.log('Sending verification email to:', email);
-  console.log('Backend URL:', backendUrl);
-  console.log('Verification URL:', verificationUrl);
+  console.log('Production email sending to:', email);
+  console.log('Using backend URL:', backendUrl);
 
-  // Define email content with branded styling
   const mailOptions = {
     from: process.env.EMAIL_USER,
     to: email,
@@ -58,11 +56,11 @@ const sendVerificationEmail = async (email, token) => {
   };
 
   try {
-    // Send the email
     await transporter.sendMail(mailOptions);
-    console.log(`Verification email sent to ${email}`);
+    console.log(`Production email sent to ${email}`);
+    return true;
   } catch (error) {
-    console.error('Error sending email:', error);
+    console.error('Production email error:', error);
     throw new Error('Failed to send verification email');
   }
 };
