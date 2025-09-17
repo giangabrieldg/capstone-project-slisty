@@ -1,28 +1,71 @@
 const nodemailer = require('nodemailer');
 require('dotenv').config();
 
-// Enhanced transporter configuration for production
-const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 587,
-  secure: false, // Use STARTTLS
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-  connectionTimeout: 10000, // 10 seconds
-  greetingTimeout: 10000,
-  socketTimeout: 10000,
-});
+// Enhanced transporter configuration for production with fallback options
+const createTransporter = () => {
+  // Try different SMTP configurations
+  const configs = [
+    {
+      // Primary config - Gmail SMTP with SSL
+      host: 'smtp.gmail.com',
+      port: 465,
+      secure: true, // Use SSL
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+      connectionTimeout: 20000, // Increased timeout
+      greetingTimeout: 20000,
+      socketTimeout: 20000,
+    },
+    {
+      // Fallback config - Gmail SMTP with TLS
+      host: 'smtp.gmail.com',
+      port: 587,
+      secure: false, // Use STARTTLS
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+      connectionTimeout: 20000,
+      greetingTimeout: 20000,
+      socketTimeout: 20000,
+      requireTLS: true,
+      tls: {
+        ciphers: 'SSLv3',
+        rejectUnauthorized: false
+      }
+    }
+  ];
 
-// Verify connection on startup
-transporter.verify((error, success) => {
-  if (error) {
-    console.error('Email transporter failed:', error);
-  } else {
-    console.log('Email transporter ready');
+  // Use the first config for production, second for development issues
+  const config = process.env.NODE_ENV === 'production' ? configs[0] : configs[1];
+  return nodemailer.createTransporter(config);
+};
+
+const transporter = createTransporter();
+
+// Verify connection on startup with retry logic
+const verifyConnection = async (retries = 3) => {
+  for (let i = 0; i < retries; i++) {
+    try {
+      await transporter.verify();
+      console.log('Email transporter ready');
+      return true;
+    } catch (error) {
+      console.error(`Email transporter attempt ${i + 1} failed:`, error.message);
+      if (i === retries - 1) {
+        console.error('All email transporter attempts failed');
+        return false;
+      }
+      // Wait before retry
+      await new Promise(resolve => setTimeout(resolve, 2000));
+    }
   }
-});
+};
+
+// Initialize connection verification
+verifyConnection();
 
 // Send email verification link to new users
 const sendVerificationEmail = async (email, token) => {
@@ -52,24 +95,38 @@ const sendVerificationEmail = async (email, token) => {
   };
 
   try {
-    await transporter.sendMail(mailOptions);
-    console.log(`Verification email sent to ${email}`);
+    const result = await transporter.sendMail(mailOptions);
+    console.log(`Verification email sent to ${email}:`, result.messageId);
     return true;
   } catch (error) {
     console.error('Error sending verification email:', {
       message: error.message,
       stack: error.stack,
       email,
+      code: error.code
     });
+
+    // Try to recreate transporter and retry once
+    if (error.code === 'ETIMEDOUT' || error.code === 'ECONNECTION') {
+      console.log('Attempting to retry with new transporter...');
+      try {
+        const newTransporter = createTransporter();
+        await newTransporter.sendMail(mailOptions);
+        console.log(`Verification email sent to ${email} on retry`);
+        return true;
+      } catch (retryError) {
+        console.error('Retry also failed:', retryError.message);
+      }
+    }
+
     throw new Error(`Failed to send verification email: ${error.message}`);
   }
 };
 
 // Send confirmation email for inquiry submission
 const sendInquiryConfirmationEmail = async (email, name, subject, message) => {
-  // Define confirmation email content with branded styling
   const mailOptions = {
-    from: process.env.EMAIL_USER,
+    from: `"Slice N Grind" <${process.env.EMAIL_USER}>`,
     to: email,
     subject: 'Inquiry Received - Slice N Grind',
     html: `
@@ -84,7 +141,6 @@ const sendInquiryConfirmationEmail = async (email, name, subject, message) => {
   };
 
   try {
-    // Send the email
     await transporter.sendMail(mailOptions);
     console.log(`Confirmation email sent to ${email}`);
   } catch (error) {
@@ -95,9 +151,8 @@ const sendInquiryConfirmationEmail = async (email, name, subject, message) => {
 
 // Send reply email to user for their inquiry
 const sendInquiryReplyEmail = async (email, name, subject, reply) => {
-  // Define reply email content with branded styling
   const mailOptions = {
-    from: process.env.EMAIL_USER,
+    from: `"Slice N Grind" <${process.env.EMAIL_USER}>`,
     to: email,
     subject: `Response to Your Inquiry: ${subject} - Slice N Grind`,
     html: `
@@ -113,7 +168,6 @@ const sendInquiryReplyEmail = async (email, name, subject, reply) => {
   };
 
   try {
-    // Send the email
     await transporter.sendMail(mailOptions);
     console.log(`Reply email sent to ${email}`);
   } catch (error) {
@@ -122,5 +176,4 @@ const sendInquiryReplyEmail = async (email, name, subject, reply) => {
   }
 };
 
-// Export email functions for use in routes
 module.exports = { sendVerificationEmail, sendInquiryConfirmationEmail, sendInquiryReplyEmail };
