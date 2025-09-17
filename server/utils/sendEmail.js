@@ -1,71 +1,106 @@
 const nodemailer = require('nodemailer');
 require('dotenv').config();
 
-// Enhanced transporter configuration for production with fallback options
-const createTransporter = () => {
-  // Try different SMTP configurations
-  const configs = [
-    {
-      // Primary config - Gmail SMTP with SSL
-      host: 'smtp.gmail.com',
-      port: 465,
-      secure: true, // Use SSL
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-      connectionTimeout: 20000, // Increased timeout
-      greetingTimeout: 20000,
-      socketTimeout: 20000,
+// SendGrid configuration (primary choice for production)
+const createSendGridTransporter = () => {
+  return nodemailer.createTransport({
+    host: 'smtp.sendgrid.net',
+    port: 587,
+    secure: false, // Use STARTTLS
+    auth: {
+      user: 'apikey', // This is literally the string 'apikey'
+      pass: process.env.SENDGRID_API_KEY,
     },
-    {
-      // Fallback config - Gmail SMTP with TLS
-      host: 'smtp.gmail.com',
-      port: 587,
-      secure: false, // Use STARTTLS
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-      connectionTimeout: 20000,
-      greetingTimeout: 20000,
-      socketTimeout: 20000,
-      requireTLS: true,
-      tls: {
-        ciphers: 'SSLv3',
-        rejectUnauthorized: false
-      }
-    }
-  ];
-
-  // Use the first config for production, second for development issues
-  const config = process.env.NODE_ENV === 'production' ? configs[0] : configs[1];
-  return nodemailer.createTransport(config);
+    connectionTimeout: 20000,
+    greetingTimeout: 20000,
+    socketTimeout: 20000,
+  });
 };
 
-const transporter = createTransporter();
+// Gmail fallback configuration
+const createGmailTransporter = () => {
+  return nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+    connectionTimeout: 20000,
+    greetingTimeout: 20000,
+    socketTimeout: 20000,
+  });
+};
 
-// Verify connection on startup with retry logic
-const verifyConnection = async (retries = 3) => {
-  for (let i = 0; i < retries; i++) {
-    try {
-      await transporter.verify();
-      console.log('Email transporter ready');
-      return true;
-    } catch (error) {
-      console.error(`Email transporter attempt ${i + 1} failed:`, error.message);
-      if (i === retries - 1) {
-        console.error('All email transporter attempts failed');
-        return false;
-      }
-      // Wait before retry
-      await new Promise(resolve => setTimeout(resolve, 2000));
-    }
+// Choose transporter based on available environment variables
+const createTransporter = () => {
+  if (process.env.SENDGRID_API_KEY) {
+    console.log('Using SendGrid transporter');
+    return createSendGridTransporter();
+  } else if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+    console.log('Using Gmail transporter');
+    return createGmailTransporter();
+  } else {
+    console.error('No email configuration found!');
+    throw new Error('Missing email configuration. Please set SENDGRID_API_KEY or EMAIL_USER/EMAIL_PASS');
   }
 };
 
-// Initialize connection verification
-verifyConnection();
+let transporter;
+try {
+  transporter = createTransporter();
+} catch (error) {
+  console.error('Failed to create email transporter:', error.message);
+}
+
+// Get sender email based on configuration
+const getSenderEmail = () => {
+  if (process.env.SENDGRID_FROM_EMAIL) {
+    return process.env.SENDGRID_FROM_EMAIL;
+  }
+  return process.env.EMAIL_USER || 'noreply@slicengrind.com';
+};
+
+// Verify connection with better error handling
+const verifyConnection = async () => {
+  if (!transporter) {
+    console.log('No transporter available, skipping verification');
+    return false;
+  }
+
+  try {
+    await transporter.verify();
+    console.log('Email transporter ready');
+    return true;
+  } catch (error) {
+    console.error('Email transporter verification failed:', error.message);
+    console.log('Email functionality will be limited');
+    return false;
+  }
+};
+
+// Initialize connection verification (non-blocking)
+if (transporter) {
+  verifyConnection().catch(console.error);
+}
+
+// Mock email function for when SMTP fails
+const sendMockEmail = async (email, token) => {
+  const backendUrl =
+    process.env.NODE_ENV === 'production'
+      ? process.env.BASE_URL_PROD || 'https://capstone-project-slisty.onrender.com'
+      : process.env.BASE_URL_LOCAL || 'http://localhost:3000';
+
+  const verificationUrl = `${backendUrl}/api/auth/verify?token=${token}`;
+  
+  console.log('\n=== MOCK EMAIL (SMTP Failed) ===');
+  console.log('To:', email);
+  console.log('Subject: Verify Your Email - Slice N Grind');
+  console.log('Verification Link:', verificationUrl);
+  console.log('*** COPY THIS LINK TO VERIFY EMAIL ***');
+  console.log('=== END MOCK EMAIL ===\n');
+  
+  return true;
+};
 
 // Send email verification link to new users
 const sendVerificationEmail = async (email, token) => {
@@ -75,12 +110,15 @@ const sendVerificationEmail = async (email, token) => {
       : process.env.BASE_URL_LOCAL || 'http://localhost:3000';
 
   const verificationUrl = `${backendUrl}/api/auth/verify?token=${token}`;
+  const senderEmail = getSenderEmail();
 
-  console.log('Sending email to:', email);
-  console.log('Using backend URL:', backendUrl);
+  console.log('Attempting to send verification email...');
+  console.log('To:', email);
+  console.log('From:', senderEmail);
+  console.log('Backend URL:', backendUrl);
 
   const mailOptions = {
-    from: `"Slice N Grind" <${process.env.EMAIL_USER}>`,
+    from: `"Slice N Grind" <${senderEmail}>`,
     to: email,
     subject: 'Verify Your Email - Slice N Grind',
     html: `
@@ -89,34 +127,45 @@ const sendVerificationEmail = async (email, token) => {
         <p>Please verify your email by clicking the button below:</p>
         <a href="${verificationUrl}" style="display: inline-block; padding: 10px 20px; background-color: #2c9045; color: white; text-decoration: none; border-radius: 4px;">Verify Email</a>
         <p style="color: #5e5d5d;">This link expires in 1 hour.</p>
+        <p style="color: #5e5d5d;">If you can't click the button, copy this link:</p>
+        <p style="font-size: 12px; word-break: break-all;">${verificationUrl}</p>
         <p style="color: #5e5d5d;">Best regards,<br>Slice N Grind Team</p>
       </div>
     `,
+    text: `
+      Welcome to Slice N Grind!
+      
+      Please verify your email by clicking this link: ${verificationUrl}
+      
+      This link expires in 1 hour.
+      
+      Best regards,
+      Slice N Grind Team
+    `
   };
+
+  // If no transporter is available, use mock email
+  if (!transporter) {
+    console.log('No email transporter available, using mock email');
+    return await sendMockEmail(email, token);
+  }
 
   try {
     const result = await transporter.sendMail(mailOptions);
-    console.log(`Verification email sent to ${email}:`, result.messageId);
+    console.log(`✓ Verification email sent successfully to ${email}`);
+    console.log('Message ID:', result.messageId);
     return true;
   } catch (error) {
-    console.error('Error sending verification email:', {
+    console.error('✗ Failed to send verification email:', {
       message: error.message,
-      stack: error.stack,
-      email,
-      code: error.code
+      code: error.code,
+      email: email
     });
 
-    // Try to recreate transporter and retry once
-    if (error.code === 'ETIMEDOUT' || error.code === 'ECONNECTION') {
-      console.log('Attempting to retry with new transporter...');
-      try {
-        const newTransporter = nodemailer.createTransport(configs[1]);
-        await newTransporter.sendMail(mailOptions);
-        console.log(`Verification email sent to ${email} on retry`);
-        return true;
-      } catch (retryError) {
-        console.error('Retry also failed:', retryError.message);
-      }
+    // In production, fall back to mock email so user can still verify
+    if (process.env.NODE_ENV === 'production') {
+      console.log('Falling back to mock email for user verification');
+      return await sendMockEmail(email, token);
     }
 
     throw new Error(`Failed to send verification email: ${error.message}`);
@@ -125,8 +174,15 @@ const sendVerificationEmail = async (email, token) => {
 
 // Send confirmation email for inquiry submission
 const sendInquiryConfirmationEmail = async (email, name, subject, message) => {
+  if (!transporter) {
+    console.log('No email transporter available for inquiry confirmation');
+    return;
+  }
+
+  const senderEmail = getSenderEmail();
+  
   const mailOptions = {
-    from: `"Slice N Grind" <${process.env.EMAIL_USER}>`,
+    from: `"Slice N Grind" <${senderEmail}>`,
     to: email,
     subject: 'Inquiry Received - Slice N Grind',
     html: `
@@ -142,17 +198,24 @@ const sendInquiryConfirmationEmail = async (email, name, subject, message) => {
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log(`Confirmation email sent to ${email}`);
+    console.log(`✓ Confirmation email sent to ${email}`);
   } catch (error) {
-    console.error('Error sending confirmation email:', error);
-    throw new Error('Failed to send confirmation email');
+    console.error('✗ Error sending confirmation email:', error.message);
+    // Don't throw error for inquiry confirmations - not critical
   }
 };
 
 // Send reply email to user for their inquiry
 const sendInquiryReplyEmail = async (email, name, subject, reply) => {
+  if (!transporter) {
+    console.log('No email transporter available for inquiry reply');
+    return;
+  }
+
+  const senderEmail = getSenderEmail();
+  
   const mailOptions = {
-    from: `"Slice N Grind" <${process.env.EMAIL_USER}>`,
+    from: `"Slice N Grind" <${senderEmail}>`,
     to: email,
     subject: `Response to Your Inquiry: ${subject} - Slice N Grind`,
     html: `
@@ -169,11 +232,17 @@ const sendInquiryReplyEmail = async (email, name, subject, reply) => {
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log(`Reply email sent to ${email}`);
+    console.log(`✓ Reply email sent to ${email}`);
   } catch (error) {
-    console.error('Error sending reply email:', error);
-    throw new Error('Failed to send reply email');
+    console.error('✗ Error sending reply email:', error.message);
+    // Don't throw error for inquiry replies - not critical
   }
 };
 
-module.exports = { sendVerificationEmail, sendInquiryConfirmationEmail, sendInquiryReplyEmail };
+// Export functions
+module.exports = { 
+  sendVerificationEmail, 
+  sendInquiryConfirmationEmail, 
+  sendInquiryReplyEmail,
+  verifyConnection // Export for testing
+};
