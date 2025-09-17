@@ -15,7 +15,7 @@ const port = process.env.PORT || 3000;
 const allowedOrigins = [
   process.env.CLIENT_URL_LOCAL,    // http://localhost:3000
   process.env.CLIENT_URL_PROD,     // https://slice-n-grind.onrender.com
-  process.env.BASE_URL,            // https://capstone-project-slisty.onrender.com
+  process.env.BASE_URL_PROD,            // https://capstone-project-slisty.onrender.com
   'http://localhost:5000'
 ];
 
