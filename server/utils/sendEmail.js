@@ -7,32 +7,40 @@ require('dotenv').config();
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: process.env.EMAIL_USER, // Gmail address from .env
-    pass: process.env.EMAIL_PASS, // Gmail app-specific password from .env
-  },// Add these options
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+  // Add these for better reliability
+  pool: true,
+  maxConnections: 1,
   tls: {
     rejectUnauthorized: false
-  },
-  secure: true,
-  port: 465
+  }
+});
+
+// Verify transporter on startup
+transporter.verify(function(error, success) {
+  if (error) {
+    console.log('Email transporter error:', error);
+  } else {
+    console.log('Email transporter is ready');
+  }
 });
 
 // Send email verification link to new users
 const sendVerificationEmail = async (email, token) => {
-  // Determine the base URL based on environment
-  const baseUrl = process.env.NODE_ENV === 'production'
-    ? (process.env.CLIENT_URL_PROD || 'https://slice-n-grind.onrender.com')
-    : (process.env.CLIENT_URL_LOCAL || 'http://localhost:3000');
-
-  console.log('Email verification baseUrl:', baseUrl);
-  console.log('Environment:', process.env.NODE_ENV);
-console.log('Email user exists:', !!process.env.EMAIL_USER);
-console.log('JWT secret exists:', !!process.env.JWT_SECRET);
-  
+  // Use environment-based URL configuration
+  const backendUrl = process.env.NODE_ENV === 'production'
+    ? 'https://capstone-project-slisty.onrender.com'
+    : 'http://localhost:3000'; // Your backend port
 
   // Construct verification URL with token
-  const verificationUrl = `${baseUrl}/api/auth/verify?token=${token}`;
+  const verificationUrl = `${backendUrl}/api/auth/verify?token=${token}`;
   
+  console.log('Sending verification email to:', email);
+  console.log('Backend URL:', backendUrl);
+  console.log('Verification URL:', verificationUrl);
+
   // Define email content with branded styling
   const mailOptions = {
     from: process.env.EMAIL_USER,

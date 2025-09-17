@@ -165,25 +165,48 @@ router.post('/signup-email', async (req, res) => {
     return res.status(400).json({ message: 'Email is required' });
   }
 
+  // Validate email format
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ message: 'Invalid email format' });
+  }
+
   try {
+    // Check if email already exists
     const existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
-      return res.status(400).json({ message: 'Email already registered' });
+      if (existingUser.isVerified) {
+        return res.status(400).json({ message: 'Email already registered and verified' });
+      } else {
+        // If user exists but not verified, resend verification email
+        const token = jwt.sign({ userID: existingUser.userID, email: existingUser.email }, process.env.JWT_SECRET, {
+          expiresIn: '1h',
+        });
+        await existingUser.update({ verificationToken: token });
+        await sendVerificationEmail(email, token);
+        return res.status(200).json({ message: 'Verification email resent' });
+      }
     }
 
+    // Create new user if email doesn't exist
     const user = await User.create({ email, isVerified: false, userLevel: 'Customer' });
-
     const token = jwt.sign({ userID: user.userID, email: user.email }, process.env.JWT_SECRET, {
       expiresIn: '1h',
     });
 
     await user.update({ verificationToken: token });
-
     await sendVerificationEmail(email, token);
 
     res.status(200).json({ message: 'Verification email sent' });
+    
   } catch (error) {
     console.error('Error in signup-email:', error);
+    
+    // Handle duplicate entry error specifically
+    if (error.name === 'SequelizeUniqueConstraintError' || error.code === 'ER_DUP_ENTRY') {
+      return res.status(400).json({ message: 'Email already registered' });
+    }
+    
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -193,6 +216,7 @@ router.get('/verify', async (req, res) => {
   try {
     const token = req.query.token;
     console.log('Token received in /verify route:', token);
+    
     if (!token) {
       return res.status(401).json({ message: 'No token provided' });
     }
@@ -211,15 +235,16 @@ router.get('/verify', async (req, res) => {
     await user.update({ isVerified: true, verificationToken: null });
 
     const newToken = jwt.sign({ userID: user.userID }, process.env.JWT_SECRET, { expiresIn: '24h' });
-    console.log('New token generated for completion:', newToken);
 
-    const redirectUrl = `/customer/complete-registration.html?userID=${user.userID}&token=${newToken}`;
-    console.log('Verification redirect:', {
-      env: process.env.NODE_ENV,
-      baseUrl: FRONTEND_URL,
-      redirectUrl: `${FRONTEND_URL}${redirectUrl}`
-    });
-    res.redirect(`${FRONTEND_URL}${redirectUrl}`);
+    // Redirect to FRONTEND completion page
+    const frontendUrl = process.env.NODE_ENV === 'production'
+      ? 'https://slice-n-grind.onrender.com'
+      : 'http://localhost:3000'; // Your frontend port
+
+    const redirectUrl = `${frontendUrl}/customer/complete-registration.html?userID=${user.userID}&token=${newToken}`;
+    
+    res.redirect(redirectUrl);
+    
   } catch (error) {
     console.error('Error in verify:', error);
     res.status(500).json({ message: 'Server error' });
