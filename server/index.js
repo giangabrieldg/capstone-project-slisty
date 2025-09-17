@@ -11,26 +11,50 @@ const User = require('./models/user-model.js');
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Configure CORS
+// Configure CORS for production with security
 const allowedOrigins = [
-  process.env.CLIENT_URL_LOCAL,    // http://localhost:3000
-  process.env.CLIENT_URL_PROD,     // https://slice-n-grind.onrender.com
-  process.env.BASE_URL_PROD,            // https://capstone-project-slisty.onrender.com
-  'http://localhost:5000'
+  'https://slice-n-grind.onrender.com',  // Your production frontend
+  'http://localhost:3000',               // Local development
+  'http://127.0.0.1:3000'                // Alternative localhost
 ];
 
+// Handle preflight requests first
+app.options('*', cors({
+  origin: allowedOrigins,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+}));
+
+// Main CORS middleware
 app.use(cors({
   origin: function(origin, callback) {
-    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+    // Allow requests with no origin (like server-to-server or Postman)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      console.log('Blocked by CORS:', origin);
+      console.log('🚫 Blocked by CORS:', origin);
       callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true,
-  optionsSuccessStatus: 200
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
+
+// Explicit preflight handler for all routes
+app.options('*', (req, res) => {
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.status(200).end();
+});
 
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
@@ -163,7 +187,7 @@ app.use((req, res) => {
 
 console.log('Environment:', {
   NODE_ENV: process.env.NODE_ENV,
-  BASE_URL: process.env.BASE_URL,
+  BASE_URL_PROD: process.env.BASE_URL,
   CLIENT_URL_PROD: process.env.CLIENT_URL_PROD,
   PORT: port
 });
