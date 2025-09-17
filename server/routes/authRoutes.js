@@ -469,5 +469,22 @@ router.post('/create-test-user', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+// Test route to verify route registration
+router.get('/test', (req, res) => {
+  res.json({ message: 'Auth routes are working!' });
+});
+
+// Test email connection
+router.get('/test-email', async (req, res) => {
+  try {
+    const { sendVerificationEmail } = require('../utils/sendEmail');
+    res.json({ message: 'Email route accessible' });
+  } catch (error) {
+    res.status(500).json({ 
+      message: 'Email module error', 
+      error: error.message 
+    });
+  }
+});
 
 module.exports = router;

@@ -40,7 +40,7 @@ const createTransporter = () => {
 
   // Use the first config for production, second for development issues
   const config = process.env.NODE_ENV === 'production' ? configs[0] : configs[1];
-  return nodemailer.createTransporter(config);
+  return nodemailer.createTransport(config);
 };
 
 const transporter = createTransporter();
@@ -110,7 +110,7 @@ const sendVerificationEmail = async (email, token) => {
     if (error.code === 'ETIMEDOUT' || error.code === 'ECONNECTION') {
       console.log('Attempting to retry with new transporter...');
       try {
-        const newTransporter = createTransporter();
+        const newTransporter = nodemailer.createTransport(configs[1]);
         await newTransporter.sendMail(mailOptions);
         console.log(`Verification email sent to ${email} on retry`);
         return true;
