@@ -13,48 +13,19 @@ const port = process.env.PORT || 3000;
 
 // Configure CORS for production with security
 const allowedOrigins = [
-  'https://slice-n-grind.onrender.com',  // Your production frontend
-  'http://localhost:3000',               // Local development
-  'http://127.0.0.1:3000'                // Alternative localhost
+  'https://slice-n-grind.onrender.com',
+  'http://localhost:3000',
+  'http://127.0.0.1:3000'
 ];
 
-// Handle preflight requests first
-app.options('*', cors({
+app.use(cors({
   origin: allowedOrigins,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// Main CORS middleware
-app.use(cors({
-  origin: function(origin, callback) {
-    // Allow requests with no origin (like server-to-server or Postman)
-    if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      console.log('🚫 Blocked by CORS:', origin);
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
-}));
-
-// Explicit preflight handler for all routes
-app.options('*', (req, res) => {
-  const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-  }
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.status(200).end();
-});
+app.options('*', cors());
 
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
