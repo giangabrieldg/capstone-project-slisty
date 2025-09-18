@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Cache-Control"
+      content="no-cache, no-store, must-revalidate"
+    />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <title>AMenu Management</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles/admin-menu.css" />
+    <link rel="stylesheet" href="/styles/sidebar.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;700&family=Poppins:wght@300;400;600&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css"
+    />
+  </head>
+  <body>
+    <!-- Sidebar toggle button -->
+    <button class="sidebar-toggle" aria-label="Toggle sidebar">
+      <i class="bi bi-list"></i>
+    </button>
+    <div class="d-flex">
+      <!-- Sidebar  -->
+      <div data-include-admin-sidebar="/includes/sidebar-staff.html"></div>
+      <main class="content">
+        <!-- Header with search and add item button -->
+        <div class="menu-management-header">
+          <h2>Menu Management</h2>
+          <div class="header-actions">
+            <input
+              type="text"
+              class="form-control search-bar"
+              placeholder="Search by Item Name or Category..."
+            />
+            <button class="btn btn-primary add-item-btn">Add New Item</button>
+          </div>
+        </div>
+        <!-- Menu items table -->
+        <div class="menu-management-table">
+          <h3>Menu Items</h3>
+          <div class="table-responsive">
+            <table class="table table-hover" id="menuTable">
+              <thead>
+                <tr>
+                  <th>Menu ID</th>
+                  <th>Item Name</th>
+                  <th>Category</th>
+                  <th>Image</th>
+                  <th>Price (₱)</th>
+                  <th>Stock</th>
+                  <th>Description</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+        <!-- Modal for adding/editing items -->
+        <div
+          class="modal fade"
+          id="itemModal"
+          tabindex="-1"
+          aria-labelledby="itemModalLabel"
+          aria-hidden="true"
+        >
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="itemModalLabel">
+                  Add New Menu Item
+                </h5>
+                <button
+                  type="button"
+                  class="btn-close"
+                  data-bs-dismiss="modal"
+                  aria-label="Close"
+                ></button>
+              </div>
+              <div class="modal-body">
+                <form id="itemForm">
+                  <input type="hidden" id="editItemId" name="id" />
+                  <div class="mb-3">
+                    <label for="itemName" class="form-label">Item Name</label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="itemName"
+                      name="name"
+                      required
+                    />
+                  </div>
+                  <div class="mb-3">
+                    <label for="category" class="form-label">Category</label>
+                    <select
+                      class="form-select"
+                      id="category"
+                      name="category"
+                      required
+                    >
+                      <option value="Cakes">Cakes</option>
+                      <option value="Pastries">Pastries</option>
+                      <option value="Rice Meals">Rice Meals</option>
+                      <option value="Snacks">Snacks</option>
+                      <option value="Drinks">Drinks</option>
+                    </select>
+                  </div>
+                  <div class="mb-3 form-check">
+                    <input
+                      type="checkbox"
+                      class="form-check-input"
+                      id="hasSizes"
+                      name="hasSizes"
+                    />
+                    <label class="form-check-label" for="hasSizes"
+                      >Has Sizes?</label
+                    >
+                  </div>
+                  <div class="mb-3" id="sizesContainer" style="display: none">
+                    <label for="sizePricePairs" class="form-label"
+                      >Sizes, Prices and Stock</label
+                    >
+                    <div id="sizePricePairs">
+                      <div class="mb-2 size-price-pair">
+                        <div class="row g-2 align-items-center">
+                          <div class="col-4">
+                            <input
+                              type="text"
+                              class="form-control"
+                              name="size_0"
+                              placeholder="Size (e.g., Small)"
+                              required
+                            />
+                          </div>
+                          <div class="col-3">
+                            <input
+                              type="number"
+                              class="form-control"
+                              name="price_0"
+                              step="0.01"
+                              min="0"
+                              placeholder="Price (₱)"
+                              required
+                            />
+                          </div>
+                          <div class="col-3">
+                            <input
+                              type="number"
+                              class="form-control"
+                              name="stock_0"
+                              min="0"
+                              placeholder="Stock"
+                              required
+                            />
+                          </div>
+                          <div class="col-2">
+                            <button
+                              type="button"
+                              class="btn btn-sm btn-danger remove-size w-100"
+                            >
+                              <i class="bi bi-trash"></i>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-secondary"
+                      id="addSizePrice"
+                    >
+                      Add Size
+                    </button>
+                  </div>
+                  <div class="mb-3" id="singlePriceContainer">
+                    <label class="form-label">Price (₱)</label>
+                    <input
+                      type="number"
+                      class="form-control"
+                      id="price"
+                      name="price"
+                      step="0.01"
+                      min="0"
+                      placeholder="Enter price"
+                      required
+                    />
+                  </div>
+                  <div class="mb-3" id="singleStockContainer">
+                    <!-- Add container for single stock -->
+                    <label for="stock" class="form-label">Stock</label>
+                    <input
+                      type="number"
+                      class="form-control"
+                      id="stock"
+                      name="stock"
+                      min="0"
+                      step="1"
+                      placeholder="Enter stock quantity"
+                      required
+                    />
+                  </div>
+                  <div class="mb-3">
+                    <label for="imageUpload" class="form-label"
+                      >Upload Image</label
+                    >
+                    <input
+                      type="file"
+                      class="form-control"
+                      id="imageUpload"
+                      name="image"
+                      accept="image/*"
+                    />
+                    <img
+                      id="imagePreview"
+                      src=""
+                      alt="Image Preview"
+                      class="img-fluid mt-2"
+                      style="display: none; max-width: 200px"
+                    />
+                  </div>
+                  <div class="mb-3">
+                    <label for="description" class="form-label"
+                      >Description</label
+                    >
+                    <textarea
+                      class="form-control"
+                      id="description"
+                      name="description"
+                      rows="3"
+                      required
+                    ></textarea>
+                  </div>
+                  <button type="submit" class="btn btn-success" id="saveItem">
+                    Save Item
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Modal for image preview -->
+        <div
+          class="modal fade"
+          id="imageModal"
+          tabindex="-1"
+          aria-labelledby="imageModalLabel"
+          aria-hidden="true"
+        >
+          <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="imageModalLabel">Image Preview</h5>
+                <button
+                  type="button"
+                  class="btn-close"
+                  data-bs-dismiss="modal"
+                  aria-label="Close"
+                ></button>
+              </div>
+              <div class="modal-body text-center">
+                <img
+                  src=""
+                  alt="Enlarged Image"
+                  id="enlargedImage"
+                  class="img-fluid"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Toast for success -->
+        <div
+          class="toast align-items-center text-white bg-success border-0 position-fixed bottom-0 end-0 m-3"
+          id="successToast"
+          role="alert"
+          aria-live="assertive"
+          aria-atomic="true"
+        >
+          <div class="d-flex">
+            <div class="toast-body" id="successToastMessage"></div>
+            <button
+              type="button"
+              class="btn-close btn-close-white me-2 m-auto"
+              data-bs-dismiss="toast"
+              aria-label="Close"
+            ></button>
+          </div>
+        </div>
+        <!-- Toast for error -->
+        <div
+          class="toast align-items-center text-white bg-danger border-0 position-fixed bottom-0 end-0 m-3"
+          id="errorToast"
+          role="alert"
+          aria-live="assertive"
+          aria-atomic="true"
+        >
+          <div class="d-flex">
+            <div class="toast-body" id="errorToastMessage"></div>
+            <button
+              type="button"
+              class="btn-close btn-close-white me-2 m-auto"
+              data-bs-dismiss="toast"
+              aria-label="Close"
+            ></button>
+          </div>
+        </div>
+      </main>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/scripts/add-menu.js"></script>
+    <script src="/scripts/include-admin-sidebar.js"></script>
+  </body>
+</html>

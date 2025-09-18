@@ -130,7 +130,7 @@ router.post('/login', async (req, res) => {
     if (user.userLevel === 'Customer') {
       redirectUrl = '/index.html';
     } else if (user.userLevel === 'Staff') {
-      redirectUrl = '/staff/staff.html';
+      redirectUrl = '/staff/staff-dashboard.html';
     } else if (user.userLevel === 'Admin') {
       redirectUrl = '/admin/admin-dashboard.html';
     }

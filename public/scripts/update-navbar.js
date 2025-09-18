@@ -59,7 +59,7 @@ function updateNavbarAndGreeting() {
   if (token) {
     userCartContainer.style.display = "block";
     userProfileContainer.style.display = "block";
-    userProfileLink.href = "/customer/profile.html";
+    userProfileLink.href = "/public/customer/profile.html";
     if (userNameSpan) userNameSpan.textContent = localStorage.getItem("userName") || "User Profile";
     // Update profile.html content if on that page
     if (window.location.pathname.includes("profile.html")) {
@@ -71,7 +71,7 @@ function updateNavbarAndGreeting() {
   } else {
     userCartContainer.style.display = "none";
     userProfileContainer.style.display = "block";
-    userProfileLink.href = "/customer/login.html";
+    userProfileLink.href = "/public/customer/login.html";
     if (userNameSpan) userNameSpan.textContent = "User Profile";
     if (window.location.pathname.includes("profile.html")) {
       document.getElementById("userName").textContent = "Guest";

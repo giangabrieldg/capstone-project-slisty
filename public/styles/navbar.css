@@ -62,13 +62,42 @@
     stroke: var(--primary-color);
 }
 
+/* Login button styles */
+.btn-primary {
+    background-color: var(--primary-color);
+    color: white;
+    font-family: var(--font-poppins);
+    font-size: 18px;
+    font-weight: 500;
+    border: none;
+    border-radius: 0.375rem;
+    padding: 0.5rem 1rem;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+}
+
+.btn-primary:hover {
+    background-color: #257a3b;
+    /* Darker shade of primary color for hover */
+    color: white;
+    transform: translateY(-1px);
+}
+
+.btn-primary:focus {
+    outline: none;
+    box-shadow: 0 0 0 0.2rem rgba(44, 144, 69, 0.25);
+    /* Focus ring using primary color */
+}
+
 /* Cart count badge styles */
 .cart-count-badge {
     position: absolute;
     top: 2px;
-    /* Align to the top edge of the parent */
     left: 40%;
-    /* Center horizontally relative to the parent */
     transform: translateX(70%);
     background-color: var(--badge-color);
     color: white;
@@ -81,7 +110,7 @@
     display: none;
 }
 
-/* Responsive adjustments for navbar*/
+/* Responsive adjustments for navbar */
 @media (min-width: 992px) {
 
     /* Remove hover background and padding styling on large screens */
@@ -95,5 +124,11 @@
     /* Hide nav text (like "User Profile" and "Cart") on large screens */
     .icon-btn span {
         display: none;
+    }
+
+    /* Adjust button appearance for large screens */
+    .btn-primary {
+        padding: 0.25rem 0.75rem;
+        font-size: 16px;
     }
 }

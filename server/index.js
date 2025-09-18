@@ -167,7 +167,7 @@ app.use((req, res) => {
 
 console.log('Environment:', {
   NODE_ENV: process.env.NODE_ENV,
-  BASE_URL_PROD: process.env.BASE_URL,
+  BASE_URL_PROD: process.env.BASE_URL_PROD,
   CLIENT_URL_PROD: process.env.CLIENT_URL_PROD,
   PORT: port
 });
