@@ -1,14 +1,10 @@
-/**
- * For handling user authentication API endpoints
- * Supports creating, verifying, authenticating, and updating users account
- */
 
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const { OAuth2Client } = require('google-auth-library');
 const User = require('../models/user-model');
-const { Sequelize } = require('sequelize');
+const ResetToken = require('../models/reset-token-model');
 const { sendVerificationEmail } = require('../utils/sendEmail');
 const verifyToken = require('../middleware/verifyToken');
 require('dotenv').config();
@@ -31,7 +27,95 @@ const setNoCacheHeaders = (req, res, next) => {
   next();
 };
 
-// Route to verify Google ID token
+// Route to handle forgot password
+router.post('/forgot-password', async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ message: 'Email is required' });
+  }
+
+  try {
+    const user = await User.findOne({ where: { email } });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (user.isArchived) {
+      return res.status(403).json({ message: 'Account is archived' });
+    }
+
+    // Generate reset token
+    const resetToken = jwt.sign(
+      { userID: user.userID, email: user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+
+    // Store reset token
+    await ResetToken.create({
+      userID: user.userID,
+      token: resetToken,
+      expiresAt: new Date(Date.now() + 3600000) // 1 hour expiry
+    });
+
+    // Send reset email
+    const resetUrl = `${FRONTEND_URL}/customer/reset-password.html?token=${resetToken}&email=${email}`;
+    await sendVerificationEmail(email, resetToken, 'Password Reset Request - Slice N Grind', `
+      <div style="font-family: 'Poppins', sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #2c9045; border-radius: 8px;">
+        <h2 style="color: #2c9045;">Password Reset Request</h2>
+        <p>Click the button below to reset your password:</p>
+        <a href="${resetUrl}" style="display: inline-block; padding: 10px 20px; background-color: #2c9045; color: white; text-decoration: none; border-radius: 4px;">Reset Password</a>
+        <p style="color: #5e5d5d;">This link expires in 1 hour.</p>
+        <p style="color: #5e5d5d;">If you can't click the button, copy this link:</p>
+        <p style="font-size: 12px; word-break: break-all;">${resetUrl}</p>
+        <p style="color: #5e5d5d;">Best regards,<br>Slice N Grind Team</p>
+      </div>
+    `);
+
+    res.status(200).json({ message: 'Password reset link sent to your email' });
+  } catch (error) {
+    console.error('Error in forgot-password:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Route to handle password reset
+router.post('/reset-password', async (req, res) => {
+  const { token, password } = req.body;
+
+  if (!token || !password) {
+    return res.status(400).json({ message: 'Token and password are required' });
+  }
+
+  try {
+    // Verify token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findByPk(decoded.userID);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const resetToken = await ResetToken.findOne({ where: { userID: user.userID, token } });
+    if (!resetToken || resetToken.expiresAt < new Date()) {
+      return res.status(400).json({ message: 'Invalid or expired token' });
+    }
+
+    // Update password
+    const hashedPassword = await bcrypt.hash(password, 10);
+    await user.update({ password: hashedPassword });
+
+    // Delete used token
+    await ResetToken.destroy({ where: { userID: user.userID } });
+
+    res.status(200).json({ message: 'Password reset successfully' });
+  } catch (error) {
+    console.error('Error in reset-password:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// ... (rest of your existing routes remain unchanged)
 router.post('/google', async (req, res) => {
   const { idToken } = req.body;
 
@@ -87,7 +171,6 @@ router.post('/google', async (req, res) => {
   }
 });
 
-// Route to handle login for all users
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
@@ -157,7 +240,6 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// Route to submit email for customer signup
 router.post('/signup-email', async (req, res) => {
   const { email } = req.body;
 
@@ -165,20 +247,17 @@ router.post('/signup-email', async (req, res) => {
     return res.status(400).json({ message: 'Email is required' });
   }
 
-  // Validate email format
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
     return res.status(400).json({ message: 'Invalid email format' });
   }
 
   try {
-    // Check if email already exists
     const existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
       if (existingUser.isVerified) {
         return res.status(400).json({ message: 'Email already registered and verified' });
       } else {
-        // Resend verification email
         const token = jwt.sign(
           { userID: existingUser.userID, email: existingUser.email },
           process.env.JWT_SECRET,
@@ -190,7 +269,6 @@ router.post('/signup-email', async (req, res) => {
       }
     }
 
-    // Create new user
     const user = await User.create({ email, isVerified: false, userLevel: 'Customer' });
     const token = jwt.sign(
       { userID: user.userID, email: user.email },
@@ -217,7 +295,6 @@ router.post('/signup-email', async (req, res) => {
   }
 });
 
-// Route to verify email via token for customer signup
 router.get('/verify', async (req, res) => {
   try {
     const token = req.query.token;
@@ -242,12 +319,7 @@ router.get('/verify', async (req, res) => {
 
     const newToken = jwt.sign({ userID: user.userID }, process.env.JWT_SECRET, { expiresIn: '24h' });
 
-    // Redirect to FRONTEND completion page
-    const frontendUrl = process.env.NODE_ENV === 'production'
-      ? 'https://slice-n-grind.onrender.com'
-      : 'http://localhost:3000'; // Your frontend port
-
-    const redirectUrl = `${frontendUrl}/customer/complete-registration.html?userID=${user.userID}&token=${newToken}`;
+    const redirectUrl = `${FRONTEND_URL}/customer/complete-registration.html?userID=${user.userID}&token=${newToken}`;
     
     res.redirect(redirectUrl);
     
@@ -257,7 +329,6 @@ router.get('/verify', async (req, res) => {
   }
 });
 
-// Route to complete customer registration
 router.post('/complete-registration', async (req, res) => {
   const { name, phone, address, password } = req.body;
   const token = req.query.token;
@@ -303,7 +374,6 @@ router.post('/complete-registration', async (req, res) => {
   }
 });
 
-// Route to create staff account (admin only)
 router.post('/create-staff', verifyToken, setNoCacheHeaders, async (req, res) => {
   if (req.user.userLevel !== 'Admin') {
     return res.status(403).json({ message: 'Access denied: Admins only' });
@@ -357,7 +427,6 @@ router.post('/create-staff', verifyToken, setNoCacheHeaders, async (req, res) =>
   }
 });
 
-// Route to fetch all users for admin user management
 router.get('/users', verifyToken, setNoCacheHeaders, async (req, res) => {
   if (req.user.userLevel !== 'Admin') {
     return res.status(403).json({ message: 'Access denied: Admins only' });
@@ -375,7 +444,6 @@ router.get('/users', verifyToken, setNoCacheHeaders, async (req, res) => {
   }
 });
 
-// Route to archive/unarchive a user
 router.put('/users/:id/archive', verifyToken, setNoCacheHeaders, async (req, res) => {
   if (req.user.userLevel !== 'Admin') {
     return res.status(403).json({ message: 'Access denied: Admins only' });
@@ -398,7 +466,6 @@ router.put('/users/:id/archive', verifyToken, setNoCacheHeaders, async (req, res
   }
 });
 
-// Route to fetch user profile data
 router.get('/profile', verifyToken, setNoCacheHeaders, async (req, res) => {
   try {
     const user = await User.findByPk(req.user.userID);
@@ -420,7 +487,6 @@ router.get('/profile', verifyToken, setNoCacheHeaders, async (req, res) => {
   }
 });
 
-// Route to update user profile
 router.put('/profile/update', verifyToken, setNoCacheHeaders, async (req, res) => {
   const { name, phone, address } = req.body;
 
@@ -453,7 +519,6 @@ router.put('/profile/update', verifyToken, setNoCacheHeaders, async (req, res) =
   }
 });
 
-// Temporary route for testing
 router.post('/create-test-user', async (req, res) => {
   try {
     const hashedPassword = await bcrypt.hash('test123', 10);
@@ -469,12 +534,11 @@ router.post('/create-test-user', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
-// Test route to verify route registration
+
 router.get('/test', (req, res) => {
   res.json({ message: 'Auth routes are working!' });
 });
 
-// Test email connection
 router.get('/test-email', async (req, res) => {
   try {
     const { sendVerificationEmail } = require('../utils/sendEmail');

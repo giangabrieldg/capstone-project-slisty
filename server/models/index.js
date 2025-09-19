@@ -1,8 +1,10 @@
+
 const { Sequelize, DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 
 // Import models
 const User = require('./user-model');
+const ResetToken = require('./reset-token-model'); // Added ResetToken
 const MenuItem = require('./menu-item-model')(sequelize, DataTypes);
 const ItemSize = require('./item-size-model')(sequelize, DataTypes);
 const Cart = require('./cart-model')(sequelize, DataTypes);
@@ -156,9 +158,26 @@ OrderItem.belongsTo(CustomCakeOrder, {
   constraintName: 'fk_orderitem_customcake_belongsTo' 
 });
 
+// User ↔ ResetToken
+User.hasMany(ResetToken, {
+  foreignKey: 'userID',
+  as: 'resetTokens',
+  constraints: true,
+  foreignKeyConstraint: true,
+  constraintName: 'fk_resettoken_user_hasMany'
+});
+ResetToken.belongsTo(User, {
+  foreignKey: 'userID',
+  as: 'user',
+  constraints: true,
+  foreignKeyConstraint: true,
+  constraintName: 'fk_resettoken_user_belongsTo'
+});
+
 module.exports = {
   sequelize,
   User,
+  ResetToken, // Added ResetToken
   MenuItem,
   ItemSize,
   Cart,
