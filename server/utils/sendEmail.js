@@ -1,9 +1,7 @@
-// Import nodemailer for sending emails
 const nodemailer = require('nodemailer');
-// Load environment variables from .env
+const { google } = require('googleapis');
 require('dotenv').config();
 
-// Define FRONTEND_URL based on environment
 const FRONTEND_URL = process.env.NODE_ENV === 'production'
   ? (process.env.CLIENT_URL_PROD || 'https://slice-n-grind.onrender.com')
   : (process.env.CLIENT_URL_LOCAL || 'http://localhost:3000');
@@ -15,41 +13,68 @@ const BACKEND_URL = process.env.NODE_ENV === 'production'
 console.log('FRONTEND_URL set to:', FRONTEND_URL);
 console.log('BACKEND_URL set to:', BACKEND_URL);
 
-// Configure Nodemailer transporter for Gmail SMTP
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER, // Gmail address from .env
-    pass: process.env.EMAIL_PASS, // Gmail app-specific password from .env
-  },
-  connectionTimeout: 20000,
-  greetingTimeout: 20000,
-  socketTimeout: 20000,
+// Create OAuth2 client
+const oauth2Client = new google.auth.OAuth2(
+  process.env.GOOGLE_CLIENT_ID_SENDEMAIL,
+  process.env.GOOGLE_CLIENT_SECRET_SENDEMAIL,
+  "https://developers.google.com/oauthplayground"
+);
+
+oauth2Client.setCredentials({
+  refresh_token: process.env.GOOGLE_REFRESH_TOKEN
 });
 
-// Verify transporter connection
+// Function to create transporter with fresh access token
+const createTransporter = async () => {
+  try {
+    const accessToken = await new Promise((resolve, reject) => {
+      oauth2Client.getAccessToken((err, token) => {
+        if (err) {
+          console.error('Error getting access token:', err);
+          reject(err);
+        }
+        resolve(token);
+      });
+    });
+
+    return nodemailer.createTransporter({
+      service: "gmail",
+      auth: {
+        type: "OAuth2",
+        user: process.env.EMAIL_USER,
+        accessToken,
+        clientId: process.env.GOOGLE_CLIENT_ID,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        refreshToken: process.env.GOOGLE_REFRESH_TOKEN
+      }
+    });
+  } catch (error) {
+    console.error('Error creating transporter:', error);
+    throw error;
+  }
+};
+
+// Verify connection
 const verifyConnection = async () => {
   try {
+    const transporter = await createTransporter();
     await transporter.verify();
-    console.log('Gmail transporter ready');
+    console.log('Gmail OAuth2 transporter ready');
     return true;
   } catch (error) {
-    console.error('Gmail transporter verification failed:', error.message);
+    console.error('Gmail OAuth2 transporter verification failed:', error.message);
     console.log('Email functionality will use mock email fallback');
     return false;
   }
 };
 
-// Initialize connection verification (non-blocking)
-verifyConnection().catch(console.error);
-
-// Mock email function for when SMTP fails
+// Mock email function
 const sendMockEmail = async (email, token, subject, html) => {
   const verificationUrl = subject.includes('Password Reset')
     ? `${FRONTEND_URL}/customer/reset-password.html?token=${token}&email=${email}`
     : `${BACKEND_URL}/api/auth/verify?token=${token}`;
 
-  console.log('\n=== MOCK EMAIL (SMTP Failed) ===');
+  console.log('\n=== MOCK EMAIL (OAuth2 Failed) ===');
   console.log('To:', email);
   console.log('Subject:', subject);
   console.log('Verification Link:', verificationUrl);
@@ -60,7 +85,7 @@ const sendMockEmail = async (email, token, subject, html) => {
   return true;
 };
 
-// Send email verification or password reset link
+// Send email function
 const sendVerificationEmail = async (email, token, subject = 'Verify Your Email - Slice N Grind', htmlContent) => {
   const defaultVerificationUrl = `${BACKEND_URL}/api/auth/verify?token=${token}`;
   const resetUrl = `${FRONTEND_URL}/customer/reset-password.html?token=${token}&email=${email}`;
@@ -93,6 +118,7 @@ const sendVerificationEmail = async (email, token, subject = 'Verify Your Email 
   };
 
   try {
+    const transporter = await createTransporter();
     await transporter.sendMail(mailOptions);
     console.log(`✓ ${subject} email sent successfully to ${email}`);
     return true;
@@ -103,7 +129,7 @@ const sendVerificationEmail = async (email, token, subject = 'Verify Your Email 
       email
     });
 
-    // Fall back to mock email in production or if transporter fails
+    // Fall back to mock email
     if (process.env.NODE_ENV === 'production' || !(await verifyConnection())) {
       console.log('Falling back to mock email');
       return await sendMockEmail(email, token, subject, mailOptions.html);
