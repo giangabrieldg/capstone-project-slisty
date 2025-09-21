@@ -91,66 +91,100 @@
       // Store product data globally for add-to-cart.js
       let currentProduct = null;
 
+      // Environment detection
+      const API_BASE_URL =
+        window.location.origin === "http://localhost:3000"
+          ? "http://localhost:3000"
+          : "https://capstone-project-slisty.onrender.com";
+
       async function fetchProduct() {
         const urlParams = new URLSearchParams(window.location.search);
         const productId = urlParams.get("id");
 
+        if (!productId) {
+          document.getElementById("productName").textContent =
+            "Product Not Found";
+          return;
+        }
+
         try {
-          const response = await fetch(
-            `http://localhost:3000/api/menu/${productId}`
-          );
-          const product = await response.json();
+          const response = await fetch(`${API_BASE_URL}/api/menu/${productId}`);
 
-          if (response.ok) {
-            currentProduct = product; // Store product data
-            document.getElementById("productName").textContent = product.name;
-            document.getElementById("productDescription").textContent =
-              product.description || "";
-            document.getElementById("productImage").src =
-              product.image || "/assets/placeholder.jpg";
-
-            const sizeButtons = document.getElementById("sizeButtons");
-            const productPrice = document.getElementById("productPrice");
-            sizeButtons.innerHTML = "";
-
-            if (product.hasSizes && product.sizes?.length > 0) {
-              productPrice.textContent = `₱${Number(
-                product.sizes[0].price
-              ).toFixed(2)}`;
-              product.sizes.forEach((size, index) => {
-                const button = document.createElement("button");
-                button.type = "button";
-                button.className = `size-btn ${index === 0 ? "active" : ""}`;
-                button.textContent = `${size.sizeName} - ₱${Number(
-                  size.price
-                ).toFixed(2)}`;
-                button.dataset.price = size.price;
-                button.dataset.size = size.sizeName;
-                button.dataset.stock = size.stock; // Add stock data
-                button.addEventListener("click", () => {
-                  document
-                    .querySelectorAll(".size-btn")
-                    .forEach((btn) => btn.classList.remove("active"));
-                  button.classList.add("active");
-                  productPrice.textContent = `₱${Number(size.price).toFixed(
-                    2
-                  )}`;
-                });
-                sizeButtons.appendChild(button);
-              });
-              document.getElementById("sizeContainer").style.display = "block";
-            } else {
-              productPrice.textContent = `₱${Number(
-                product.basePrice || 0
-              ).toFixed(2)}`;
-              document.getElementById("sizeContainer").style.display = "none";
-            }
-          } else {
-            document.getElementById("productName").textContent =
-              "Product Not Found";
-            document.getElementById("productPrice").textContent = "";
-            document.getElementById("sizeContainer").style.display = "none";
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
           }
+
+          const product = await response.json();
+          currentProduct = product; // Store product data
+
+          document.getElementById("productName").textContent = product.name;
+          document.getElementById("productDescription").textContent =
+            product.description || "";
+
+          // Use Google Drive CDN URL directly (already formatted from backend)
+          document.getElementById("productImage").src =
+            product.image || "/assets/placeholder.jpg";
+          document.getElementById("productImage").onerror = function () {
+            this.src = "/assets/placeholder.jpg";
+          };
+
+          const sizeButtons = document.getElementById("sizeButtons");
+          const productPrice = document.getElementById("productPrice");
+          sizeButtons.innerHTML = "";
+
+          if (product.hasSizes && product.sizes?.length > 0) {
+            productPrice.textContent = `₱${Number(
+              product.sizes[0].price
+            ).toFixed(2)}`;
+
+            product.sizes.forEach((size, index) => {
+              // Check stock availability
+              const isOutOfStock = size.stock === 0;
+              const isLowStock = size.stock > 0 && size.stock <= 5;
+
+              const button = document.createElement("button");
+              button.type = "button";
+              button.className = `size-btn ${index === 0 ? "active" : ""} ${
+                isOutOfStock ? "out-of-stock" : ""
+              }`;
+              button.textContent = `${size.sizeName} - ₱${Number(
+                size.price
+              ).toFixed(2)}`;
+              button.dataset.price = size.price;
+              button.dataset.size = size.sizeName;
+              button.dataset.stock = size.stock;
+
+              if (isOutOfStock) {
+                button.disabled = true;
+                button.title = "Out of stock";
+              } else if (isLowStock) {
+                button.title = `Only ${size.stock} left in stock`;
+              }
+
+              button.addEventListener("click", () => {
+                document
+                  .querySelectorAll(".size-btn")
+                  .forEach((btn) => btn.classList.remove("active"));
+                button.classList.add("active");
+                productPrice.textContent = `₱${Number(size.price).toFixed(2)}`;
+                updateMaxQuantity(size.stock);
+              });
+
+              sizeButtons.appendChild(button);
+            });
+
+            document.getElementById("sizeContainer").style.display = "block";
+            // Set initial max quantity based on first size
+            updateMaxQuantity(product.sizes[0].stock);
+          } else {
+            productPrice.textContent = `₱${Number(
+              product.basePrice || 0
+            ).toFixed(2)}`;
+            document.getElementById("sizeContainer").style.display = "none";
+            updateMaxQuantity(product.stock || 0);
+          }
+
+          updateStockIndicator();
         } catch (error) {
           console.error("Error fetching product:", error);
           document.getElementById("productName").textContent =
@@ -160,20 +194,84 @@
         }
       }
 
+      function updateMaxQuantity(maxStock) {
+        const quantityInput = document.getElementById("quantityInput");
+        const currentValue = parseInt(quantityInput.value);
+
+        if (currentValue > maxStock) {
+          quantityInput.value = maxStock;
+        }
+
+        quantityInput.max = maxStock;
+      }
+
+      function updateStockIndicator() {
+        const stockIndicator = document.getElementById("stockIndicator");
+        if (!stockIndicator) return;
+
+        let stock = 0;
+        let sizeName = "";
+
+        if (currentProduct.hasSizes && currentProduct.sizes?.length > 0) {
+          const activeSize = document.querySelector(".size-btn.active");
+          if (activeSize) {
+            stock = parseInt(activeSize.dataset.stock);
+            sizeName = activeSize.dataset.size;
+          }
+        } else {
+          stock = currentProduct.stock || 0;
+        }
+
+        if (stock === 0) {
+          stockIndicator.textContent = sizeName
+            ? `${sizeName} - Out of Stock`
+            : "Out of Stock";
+          stockIndicator.className = "stock-indicator out-of-stock";
+        } else if (stock <= 5) {
+          stockIndicator.textContent = sizeName
+            ? `${sizeName} - Only ${stock} left!`
+            : `Only ${stock} left!`;
+          stockIndicator.className = "stock-indicator low-stock";
+        } else {
+          stockIndicator.textContent = sizeName
+            ? `${sizeName} - In Stock`
+            : "In Stock";
+          stockIndicator.className = "stock-indicator in-stock";
+        }
+      }
+
       function setupQuantityControls() {
         const quantityInput = document.getElementById("quantityInput");
+
         document.getElementById("decreaseQty").addEventListener("click", () => {
           let value = parseInt(quantityInput.value);
           if (value > 1) quantityInput.value = value - 1;
         });
+
         document.getElementById("increaseQty").addEventListener("click", () => {
           let value = parseInt(quantityInput.value);
-          quantityInput.value = value + 1;
+          const max = parseInt(quantityInput.max) || 99;
+          if (value < max) quantityInput.value = value + 1;
         });
+
         quantityInput.addEventListener("input", () => {
-          if (quantityInput.value < 1) quantityInput.value = 1;
+          let value = parseInt(quantityInput.value);
+          const max = parseInt(quantityInput.max) || 99;
+
+          if (isNaN(value) || value < 1) quantityInput.value = 1;
+          if (value > max) quantityInput.value = max;
         });
+
+        // Update stock indicator when quantity changes
+        quantityInput.addEventListener("change", updateStockIndicator);
       }
+
+      // Update stock indicator when size changes
+      document.addEventListener("click", (e) => {
+        if (e.target.classList.contains("size-btn")) {
+          setTimeout(updateStockIndicator, 100);
+        }
+      });
 
       document.addEventListener("DOMContentLoaded", () => {
         fetchProduct();
