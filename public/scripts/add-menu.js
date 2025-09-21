@@ -1,41 +1,40 @@
-// Fetches menu items from the server and renders them
+/**
+ * scripts/add-menu.js
+ * Admin-side menu management script
+ */
+const API_BASE_URL = window.location.origin === 'http://localhost:3000'
+  ? 'http://localhost:3000'
+  : 'https://capstone-project-slisty.onrender.com';
+
 async function fetchMenuItems() {
-  // Retrieve authentication token from localStorage
   const token = localStorage.getItem('token');
   if (!token) {
     alert('Please log in to access the menu');
     window.location.href = '/public/login.html';
     return;
   }
-  
+
   try {
-    // Set loading state to indicate data fetching
     setLoadingState(true, 'Loading menu items...');
-    // Make API request to fetch menu items with authorization header
-    const response = await fetch('http://localhost:3000/api/menu', {
+    const response = await fetch(`${API_BASE_URL}/api/menu`, {
       headers: { 'Authorization': `Bearer ${token}` },
     });
-    
-    // Check if response is successful
+
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(errorData.error || 'Failed to fetch menu items');
     }
-    
-    // Parse response data and render menu items
+
     const menuItems = await response.json();
     renderMenuItems(menuItems);
   } catch (error) {
-    // Log and display error if fetching fails
     console.error('Error fetching menu items:', error);
     showError('Failed to load menu items', error);
   } finally {
-    // Reset loading state after operation completes
     setLoadingState(false);
   }
 }
 
-// Renders menu items into the table
 function renderMenuItems(menuItems) {
   const tableBody = document.querySelector('#menuTable tbody');
   tableBody.innerHTML = '';
@@ -44,11 +43,9 @@ function renderMenuItems(menuItems) {
     const row = document.createElement('tr');
     const priceDisplay = formatPriceDisplay(item);
     const formattedMenuId = `M${item.menuId.toString().padStart(4, '0')}`;
-    // Format stock display similar to price
     const stockDisplay = item.hasSizes && item.sizes?.length > 0
       ? item.sizes.map(size => `${size.sizeName} - ${size.stock}`).join('<br>')
       : item.stock != null ? item.stock : '0';
-    // Apply text-danger only if stock is 0 (or all size stocks are 0)
     const isOutOfStock = item.hasSizes
       ? item.sizes.every(size => size.stock === 0)
       : item.stock === 0;
@@ -59,9 +56,9 @@ function renderMenuItems(menuItems) {
       <td>${item.category}</td>
       <td>
         <img src="${item.image || 'https://via.placeholder.com/50'}" 
-             alt="${item.name}" 
-             class="menu-image enlarge-image">
-        ${item.image ? `<small class="d-block">${item.image.split('/').pop()}</small>` : ''}
+       alt="${item.name}" 
+       class="menu-image enlarge-image">
+  ${item.image ? `<small class="d-block">${item.image.split('/').pop()}</small>` : ''}
       </td>
       <td>${priceDisplay}</td>
       <td class="${isOutOfStock ? 'text-danger fw-bold' : ''}">
@@ -83,36 +80,28 @@ function renderMenuItems(menuItems) {
     `;
     tableBody.appendChild(row);
   });
-  
+
   addTableEventListeners();
 }
 
-// Formats price display for menu items
 function formatPriceDisplay(item) {
-  // Check if item has multiple sizes
   if (item.hasSizes && item.sizes?.length > 0) {
-    // Map sizes to formatted string with prices
     return item.sizes.map(size => 
       `${size.sizeName} - ₱${Number(size.price).toFixed(2)}`
     ).join('<br>');
   }
-  // Return base price formatted to two decimal places
   return `₱${Number(item.basePrice || 0).toFixed(2)}`;
 }
 
-// Adds event listeners to table buttons and images
 function addTableEventListeners() {
-  // Add click listeners to edit buttons
   document.querySelectorAll('.edit-item').forEach(button => {
     button.addEventListener('click', () => openEditModal(button.getAttribute('data-id')));
   });
-  
-  // Add click listeners to delete buttons
+
   document.querySelectorAll('.remove-item').forEach(button => {
     button.addEventListener('click', () => deleteMenuItem(button.getAttribute('data-id')));
   });
-  
-  // Add click listeners to enlarge images
+
   document.querySelectorAll('.enlarge-image').forEach(img => {
     img.addEventListener('click', () => {
       document.getElementById('enlargedImage').src = img.src;
@@ -121,170 +110,137 @@ function addTableEventListeners() {
   });
 }
 
-// Adds a new menu item via API
 async function addMenuItem(formData, form) {
-  // Retrieve authentication token
   const token = localStorage.getItem('token');
   if (!token) {
     alert('Please log in to add a menu item');
     window.location.href = '/public/login.html';
     return;
   }
-  
+
   try {
-    // Set loading state for adding item
     setLoadingState(true, 'Adding item...');
-    // Make POST request to add menu item
-    const response = await fetch('http://localhost:3000/api/menu', {
+    const response = await fetch(`${API_BASE_URL}/api/menu`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}` },
       body: formData,
     });
-    
-    // Check response status
+
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(errorData.error || 'Failed to add menu item');
     }
-    
-    // Show success message and refresh form
+
     const responseData = await response.json();
     showSuccess(`Item "${formData.get('name')}" added successfully!`);
     resetFormAndRefresh(form);
   } catch (error) {
-    // Handle and display errors
     console.error('Error adding menu item:', error);
     showError('Failed to add menu item', error);
   } finally {
-    // Reset loading state
     setLoadingState(false);
   }
 }
 
-// Updates an existing menu item
 async function updateMenuItem(formData, form) {
-  // Get menu item ID and token
   const menuId = document.getElementById('editItemId').value;
   const token = localStorage.getItem('token');
-  
+
   if (!token) {
     alert('Please log in to update a menu item');
     window.location.href = '/public/login.html';
     return;
   }
-  
+
   try {
-    // Set loading state for updating
     setLoadingState(true, 'Updating item...');
-    // Make PUT request to update menu item
-    const response = await fetch(`http://localhost:3000/api/menu/${menuId}`, {
+    const response = await fetch(`${API_BASE_URL}/api/menu/${menuId}`, {
       method: 'PUT',
       headers: { 'Authorization': `Bearer ${token}` },
       body: formData,
     });
-    
-    // Check response status
+
     if (!response.ok) {
       const errorData = await response.json();
+      console.error('Server response:', errorData); // Log server error
       throw new Error(errorData.error || 'Failed to update menu item');
     }
-    
-    // Show success message and refresh form
+
     const responseData = await response.json();
     showSuccess(`Item "${formData.get('name')}" updated successfully!`);
     resetFormAndRefresh(form);
   } catch (error) {
-    // Handle and display errors
     console.error('Error updating menu item:', error);
     showError('Failed to update menu item', error);
   } finally {
-    // Reset loading state
     setLoadingState(false);
   }
 }
 
-// Deletes a menu item
 async function deleteMenuItem(menuId) {
-  // Confirm deletion with user
   if (!confirm('Are you sure you want to remove this item? This action cannot be undone.')) {
     return;
   }
-  
-  // Retrieve authentication token
+
   const token = localStorage.getItem('token');
   if (!token) {
     alert('Please log in to delete a menu item');
     window.location.href = '/public/login.html';
     return;
   }
-  
+
   try {
-    // Set loading state for deletion
     setLoadingState(true, 'Deleting item...');
-    // Make DELETE request to remove menu item
-    const response = await fetch(`http://localhost:3000/api/menu/${menuId}`, {
+    const response = await fetch(`${API_BASE_URL}/api/menu/${menuId}`, {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${token}` },
     });
-    
-    // Check response status
+
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(errorData.error || 'Failed to delete menu item');
     }
-    
-    // Show success message and refresh menu
+
     showSuccess('Item removed successfully!');
     fetchMenuItems();
   } catch (error) {
-    // Handle and display errors
     console.error('Error deleting menu item:', error);
     showError('Failed to delete menu item', error);
   } finally {
-    // Reset loading state
     setLoadingState(false);
   }
 }
 
-// Opens the edit modal for a menu item
 async function openEditModal(menuId) {
-  // Retrieve authentication token
   const token = localStorage.getItem('token');
   if (!token) {
     alert('Please log in to edit a menu item');
     window.location.href = '/public/login.html';
     return;
   }
-  
+
   try {
-    // Set loading state for fetching item data
     setLoadingState(true, 'Loading item data...');
-    // Make GET request to fetch item details
-    const response = await fetch(`http://localhost:3000/api/menu/${menuId}`, {
+    const response = await fetch(`${API_BASE_URL}/api/menu/${menuId}`, {
       headers: { 'Authorization': `Bearer ${token}` },
     });
-    
-    // Check response status
+
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(errorData.error || 'Failed to fetch menu item');
     }
-    
-    // Populate form and show modal
+
     const item = await response.json();
     populateEditForm(item);
     bootstrap.Modal.getOrCreateInstance(document.getElementById('itemModal')).show();
   } catch (error) {
-    // Handle and display errors
     console.error('Error fetching item for edit:', error);
     showError('Failed to load item data', error);
   } finally {
-    // Reset loading state
     setLoadingState(false);
   }
 }
 
-// Populates the edit form with item data
 function populateEditForm(item) {
   document.getElementById('itemModalLabel').textContent = 'Edit Menu Item';
   document.getElementById('editItemId').value = item.menuId;
@@ -293,18 +249,16 @@ function populateEditForm(item) {
   document.getElementById('description').value = item.description || '';
   document.getElementById('hasSizes').checked = item.hasSizes;
 
-  // Show/hide inputs and populate sizes if applicable
   showSizeInputs(item.hasSizes);
   if (item.hasSizes) {
     populateSizeInputs(item.sizes || []);
-    document.getElementById('price').value = ''; 
-    document.getElementById('stock').value = ''; 
+    document.getElementById('price').value = '';
+    document.getElementById('stock').value = '';
   } else {
     document.getElementById('price').value = item.basePrice || '';
-    document.getElementById('stock').value = item.stock || ''; 
+    document.getElementById('stock').value = item.stock || '';
   }
 
-  // Display image preview if available
   const imagePreview = document.getElementById('imagePreview');
   if (item.image) {
     imagePreview.src = item.image;
@@ -314,28 +268,32 @@ function populateEditForm(item) {
   }
 }
 
-// Toggles visibility of size inputs
 function showSizeInputs(show) {
   const sizesContainer = document.getElementById('sizesContainer');
   const singlePriceContainer = document.getElementById('singlePriceContainer');
-  const singleStockContainer = document.getElementById('singleStockContainer'); 
+  const singleStockContainer = document.getElementById('singleStockContainer');
   const priceInput = document.getElementById('price');
-  const stockInput = document.getElementById('stock'); 
+  const stockInput = document.getElementById('stock');
 
   sizesContainer.style.display = show ? 'block' : 'none';
   singlePriceContainer.style.display = show ? 'none' : 'block';
-  singleStockContainer.style.display = show ? 'none' : 'block'; 
+  singleStockContainer.style.display = show ? 'none' : 'block';
+
+  // Toggle required attributes for single-item inputs
   priceInput.toggleAttribute('required', !show);
-  stockInput.toggleAttribute('required', !show); 
+  stockInput.toggleAttribute('required', !show);
+
+  // Toggle required attributes for size-based inputs
+  const sizeInputs = document.querySelectorAll('#sizesContainer input[name^="size_"], #sizesContainer input[name^="price_"], #sizesContainer input[name^="stock_"]');
+  sizeInputs.forEach(input => {
+    input.toggleAttribute('required', show);
+  });
 }
 
-// Populates size inputs for editing
 function populateSizeInputs(sizes) {
-  // Get size input container
   const sizePricePairsDiv = document.getElementById('sizePricePairs');
-  sizePricePairsDiv.innerHTML = ''; 
-  
-  // Create input fields for each size
+  sizePricePairsDiv.innerHTML = '';
+
   sizes.forEach((size, index) => {
     const div = document.createElement('div');
     div.className = 'mb-2 size-price-pair';
@@ -365,14 +323,11 @@ function populateSizeInputs(sizes) {
     `;
     sizePricePairsDiv.appendChild(div);
   });
-  
-  // Add listeners for removing sizes
+
   addRemoveSizeListeners();
 }
 
-// Adds event listeners to remove size buttons
 function addRemoveSizeListeners() {
-  // Add click listeners to remove buttons
   document.querySelectorAll('.remove-size').forEach(button => {
     button.addEventListener('click', (e) => {
       e.target.closest('.size-price-pair').remove();
@@ -381,24 +336,22 @@ function addRemoveSizeListeners() {
   });
 }
 
-// Reindexes size inputs after removal
 function reindexSizeInputs() {
-  // Get all size-price pairs
   const pairs = document.querySelectorAll('.size-price-pair');
-  // Update input names with new indices
   pairs.forEach((pair, index) => {
-    pair.querySelector('input[type="text"]').name = `size_${index}`;
-    pair.querySelector('input[type="number"]').name = `price_${index}`;
+    const sizeInput = pair.querySelector('input[name^="size_"]');
+    const priceInput = pair.querySelector('input[name^="price_"]');
+    const stockInput = pair.querySelector('input[name^="stock_"]');
+    if (sizeInput) sizeInput.name = `size_${index}`;
+    if (priceInput) priceInput.name = `price_${index}`;
+    if (stockInput) stockInput.name = `stock_${index}`;
   });
 }
 
-// Clears size-price input pairs
 function clearSizePricePairs(initialSize = false) {
-  // Get size input container
   const sizePricePairsDiv = document.getElementById('sizePricePairs');
-  sizePricePairsDiv.innerHTML = ''; // Clear existing inputs
-  
-  // Add initial size input if specified
+  sizePricePairsDiv.innerHTML = '';
+
   if (initialSize) {
     const div = document.createElement('div');
     div.className = 'mb-2 size-price-pair';
@@ -421,38 +374,37 @@ function clearSizePricePairs(initialSize = false) {
       </div>
     `;
     sizePricePairsDiv.appendChild(div);
+    addRemoveSizeListeners();
   }
 }
 
-// Resets form and refreshes menu
 function resetFormAndRefresh(form) {
-  // Reset form fields and UI elements
   form.reset();
   document.getElementById('imageUpload').value = '';
   document.getElementById('imagePreview').style.display = 'none';
   document.getElementById('hasSizes').checked = false;
   clearSizeInputs();
-  // Hide modal and refresh menu
   bootstrap.Modal.getInstance(document.getElementById('itemModal')).hide();
   fetchMenuItems();
 }
 
-// Clears size inputs and resets to single price
 function clearSizeInputs() {
-  // Get relevant DOM elements
   const sizesContainer = document.getElementById('sizesContainer');
   const singlePriceContainer = document.getElementById('singlePriceContainer');
+  const singleStockContainer = document.getElementById('singleStockContainer');
   const priceInput = document.getElementById('price');
-  if (sizesContainer && singlePriceContainer && priceInput) {
-    // Toggle visibility and attributes
+  const stockInput = document.getElementById('stock');
+
+  if (sizesContainer && singlePriceContainer && singleStockContainer && priceInput && stockInput) {
     sizesContainer.style.display = 'none';
     singlePriceContainer.style.display = 'block';
+    singleStockContainer.style.display = 'block';
     priceInput.setAttribute('required', 'true');
+    stockInput.setAttribute('required', 'true');
     clearSizePricePairs(false);
   }
 }
 
-// Sets loading state for UI elements
 function setLoadingState(isLoading, message = '') {
   const saveButton = document.getElementById('saveItem');
   if (saveButton) {
@@ -461,14 +413,12 @@ function setLoadingState(isLoading, message = '') {
       ? `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> ${message}`
       : 'Save Item';
   }
-  
-  // Disable/enable action buttons
+
   document.querySelectorAll('.edit-item, .remove-item, .add-item-btn').forEach(btn => {
     btn.disabled = isLoading;
   });
 }
 
-// Displays success toast notification
 function showSuccess(message) {
   const toast = new bootstrap.Toast(document.getElementById('successToast'));
   const toastMessage = document.getElementById('successToastMessage');
@@ -478,7 +428,6 @@ function showSuccess(message) {
   }
 }
 
-// Displays error toast notification
 function showError(title, error) {
   console.error(title, error);
   const errorToast = new bootstrap.Toast(document.getElementById('errorToast'));
@@ -489,20 +438,17 @@ function showError(title, error) {
   }
 }
 
-// Handles form submission for adding/editing items
 function handleFormSubmit(e) {
   e.preventDefault();
   const form = e.target;
   const formData = new FormData(form);
   const hasSizes = formData.get('hasSizes') === 'on';
 
-   // Always include hasSizes in form data
+  // Always include hasSizes in form data
   formData.set('hasSizes', hasSizes.toString());
 
   // Handle sizes if enabled
-  // In handleFormSubmit function:
- if (hasSizes) {
-    // For items with sizes, we'll use size-specific stock
+  if (hasSizes) {
     const sizes = [];
     const sizeInputs = document.querySelectorAll('input[name^="size_"]');
     const priceInputs = document.querySelectorAll('input[name^="price_"]');
@@ -513,49 +459,60 @@ function handleFormSubmit(e) {
       const size = sizeInputs[index].value.trim();
       const price = priceInputs[index].value.trim();
       const stock = stockInputs[index].value.trim();
-      
-      if (!size || !price || isNaN(price) || Number(price) < 0 || 
-          !stock || isNaN(stock) || Number(stock) < 0) {
-        showError('Validation Error', new Error('Please enter valid sizes, prices and stock for all sizes'));
+
+      if (!size || !price || isNaN(price) || Number(price) < 0 || !stock || isNaN(stock) || Number(stock) < 0) {
+        showError('Validation Error', new Error('Please enter valid sizes, prices, and stock for all sizes'));
         return;
       }
-      
-      sizes.push({ 
-        sizeName: size, 
+
+      sizes.push({
+        sizeName: size,
         price: Number(price).toFixed(2),
-        stock: parseInt(stock)
+        stock: parseInt(stock),
       });
-      
-      // Remove the size inputs from formData since we're sending as JSON
+
+      // Remove size inputs from formData since we're sending as JSON
       formData.delete(`size_${index}`);
       formData.delete(`price_${index}`);
       formData.delete(`stock_${index}`);
     }
-    
-    // Add sizes as JSON string
-    formData.set('sizes', JSON.stringify(sizes));
-    
-    // Remove the main stock field for items with sizes
+
+    // Add sizes as JSON string, or empty array if no sizes
+    formData.set('sizes', JSON.stringify(sizes.length > 0 ? sizes : []));
+    // Ensure stock and basePrice are not sent when hasSizes is true
     formData.delete('stock');
+    formData.delete('basePrice');
+    formData.delete('price');
   } else {
-    // For items without sizes, validate the single price and stock
+    // For items without sizes, validate single price and stock
     const price = formData.get('price');
     const stock = formData.get('stock');
-    
-    if (!price || isNaN(price) || Number(price) < 0 ||
-        !stock || isNaN(stock) || Number(stock) < 0) {
+
+    if (!price || isNaN(price) || Number(price) < 0 || !stock || isNaN(stock) || Number(stock) < 0) {
       showError('Validation Error', new Error('Please enter valid price and stock'));
       return;
     }
-    
-    // Set base price and ensure we don't send sizes
+
+    // Set basePrice and stock, remove sizes
     formData.set('basePrice', Number(price).toFixed(2));
+    formData.set('stock', parseInt(stock));
     formData.delete('price');
     formData.delete('sizes');
   }
 
-  // Determine if editing or adding
-   const isEdit = !!document.getElementById('editItemId').value;
+  // Ensure name and category are present
+  if (!formData.get('name') || !formData.get('category')) {
+    showError('Validation Error', new Error('Name and category are required'));
+    return;
+  }
+
+  // Log FormData for debugging
+  console.log('FormData contents:');
+  for (let [key, value] of formData.entries()) {
+    console.log(`${key}: ${value}`);
+  }
+
+  const isEdit = !!document.getElementById('editItemId').value;
   if (isEdit) {
     updateMenuItem(formData, form);
   } else {
@@ -563,9 +520,7 @@ function handleFormSubmit(e) {
   }
 }
 
-// Initializes page functionality
 function initializePage() {
-  // Check for authentication token
   const token = localStorage.getItem('token');
   if (!token) {
     alert('Please log in to access the admin panel');
@@ -573,7 +528,6 @@ function initializePage() {
     return;
   }
 
-  // Verify required DOM elements
   const requiredElements = ['sizesContainer', 'singlePriceContainer', 'imagePreview', 'successToastMessage', 'errorToastMessage', 'hasSizes'];
   for (const id of requiredElements) {
     if (!document.getElementById(id)) {
@@ -582,9 +536,7 @@ function initializePage() {
     }
   }
 
-  // Add click listener to add item button
   document.querySelector('.add-item-btn').addEventListener('click', () => {
-    // Reset modal and form for adding new item
     document.getElementById('itemModalLabel').textContent = 'Add New Menu Item';
     document.getElementById('editItemId').value = '';
     document.getElementById('itemForm').reset();
@@ -597,46 +549,42 @@ function initializePage() {
     bootstrap.Modal.getOrCreateInstance(document.getElementById('itemModal')).show();
   });
 
-  // Add change listener for size toggle
   document.getElementById('hasSizes').addEventListener('change', (e) => {
     const isChecked = e.target.checked;
     showSizeInputs(isChecked);
     clearSizePricePairs(isChecked);
   });
 
-  // Add click listener for adding size-price pair
   document.getElementById('addSizePrice').addEventListener('click', () => {
-  const sizePricePairsDiv = document.getElementById('sizePricePairs');
-  const index = sizePricePairsDiv.querySelectorAll('.size-price-pair').length;
-  const div = document.createElement('div');
-  div.className = 'mb-2 size-price-pair';
-  div.innerHTML = `
-    <div class="row g-2 align-items-center">
-      <div class="col-4">
-        <input type="text" class="form-control" name="size_${index}" placeholder="Size (e.g., Small)" required />
+    const sizePricePairsDiv = document.getElementById('sizePricePairs');
+    const index = sizePricePairsDiv.querySelectorAll('.size-price-pair').length;
+    const div = document.createElement('div');
+    div.className = 'mb-2 size-price-pair';
+    div.innerHTML = `
+      <div class="row g-2 align-items-center">
+        <div class="col-4">
+          <input type="text" class="form-control" name="size_${index}" placeholder="Size (e.g., Small)" required />
+        </div>
+        <div class="col-3">
+          <input type="number" class="form-control" name="price_${index}" step="0.01" min="0" placeholder="Price (₱)" required />
+        </div>
+        <div class="col-3">
+          <input type="number" class="form-control" name="stock_${index}" min="0" placeholder="Stock" required />
+        </div>
+        <div class="col-2">
+          <button type="button" class="btn btn-sm btn-danger remove-size w-100">
+            <i class="bi bi-trash"></i>
+          </button>
+        </div>
       </div>
-      <div class="col-3">
-        <input type="number" class="form-control" name="price_${index}" step="0.01" min="0" placeholder="Price (₱)" required />
-      </div>
-      <div class="col-3">
-        <input type="number" class="form-control" name="stock_${index}" min="0" placeholder="Stock" required />
-      </div>
-      <div class="col-2">
-        <button type="button" class="btn btn-sm btn-danger remove-size w-100">
-          <i class="bi bi-trash"></i>
-        </button>
-      </div>
-    </div>
-  `;
-  sizePricePairsDiv.appendChild(div);
-  addRemoveSizeListeners();
-});
+    `;
+    sizePricePairsDiv.appendChild(div);
+    addRemoveSizeListeners();
+  });
 
-  // Add change listener for image upload
   document.getElementById('imageUpload').addEventListener('change', function(e) {
     const file = e.target.files[0];
     if (file) {
-      // Preview uploaded image
       const reader = new FileReader();
       reader.onload = function(event) {
         document.getElementById('imagePreview').src = event.target.result;
@@ -646,28 +594,25 @@ function initializePage() {
     }
   });
 
-  // Add submit listener for item form
   document.getElementById('itemForm').addEventListener('submit', handleFormSubmit);
 
-  // Add input listener for search functionality
   document.querySelector('.search-bar').addEventListener('input', debounce(async (e) => {
     const searchTerm = e.target.value.toLowerCase();
     if (!searchTerm) {
       fetchMenuItems();
       return;
     }
-    
+
     try {
-      // Fetch and filter menu items based on search term
-      const response = await fetch('http://localhost:3000/api/menu', {
+      const response = await fetch(`${API_BASE_URL}/api/menu`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to search menu items');
       }
-      
+
       const menuItems = await response.json();
       const filteredItems = menuItems.filter(item => {
         const formattedMenuId = `M${item.menuId.toString().padStart(4, '0')}`;
@@ -675,19 +620,17 @@ function initializePage() {
                item.category.toLowerCase().includes(searchTerm) ||
                formattedMenuId.toLowerCase().includes(searchTerm);
       });
-      
+
       renderMenuItems(filteredItems);
     } catch (error) {
-      // Handle and display search errors
       console.error('Error searching menu items:', error);
       showError('Failed to search menu items', error);
     }
   }, 300));
-  // Initial fetch of menu items
+
   fetchMenuItems();
 }
 
-// Debounces a function to limit execution frequency
 function debounce(func, wait) {
   let timeout;
   return function(...args) {
@@ -696,5 +639,4 @@ function debounce(func, wait) {
   };
 }
 
-// Initialize page when DOM is loaded
 document.addEventListener('DOMContentLoaded', initializePage);

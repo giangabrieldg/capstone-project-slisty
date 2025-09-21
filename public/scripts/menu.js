@@ -1,4 +1,11 @@
-// Wait for dynamic HTML includes (navbar, footer) to load
+/**
+ * scripts/menu.js
+ * Customer-side menu display script
+ */
+const API_BASE_URL = window.location.origin === 'http://localhost:3000'
+  ? 'http://localhost:3000'
+  : 'https://capstone-project-slisty.onrender.com';
+
 function waitForIncludes(callback) {
   const checkIncludes = () => {
     const includes = document.querySelectorAll('[data-include-html]');
@@ -11,7 +18,6 @@ function waitForIncludes(callback) {
   checkIncludes();
 }
 
-// Helper function to render menu items
 function renderMenuItems(menuItems, container) {
   container.innerHTML = '';
   if (menuItems.length === 0) {
@@ -30,10 +36,9 @@ function renderMenuItems(menuItems, container) {
     const hasStock = item.hasSizes ? item.sizes.some(size => size.stock > 0) : item.stock > 0;
     const viewDetailsClass = hasStock ? 'btn btn-primary' : 'btn btn-primary disabled';
     
-    // Use a fallback image with 3:2 aspect ratio
     const imageSrc = item.image && item.image.trim() !== ''
       ? item.image
-      : 'https://via.placeholder.com/600x400?text=No+Image'; // Matches 3:2 aspect ratio
+      : 'https://via.placeholder.com/600x400?text=No+Image';
 
     const rowHtml = `
       <div class="card mb-4 shadow-sm">
@@ -56,10 +61,9 @@ function renderMenuItems(menuItems, container) {
   });
 }
 
-// Fetch and display all menu items
 async function fetchMenuItems() {
   try {
-    const response = await fetch('http://localhost:3000/api/menu');
+    const response = await fetch(`${API_BASE_URL}/api/menu`);
     const menuItems = await response.json();
     if (!response.ok) {
       document.getElementById('menuItems').innerHTML = `<p>Failed to load menu items: ${menuItems.error || 'Server error'}</p>`;
@@ -77,7 +81,6 @@ async function fetchMenuItems() {
   }
 }
 
-// Set up search functionality
 function setupSearch() {
   const searchInput = document.querySelector('.search-input');
   if (!searchInput) return;
@@ -85,7 +88,7 @@ function setupSearch() {
   searchInput.addEventListener('input', async (e) => {
     const searchTerm = e.target.value.toLowerCase();
     try {
-      const response = await fetch('http://localhost:3000/api/menu');
+      const response = await fetch(`${API_BASE_URL}/api/menu`);
       const menuItems = await response.json();
       if (!response.ok) {
         document.getElementById('menuItems').innerHTML = `<p>Failed to load menu items: ${menuItems.error || 'Server error'}</p>`;
@@ -102,23 +105,20 @@ function setupSearch() {
   });
 }
 
-// Variable to track the currently selected category
 let selectedCategory = '';
 
-// Set up category filters
 function setupCategoryFilters() {
   const categoryFilters = document.querySelectorAll('.category-filter');
   categoryFilters.forEach(link => {
     link.addEventListener('click', async (e) => {
       e.preventDefault();
-      selectedCategory = link.getAttribute('data-category'); // Update selected category
+      selectedCategory = link.getAttribute('data-category');
 
-      // Update active class
       categoryFilters.forEach(el => el.classList.remove('active'));
       e.target.classList.add('active');
 
       try {
-        const response = await fetch('http://localhost:3000/api/menu');
+        const response = await fetch(`${API_BASE_URL}/api/menu`);
         const menuItems = await response.json();
         if (!response.ok) {
           document.getElementById('menuItems').innerHTML = `<p>Failed to load menu items: ${menuItems.error || 'Server error'}</p>`;
@@ -135,14 +135,12 @@ function setupCategoryFilters() {
     });
   });
 
-  // Set "All" category active on initial load
   const allCategoryLink = document.querySelector('.category-filter[data-category=""]');
   if (allCategoryLink) {
     allCategoryLink.classList.add('active');
   }
 }
 
-// Set up sorting functionality
 function setupSort() {
   const sortSelect = document.querySelector('.sort-select');
   if (!sortSelect) return;
@@ -150,19 +148,17 @@ function setupSort() {
   sortSelect.addEventListener('change', async (e) => {
     const sortBy = e.target.value;
     try {
-      const response = await fetch('http://localhost:3000/api/menu');
+      const response = await fetch(`${API_BASE_URL}/api/menu`);
       let menuItems = await response.json();
       if (!response.ok) {
         document.getElementById('menuItems').innerHTML = `<p>Failed to load menu items: ${menuItems.error || 'Server error'}</p>`;
         return;
       }
 
-      // Apply category filter before sorting
       let filteredItems = selectedCategory
         ? menuItems.filter(item => item.category === selectedCategory)
         : menuItems;
 
-      // Apply sorting to the filtered items
       switch (sortBy) {
         case 'price-asc':
           filteredItems.sort((a, b) => {
@@ -194,7 +190,6 @@ function setupSort() {
   });
 }
 
-// Initialize the menu page
 waitForIncludes(() => {
   fetchMenuItems();
   setupSearch();

@@ -7,6 +7,7 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const bcrypt = require('bcrypt');
 const User = require('./models/user-model.js');
+const { google } = require('googleapis');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -126,9 +127,40 @@ try {
   app.use('/api/custom-cake', customCakeRoutes);
   app.use('/api/faqs', faqRoutes);
   console.log('Routes registered successfully');
-  
 
-  //cleanupAbandonedOrders();
+  // OAuth setup
+const oauth2Client = new google.auth.OAuth2(
+  process.env.GOOGLE_CLIENT_ID,
+  process.env.GOOGLE_CLIENT_SECRET,
+  process.env.GOOGLE_REDIRECT_URI
+);
+
+// Route to initiate OAuth flow (for manual testing)
+app.get('/auth/google', (req, res) => {
+  const authUrl = oauth2Client.generateAuthUrl({
+    access_type: 'offline', // Get refresh token
+    scope: ['https://www.googleapis.com/auth/drive.file'],
+  });
+  res.redirect(authUrl);
+});
+
+// OAuth callback route
+app.get('/auth/google/callback', async (req, res) => {
+  const { code } = req.query;
+  if (!code) return res.status(400).json({ error: 'No auth code provided' });
+
+  try {
+    const { tokens } = await oauth2Client.getToken(code);
+    console.log('Access Token:', tokens.access_token);
+    console.log('Refresh Token:', tokens.refresh_token);
+    // TODO: Store tokens securely (e.g., in DB or env for testing)
+    res.json({ message: 'Authentication successful! Check console for tokens.' });
+  } catch (error) {
+    console.error('OAuth callback error:', error.message);
+    res.status(400).json({ error: 'Authentication failed' });
+  }
+});
+  
   
 } catch (error) {
   console.error('Error loading routes or cleanup:', error.message, error.stack);
