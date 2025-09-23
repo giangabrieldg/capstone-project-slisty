@@ -1,19 +1,34 @@
+// Determine API base URL based on environment
+const API_BASE_URL =
+  window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:3000' // Adjust if your backend runs on a different port
+    : process.env.NODE_ENV === 'production'
+      ? 'https://capstone-project-slisty.onrender.com'
+      : 'http://localhost:3000';
+
 // Fetch and display users from backend
 async function fetchUsers() {
   try {
-    const response = await fetch('/api/auth/users', {
+    const response = await fetch(`${API_BASE_URL}/api/auth/users`, {
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
-      }
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      },
     });
-    if (!response.ok) throw new Error('Failed to fetch users');
+    if (!response.ok) {
+      if (response.status === 401) {
+        localStorage.removeItem('token');
+        window.location.href = '/public/customer/login.html';
+        throw new Error('Unauthorized: Please log in again');
+      }
+      throw new Error('Failed to fetch users');
+    }
     const users = await response.json();
     const activeTbody = document.querySelector('.active-users');
     const archivedTbody = document.querySelector('.archived-users');
     activeTbody.innerHTML = '';
     archivedTbody.innerHTML = '';
 
-    users.forEach(user => {
+    users.forEach((user) => {
       const row = document.createElement('tr');
       row.innerHTML = `
         <td>${user.employeeID || 'N/A'}</td>
@@ -39,14 +54,14 @@ async function fetchUsers() {
     document.querySelectorAll('.archive-checkbox').forEach(addArchiveToggleListener);
   } catch (error) {
     console.error('Error fetching users:', error);
-    alert('Failed to load users');
+    alert(`Failed to load users: ${error.message}`);
   }
 }
 
 // Add new user functionality
 document.getElementById('addUserForm').addEventListener('submit', async (e) => {
   e.preventDefault();
-  
+
   // Get the modal form elements specifically
   const modal = document.getElementById('addUserModal');
   const nameInput = modal.querySelector('#userName');
@@ -96,7 +111,19 @@ document.getElementById('addUserForm').addEventListener('submit', async (e) => {
     return;
   }
 
-  // Rest of your code remains the same...
+  // Client-side email validation
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    alert('Please enter a valid email address');
+    return;
+  }
+
+  // Client-side password validation
+  if (password.length < 8) {
+    alert('Password must be at least 8 characters long');
+    return;
+  }
+
   const token = localStorage.getItem('token');
   if (!token) {
     alert('Please log in again');
@@ -105,25 +132,30 @@ document.getElementById('addUserForm').addEventListener('submit', async (e) => {
   }
 
   try {
-    const response = await fetch('/api/auth/create-staff', {
+    const response = await fetch(`${API_BASE_URL}/api/auth/create-staff`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
+        'Authorization': `Bearer ${token}`,
       },
-      body: JSON.stringify({ name, email, password, role })
+      body: JSON.stringify({ name, email, password, role }),
     });
-    
+
     if (!response.ok) {
       const errorResult = await response.json();
+      if (response.status === 401) {
+        localStorage.removeItem('token');
+        window.location.href = '/public/customer/login.html';
+        throw new Error('Unauthorized: Please log in again');
+      }
       throw new Error(errorResult.message || 'Failed to add user');
     }
-    
+
     const result = await response.json();
-    
+
     // Refresh user list
     await fetchUsers();
-    
+
     // Close modal and reset form
     const modalElement = document.getElementById('addUserModal');
     if (modalElement) {
@@ -146,15 +178,22 @@ function addArchiveToggleListener(checkbox) {
     const userId = checkbox.getAttribute('data-user-id');
     const isArchived = checkbox.checked;
     try {
-      const response = await fetch(`/api/auth/users/${userId}/archive`, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/users/${userId}/archive`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
         },
-        body: JSON.stringify({ isArchived })
+        body: JSON.stringify({ isArchived }),
       });
-      if (!response.ok) throw new Error('Failed to update user status');
+      if (!response.ok) {
+        if (response.status === 401) {
+          localStorage.removeItem('token');
+          window.location.href = '/public/customer/login.html';
+          throw new Error('Unauthorized: Please log in again');
+        }
+        throw new Error('Failed to update user status');
+      }
       await fetchUsers();
       alert(`User ${isArchived ? 'archived' : 'unarchived'} successfully!`);
     } catch (error) {
@@ -163,7 +202,6 @@ function addArchiveToggleListener(checkbox) {
     }
   });
 }
-
 // View switch functionality
 document.querySelectorAll('.view-link').forEach((link) => {
   link.addEventListener('click', (e) => {

@@ -7,6 +7,7 @@ const User = require('../models/user-model');
 const ResetToken = require('../models/reset-token-model');
 const { sendVerificationEmail } = require('../utils/sendEmail');
 const verifyToken = require('../middleware/verifyToken');
+const Sequelize = require('sequelize');
 require('dotenv').config();
 
 const router = express.Router();
