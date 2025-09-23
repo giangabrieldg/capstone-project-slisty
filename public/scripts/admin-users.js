@@ -1,10 +1,25 @@
 // Determine API base URL based on environment
-const API_BASE_URL =
+const API_BASE_URL = 
   window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? 'http://localhost:3000' // Adjust if your backend runs on a different port
-    : process.env.NODE_ENV === 'production'
-      ? 'https://capstone-project-slisty.onrender.com'
-      : 'http://localhost:3000';
+    ? 'http://localhost:3000' // Local backend
+    : 'https://capstone-project-slisty.onrender.com'; // Production backend
+
+console.log('API Base URL:', API_BASE_URL);
+console.log('Current hostname:', window.location.hostname);
+
+// Test the connection
+async function testConnection() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/auth/test`);
+    const result = await response.json();
+    console.log('Backend connection test:', result);
+  } catch (error) {
+    console.error('Backend connection failed:', error);
+  }
+}
+
+// Call this when the page loads
+testConnection();
 
 // Fetch and display users from backend
 async function fetchUsers() {
