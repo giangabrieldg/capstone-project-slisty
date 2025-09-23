@@ -6,58 +6,24 @@ const express = require('express');
 const router = express.Router();
 const { MenuItem, ItemSize } = require('../models');
 const multer = require('multer');
-const { google } = require('googleapis');
 const verifyToken = require('../middleware/verifyToken');
+const checkDriveAuth = require('../middleware/driveAuth');
+const googleDriveService = require('../utils/googleDrive');
 require('dotenv').config();
 
-// Multer memory storage for Google Drive uploads
+// Multer memory storage
 const upload = multer({ storage: multer.memoryStorage() });
 
-// Google Drive setup
-const oauth2Client = new google.auth.OAuth2(
-  process.env.GOOGLE_CLIENT_ID,
-  process.env.GOOGLE_CLIENT_SECRET,
-  process.env.GOOGLE_REDIRECT_URI || 'http://localhost:3000/oauth2callback'
-);
-oauth2Client.setCredentials({ access_token: process.env.GOOGLE_ACCESS_TOKEN }); // Use env variable or secure storage
-const drive = google.drive({ version: 'v3', auth: oauth2Client });
-
 // POST /api/menu
-router.post('/', verifyToken, upload.single('image'), async (req, res) => {
+router.post('/', verifyToken, upload.single('image'), checkDriveAuth, async (req, res) => {
   try {
     const { name, category, description, stock, hasSizes, basePrice, sizes } = req.body;
     let imageUrl = null;
 
-   // Upload image to Google Drive
-if (req.file) {
-  const fileMetadata = {
-    name: `${Date.now()}-${req.file.originalname}`,
-    parents: [process.env.GOOGLE_DRIVE_FOLDER_ID],
-  };
-  const media = {
-    mimeType: req.file.mimetype,
-    body: require('stream').Readable.from(req.file.buffer),
-  };
-  const response = await drive.files.create({
-    resource: fileMetadata,
-    media: media,
-    fields: 'id',
-  });
-  
-  const fileId = response.data.id;
-  
-  // Make the file publicly accessible with READER permissions
-  await drive.permissions.create({
-    fileId: fileId,
-    requestBody: {
-      role: 'reader', // MUST be 'reader' not 'editor'
-      type: 'anyone',
-    },
-  });
-  
-  // Get the direct image URL
-  imageUrl = `https://lh3.googleusercontent.com/d/${fileId}=s500`;
-}
+    // Upload image to Google Drive if provided
+    if (req.file) {
+      imageUrl = await googleDriveService.uploadImage(req.file);
+    }
 
     // Create menu item
     const menuItem = await MenuItem.create({
@@ -87,7 +53,7 @@ if (req.file) {
       }
     }
 
-    // Fetch created item
+    // Fetch created item with sizes
     const result = await MenuItem.findByPk(menuItem.menuId, {
       include: [{
         model: ItemSize,
@@ -100,13 +66,16 @@ if (req.file) {
 
     res.status(201).json(result);
   } catch (error) {
-    console.error('Error creating menu item:', error.message);
-    res.status(400).json({ error: 'Failed to create menu item' });
+    console.error('Error creating menu item:', error);
+    res.status(400).json({ 
+      error: 'Failed to create menu item',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 });
 
 // PUT /api/menu/:id
-router.put('/:id', verifyToken, upload.single('image'), async (req, res) => {
+router.put('/:id', verifyToken, upload.single('image'), checkDriveAuth, async (req, res) => {
   try {
     const { id } = req.params;
     const { name, category, description, stock, hasSizes, basePrice, sizes } = req.body;
@@ -118,35 +87,15 @@ router.put('/:id', verifyToken, upload.single('image'), async (req, res) => {
       return res.status(404).json({ error: 'Menu item not found' });
     }
 
-    // Upload new image to Google Drive if provided
+    // Upload new image if provided
     if (req.file) {
-      const fileMetadata = {
-        name: `${Date.now()}-${req.file.originalname}`,
-        parents: [process.env.GOOGLE_DRIVE_FOLDER_ID],
-      };
-      const media = {
-        mimeType: req.file.mimetype,
-        body: require('stream').Readable.from(req.file.buffer),
-      };
-      const response = await drive.files.create({
-        resource: fileMetadata,
-        media: media,
-        fields: 'id', // Only need the ID now
-      });
+      // Delete old image from Google Drive if exists
+      if (menuItem.image) {
+        await googleDriveService.deleteFile(menuItem.image);
+      }
       
-      const fileId = response.data.id;
-      
-      // Make the file publicly accessible
-      await drive.permissions.create({
-        fileId: fileId,
-        requestBody: {
-          role: 'reader',
-          type: 'anyone',
-        },
-      });
-      
-      // Use Google's CDN URL for optimal performance
-      imageUrl = `https://lh3.googleusercontent.com/d/${fileId}=s500`;
+      // Upload new image
+      imageUrl = await googleDriveService.uploadImage(req.file);
     }
 
     // Update menu item
@@ -181,12 +130,21 @@ router.put('/:id', verifyToken, upload.single('image'), async (req, res) => {
 
     // Fetch updated item
     const result = await MenuItem.findByPk(id, {
-      include: [{ model: ItemSize, as: 'sizes', where: { isActive: true }, required: false }],
+      include: [{ 
+        model: ItemSize, 
+        as: 'sizes', 
+        where: { isActive: true }, 
+        required: false 
+      }],
     });
+
     res.json(result);
   } catch (error) {
-    console.error('Error updating menu item:', error.message);
-    res.status(400).json({ error: 'Failed to update menu item' });
+    console.error('Error updating menu item:', error);
+    res.status(400).json({ 
+      error: 'Failed to update menu item',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 });
 
