@@ -905,6 +905,8 @@
             >
               Have a custom design in mind?
             </h4>
+
+            <!-- Upload Area -->
             <div
               class="upload-area"
               id="uploadArea"
@@ -930,6 +932,7 @@
               <input
                 type="file"
                 id="imageUpload"
+                name="image"
                 accept="image/*"
                 style="display: none"
               />
@@ -945,6 +948,8 @@
                 Upload Image Reference
               </div>
             </div>
+
+            <!-- Image Preview (separate from form) -->
             <div
               id="uploadedImage"
               style="display: none; margin-top: 16px; text-align: center"
@@ -974,6 +979,91 @@
                 </button>
               </div>
             </div>
+
+            <!-- Order Form (separate from image preview) -->
+            <div id="imageOrderForm" style="display: none; margin-top: 16px">
+              <form
+                id="imageOrderFormContent"
+                class="p-3"
+                style="background: #fafafa; border-radius: 8px"
+              >
+                <!-- Show uploaded file info -->
+                <div class="mb-3">
+                  <label class="form-label"
+                    ><strong>Reference Image</strong></label
+                  >
+                  <div
+                    style="
+                      padding: 10px;
+                      background: #f0f0f0;
+                      border-radius: 4px;
+                      border: 1px solid #ddd;
+                    "
+                  >
+                    <span
+                      id="uploadedFileName"
+                      style="font-weight: bold; color: #2c9045"
+                      >No image selected</span
+                    >
+                  </div>
+                </div>
+
+                <div class="mb-3">
+                  <label for="imageFlavor" class="form-label">Flavor *</label>
+                  <input
+                    type="text"
+                    id="imageFlavor"
+                    class="form-control"
+                    maxlength="50"
+                    placeholder="e.g., Chocolate"
+                    required
+                  />
+                </div>
+                <div class="mb-3">
+                  <label for="imageMessage" class="form-label">Message</label>
+                  <input
+                    type="text"
+                    id="imageMessage"
+                    class="form-control"
+                    maxlength="100"
+                    placeholder="e.g., Happy Birthday"
+                  />
+                  <div class="text-end">
+                    <span id="messageCharCount">0</span>/100 characters
+                  </div>
+                </div>
+                <div class="mb-3">
+                  <label for="eventDate" class="form-label">Event Date *</label>
+                  <input
+                    type="date"
+                    id="eventDate"
+                    class="form-control"
+                    required
+                  />
+                </div>
+                <div class="mb-3">
+                  <label for="imageNotes" class="form-label"
+                    >Additional Notes</label
+                  >
+                  <textarea
+                    id="imageNotes"
+                    class="form-control"
+                    maxlength="200"
+                    rows="3"
+                  ></textarea>
+                  <div class="text-end">
+                    <span id="notesCharCount">0</span>/200 characters
+                  </div>
+                </div>
+                <button
+                  type="submit"
+                  class="btn"
+                  style="background-color: #2c9045; color: white"
+                >
+                  Submit Image Order
+                </button>
+              </form>
+            </div>
           </div>
         </div>
       </div>
@@ -988,6 +1078,8 @@
     <script src="/scripts/include-html.js"></script>
     <script src="/scripts/update-navbar.js"></script>
     <!-- Custom JavaScript -->
+    <script src="/scripts/cake-renderer.js"></script>
     <script src="/scripts/custom-cake.js"></script>
+    <script src="/scripts/custom-cake-controller.js"></script>
   </body>
 </html>

@@ -1,10 +1,9 @@
-
 const { Sequelize, DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 
 // Import models
 const User = require('./user-model');
-const ResetToken = require('./reset-token-model'); // Added ResetToken
+const ResetToken = require('./reset-token-model');
 const MenuItem = require('./menu-item-model')(sequelize, DataTypes);
 const ItemSize = require('./item-size-model')(sequelize, DataTypes);
 const Cart = require('./cart-model')(sequelize, DataTypes);
@@ -12,6 +11,7 @@ const CartItem = require('./cart-item-model')(sequelize, DataTypes);
 const Order = require('./order-model')(sequelize, DataTypes);
 const OrderItem = require('./order-item-model')(sequelize, DataTypes);
 const CustomCakeOrder = require('./custom-cake-model');
+const ImageBasedOrder = require('./image-based-order-model'); // Add this line
 
 // MenuItem ↔ ItemSize
 MenuItem.hasMany(ItemSize, { 
@@ -130,6 +130,22 @@ CustomCakeOrder.belongsTo(User, {
   constraintName: 'fk_customcakeorder_user_belongsTo' 
 });
 
+// User ↔ ImageBasedOrder (ADD THIS ASSOCIATION)
+User.hasMany(ImageBasedOrder, { 
+  foreignKey: 'userID', 
+  as: 'imageBasedOrders', 
+  constraints: true, 
+  foreignKeyConstraint: true, 
+  constraintName: 'fk_imagebasedorder_user_hasMany' 
+});
+ImageBasedOrder.belongsTo(User, { 
+  foreignKey: 'userID', 
+  as: 'customer', 
+  constraints: true, 
+  foreignKeyConstraint: true, 
+  constraintName: 'fk_imagebasedorder_user_belongsTo' 
+});
+
 // CartItem ↔ CustomCakeOrder
 CustomCakeOrder.hasMany(CartItem, { 
   foreignKey: 'customCakeId', 
@@ -177,7 +193,7 @@ ResetToken.belongsTo(User, {
 module.exports = {
   sequelize,
   User,
-  ResetToken, // Added ResetToken
+  ResetToken,
   MenuItem,
   ItemSize,
   Cart,
@@ -185,4 +201,5 @@ module.exports = {
   Order,
   OrderItem,
   CustomCakeOrder,
+  ImageBasedOrder, // Add this to exports
 };

@@ -1,7 +1,6 @@
-/**
- * scripts/add-menu.js
- * Admin-side menu management script
- */
+//admin menu side script (adding, editing, deleting menu items)
+
+
 const API_BASE_URL = window.location.origin === 'http://localhost:3000'
   ? 'http://localhost:3000'
   : 'https://capstone-project-slisty.onrender.com';
