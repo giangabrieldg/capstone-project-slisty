@@ -12,6 +12,7 @@
     --line-color: #d1d5db;
     --text-color: #374151;
     --yellow-color: #facc15;
+
 }
 
 /* Main section styles */
@@ -151,8 +152,6 @@
     color: #666;
     margin-bottom: 1rem;
     display: -webkit-box;
-    -webkit-line-clamp: 2;
-    /* Reduced to 2 lines for cleaner look */
     -webkit-box-orient: vertical;
     overflow: hidden;
     line-height: 1.4;

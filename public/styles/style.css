@@ -6,6 +6,7 @@
     --background-color: #FFFBF0;
     --secodary-background-color: #F5F1E9;
     --sidebar-hover-color: #A8D9B0;
+    --hover-color: #d3ad30;
     --text-color: #2D2D2D;
     --secondary-text-color: #5e5d5d;
     --white-text-color: #F9F6EE;
@@ -89,8 +90,8 @@ body {
 .navbar-nav .nav-link:hover,
 .navbar-nav .nav-link.active,
 .icon-btn:hover {
-    color: var(--primary-color);
-    background-color: var(--sidebar-hover-color);
+    color: var(--hover-color);
+    background-color: var(--hover-color);
     border-radius: 0.375rem;
 }
 
@@ -107,7 +108,7 @@ body {
 }
 
 .icon-btn:hover svg {
-    stroke: var(--primary-color);
+    stroke: var(--hover-color);
 }
 
 /* Hero Section */
