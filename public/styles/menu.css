@@ -9,10 +9,12 @@
     --font-poppins: 'Poppins', sans-serif;
     --font-baloo: 'Baloo 2', sans-serif;
     --light-green: #E6F0E6;
+    --line-color: #d1d5db;
+    --text-color: #374151;
+    --yellow-color: #facc15;
 }
 
-/* main section styles */
-
+/* Main section styles */
 .menu-section {
     background-color: var(--bg-color);
     padding: 3rem 0;
@@ -21,190 +23,214 @@
 .menu-title {
     font-size: 2rem;
     font-family: var(--font-poppins);
-    color: var(--text-color);
-    font-weight: 500;
+    color: var(--primary-color);
+    font-weight: 600;
+    border-left: 6px solid var(--yellow-color);
+    padding-left: 0.75rem;
 }
 
-/* menu sidebar styles */
+/* Menu sidebar styles */
 .sidebar {
-    border-radius: 8px;
+    background: var(--secondary-bg-color);
+    border: 1px solid var(--line-color);
+    border-radius: 12px;
     padding: 1.5rem;
-    margin-bottom: 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .sidebar-title {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
     font-family: var(--font-poppins);
     color: var(--text-color);
-    font-weight: 500;
+    font-weight: 600;
+    margin-bottom: 1rem;
 }
 
 .sidebar-item {
     font-size: 1rem;
     font-family: var(--font-poppins);
     color: var(--text-color);
-    padding: 0.75rem 1rem;
-    border-radius: 4px;
+    padding: 0.6rem 1rem;
+    border-radius: 6px;
     transition: all 0.3s ease;
     text-decoration: none;
+    display: block;
 }
 
-.sidebar-item:hover {
-    background-color: var(--secondary-color);
-    color: var(--primary-color);
-    transform: translateX(5px);
-}
-
+.sidebar-item:hover,
 .sidebar-item.active {
     background-color: var(--secondary-color);
-    color: white;
-    transform: translateX(5px);
+    color: var(--primary-color);
+    font-weight: 500;
+    transform: translateX(4px);
 }
 
+/* Search and sort controls */
 .search-input,
 .sort-select {
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--line-color);
+    border-radius: 8px;
+    padding: 0.6rem 1rem;
     font-family: var(--font-poppins);
+    font-size: 0.95rem;
 }
 
-.search-input {
-    min-width: 200px;
+.search-input:focus,
+.sort-select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(44, 144, 69, 0.2);
 }
 
-.sort-select {
-    min-width: 150px;
-}
-
-/* item cards styles */
-
+/* Menu card styles */
 .card {
     border: none;
-    border-radius: 12px;
+    border-radius: 16px;
     background-color: var(--secondary-bg-color);
     transition: all 0.3s ease;
     overflow: hidden;
-    padding: 1rem;
-    width: 100%;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     height: 100%;
-    display: flex;
-    flex-direction: column;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.card:hover {
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-    transform: translateY(-5px);
 }
 
 .menu-image-wrapper {
     position: relative;
     width: 100%;
-    height: 250px;
+    height: 220px;
     overflow: hidden;
-    border-radius: 8px 8px 0 0;
+    border-radius: 12px 12px 0 0;
+    background-color: var(--secondary-bg-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
+/* Option 1: Show full image without cropping */
 .card-img-top {
     width: 100%;
     height: 100%;
+    object-fit: contain;
+    /* Changed from cover to contain */
+    display: block;
+    padding: 8px;
+    /* Add small padding to prevent touching edges */
+}
+
+/* Option 2: If you prefer slight cropping but better centered */
+.card-img-top.crop-center {
+    width: 100%;
+    height: 100%;
     object-fit: cover;
-    object-position: center;
-    border-radius: 8px 8px 0 0;
+    object-position: center center;
+    /* Better centering */
+    display: block;
 }
 
 .card-body {
-    flex-grow: 1;
+    padding: 1.25rem;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
-    padding: 1rem;
+    height: calc(100% - 220px);
+}
+
+.card-content {
+    flex-grow: 1;
 }
 
 .card-title {
     font-family: var(--font-poppins);
     font-size: 1.25rem;
     font-weight: 600;
-    margin-bottom: 0.5rem;
-    color: #333;
+    margin-bottom: 0.75rem;
+    color: var(--text-color);
+    line-height: 1.3;
+}
+
+.card-text.description {
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 1rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    /* Reduced to 2 lines for cleaner look */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-height: 1.4;
+}
+
+.card-details {
+    margin-top: auto;
+    padding-top: 0.75rem;
+}
+
+/* Improved price and stock alignment */
+.price-stock-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    background-color: rgba(44, 144, 69, 0.05);
+    border-radius: 8px;
+    border-left: 3px solid var(--primary-color);
 }
 
 .card-text.price,
 .card-text.stock {
-    white-space: nowrap;
-    font-family: var(--font-poppins);
-    font-size: 0.95rem;
-    color: #444;
-    margin-bottom: 0.5rem;
-}
-
-.card-details {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-}
-
-/* New button styles */
-.btn-primary {
-    background-color: var(--primary-color);
-    border: none;
-    border-radius: 6px;
-    padding: 0.5rem 1rem;
-    font-family: var(--font-poppins);
     font-size: 0.9rem;
-    font-weight: 500;
-    color: white;
-    text-align: center;
-    text-decoration: none;
-    transition: background-color 0.3s ease, transform 0.2s ease;
-    align-self: flex-start;
+    color: var(--text-color);
+    margin: 0;
+    font-family: var(--font-poppins);
 }
 
-.btn-primary:hover {
-    background-color: #247A3A;
+.card-text.price strong,
+.card-text.stock strong {
+    color: var(--primary-color);
+    font-weight: 600;
+    display: inline-block;
+    min-width: 50px;
+}
+
+.card-text.price {
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+/* Buttons */
+.view-details-btn {
+    background: transparent;
+    color: var(--primary-color);
+    border: 2px solid var(--primary-color);
+    padding: 0.6rem 1.5rem;
+    font-family: var(--font-poppins);
+    font-weight: 600;
+    font-size: 0.95rem;
+    border-radius: 2rem;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    display: inline-block;
+    margin-top: 0.5rem;
+}
+
+.view-details-btn:hover {
+    background: var(--primary-color);
+    color: #fff;
     transform: translateY(-2px);
 }
 
-.btn-primary.disabled {
-    background-color: #B0B0B0;
-    color: #E0E0E0;
+.view-details-btn.disabled {
+    border-color: var(--line-color);
+    color: var(--line-color);
+    background: transparent;
     cursor: not-allowed;
     transform: none;
+    pointer-events: none;
+    opacity: 0.6;
 }
 
-.menu-section .row {
-    display: flex;
-    align-items: stretch;
-}
 
-@media (min-width: 992px) {
-    .col-lg-4 {
-        flex: 0 0 30%;
-        max-width: 30%;
-        display: flex;
-    }
-
-    .menu-image-wrapper {
-        height: 250px;
-    }
-
-    .menu-card {
-        margin-bottom: 1.5rem;
-    }
-
-    .row {
-        margin-left: -0.75rem;
-        margin-right: -0.75rem;
-    }
-
-    .col-lg-4 {
-        padding-left: 0.75rem;
-        padding-right: 0.75rem;
-    }
-}
-
-@media (max-width: 992px) {
+/* Responsive design */
+@media (max-width: 991px) {
     .sidebar {
         margin-bottom: 2rem;
         padding-top: 2rem;
@@ -220,6 +246,10 @@
 
     .menu-image-wrapper {
         height: 200px;
+    }
+
+    .card-body {
+        height: calc(100% - 200px);
     }
 }
 
@@ -249,12 +279,8 @@
         height: 180px;
     }
 
-    .menu-name {
-        font-size: 1.1rem;
-    }
-
-    .menu-price {
-        font-size: 0.9rem;
+    .card-body {
+        height: calc(100% - 180px);
     }
 }
 
@@ -267,11 +293,16 @@
         height: 160px;
     }
 
-    .menu-name {
-        font-size: 1rem;
+    .card-body {
+        height: calc(100% - 160px);
     }
+}
 
-    .menu-price {
-        font-size: 0.85rem;
-    }
+/* Alternative minimal card style without price/stock */
+.card.minimal .price-stock-info {
+    display: none;
+}
+
+.card.minimal .card-details {
+    padding-top: 0;
 }

@@ -28,33 +28,46 @@
     <div data-include-html="/includes/navbar.html"></div>
 
     <section class="py-5 product-section">
-      <div class="container">
-        <div class="row g-4 align-items-center">
-          <div class="col-md-6">
-            <div class="product-image-container">
+      <div class="container mt-5">
+        <div class="row g-5 align-items-center product-card">
+          <!-- Product Image -->
+          <div class="col-md-6 text-center">
+            <div class="product-image-container shadow-sm rounded">
               <img
                 src="/assets/placeholder.jpg"
                 alt="Product Image"
-                class="product-image img-fluid"
+                class="product-image img-fluid rounded"
                 id="productImage"
               />
             </div>
           </div>
+
+          <!-- Product Details -->
           <div class="col-md-6">
-            <h1 class="h3 fw-normal text-dark mb-2" id="productName"></h1>
-            <p class="price fw-lighter mb-2" id="productPrice"></p>
+            <h1
+              class="product-title fw-bold text-dark mb-3"
+              id="productName"
+            ></h1>
+            <p class="product-price fs-4 mb-2" id="productPrice"></p>
             <p class="text-muted mb-4" id="productDescription"></p>
 
+            <!-- Stock Indicator -->
+            <p id="stockIndicator" class="stock-indicator mb-3"></p>
+
+            <!-- Size Options -->
             <div class="mb-4" id="sizeContainer">
-              <label class="form-label text-dark">Size</label>
-              <div class="d-flex gap-2" id="sizeButtons"></div>
+              <label class="form-label fw-semibold">Choose Size</label>
+              <div class="d-flex flex-wrap gap-2" id="sizeButtons"></div>
             </div>
 
+            <!-- Quantity Selector -->
             <div class="mb-4 d-flex align-items-center gap-3">
-              <label class="form-label text-dark">Quantity</label>
-              <div class="d-flex align-items-center border rounded">
+              <label class="form-label fw-semibold mb-0">Quantity</label>
+              <div
+                class="d-flex align-items-center border rounded quantity-box"
+              >
                 <button type="button" class="quantity-btn" id="decreaseQty">
-                  -
+                  −
                 </button>
                 <input
                   type="number"
@@ -71,7 +84,12 @@
             </div>
 
             <div class="separator-line mb-4"></div>
-            <button class="add-to-cart-btn" id="addToCart">Add to Cart</button>
+            <button
+              class="add-to-cart-btn btn-lg w-100 shadow-sm"
+              id="addToCart"
+            >
+              Add to Cart
+            </button>
           </div>
         </div>
       </div>
