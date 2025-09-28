@@ -48,7 +48,7 @@ router.post('/forgot-password', async (req, res) => {
 
     // Generate reset token
     const resetToken = jwt.sign(
-      { userID: user.userID, email: user.email },
+      { userID: user.userID },
       process.env.JWT_SECRET,
       { expiresIn: '1h' }
     );
@@ -61,19 +61,12 @@ router.post('/forgot-password', async (req, res) => {
     });
 
     // Send reset email
-    const resetUrl = `${FRONTEND_URL}/customer/reset-password.html?token=${resetToken}&email=${email}`;
-    await sendVerificationEmail(email, resetToken, 'Password Reset Request - Slice N Grind', `
-      <div style="font-family: 'Poppins', sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #2c9045; border-radius: 8px;">
-        <h2 style="color: #2c9045;">Password Reset Request</h2>
-        <p>Click the button below to reset your password:</p>
-        <a href="${resetUrl}" style="display: inline-block; padding: 10px 20px; background-color: #2c9045; color: white; text-decoration: none; border-radius: 4px;">Reset Password</a>
-        <p style="color: #5e5d5d;">This link expires in 1 hour.</p>
-        <p style="color: #5e5d5d;">If you can't click the button, copy this link:</p>
-        <p style="font-size: 12px; word-break: break-all;">${resetUrl}</p>
-        <p style="color: #5e5d5d;">Best regards,<br>Slice N Grind Team</p>
-      </div>
-    `);
+    const emailSent = await sendVerificationEmail(email, resetToken, 'Password Reset Request - Slice N Grind');
+    if (!emailSent) {
+      throw new Error('Failed to send reset email');
+    }
 
+    console.log(`Password reset requested for ${email}`);
     res.status(200).json({ message: 'Password reset link sent to your email' });
   } catch (error) {
     console.error('Error in forgot-password:', error);

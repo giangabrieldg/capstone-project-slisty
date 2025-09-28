@@ -1,9 +1,16 @@
-const gmailService = require('./utils/gmailService');
+// test-email-real.js
+const { sendVerificationEmail, verifyConnection } = require('./utils/sendEmail');
 
-async function test() {
-  console.log('Testing Gmail API...');
-  const result = await gmailService.testConnection();
-  console.log('Result:', result);
+async function testRealEmail() {
+  console.log('Testing real email sending...');
+  
+  const connected = await verifyConnection();
+  console.log('Connected:', connected);
+  
+  if (connected) {
+    // Send to a real email you can check
+    await sendVerificationEmail('your-real-email@gmail.com', 'test-token-123', 'Test Email from Localhost');
+  }
 }
 
-test();
+testRealEmail();
