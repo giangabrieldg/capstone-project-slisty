@@ -35,6 +35,7 @@ const upload = multer({
 });
 
 // POST /api/custom-cake/create - Create a new custom cake order (3D design)
+// POST /api/custom-cake/create - Create a new custom cake order (3D design)
 router.post('/create', verifyToken, upload.fields([
   { name: 'referenceImage', maxCount: 1 },
   { name: 'designImage', maxCount: 1 }
@@ -43,28 +44,46 @@ router.post('/create', verifyToken, upload.fields([
     const {
       size, cakeColor, icingStyle, icingColor, filling, bottomBorder, topBorder,
       bottomBorderColor, topBorderColor, decorations, flowerType, customText,
-      messageChoice, toppingsColor, price
+      messageChoice, toppingsColor, price, requiresReview = 'false' // Add this new field
     } = req.body;
 
     // Validate required fields
     if (!size || !cakeColor || !icingStyle || !icingColor || !filling || !bottomBorder ||
         !topBorder || !bottomBorderColor || !topBorderColor || !decorations ||
-        !messageChoice || !toppingsColor || !price) {
+        !messageChoice || !toppingsColor) {
       return res.status(400).json({ success: false, message: 'Missing required fields' });
+    }
+
+    // Determine if this requires admin review
+    const needsReview = requiresReview === 'true';
+    
+    // If immediate checkout, price is required
+    if (!needsReview && (!price || isNaN(parseFloat(price)))) {
+      return res.status(400).json({ success: false, message: 'Price is required for immediate checkout' });
     }
 
     let referenceImageUrl = null;
     let designImageUrl = null;
 
     // Upload reference image to Google Drive if provided
-    if (req.files.referenceImage) {
+    if (req.files?.referenceImage) {
       referenceImageUrl = await googleDriveService.uploadImage(req.files.referenceImage[0]);
     }
 
     // Upload design image to Google Drive if provided
-    if (req.files.designImage) {
+    if (req.files?.designImage) {
       designImageUrl = await googleDriveService.uploadImage(req.files.designImage[0]);
     }
+
+    // Set status based on whether review is needed
+    const status = needsReview ? 'Pending Review' : 'Ready for Checkout';
+
+    if (!needsReview && (!price || isNaN(parseFloat(price)) || parseFloat(price) <= 0)) {
+  return res.status(400).json({ 
+    success: false, 
+    message: 'Valid price is required for immediate checkout' 
+  });
+}
 
     // Create custom cake order
     const customCakeOrder = await CustomCakeOrder.create({
@@ -85,15 +104,21 @@ router.post('/create', verifyToken, upload.fields([
       toppingsColor,
       referenceImageUrl,
       designImageUrl,
-      price: parseFloat(price),
-      status: 'Pending Review',
+      price: price ? parseFloat(price) : null,
+      status: status,
+      payment_status: 'pending',
+      deliveryDate: req.body.deliveryDate || null
     });
 
-    res.status(201).json({
-      success: true,
-      message: 'Custom cake order created successfully',
-      customCakeId: customCakeOrder.customCakeId,
-    });
+   res.status(201).json({
+    success: true,
+    message: needsReview 
+      ? 'Custom cake order created successfully and submitted for review' 
+      : 'Custom cake order created successfully', // Removed "ready for checkout"
+    customCakeId: customCakeOrder.customCakeId,
+    status: customCakeOrder.status,
+    requiresReview: needsReview
+  });
   } catch (error) {
     console.error('Error creating custom cake order:', error);
     res.status(500).json({ success: false, message: 'Server error', error: error.message });
@@ -195,6 +220,7 @@ router.get('/admin/orders', verifyToken, async (req, res) => {
         name: order.customer.name,
         email: order.customer.email,
       } : null,
+      deliveryDate: order.deliveryDate
     }));
     res.json({ success: true, orders: formattedOrders });
   } catch (error) {
@@ -229,6 +255,7 @@ router.get('/admin/image-orders', verifyToken, async (req, res) => {
         name: order.customer.name,
         email: order.customer.email,
       } : null,
+      deliveryDate: order.deliveryDate
     }));
     
     res.json({ success: true, orders: formattedOrders });
@@ -252,7 +279,8 @@ router.put('/admin/orders/:customCakeId', verifyToken, async (req, res) => {
       return res.status(403).json({ success: false, message: 'Unauthorized: Admin or staff access required' });
     }
     const { status } = req.body;
-    if (!['Pending Review', 'Feasible', 'Not Feasible'].includes(status)) {
+    // Update valid statuses for custom cakes
+    if (!['Pending', 'Ready', 'In Progress', 'Ready for Pickup/Delivery', 'Completed', 'Cancelled'].includes(status)) {
       return res.status(400).json({ success: false, message: 'Invalid status' });
     }
     const order = await CustomCakeOrder.findByPk(req.params.customCakeId);
@@ -274,7 +302,8 @@ router.put('/image-orders/:orderId', verifyToken, async (req, res) => {
       return res.status(403).json({ success: false, message: 'Unauthorized: Admin or staff access required' });
     }
     const { status } = req.body;
-    if (!['Pending Review', 'Feasible', 'Not Feasible'].includes(status)) {
+    // Updated valid statuses for image-based orders
+    if (!['Pending Review', 'Feasible', 'Not Feasible', 'Ready', 'In Progress', 'Ready for Pickup/Delivery', 'Completed', 'Cancelled'].includes(status)) {
       return res.status(400).json({ success: false, message: 'Invalid status' });
     }
     const order = await ImageBasedOrder.findByPk(req.params.orderId);
@@ -319,6 +348,89 @@ router.get('/image-orders/:orderId', verifyToken, async (req, res) => {
     res.json({ success: true, order });
   } catch (error) {
     console.error('Error fetching image-based order:', error);
+    res.status(500).json({ success: false, message: 'Server error', error: error.message });
+  }
+});
+
+// PUT /api/custom-cake/admin/orders/:customCakeId/price - Set price for custom cake order
+router.put('/admin/orders/:customCakeId/price', verifyToken, async (req, res) => {
+  try {
+    if (!['admin', 'staff'].includes(req.user.userLevel.toLowerCase())) {
+      return res.status(403).json({ success: false, message: 'Unauthorized: Admin or staff access required' });
+    }
+
+    const { price, status } = req.body;
+    
+    if (!price || isNaN(parseFloat(price)) || parseFloat(price) < 0) {
+      return res.status(400).json({ success: false, message: 'Valid price is required' });
+    }
+
+    const order = await CustomCakeOrder.findByPk(req.params.customCakeId);
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Custom cake order not found' });
+    }
+
+    const updateData = { price: parseFloat(price) };
+    
+    // If status is provided and valid, update it too
+    if (status && ['Pending Review', 'Feasible', 'Not Feasible', 'Ready for Checkout'].includes(status)) {
+      updateData.status = status;
+    } else {
+      // Auto-set status to 'Ready for Checkout' when price is set
+      updateData.status = 'Ready for Checkout';
+    }
+
+    await order.update(updateData);
+    
+    res.json({ 
+      success: true, 
+      message: 'Price set successfully', 
+      order: {
+        customCakeId: order.customCakeId,
+        price: order.price,
+        status: order.status
+      }
+    });
+  } catch (error) {
+    console.error('Error setting custom cake order price:', error);
+    res.status(500).json({ success: false, message: 'Server error', error: error.message });
+  }
+});
+
+// PUT /api/custom-cake/admin/image-orders/:orderId/price - Set price for image-based order
+router.put('/admin/image-orders/:orderId/price', verifyToken, async (req, res) => {
+  try {
+    if (!['admin', 'staff'].includes(req.user.userLevel.toLowerCase())) {
+      return res.status(403).json({ success: false, message: 'Unauthorized: Admin or staff access required' });
+    }
+
+    const { price } = req.body;
+    
+    if (!price || isNaN(parseFloat(price)) || parseFloat(price) < 0) {
+      return res.status(400).json({ success: false, message: 'Valid price is required' });
+    }
+
+    const order = await ImageBasedOrder.findByPk(req.params.orderId);
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Image-based order not found' });
+    }
+
+    await order.update({
+      price: parseFloat(price),
+      status: 'Feasible' // Automatically mark as feasible when price is set
+    });
+    
+    res.json({ 
+      success: true, 
+      message: 'Price set successfully and marked as feasible', 
+      order: {
+        id: order.id,
+        price: order.price,
+        status: order.status
+      }
+    });
+  } catch (error) {
+    console.error('Error setting image-based order price:', error);
     res.status(500).json({ success: false, message: 'Server error', error: error.message });
   }
 });

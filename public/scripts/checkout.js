@@ -22,7 +22,15 @@ class CheckoutManager {
    */
   init() {
     console.log('Initializing checkout manager...');
-    this.loadCartItems();
+
+    this.isCustomCakeCheckout = this.checkForCustomCake();
+  
+    if (this.isCustomCakeCheckout) {
+      this.loadCustomCakeOrder();
+    } else {
+        this.loadCartItems();
+    }
+
     this.loadCustomerProfile();
     this.setupEventListeners();
     this.renderCheckoutForm();
@@ -59,14 +67,79 @@ class CheckoutManager {
     });
   }
 
+    checkForCustomCake() {
+    const urlParams = new URLSearchParams(window.location.search);
+    this.customCakeData = {
+      customCakeId: urlParams.get('customCakeId'),
+      isImageOrder: urlParams.get('isImageOrder') === 'true',
+      amount: parseFloat(urlParams.get('amount'))
+    };
+    
+    return !!this.customCakeData.customCakeId;
+  }
+
+  //load custom cake order details
+  async loadCustomCakeOrder() {
+  const token = localStorage.getItem('token');
+  if (!token) return;
+
+  try {
+    // Use the correct endpoint based on order type
+    const endpoint = this.customCakeData.isImageOrder 
+      ? `/api/custom-cake/image-orders/${this.customCakeData.customCakeId}`
+      : `/api/custom-cake/${this.customCakeData.customCakeId}`;
+    
+    const response = await fetch(endpoint, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    
+    if (!response.ok) throw new Error('Failed to load custom cake order');
+    
+    const data = await response.json();
+    this.customCakeOrder = data.order;
+    
+    // Create a mock cart item for the custom cake
+    this.cartItems = [{
+      menuId: null,
+      name: this.customCakeData.isImageOrder ? 'Custom Image Cake' : '3D Custom Cake',
+      price: this.customCakeData.amount,
+      quantity: 1,
+      size: 'Custom',
+      isCustomCake: true,
+      customCakeId: this.customCakeData.customCakeId,
+      isImageOrder: this.customCakeData.isImageOrder
+    }];
+    
+    this.renderCartSummary();
+  } catch (error) {
+    console.error('Error loading custom cake:', error);
+    alert('Error loading custom cake order. Please try again.');
+  }
+}
   /**
    * Starts polling to check payment status and handle return flow.
    */
   startPaymentPolling() {
+    let pollCount = 0;
+    const maxPolls = 60; // 5 minutes (60 * 5 seconds)
+    
     const pollInterval = setInterval(async () => {
+      pollCount++;
+      
       const pendingPayment = sessionStorage.getItem('pendingPayment');
-      if (!pendingPayment) {
+      if (!pendingPayment || pollCount >= maxPolls) {
         clearInterval(pollInterval);
+        
+        if (pollCount >= maxPolls) {
+          console.warn('Polling timeout reached');
+          const statusMessage = document.getElementById('paymentStatusMessage');
+          if (statusMessage) {
+            statusMessage.classList.add('alert-warning', 'show');
+            statusMessage.classList.remove('d-none', 'alert-info');
+            document.getElementById('paymentStatusText').innerHTML = 
+              'Payment verification is taking longer than expected. Please check your <a href="/public/customer/orders.html">orders page</a>.';
+          }
+        }
         return;
       }
 
@@ -426,6 +499,12 @@ class CheckoutManager {
    * Handles order placement and payment processing.
    */
   async placeOrder() {
+
+    if (this.isCustomCakeCheckout) {
+    await this.placeCustomCakeOrder();
+    return;
+  }
+
     if (this.cartItems.length === 0) {
       alert('Your cart is empty. Please add items before placing an order.');
       return;
@@ -624,6 +703,174 @@ class CheckoutManager {
     }
   }
 
+  async placeCustomCakeOrder() {
+  const profile = this.customerProfile;
+  const requiredFields = ['name', 'email', 'phone'];
+  const missingFields = requiredFields.filter(field => !profile[field]);
+  
+  if (missingFields.length > 0) {
+    alert(`Please complete your profile (${missingFields.join(', ')}) before placing an order.`);
+    window.location.href = '/public/customer/profile.html';
+    return;
+  }
+
+  if (this.checkoutData.deliveryMethod === 'delivery' && !profile.address) {
+    alert('Please provide a delivery address in your profile for home delivery.');
+    window.location.href = '/public/customer/profile.html';
+    return;
+  }
+
+  if (!this.checkoutData.pickupDate) {
+    alert('Please select a pickup or delivery date.');
+    return;
+  }
+
+  const token = localStorage.getItem('token');
+  if (!token) {
+    alert('Session expired. Please login again.');
+    window.location.href = '/public/customer/login.html';
+    return;
+  }
+
+  try {
+    const checkoutBtn = document.querySelector('.checkout-btn');
+    if (checkoutBtn) {
+      checkoutBtn.disabled = true;
+      checkoutBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+    }
+
+    const statusMessage = document.getElementById('paymentStatusMessage');
+    if (statusMessage) {
+      statusMessage.classList.remove('d-none');
+      statusMessage.classList.add('show');
+    }
+
+    // Prepare custom cake order data
+    const orderData = {
+      customCakeId: this.customCakeData.customCakeId,
+      isImageOrder: this.customCakeData.isImageOrder,
+      totalAmount: this.customCakeData.amount,
+      paymentMethod: this.checkoutData.paymentMethod,
+      deliveryMethod: this.checkoutData.deliveryMethod,
+      pickupDate: this.checkoutData.pickupDate,
+      deliveryDate: this.checkoutData.pickupDate, // Add this line
+      customerInfo: {
+        fullName: profile.name,
+        email: profile.email,
+        phone: profile.phone,
+        deliveryAddress: this.checkoutData.deliveryMethod === 'delivery' ? profile.address : null
+      }
+    };
+
+    sessionStorage.setItem('pendingCustomCakeOrder', JSON.stringify(orderData));
+
+    if (this.checkoutData.paymentMethod === 'gcash') {
+      if (this.customCakeData.amount * 100 < 2000) {
+        alert('GCash payments require a minimum amount of ₱20.00.');
+        if (checkoutBtn) {
+          checkoutBtn.disabled = false;
+          checkoutBtn.innerHTML = '<i class="fas fa-check"></i> Place Order';
+        }
+        if (statusMessage) {
+          statusMessage.classList.add('d-none');
+          statusMessage.classList.remove('show');
+        }
+        return;
+      }
+
+      console.log('Initiating GCash payment for custom cake...');
+      const successUrl = `${window.location.origin}/public/customer/success.html`;
+      const failedUrl = `${window.location.origin}/public/customer/failed.html`;
+
+      const paymentResponse = await fetch('/api/payment/create-custom-cake-payment', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          customCakeId: this.customCakeData.customCakeId,
+          isImageOrder: this.customCakeData.isImageOrder,
+          amount: this.customCakeData.amount * 100,
+          description: this.customCakeData.isImageOrder ? 'Custom Image Cake Order' : '3D Custom Cake Order',
+          deliveryDate: this.checkoutData.pickupDate,
+          redirect: {
+            success: successUrl,
+            failed: failedUrl
+          }
+        })
+      });
+
+      const paymentData = await paymentResponse.json();
+      if (!paymentResponse.ok) {
+        throw new Error(paymentData.error || 'Payment processing failed');
+      }
+
+      sessionStorage.setItem('pendingPayment', JSON.stringify({
+        paymentId: paymentData.paymentId,
+        timestamp: Date.now(),
+        paymentMethod: 'gcash',
+        isCustomCake: true
+      }));
+
+      const paymentWindow = window.open(
+        paymentData.checkoutUrl,
+        'GCashPayment',
+        'width=500,height=800,scrollbars=yes'
+      );
+
+      this.startPaymentPolling();
+
+      if (paymentWindow) {
+        paymentWindow.focus();
+      }
+
+      if (statusMessage) {
+        document.getElementById('paymentStatusText').textContent = 
+          'Please complete the GCash payment in the popup window...';
+      }
+
+    } else if (this.checkoutData.paymentMethod === 'cash') {
+      if (statusMessage) {
+        statusMessage.classList.remove('d-none');
+        statusMessage.classList.add('show');
+        document.getElementById('paymentStatusText').textContent = 
+          'Processing your custom cake order...';
+      }
+      
+      const response = await fetch('/api/payment/process-cash-custom-cake', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          customCakeId: this.customCakeData.customCakeId,
+          isImageOrder: this.customCakeData.isImageOrder,
+          pickupDate: this.checkoutData.pickupDate
+        })
+      });
+      
+      if (!response.ok) throw new Error('Custom cake order creation failed');
+      const result = await response.json();
+      window.location.href = `/public/customer/success.html?orderId=${this.customCakeData.customCakeId}&isCustomCake=true`;
+    }
+
+  } catch (error) {
+    console.error('Custom cake order placement failed:', error);
+    alert(`Order failed: ${error.message}. Please try again.`);
+    const checkoutBtn = document.querySelector('.checkout-btn');
+    if (checkoutBtn) {
+      checkoutBtn.disabled = false;
+      checkoutBtn.innerHTML = '<i class="fas fa-check"></i> Place Order';
+    }
+    if (statusMessage) {
+      statusMessage.classList.add('d-none');
+      statusMessage.classList.remove('show');
+    }
+  }
+}
+
   /**
    * Handles the return flow from PayMongo payment:
    * 1. Checks for pending payment data
@@ -633,30 +880,78 @@ class CheckoutManager {
    * 5. Cleans up session storage
    */
   async handleReturnFromPaymongo() {
-    const pendingPayment = sessionStorage.getItem('pendingPayment');
-    const pendingOrder = sessionStorage.getItem('pendingOrder');
-    if (!pendingPayment || !pendingOrder) return;
+  const pendingPayment = sessionStorage.getItem('pendingPayment');
+  const pendingOrder = sessionStorage.getItem('pendingOrder');
+  const pendingCustomCakeOrder = sessionStorage.getItem('pendingCustomCakeOrder');
+  
+  if (!pendingPayment || (!pendingOrder && !pendingCustomCakeOrder)) {
+    console.log('No pending payment found');
+    return;
+  }
 
-    try {
-      const { paymentId } = JSON.parse(pendingPayment);
-      const orderData = JSON.parse(pendingOrder);
-      const token = localStorage.getItem('token');
+  try {
+    const paymentData = JSON.parse(pendingPayment);
+    const { paymentId, isCustomCake } = paymentData;
+    const token = localStorage.getItem('token');
 
-      // Verify payment status
-      const response = await fetch(`/api/payment/verify-payment/${paymentId}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      
-      if (!response.ok) {
-        throw new Error(await response.text() || 'Payment verification failed');
+    console.log('Verifying payment:', { paymentId, isCustomCake });
+
+    // Verify payment status with retry logic
+    let retries = 3;
+    let response;
+    
+    while (retries > 0) {
+      try {
+        response = await fetch(`/api/payment/verify-payment/${paymentId}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (response.ok) break;
+        
+        retries--;
+        if (retries > 0) {
+          await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2s before retry
+        }
+      } catch (err) {
+        retries--;
+        if (retries === 0) throw err;
+        await new Promise(resolve => setTimeout(resolve, 2000));
       }
+    }
+    
+    if (!response.ok) {
+      throw new Error('Payment verification failed after retries');
+    }
 
-      const result = await response.json();
+    const result = await response.json();
+    console.log('Payment verification result:', result);
+    
+    // Handle successful payment
+    if (result.success && result.isPaid) {
       
-      // Handle payment result
-      if (result.success && result.isPaid) {
-        // Update order status
-        const updateResponse = await fetch(`/api/orders/verify-gcash-payment`, {
+      // Handle custom cake orders
+      if (isCustomCake && pendingCustomCakeOrder) {
+        const customCakeData = JSON.parse(pendingCustomCakeOrder);
+        
+        console.log('Custom cake payment verified, redirecting...');
+        
+        // Clear session storage
+        sessionStorage.removeItem('pendingPayment');
+        sessionStorage.removeItem('pendingCustomCakeOrder');
+        
+        // Redirect to success page
+        window.location.href = `/public/customer/success.html?orderId=${customCakeData.customCakeId}&isCustomCake=true`;
+        return;
+      }
+      
+      // Handle regular orders
+      if (pendingOrder) {
+        const orderData = JSON.parse(pendingOrder);
+        
+        console.log('Regular order payment verified, creating/updating order...');
+        
+        // Create or update order
+        const updateResponse = await fetch('/api/orders/verify-gcash-payment', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -669,10 +964,13 @@ class CheckoutManager {
         });
 
         if (!updateResponse.ok) {
-          throw new Error('Failed to update order status');
+          const errorText = await updateResponse.text();
+          throw new Error(`Order creation failed: ${errorText}`);
         }
 
         const { order } = await updateResponse.json();
+        
+        console.log('Order created/updated:', order.orderId);
         
         // Clear session storage
         sessionStorage.removeItem('pendingPayment');
@@ -680,22 +978,37 @@ class CheckoutManager {
         
         // Redirect to success page
         window.location.href = `/public/customer/success.html?orderId=${order.orderId}`;
-        
-      } else if (result.status === 'failed') {
-        // Payment failed - cleanup and redirect
-        sessionStorage.removeItem('pendingPayment');
-        sessionStorage.removeItem('pendingOrder');
-        window.location.href = '/public/customer/failed.html';
       }
-      // Else: payment still pending - do nothing
-
-    } catch (error) {
-      console.error('Payment verification failed:', error);
+      
+    } else if (result.status === 'failed') {
+      // Payment failed
+      console.warn('Payment failed:', result);
       sessionStorage.removeItem('pendingPayment');
       sessionStorage.removeItem('pendingOrder');
+      sessionStorage.removeItem('pendingCustomCakeOrder');
       window.location.href = '/public/customer/failed.html';
+      
+    } else {
+      // Payment still pending
+      console.log('Payment still pending, will retry...');
     }
+
+  } catch (error) {
+    console.error('Payment verification error:', error);
+    
+    // Show error message to user
+    const statusMessage = document.getElementById('paymentStatusMessage');
+    if (statusMessage) {
+      statusMessage.classList.remove('alert-info', 'd-none');
+      statusMessage.classList.add('alert-danger', 'show');
+      document.getElementById('paymentStatusText').textContent = 
+        'Payment verification failed. Please check your orders page or contact support.';
+    }
+    
+    // Don't clear session storage immediately - let polling continue
+    // Only redirect to failed page after polling timeout
   }
+}
 
   /**
    * Cancels an order by ID.

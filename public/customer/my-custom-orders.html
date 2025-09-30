@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Custom Cake Orders - Slice N Grind</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Baloo+2:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles/navbar.css" />
+    <link rel="stylesheet" href="/styles/footer.css" />
+    <link rel="stylesheet" href="/styles/my-custom-orders.css" />
+  </head>
+  <body>
+    <!-- Navbar -->
+    <div data-include-html="/includes/navbar.html"></div>
+
+    <!-- Main Content -->
+    <div class="container-main">
+      <h2 class="page-title">My Custom Cake Orders</h2>
+
+      <div class="table-container">
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th>Order ID</th>
+                <th>Type</th>
+                <th>Details</th>
+                <th>Delivery Date</th>
+                <th>Status</th>
+                <th>Image</th>
+                <th>Price</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="ordersTableBody">
+              <!-- Orders will be populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Image Modal -->
+    <div
+      class="modal fade"
+      id="imageModal"
+      tabindex="-1"
+      aria-labelledby="imageModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="imageModalLabel">Custom Cake Image</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <img
+              src=""
+              class="modal-img"
+              id="modalImage"
+              alt="Custom Cake Image"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div data-include-html="/includes/footer.html"></div>
+
+    <script src="/scripts/include-html.js"></script>
+    <script src="/scripts/update-navbar.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/scripts/custom-cake.js"></script>
+    <script>
+      const apiService = new CakeAPIService();
+
+      // Fetch and display both custom and image-based orders
+      async function fetchCustomOrders() {
+        try {
+          const response = await apiService.getCustomOrders();
+          if (response.success) {
+            populateOrdersTable(
+              response.data.customOrders,
+              response.data.imageOrders
+            );
+          } else {
+            alert(
+              response.message || "Failed to load orders. Please try again."
+            );
+          }
+        } catch (error) {
+          console.error("Error fetching orders:", error);
+          alert("Failed to load orders. Please try again.");
+        }
+      }
+
+      // Populate table with orders
+      function populateOrdersTable(customOrders, imageOrders) {
+        const tableBody = document.getElementById("ordersTableBody");
+        tableBody.innerHTML = "";
+
+        // Custom Cake Orders
+        customOrders.forEach((order) => {
+          const displayOrderId = `CC${String(order.customCakeId).padStart(
+            3,
+            "0"
+          )}`;
+          const statusClass = getStatusClass(order.status, false);
+          const details = `Size: ${order.size}, Flavor: ${order.cakeColor}, Icing: ${order.icingStyle}`;
+          const imageUrl =
+            order.designImageUrl || order.referenceImageUrl || "";
+          const deliveryDate = order.deliveryDate
+            ? new Date(order.deliveryDate).toLocaleDateString()
+            : "Not set";
+
+          const row = document.createElement("tr");
+          row.innerHTML = `
+    <td><span class="order-id">${displayOrderId}</span></td>
+    <td><span class="order-type-badge order-type-3d">3D Custom Cake</span></td>
+    <td><div class="order-details">${details}</div></td>
+    <td><span class="delivery-date">${deliveryDate}</span></td>
+    <td><span class="${statusClass}">${order.status}</span></td>
+    <td>
+      ${
+        imageUrl
+          ? `<button class="btn btn-view-image" onclick="viewImage('${imageUrl}')">View Image</button>`
+          : '<span class="no-image-text">No Image</span>'
+      }
+    </td>
+    <td>${
+      order.price
+        ? `<span class="price">₱${parseFloat(order.price).toFixed(2)}</span>`
+        : '<span class="price-tbd">TBD</span>'
+    }</td>
+    <td>${getActionButtons(order, false)}</td>
+  `;
+          tableBody.appendChild(row);
+        });
+
+        // Image-Based Orders
+        imageOrders.forEach((order) => {
+          const displayOrderId = `RCC${String(order.id).padStart(3, "0")}`;
+          const statusClass = getStatusClass(order.status, true);
+          const details = `Flavor: ${order.flavor}, Event: ${new Date(
+            order.eventDate
+          ).toLocaleDateString()}`;
+          const deliveryDate = order.deliveryDate
+            ? new Date(order.deliveryDate).toLocaleDateString()
+            : "Not set";
+
+          const row = document.createElement("tr");
+          row.innerHTML = `
+    <td><span class="order-id">${displayOrderId}</span></td>
+    <td><span class="order-type-badge order-type-image">Image-Based Cake</span></td>
+    <td><div class="order-details">${details}</div></td>
+    <td><span class="delivery-date">${deliveryDate}</span></td>
+    <td><span class="${statusClass}">${order.status}</span></td>
+    <td>${
+      order.imagePath
+        ? `<button class="btn btn-view-image" onclick="viewImage('${order.imagePath}')">View Image</button>`
+        : '<span class="no-image-text">No Image</span>'
+    }</td>
+    <td>${
+      order.price
+        ? `<span class="price">₱${parseFloat(order.price).toFixed(2)}</span>`
+        : '<span class="price-tbd">TBD</span>'
+    }</td>
+    <td>${getActionButtons(order, true)}</td>
+  `;
+          tableBody.appendChild(row);
+        });
+
+        // Show empty state if no orders
+        if (customOrders.length === 0 && imageOrders.length === 0) {
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td colspan="7" class="text-center py-4">
+              <div class="empty-state">
+                <div class="icon">🎂</div>
+                <h4>No Custom Orders Yet</h4>
+                <p>Start by creating a custom cake order!</p>
+              </div>
+            </td>
+          `;
+          tableBody.appendChild(row);
+        }
+      }
+
+      // Get status class based on status type
+      function getStatusClass(status, isImageOrder) {
+        if (isImageOrder) {
+          switch (status) {
+            case "Feasible":
+            case "Ready":
+              return "status-feasible";
+            case "In Progress":
+            case "Ready for Pickup/Delivery":
+            case "Completed":
+              return "status-completed";
+            case "Not Feasible":
+            case "Cancelled":
+              return "status-not-feasible";
+            default:
+              return "status-pending";
+          }
+        } else {
+          // For 3D custom cakes
+          switch (status) {
+            case "Ready":
+            case "In Progress":
+              return "status-feasible";
+            case "Ready for Pickup/Delivery":
+            case "Completed":
+              return "status-completed";
+            case "Cancelled":
+              return "status-not-feasible";
+            default:
+              return "status-pending";
+          }
+        }
+      }
+
+      // Get action buttons based on order status
+      function getActionButtons(order, isImageOrder) {
+        const orderId = isImageOrder ? order.id : order.customCakeId;
+
+        if (isImageOrder) {
+          // Image-based order actions
+          if (order.status === "Not Feasible" || order.status === "Cancelled") {
+            return `<button class="btn btn-checkout" disabled>Not Available</button>`;
+          } else if (order.status === "Feasible" && order.price) {
+            return `
+          <button class="btn btn-checkout" onclick="checkoutOrder(${orderId}, true)">
+            Checkout Now
+          </button>
+      `;
+          } else {
+            return `<button class="btn btn-checkout" disabled>Awaiting Review</button>`;
+          }
+        } else {
+          // 3D custom cake actions
+          if (order.status === "Ready for Checkout" && order.price) {
+            return `
+          <button class="btn btn-checkout" onclick="checkoutOrder(${orderId}, false)">
+            Checkout Now
+          </button>
+      `;
+          } else if (order.status === "Pending Review") {
+            return `<button class="btn btn-checkout" disabled>Under Review</button>`;
+          } else if (order.status === "Cancelled") {
+            return `<button class="btn btn-checkout" disabled>Cancelled</button>`;
+          } else {
+            return `<button class="btn btn-checkout" disabled>${order.status}</button>`;
+          }
+        }
+      }
+
+      async function checkoutOrder(orderId, isImageOrder) {
+        // Get order details to get the price
+        const orderDetails = await apiService.getOrderDetails(
+          orderId,
+          isImageOrder
+        );
+        if (!orderDetails.success) {
+          throw new Error("Could not retrieve order details");
+        }
+
+        const order = orderDetails.data.order;
+        const amount = order.price;
+
+        // Redirect to checkout with custom cake data
+        window.location.href = `/public/customer/checkout.html?customCakeId=${orderId}&isImageOrder=${isImageOrder}&amount=${amount}`;
+      }
+
+      // View image in modal
+      function viewImage(imageUrl) {
+        const modalImage = document.getElementById("modalImage");
+        modalImage.src = imageUrl;
+        const modal = new bootstrap.Modal(
+          document.getElementById("imageModal")
+        );
+        modal.show();
+      }
+
+      // Add order to cart and redirect to profile cart page
+      async function addToCart(orderId, isImageOrder) {
+        try {
+          const response = await apiService.addToCart(orderId, 1, isImageOrder);
+          apiService.handleResponse(
+            response,
+            () => {
+              window.location.href = "/public/customer/profile.html#cart";
+            },
+            (error) => {
+              console.error("Add to cart error:", error);
+              alert("Failed to add to cart. Please try again.");
+            }
+          );
+        } catch (error) {
+          console.error("Add to cart error:", error);
+          alert("Failed to add to cart. Please try again.");
+        }
+      }
+
+      // Delete order
+      async function deleteOrder(orderId, isImageOrder) {
+        if (confirm("Are you sure you want to delete this order?")) {
+          try {
+            const response = await apiService.deleteOrder(
+              orderId,
+              isImageOrder
+            );
+            apiService.handleResponse(
+              response,
+              () => fetchCustomOrders(),
+              (error) => {
+                console.error("Delete order error:", error);
+                alert("Failed to delete order: " + error);
+              }
+            );
+          } catch (error) {
+            console.error("Delete order error:", error);
+            alert("Failed to delete order: " + error.message);
+          }
+        }
+      }
+
+      // Load orders on page load
+      document.addEventListener("DOMContentLoaded", fetchCustomOrders);
+    </script>
+  </body>
+</html>

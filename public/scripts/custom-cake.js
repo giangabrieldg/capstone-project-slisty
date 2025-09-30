@@ -25,69 +25,150 @@ class CakeAPIService {
   }
 
   // Submit custom cake order with 3D design
+  // UPDATE the submitCustomOrder method in CakeAPIService:
   async submitCustomOrder(config, pricing, renderer) {
+  if (!this.requireAuth()) return;
+
+  const formData = new FormData();
+  const token = this.getToken();
+
+  // Calculate price for immediate checkout
+  const totalPrice = pricing.base[config.size] + pricing.fillings[config.filling];
+  
+  // Validate price for immediate checkout
+  if (!totalPrice || totalPrice <= 0) {
+    return {
+      success: true,
+      data: result,
+      message: "Custom cake order created successfully!"
+    };
+  }
+
+  // Capture 3D design as image
+  try {
+    const designImageDataUrl = await renderer.captureDesignImage();
+    const response = await fetch(designImageDataUrl);
+    const blob = await response.blob();
+    formData.append("designImage", blob, "cake-design.png");
+  } catch (error) {
+    console.error("Error capturing 3D design:", error);
+    // Continue without design image
+  }
+
+  // Add configuration data
+  formData.append("size", config.size);
+  formData.append("cakeColor", config.cakeColor);
+  formData.append("icingStyle", config.icingStyle);
+  formData.append("icingColor", config.icingColor);
+  formData.append("filling", config.filling);
+  formData.append("bottomBorder", config.bottomBorder);
+  formData.append("topBorder", config.topBorder);
+  formData.append("bottomBorderColor", config.bottomBorderColor);
+  formData.append("topBorderColor", config.topBorderColor);
+  formData.append("decorations", config.decorations);
+  formData.append("flowerType", config.flowerType);
+  formData.append("customText", config.customText);
+  formData.append("messageChoice", config.messageChoice);
+  formData.append("toppingsColor", config.toppingsColor);
+  formData.append("price", totalPrice);
+
+  // Set requiresReview to false for immediate checkout
+  formData.append("requiresReview", "false");
+
+  // Add reference image if uploaded
+  const imageUpload = document.getElementById("imageUpload");
+  if (imageUpload && imageUpload.files[0]) {
+    formData.append("referenceImage", imageUpload.files[0]);
+  }
+
+  try {
+    const response = await fetch(`${this.baseURL}/create?token=${encodeURIComponent(token)}`, {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+
+    const result = await response.json();
+    return {
+      success: true,
+      data: result,
+      message: "Custom cake order created successfully!"
+    };
+  } catch (error) {
+    console.error("Error submitting order:", error);
+    return {
+      success: false,
+      error: error.message,
+      message: "Sorry, there was an error creating your order. Please try again."
+    };
+  }
+}
+
+  // NEW: Process custom cake payment
+  async processCustomCakePayment(orderId, isImageOrder, paymentMethod, amount) {
     if (!this.requireAuth()) return;
 
-    const formData = new FormData();
     const token = this.getToken();
 
-    // Capture 3D design as image
     try {
-      const designImageDataUrl = await renderer.captureDesignImage();
-      const response = await fetch(designImageDataUrl);
-      const blob = await response.blob();
-      formData.append("designImage", blob, "cake-design.png");
-    } catch (error) {
-      console.error("Error capturing 3D design:", error);
-      alert("Could not capture 3D design image, but order will still be submitted");
-    }
+      if (paymentMethod === 'gcash') {
+        const response = await fetch('/api/payment/create-custom-cake-payment', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            customCakeId: orderId,
+            isImageOrder: isImageOrder,
+            amount: amount * 100, // Convert to cents
+            description: `Custom Cake Order`,
+            redirect: {
+              success: `${window.location.origin}/public/customer/success.html`,
+              failed: `${window.location.origin}/public/customer/failed.html`
+            }
+          })
+        });
 
-    // Add configuration data
-    formData.append("size", config.size);
-    formData.append("cakeColor", config.cakeColor);
-    formData.append("icingStyle", config.icingStyle);
-    formData.append("icingColor", config.icingColor);
-    formData.append("filling", config.filling);
-    formData.append("bottomBorder", config.bottomBorder);
-    formData.append("topBorder", config.topBorder);
-    formData.append("bottomBorderColor", config.bottomBorderColor);
-    formData.append("topBorderColor", config.topBorderColor);
-    formData.append("decorations", config.decorations);
-    formData.append("flowerType", config.flowerType);
-    formData.append("customText", config.customText);
-    formData.append("messageChoice", config.messageChoice);
-    formData.append("toppingsColor", config.toppingsColor);
-    const totalPrice = pricing.base[config.size] + pricing.fillings[config.filling];
-    formData.append("price", totalPrice);
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error);
 
-    // Add reference image if uploaded (local fallback)
-    const imageUpload = document.getElementById("imageUpload");
-    if (imageUpload && imageUpload.files[0]) {
-      formData.append("referenceImage", imageUpload.files[0]);
-    }
+        return {
+          success: true,
+          data: data,
+          message: "GCash payment initiated"
+        };
+      } else if (paymentMethod === 'cash') {
+        const response = await fetch('/api/payment/process-cash-custom-cake', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            customCakeId: orderId,
+            isImageOrder: isImageOrder
+          })
+        });
 
-    try {
-      const response = await fetch(`${this.baseURL}/create?token=${encodeURIComponent(token)}`, {
-        method: "POST",
-        body: formData,
-      });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error);
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
+        return {
+          success: true,
+          data: data,
+          message: "Cash payment processed successfully"
+        };
       }
-
-      const result = await response.json();
-      return {
-        success: true,
-        data: result,
-        message: "Custom cake order submitted successfully! Awaiting admin review."
-      };
     } catch (error) {
-      console.error("Error submitting order:", error);
+      console.error("Payment processing error:", error);
       return {
         success: false,
         error: error.message,
-        message: "Sorry, there was an error submitting your order. Please try again."
+        message: "Payment processing failed. Please try again."
       };
     }
   }
@@ -201,43 +282,6 @@ class CakeAPIService {
     }
   }
 
-  // Update order status (for admin use)
-  async updateOrderStatus(orderId, status, isImageOrder = false) {
-    if (!this.requireAuth()) return;
-
-    const token = this.getToken();
-    const endpoint = isImageOrder ? `${this.baseURL}/image-orders/${orderId}` : `${this.baseURL}/${orderId}/status`;
-
-    try {
-      const response = await fetch(endpoint, {
-        method: "PATCH",
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ status })
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-
-      const result = await response.json();
-      return {
-        success: true,
-        data: result,
-        message: "Order status updated successfully."
-      };
-    } catch (error) {
-      console.error("Error updating order status:", error);
-      return {
-        success: false,
-        error: error.message,
-        message: "Error updating order status. Please try again."
-      };
-    }
-  }
-
   // Delete custom order
   async deleteOrder(orderId, isImageOrder = false) {
     if (!this.requireAuth()) return;
@@ -267,43 +311,6 @@ class CakeAPIService {
         success: false,
         error: error.message,
         message: "Error deleting order. Please try again."
-      };
-    }
-  }
-
-  // Add approved cake to cart
-  async addToCart(orderId, quantity = 1, isImageOrder = false) {
-    if (!this.requireAuth()) return;
-
-    const token = this.getToken();
-    const endpoint = isImageOrder ? `${this.baseURL}/image-orders/${orderId}/add-to-cart` : `${this.baseURL}/${orderId}/add-to-cart`;
-
-    try {
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ quantity })
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-
-      const result = await response.json();
-      return {
-        success: true,
-        data: result,
-        message: "Item added to cart successfully!"
-      };
-    } catch (error) {
-      console.error("Error adding to cart:", error);
-      return {
-        success: false,
-        error: error.message,
-        message: "Error adding item to cart. Please try again."
       };
     }
   }
@@ -342,6 +349,31 @@ class CakeAPIService {
     }
   }
 
+    async processCustomCakeCheckout(customCakeId, isImageOrder = false, paymentMethod, amount) {
+  if (!this.requireAuth()) return;
+
+  const token = this.getToken();
+  
+  try {
+    // Process payment directly
+    const paymentResponse = await this.processCustomCakePayment(
+      customCakeId, 
+      isImageOrder, 
+      paymentMethod, 
+      amount
+    );
+    
+    return paymentResponse;
+  } catch (error) {
+    console.error("Direct checkout error:", error);
+    return {
+      success: false,
+      error: error.message,
+      message: "Checkout failed. Please try again."
+    };
+  }
+}
+
   // Handle API response and show user feedback
   handleResponse(response, successCallback, errorCallback) {
     if (response.success) {
@@ -359,32 +391,6 @@ class CakeAPIService {
         errorCallback(response.error);
       }
     }
-  }
-
-  // Utility method to convert form data to FormData object
-  createFormDataFromForm(formElement) {
-    const formData = new FormData();
-    const inputs = formElement.querySelectorAll('input, select, textarea');
-    
-    inputs.forEach(input => {
-      if (input.type === 'file') {
-        if (input.files.length > 0) {
-          formData.append(input.name, input.files[0]);
-        }
-      } else if (input.type === 'checkbox') {
-        if (input.checked) {
-          formData.append(input.name, input.value);
-        }
-      } else if (input.type === 'radio') {
-        if (input.checked) {
-          formData.append(input.name, input.value);
-        }
-      } else {
-        formData.append(input.name, input.value);
-      }
-    });
-    
-    return formData;
   }
 }
 

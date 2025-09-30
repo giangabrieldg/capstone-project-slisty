@@ -70,6 +70,51 @@ class CustomCakeController {
   // Update initial display
   this.updateCake();
   this.updateOrderSummary();
+  
+}
+// checkout custom cake order
+async checkoutCustomCake() {
+  if (!this.apiService.isAuthenticated()) {
+    alert('Please log in to checkout your custom cake');
+    window.location.href = '/public/customer/login.html';
+    return;
+  }
+
+  // Calculate total price
+  const totalPrice = this.pricing.base[this.config.size] + this.pricing.fillings[this.config.filling];
+  
+  if (!totalPrice || totalPrice <= 0) {
+    alert('Invalid price calculation. Please try again.');
+    return;
+  }
+
+  try {
+    // Submit the order first
+    const submitResponse = await this.apiService.submitCustomOrder(
+      this.config, 
+      this.pricing, 
+      this.renderer
+    );
+
+    if (submitResponse.success) {
+      // Redirect to checkout with custom cake data
+      const customCakeId = submitResponse.data.customCakeId;
+      window.location.href = `/public/customer/checkout.html?customCakeId=${customCakeId}&isImageOrder=false&amount=${totalPrice}`;
+    } else {
+      throw new Error(submitResponse.message);
+    }
+  } catch (error) {
+    console.error('Checkout process error:', error);
+    alert('Checkout failed: ' + error.message);
+  }
+}
+
+// Add this helper method to the CustomCakeController class
+selectPaymentMethod() {
+  return new Promise((resolve) => {
+    const useGcash = confirm('Would you like to pay with GCash? Click OK for GCash, Cancel for Cash on Delivery.');
+    resolve(useGcash ? 'gcash' : 'cash');
+  });
 }
   // Setup event listeners for all UI interactions
   setupEventListeners() {
@@ -666,8 +711,8 @@ removeUploadedImage() {
   }
 
   // Checkout (placeholder - requires admin approval)
-  checkout() {
-    alert("Please submit your custom cake order for admin review. Once approved, you can add it to your cart and proceed to checkout from the 'My Custom Orders' page.");
+    checkout() {
+    this.checkoutCustomCake();
   }
 }
 
@@ -960,3 +1005,5 @@ window.saveDesignImage = () => window.cakeController?.saveDesignImage();
 window.checkout = () => window.cakeController?.checkout();
 window.submitOrder = () => window.cakeController?.submitOrder();
 window.removeUploadedImage = () => window.cakeController?.removeUploadedImage();
+
+window.checkoutCustomCake = () => window.cakeController?.checkoutCustomCake();

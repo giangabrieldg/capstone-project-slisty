@@ -1,0 +1,308 @@
+/* custom-orders.css */
+:root {
+    --primary-color: #2c9045;
+    --secondary-color: #f4f4f4;
+    --background-color: #ffffff;
+    --secondary-background-color: #f8f9fa;
+    --text-color: #333333;
+    --secondary-text-color: #6c757d;
+    --white-text-color: #ffffff;
+    --font-poppins: "Poppins", sans-serif;
+    --font-baloo: "Baloo 2", sans-serif;
+}
+
+body {
+    font-family: var(--font-poppins);
+    background-color: var(--background-color);
+    color: var(--text-color);
+}
+
+.container-main {
+    margin-top: 20px;
+    padding: 20px;
+}
+
+.page-title {
+    font-family: var(--font-baloo);
+    color: var(--text-color);
+    margin-bottom: 2rem;
+    font-weight: 600;
+}
+
+.table-container {
+    background: var(--white-text-color);
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+}
+
+.table {
+    background-color: var(--secondary-background-color);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 0;
+}
+
+.table thead th {
+    background-color: var(--primary-color);
+    color: var(--white-text-color);
+    border: none;
+    font-weight: 600;
+    padding: 15px;
+    text-align: center;
+    font-size: 14px;
+}
+
+.table tbody tr {
+    transition: all 0.2s ease;
+}
+
+.table tbody tr:hover {
+    background-color: rgba(44, 144, 69, 0.05);
+}
+
+.table th,
+.table td {
+    vertical-align: middle;
+    text-align: center;
+    padding: 12px;
+    border: none;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Status badges - maintaining your original colors */
+.status-completed {
+    background-color: #17a2b8;
+    color: var(--white-text-color);
+    padding: 6px 12px;
+    border-radius: 5px;
+    font-weight: 600;
+    font-size: 12px;
+    display: inline-block;
+}
+
+/* Update the existing status colors if needed */
+.status-feasible {
+    background-color: var(--primary-color);
+    color: var(--white-text-color);
+}
+
+.status-not-feasible {
+    background-color: #dc3545;
+    color: var(--white-text-color);
+}
+
+.status-pending {
+    background-color: #ffc107;
+    color: var(--text-color);
+}
+
+/* Buttons - maintaining your original style */
+.btn-checkout {
+    background-color: var(--primary-color);
+    color: var(--white-text-color);
+    border: none;
+    padding: 8px 16px;
+    border-radius: 5px;
+    font-family: var(--font-poppins);
+    font-weight: 500;
+    font-size: 14px;
+    transition: background-color 0.3s ease;
+}
+
+.btn-checkout:hover {
+    background-color: #267a3a;
+    color: var(--white-text-color);
+}
+
+.btn-view-image {
+    background-color: var(--secondary-text-color);
+    color: var(--white-text-color);
+    border: none;
+    padding: 8px 16px;
+    border-radius: 5px;
+    font-family: var(--font-poppins);
+    font-weight: 500;
+    font-size: 14px;
+    transition: background-color 0.3s ease;
+}
+
+.btn-view-image:hover {
+    background-color: #5a6268;
+    color: var(--white-text-color);
+}
+
+/* Modal styling */
+.modal-content {
+    border-radius: 8px;
+    border: none;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+    background-color: var(--primary-color);
+    color: var(--white-text-color);
+    border-bottom: none;
+    border-radius: 8px 8px 0 0;
+}
+
+.modal-header .btn-close {
+    filter: invert(1);
+}
+
+.modal-img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+}
+
+/* Order type badges */
+.order-type-badge {
+    background-color: var(--secondary-background-color);
+    color: var(--text-color);
+    padding: 4px 8px;
+    border-radius: 15px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.order-type-3d {
+    background-color: var(--primary-color);
+    color: var(--white-text-color);
+}
+
+.order-type-image {
+    background-color: var(--secondary-text-color);
+    color: var(--white-text-color);
+}
+
+/* Price styling */
+.price {
+    font-weight: 600;
+    color: var(--primary-color);
+    font-size: 14px;
+}
+
+.price-tbd {
+    color: var(--secondary-text-color);
+    font-style: italic;
+}
+
+/* Empty state */
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--secondary-text-color);
+}
+
+.empty-state .icon {
+    font-size: 3rem;
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+}
+
+.empty-state h4 {
+    color: var(--text-color);
+    margin-bottom: 1rem;
+    font-family: var(--font-baloo);
+}
+
+/* Loading state */
+.loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem;
+}
+
+.loading-spinner {
+    width: 30px;
+    height: 30px;
+    border: 3px solid var(--secondary-color);
+    border-top: 3px solid var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .container-main {
+        padding: 15px;
+    }
+
+    .page-title {
+        font-size: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .table-container {
+        padding: 1rem;
+    }
+
+    .table {
+        font-size: 13px;
+    }
+
+    .table th,
+    .table td {
+        padding: 8px 4px;
+    }
+
+    .btn-checkout,
+    .btn-view-image {
+        padding: 6px 12px;
+        font-size: 12px;
+    }
+
+    .status-pending,
+    .status-feasible,
+    .status-not-feasible {
+        padding: 4px 8px;
+        font-size: 11px;
+    }
+
+    /* Stack buttons vertically on very small screens */
+    @media (max-width: 576px) {
+        .table td:last-child {
+            white-space: nowrap;
+        }
+
+        .btn-checkout,
+        .btn-view-image {
+            display: block;
+            width: 100%;
+            margin: 2px 0;
+        }
+    }
+}
+
+/* Additional improvements */
+.order-id {
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+.order-details {
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.no-image-text {
+    color: var(--secondary-text-color);
+    font-style: italic;
+    font-size: 12px;
+}
