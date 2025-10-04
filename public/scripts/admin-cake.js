@@ -88,6 +88,7 @@ async function fetchCustomCakeOrders() {
     // Process image-based orders
     // In admin-cake.js - FIX the image order ID issue:
 // Process image-based orders
+// Process image-based orders
 if (imageData.success && imageData.orders) {
   imageData.orders.forEach(order => {
     // FIX: Use imageBasedOrderId instead of id
@@ -107,6 +108,7 @@ if (imageData.success && imageData.orders) {
       <td>${displayOrderId}</td>
       <td>${order.customer ? order.customer.name : 'Unknown'}</td>
       <td>${order.flavor}</td>
+      <td>${order.size || 'Not specified'}</td> <!-- ADD SIZE DISPLAY -->
       <td>${order.message || 'None'}</td>
       <td>${new Date(order.eventDate).toLocaleDateString()}</td>
       <td>${deliveryDate}</td>
@@ -150,7 +152,7 @@ if (imageData.success && imageData.orders) {
 
     if (!imageData.orders || imageData.orders.length === 0) {
       const row = document.createElement('tr');
-      row.innerHTML = `<td colspan="12" class="text-center">No image-based orders found</td>`;
+      row.innerHTML = `<td colspan="13" class="text-center">No image-based orders found</td>`;
       imageTbody.appendChild(row);
     }
 

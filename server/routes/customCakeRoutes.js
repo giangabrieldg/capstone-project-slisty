@@ -35,7 +35,6 @@ const upload = multer({
 });
 
 // POST /api/custom-cake/create - Create a new custom cake order (3D design)
-// POST /api/custom-cake/create - Create a new custom cake order (3D design)
 router.post('/create', verifyToken, upload.fields([
   { name: 'referenceImage', maxCount: 1 },
   { name: 'designImage', maxCount: 1 }
@@ -126,9 +125,10 @@ router.post('/create', verifyToken, upload.fields([
 });
 
 // POST /api/custom-cake/image-order - Create a new image-based order
+// In customCakeRoutes.js - UPDATE the image-order endpoint:
 router.post('/image-order', verifyToken, checkDriveAuth, upload.single('image'), async (req, res) => {
   try {
-    const { flavor, message, notes, eventDate } = req.body;
+    const { flavor, message, notes, eventDate, size } = req.body; // ADD size
 
     // Validate required fields
     if (!flavor || !eventDate || !req.file) {
@@ -146,11 +146,12 @@ router.post('/image-order', verifyToken, checkDriveAuth, upload.single('image'),
     // Upload image to Google Drive
     const imageUrl = await googleDriveService.uploadImage(req.file);
 
-    // Create image-based order
+    // Create image-based order WITH SIZE
     const imageOrder = await ImageBasedOrder.create({
       userID: req.user.userID,
       imagePath: imageUrl,
       flavor,
+      size: size || null, // ADD size
       message: message || null,
       notes: notes || null,
       eventDate,
@@ -160,7 +161,7 @@ router.post('/image-order', verifyToken, checkDriveAuth, upload.single('image'),
     res.status(201).json({
       success: true,
       message: 'Image-based order created successfully',
-      orderId: imageOrder.id,
+      orderId: imageOrder.imageBasedOrderId, // Use correct ID field
     });
   } catch (error) {
     console.error('Error creating image-based order:', error);

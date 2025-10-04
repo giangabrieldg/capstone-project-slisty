@@ -132,9 +132,9 @@
             "0"
           )}`;
           const statusClass = getStatusClass(order.status, false);
-          const details = `Size: ${order.size}, Flavor: ${getFlavorName(
-            order.cakeColor
-          )}, Icing: ${order.icingStyle}`;
+          const details = `Flavor: ${order.flavor}, Size: ${
+            order.size || "Not specified"
+          }, Event: ${new Date(order.eventDate).toLocaleDateString()}`;
           const imageUrl =
             order.designImageUrl || order.referenceImageUrl || "";
           const deliveryDate = order.deliveryDate

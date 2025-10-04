@@ -268,7 +268,6 @@ router.post('/verify-gcash-payment', verifyToken, async (req, res) => {
 });
 
 // POST /api/payment/verify-custom-cake-payment - Verify GCash payment for custom cakes
-// In paymentRoutes.js - UPDATE the verify-custom-cake-payment endpoint:
 router.post('/verify-custom-cake-payment', verifyToken, async (req, res) => {
   const transaction = await sequelize.transaction();
   
@@ -348,7 +347,7 @@ router.post('/verify-custom-cake-payment', verifyToken, async (req, res) => {
         payment_verified: true,
         payment_method: 'gcash',
         delivery_method: deliveryMethod,
-        pickup_date: customOrder.deliveryDate, // Use the delivery date from custom order
+        pickup_date: customOrder.deliveryDate,
         customer_name: customerInfo.fullName,
         customer_email: customerInfo.email,
         customer_phone: customerInfo.phone,
@@ -362,15 +361,23 @@ router.post('/verify-custom-cake-payment', verifyToken, async (req, res) => {
         }]
       }, { transaction });
 
-      // Create OrderItem
-      await OrderItem.create({
+      // FIX: Create OrderItem with proper foreign key handling
+      const orderItemData = {
         orderId: order.orderId,
-        customCakeId,
         quantity: 1,
         price: totalAmount,
         item_name: isImageOrder ? 'Custom Image Cake' : '3D Custom Cake',
         size_name: customOrder.size || 'Custom'
-      }, { transaction });
+      };
+
+      // Set the correct foreign key based on order type
+      if (isImageOrder) {
+        orderItemData.imageOrderId = customCakeId; // Use imageOrderId for image-based orders
+      } else {
+        orderItemData.customCakeId = customCakeId; // Use customCakeId for 3D orders
+      }
+
+      await OrderItem.create(orderItemData, { transaction });
     }
 
     // Clear user cart

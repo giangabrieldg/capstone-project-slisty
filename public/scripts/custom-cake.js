@@ -228,74 +228,76 @@ async processCashPayment(customCakeId, isImageOrder, pickupDate, customerInfo, t
 }
 
   // Submit image-based order with Google Drive upload
-  async submitImageBasedOrder(formElement) {
-    if (!this.requireAuth()) return;
+async submitImageBasedOrder(formElement) {
+  if (!this.requireAuth()) return;
 
-    const token = this.getToken();
-    const formData = new FormData();
+  const token = this.getToken();
+  const formData = new FormData();
 
-    // Validate form inputs
-    const flavor = formElement.querySelector('#imageFlavor').value.trim();
-    const eventDate = formElement.querySelector('#eventDate').value;
-    const message = formElement.querySelector('#imageMessage').value.trim();
-    const notes = formElement.querySelector('#imageNotes').value.trim();
-    const imageUpload = document.getElementById('imageUpload');
+  // Validate form inputs - ADD SIZE FIELD
+  const flavor = formElement.querySelector('#imageFlavor').value.trim();
+  const eventDate = formElement.querySelector('#eventDate').value;
+  const message = formElement.querySelector('#imageMessage').value.trim();
+  const notes = formElement.querySelector('#imageNotes').value.trim();
+  const size = formElement.querySelector('#imageSize').value; // ADD SIZE
+  const imageUpload = document.getElementById('imageUpload');
 
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const selectedDate = new Date(eventDate);
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const selectedDate = new Date(eventDate);
 
-    if (!flavor) {
-      return {
-        success: false,
-        message: "Flavor is required."
-      };
-    }
-    if (!eventDate || selectedDate < tomorrow) {
-      return {
-        success: false,
-        message: "Event date must be tomorrow or later."
-      };
-    }
-    if (!imageUpload || !imageUpload.files[0]) {
-      return {
-        success: false,
-        message: "Reference image is required."
-      };
-    }
-
-    // Add form fields to FormData
-    formData.append('flavor', flavor);
-    formData.append('message', message);
-    formData.append('notes', notes);
-    formData.append('eventDate', eventDate);
-    formData.append('image', imageUpload.files[0]);
-
-    try {
-      const response = await fetch(`${this.baseURL}/image-order?token=${encodeURIComponent(token)}`, {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-
-      const result = await response.json();
-      return {
-        success: true,
-        data: result,
-        message: "Image-based order submitted successfully! Awaiting admin review."
-      };
-    } catch (error) {
-      console.error("Error submitting image order:", error);
-      return {
-        success: false,
-        error: error.message,
-        message: "Error submitting order. Please try again."
-      };
-    }
+  if (!flavor) {
+    return {
+      success: false,
+      message: "Flavor is required."
+    };
   }
+  if (!eventDate || selectedDate < tomorrow) {
+    return {
+      success: false,
+      message: "Event date must be tomorrow or later."
+    };
+  }
+  if (!imageUpload || !imageUpload.files[0]) {
+    return {
+      success: false,
+      message: "Reference image is required."
+    };
+  }
+
+  // Add form fields to FormData - ADD SIZE
+  formData.append('flavor', flavor);
+  formData.append('size', size); // ADD SIZE FIELD
+  formData.append('message', message);
+  formData.append('notes', notes);
+  formData.append('eventDate', eventDate);
+  formData.append('image', imageUpload.files[0]);
+
+  try {
+    const response = await fetch(`${this.baseURL}/image-order?token=${encodeURIComponent(token)}`, {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+
+    const result = await response.json();
+    return {
+      success: true,
+      data: result,
+      message: "Image-based order submitted successfully! Awaiting admin review."
+    };
+  } catch (error) {
+    console.error("Error submitting image order:", error);
+    return {
+      success: false,
+      error: error.message,
+      message: "Error submitting order. Please try again."
+    };
+  }
+}
 
   // UPDATED: Get user's custom orders (unified via /orders/user/me, filter for custom)
 // In custom-cake.js - UPDATE the getCustomOrders method:
