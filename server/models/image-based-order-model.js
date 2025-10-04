@@ -2,7 +2,7 @@ const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 
 const ImageBasedOrder = sequelize.define('ImageBasedOrder', {
-  id: {
+  imageBasedOrderId: {  // RENAMED: From 'id' to 'imageBasedOrderId'
     type: DataTypes.INTEGER,
     primaryKey: true,
     autoIncrement: true,

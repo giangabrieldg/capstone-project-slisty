@@ -100,41 +100,32 @@ const clearCart = async (userID, transaction) => {
 
 // Helper function to format orders
 const formatOrders = (orders) => {
-  return orders.map(order => ({
-    ...order.toJSON(),
-    user: order.customer ? {
-      userID: order.customer.userID,
-      name: order.customer.name,
-      email: order.customer.email,
-    } : null,
-    items: order.orderItems.map(item => ({
-      menuId: item.menuId,
-      customCakeId: item.customCakeId,
-      name: item.customCakeId ? `Custom Cake (${item.CustomCakeOrder?.size})` : item.MenuItem?.name || item.item_name || 'Unknown',
-      size: item.size_name || item.CustomCakeOrder?.size || null,
-      price: item.price,
-      quantity: item.quantity,
-      image: item.CustomCakeOrder ? item.CustomCakeOrder.imageUrl : item.MenuItem?.image || null,
-      customCakeDetails: item.CustomCakeOrder ? {
-        size: item.CustomCakeOrder.size,
-        cakeColor: item.CustomCakeOrder.cakeColor,
-        icingStyle: item.CustomCakeOrder.icingStyle,
-        icingColor: item.CustomCakeOrder.icingColor,
-        filling: item.CustomCakeOrder.filling,
-        bottomBorder: item.CustomCakeOrder.bottomBorder,
-        topBorder: item.CustomCakeOrder.topBorder,
-        bottomBorderColor: item.CustomCakeOrder.bottomBorderColor,
-        topBorderColor: item.CustomCakeOrder.topBorderColor,
-        decorations: item.CustomCakeOrder.decorations,
-        flowerType: item.CustomCakeOrder.flowerType,
-        customText: item.CustomCakeOrder.customText,
-        messageChoice: item.CustomCakeOrder.messageChoice,
-        toppingsColor: item.CustomCakeOrder.toppingsColor,
-        imageUrl: item.CustomCakeOrder.imageUrl,
-        status: item.CustomCakeOrder.status,
+  return orders
+    .filter(order => {
+      // Filter out orders that contain custom cakes
+      const hasCustomCake = order.orderItems.some(item => item.customCakeId);
+      return !hasCustomCake;
+    })
+    .map(order => ({
+      ...order.toJSON(),
+      user: order.customer ? {
+        userID: order.customer.userID,
+        name: order.customer.name,
+        email: order.customer.email,
       } : null,
-    })),
-  }));
+      items: order.orderItems
+        .filter(item => !item.customCakeId) // Only show non-custom cake items
+        .map(item => ({
+          menuId: item.menuId,
+          customCakeId: item.customCakeId,
+          name: item.MenuItem?.name || item.item_name || 'Unknown',
+          size: item.size_name || null,
+          price: item.price,
+          quantity: item.quantity,
+          image: item.MenuItem?.image || null,
+        })),
+    }))
+    .filter(order => order.items.length > 0); // Only include orders with regular items
 };
 
 // POST /api/orders/create - Create new order
@@ -388,7 +379,8 @@ router.post('/cancel/:orderId', verifyToken, async (req, res) => {
   }
 });
 
-// GET /api/orders/admin/orders - Get all orders (admin and staff only)
+
+// GET /api/orders/admin/orders - Get all orders (EXCLUDE custom cakes)
 router.get('/admin/orders', verifyToken, checkAdminOrStaff, async (req, res) => {
   try {
     const { pickup_date } = req.query;
@@ -404,7 +396,7 @@ router.get('/admin/orders', verifyToken, checkAdminOrStaff, async (req, res) => 
           include: [
             { model: MenuItem, attributes: ['name', 'image'] },
             { model: ItemSize, attributes: ['sizeName', 'price'] },
-            { model: CustomCakeOrder, attributes: ['size', 'cakeColor', 'icingStyle', 'icingColor', 'filling', 'bottomBorder', 'topBorder', 'bottomBorderColor', 'topBorderColor', 'decorations', 'flowerType', 'customText', 'messageChoice', 'toppingsColor', 'imageUrl', 'status'] },
+            { model: CustomCakeOrder, attributes: ['size'] }, // Keep for filtering
           ],
         },
       ],

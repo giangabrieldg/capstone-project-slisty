@@ -3,7 +3,7 @@ const axios = require('axios');
 const crypto = require('crypto');
 const router = express.Router();
 const { PAYMONGO_SECRET_KEY, PAYMONGO_WEBHOOK_SECRET } = process.env;
-const { Order, OrderItem, Cart, CartItem, CustomCakeOrder, ImageBasedOrder } = require('../models');
+const { Order, OrderItem, Cart, CartItem, CustomCakeOrder, ImageBasedOrder, MenuItem, ItemSize } = require('../models');
 const sequelize = require('../config/database');
 const verifyToken = require('../middleware/verifyToken');
 
@@ -14,20 +14,20 @@ const verifyWebhookSignature = (signature, payload, secret) => {
   return signature === hmac.digest('hex');
 };
 
-// POST /api/payment/create-gcash-source - Create a GCash payment source with Paymongo
+// POST /api/payment/create-gcash-source - UNIFIED for both normal and custom cake orders
 router.post('/create-gcash-source', verifyToken, async (req, res) => {
     try {
-        const { amount, description, items, redirect } = req.body;
+        const { amount, description, items, redirect, customCakeId, isImageOrder, deliveryDate, deliveryMethod, customerInfo } = req.body;
 
         // Validate required fields
-        if (!amount || !items || !redirect?.success || !redirect?.failed) {
+        if (!amount || !redirect?.success || !redirect?.failed) {
             return res.status(400).json({
                 success: false,
-                error: 'Missing required fields (amount, items, redirect URLs)'
+                error: 'Missing required fields (amount, redirect URLs)'
             });
         }
 
-        // Validate amount is positive and meets minimum for GCash
+        // Validate amount
         if (amount <= 0) {
             return res.status(400).json({
                 success: false,
@@ -41,33 +41,90 @@ router.post('/create-gcash-source', verifyToken, async (req, res) => {
             });
         }
 
-        // Create Paymongo payment link
-        const paymongoResponse = await axios.post(
-            'https://api.paymongo.com/v1/links',
-            {
-                data: {
-                    attributes: {
-                        amount: Math.round(amount),
-                        description: description || `Pending Order`,
-                        remarks: `Pending Order for user ${req.user.userID}`,
-                        currency: 'PHP',
-                        checkout: {
-                            name: req.user.name || 'Customer',
-                            email: req.user.email
-                        },
-                        redirect: {
-                            success: redirect.success,
-                            failed: redirect.failed
-                        },
-                        payment_method_allowed: ['gcash'],
-                        metadata: {
-                            userId: req.user.userID,
-                            items: items,
-                            system: 'Slice N Grind'
-                        }
+        const isCustom = !!customCakeId;
+        
+        // For custom orders, validate the custom cake exists and is ready
+        if (isCustom) {
+            let customOrder;
+            if (isImageOrder) {
+                customOrder = await ImageBasedOrder.findOne({
+                    where: { 
+                        imageBasedOrderId: customCakeId,
+                        userID: req.user.userID 
+                    }
+                });
+                if (!customOrder || customOrder.status !== 'Feasible') {
+                    return res.status(400).json({
+                        success: false,
+                        error: 'Image-based order not ready for checkout'
+                    });
+                }
+            } else {
+                customOrder = await CustomCakeOrder.findOne({
+                    where: { 
+                        customCakeId: customCakeId,
+                        userID: req.user.userID 
+                    }
+                });
+                if (!customOrder || !['Ready for Checkout', 'Pending'].includes(customOrder.status)) {
+                    return res.status(400).json({
+                        success: false,
+                        error: 'Custom cake order not ready for checkout'
+                    });
+                }
+            }
+        }
+
+        // For normal orders, validate items
+        if (!isCustom && (!items || items.length === 0)) {
+            return res.status(400).json({
+                success: false,
+                error: 'Items are required for regular orders'
+            });
+        }
+
+        // Create Paymongo payment link with unified metadata
+        const paymongoPayload = {
+            data: {
+                attributes: {
+                    amount: Math.round(amount),
+                    description: description || (isCustom ? 'Custom Cake Order' : 'Regular Order'),
+                    remarks: isCustom ? 
+                        `Custom Cake Order for user ${req.user.userID}` : 
+                        `Order for user ${req.user.userID}`,
+                    currency: 'PHP',
+                    checkout: {
+                        name: customerInfo?.fullName || req.user.name || 'Customer',
+                        email: customerInfo?.email || req.user.email
+                    },
+                    redirect: {
+                        success: redirect.success,
+                        failed: redirect.failed
+                    },
+                    payment_method_allowed: ['gcash'],
+                    metadata: {
+                        userId: req.user.userID,
+                        // Include delivery date for BOTH order types
+                        deliveryDate: deliveryDate ? new Date(deliveryDate).toISOString() : null,
+                        deliveryMethod: deliveryMethod || 'pickup',
+                        ...(isCustom && { 
+                            customCakeId, 
+                            isImageOrder,
+                            orderType: isImageOrder ? 'image_based_cake' : 'custom_3d_cake'
+                        }),
+                        ...(!isCustom && { 
+                            items,
+                            orderType: 'regular_order'
+                        }),
+                        system: 'Slice N Grind'
                     }
                 }
-            },
+            }
+        };
+
+        const paymongoResponse = await axios.post(
+            'https://api.paymongo.com/v1/links',
+            paymongoPayload,
             {
                 headers: {
                     'Authorization': `Basic ${Buffer.from(PAYMONGO_SECRET_KEY + ':').toString('base64')}`,
@@ -80,12 +137,13 @@ router.post('/create-gcash-source', verifyToken, async (req, res) => {
         const paymentLink = paymongoResponse.data.data;
         const checkoutUrl = paymentLink.attributes.checkout_url;
 
-        // Log the payment initiation
         console.log('Payment link created:', {
             paymentLinkId: paymentLink.id,
             amount: (amount/100).toFixed(2),
             checkoutUrl,
             userId: req.user.userID,
+            isCustom,
+            deliveryDate: deliveryDate ? new Date(deliveryDate).toISOString() : null,
             createdAt: new Date().toISOString()
         });
 
@@ -98,12 +156,7 @@ router.post('/create-gcash-source', verifyToken, async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Paymongo GCash Error:', {
-            message: error.message,
-            response: error.response?.data,
-            status: error.response?.status,
-            stack: error.stack
-        });
+        console.error('Paymongo GCash Error:', error.message);
 
         let statusCode = 500;
         let errorMessage = 'Payment processing failed';
@@ -111,20 +164,16 @@ router.post('/create-gcash-source', verifyToken, async (req, res) => {
         if (error.response) {
             statusCode = error.response.status || 500;
             errorMessage = error.response.data?.errors?.[0]?.detail || errorMessage;
-        } else if (error.request) {
-            errorMessage = 'No response from payment service';
-        } else if (error.code === 'ECONNABORTED') {
-            errorMessage = 'Payment service timeout';
         }
 
         res.status(statusCode).json({
             success: false,
             error: errorMessage,
-            details: process.env.NODE_ENV === 'development' ?
-                (error.response?.data || error.message) : undefined
+            details: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
     }
 });
+
 
 // POST /api/orders/verify-gcash-payment - Verify and create/update order after GCash payment
 router.post('/verify-gcash-payment', verifyToken, async (req, res) => {
@@ -162,10 +211,11 @@ router.post('/verify-gcash-payment', verifyToken, async (req, res) => {
       payment_verified: true,
       payment_method: 'gcash',
       delivery_method: orderData.deliveryMethod,
+      pickup_date: orderData.pickupDate, // FIXED: Include pickup_date
       customer_name: orderData.customerInfo.fullName,
       customer_email: orderData.customerInfo.email,
       customer_phone: orderData.customerInfo.phone,
-      delivery_address: orderData.customerInfo.deliveryAddress,
+      delivery_address: orderData.deliveryMethod === 'delivery' ? orderData.customerInfo.deliveryAddress : null,
       items: orderData.items
     }, { transaction });
 
@@ -216,6 +266,377 @@ router.post('/verify-gcash-payment', verifyToken, async (req, res) => {
     });
   }
 });
+
+// POST /api/payment/verify-custom-cake-payment - Verify GCash payment for custom cakes
+// In paymentRoutes.js - UPDATE the verify-custom-cake-payment endpoint:
+router.post('/verify-custom-cake-payment', verifyToken, async (req, res) => {
+  const transaction = await sequelize.transaction();
+  
+  try {
+    const { paymentId, customCakeData } = req.body;
+    
+    console.log('Verifying custom cake payment:', { paymentId, customCakeData });
+
+    // Verify payment with Paymongo
+    const verifyResponse = await axios.get(
+      `https://api.paymongo.com/v1/links/${paymentId}`,
+      { 
+        headers: { 'Authorization': `Basic ${Buffer.from(PAYMONGO_SECRET_KEY + ':').toString('base64')}` }, 
+        timeout: 5000 
+      }
+    );
+
+    const paymentData = verifyResponse.data.data;
+    if (paymentData.attributes.status !== 'paid') {
+      await transaction.rollback();
+      return res.status(400).json({ success: false, message: 'Payment not completed' });
+    }
+
+    const { customCakeId, isImageOrder, deliveryDate, deliveryMethod, customerInfo, totalAmount } = customCakeData;
+    
+    console.log('Processing custom cake payment:', {
+      customCakeId,
+      isImageOrder,
+      deliveryDate,
+      deliveryMethod
+    });
+
+    // Update custom cake order with delivery date
+    let customOrder;
+    const updateData = { 
+      status: 'In Progress',
+      payment_status: 'paid'
+    };
+    
+    // Set delivery date if provided
+    if (deliveryDate) {
+      const parsedDate = new Date(deliveryDate);
+      if (!isNaN(parsedDate.getTime())) {
+        updateData.deliveryDate = parsedDate;
+      }
+    }
+
+    if (isImageOrder) {
+      customOrder = await ImageBasedOrder.findByPk(customCakeId, { transaction });
+      if (!customOrder) {
+        await transaction.rollback();
+        return res.status(404).json({ success: false, error: 'Image-based order not found' });
+      }
+      await customOrder.update(updateData, { transaction });
+    } else {
+      customOrder = await CustomCakeOrder.findByPk(customCakeId, { transaction });
+      if (!customOrder) {
+        await transaction.rollback();
+        return res.status(404).json({ success: false, error: 'Custom cake order not found' });
+      }
+      await customOrder.update(updateData, { transaction });
+    }
+
+    // Check if Order already exists for this payment
+    let order = await Order.findOne({
+      where: { payment_id: paymentId },
+      transaction
+    });
+
+    if (!order) {
+      // Create Order record for the custom cake
+      order = await Order.create({
+        userID: req.user.userID,
+        total_amount: totalAmount,
+        status: 'processing',
+        payment_id: paymentId,
+        payment_verified: true,
+        payment_method: 'gcash',
+        delivery_method: deliveryMethod,
+        pickup_date: customOrder.deliveryDate, // Use the delivery date from custom order
+        customer_name: customerInfo.fullName,
+        customer_email: customerInfo.email,
+        customer_phone: customerInfo.phone,
+        delivery_address: deliveryMethod === 'delivery' ? customerInfo.deliveryAddress : null,
+        items: [{ 
+          customCakeId, 
+          name: isImageOrder ? 'Custom Image Cake' : '3D Custom Cake', 
+          price: totalAmount, 
+          quantity: 1, 
+          size: customOrder.size || 'Custom' 
+        }]
+      }, { transaction });
+
+      // Create OrderItem
+      await OrderItem.create({
+        orderId: order.orderId,
+        customCakeId,
+        quantity: 1,
+        price: totalAmount,
+        item_name: isImageOrder ? 'Custom Image Cake' : '3D Custom Cake',
+        size_name: customOrder.size || 'Custom'
+      }, { transaction });
+    }
+
+    // Clear user cart
+    const cart = await Cart.findOne({ where: { userID: req.user.userID }, transaction });
+    if (cart) {
+      await CartItem.destroy({ where: { cartId: cart.cartId }, transaction });
+    }
+
+    await transaction.commit();
+    
+    res.json({
+      success: true,
+      message: 'Custom cake payment verified and order created',
+      order,
+      customOrder
+    });
+
+  } catch (error) {
+    await transaction.rollback();
+    console.error('Custom cake verification failed:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Verification failed: ' + error.message,
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
+
+// POST /api/payment/process-cash-custom-cake - Process cash payment for custom cakes
+router.post('/process-cash-custom-cake', verifyToken, async (req, res) => {
+    try {
+        const { customCakeId, isImageOrder, pickupDate } = req.body;
+
+        if (!customCakeId) {
+            return res.status(400).json({
+                success: false,
+                error: 'Custom cake ID is required'
+            });
+        }
+
+        // Verify custom cake order exists and belongs to user
+        let customOrder;
+        if (isImageOrder) {
+          customOrder = await ImageBasedOrder.findOne({
+            where: { 
+              imageBasedOrderId: customCakeId,
+              userID: req.user.userID 
+            }
+          });
+        } else {
+          customOrder = await CustomCakeOrder.findOne({
+            where: { 
+              customCakeId: customCakeId,
+              userID: req.user.userID 
+            }
+          });
+        }
+
+        if (!customOrder) {
+            return res.status(404).json({
+                success: false,
+                error: 'Custom cake order not found'
+            });
+        }
+
+        // Update order status for cash payment
+        const updateData = { 
+          status: 'Pending',
+          payment_status: 'pending'
+        };
+        
+        if (pickupDate) {
+          updateData.deliveryDate = new Date(pickupDate);
+        }
+
+        if (isImageOrder) {
+          await ImageBasedOrder.update(updateData, { where: { imageBasedOrderId: customCakeId } });
+        } else {
+          await CustomCakeOrder.update(updateData, { where: { customCakeId: customCakeId } });
+        }
+
+        console.log(`Cash payment processed for custom cake: ${customCakeId}, type: ${isImageOrder ? 'image' : '3d'}`);
+
+        res.json({
+            success: true,
+            message: 'Cash payment processed successfully',
+            orderId: customCakeId,
+            orderType: isImageOrder ? 'image_based' : 'custom_3d'
+        });
+
+    } catch (error) {
+        console.error('Cash payment processing error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to process cash payment',
+            details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+});
+
+
+// POST /api/payment/webhook - Handle Paymongo webhooks (UPDATED for delivery dates)
+router.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+    let transaction;
+    try {
+        const signature = req.headers['paymongo-signature'];
+        const payload = req.body.toString();
+
+        // Verify signature in production
+        if (process.env.NODE_ENV === 'production') {
+            if (!verifyWebhookSignature(signature, payload, PAYMONGO_WEBHOOK_SECRET)) {
+                console.warn('Invalid webhook signature');
+                return res.status(401).send('Invalid signature');
+            }
+        }
+
+        const event = JSON.parse(payload);
+        console.log('Received Paymongo webhook:', event.data.type);
+
+        if (event.data.type === 'payment.paid') {
+            transaction = await sequelize.transaction();
+            const payment = event.data.attributes;
+            const metadata = payment.metadata || {};
+            const paymentId = payment.id;
+            const userId = metadata.userId;
+
+            console.log('Processing webhook payment:', {
+                paymentId,
+                userId,
+                metadata,
+                amount: payment.amount
+            });
+
+            // Handle custom cake orders
+            if (metadata.customCakeId) {
+                const { customCakeId, isImageOrder, deliveryDate } = metadata;
+                
+                console.log('Processing custom cake webhook with deliveryDate:', deliveryDate);
+
+                const updateData = { 
+                    status: 'In Progress',
+                    payment_status: 'paid'
+                };
+                
+                // Set delivery date from metadata
+                if (deliveryDate && deliveryDate !== 'null' && deliveryDate !== 'undefined') {
+                    const parsedDate = new Date(deliveryDate);
+                    if (!isNaN(parsedDate.getTime())) {
+                        updateData.deliveryDate = parsedDate;
+                        console.log('Setting custom cake deliveryDate:', updateData.deliveryDate);
+                    }
+                }
+
+                if (isImageOrder) {
+                    await ImageBasedOrder.update(updateData, { 
+                        where: { imageBasedOrderId: customCakeId },
+                        transaction 
+                    });
+                } else {
+                    await CustomCakeOrder.update(updateData, { 
+                        where: { customCakeId: customCakeId },
+                        transaction 
+                    });
+                }
+
+                console.log(`Updated custom cake ${customCakeId} with deliveryDate:`, updateData.deliveryDate);
+
+            } else {
+                // Handle regular orders
+                let order = await Order.findOne({
+                    where: { payment_id: paymentId },
+                    transaction
+                });
+
+                if (order && order.payment_verified) {
+                    console.log(`Payment ${paymentId} already processed, skipping`);
+                    await transaction.commit();
+                    return res.status(200).end();
+                }
+
+                const items = metadata.items || [];
+                const deliveryDate = metadata.deliveryDate;
+                const deliveryMethod = metadata.deliveryMethod || 'pickup';
+
+                if (!order) {
+                    // Create new order with delivery date
+                    const orderData = {
+                        userID: userId,
+                        total_amount: payment.amount / 100,
+                        status: 'processing',
+                        payment_id: paymentId,
+                        payment_verified: true,
+                        payment_method: 'gcash',
+                        delivery_method: deliveryMethod,
+                        customer_name: payment.checkout?.name || 'Customer',
+                        customer_email: payment.checkout?.email,
+                        customer_phone: payment.checkout?.phone || 'Not provided',
+                        delivery_address: items[0]?.customerInfo?.deliveryAddress || null,
+                        items: items
+                    };
+
+                    // Add pickup_date if deliveryDate is provided
+                    if (deliveryDate && deliveryDate !== 'null' && deliveryDate !== 'undefined') {
+                        const parsedDate = new Date(deliveryDate);
+                        if (!isNaN(parsedDate.getTime())) {
+                            orderData.pickup_date = parsedDate;
+                            console.log('Setting regular order pickup_date:', orderData.pickup_date);
+                        }
+                    }
+
+                    order = await Order.create(orderData, { transaction });
+
+                    // Create order items
+                    if (items.length > 0) {
+                        await OrderItem.bulkCreate(
+                            items.map(item => ({
+                                orderId: order.orderId,
+                                menuId: item.menuId,
+                                sizeId: item.sizeId,
+                                quantity: item.quantity,
+                                price: item.price,
+                                item_name: item.name,
+                                size_name: item.size
+                            })),
+                            { transaction }
+                        );
+                    }
+                } else {
+                    // Update existing order
+                    await order.update({
+                        status: 'processing',
+                        payment_verified: true
+                    }, { transaction });
+                }
+
+                // Clear user cart
+                if (userId) {
+                    console.log(`Clearing cart for user ${userId}`);
+                    const cart = await Cart.findOne({ 
+                        where: { userID: userId },
+                        transaction
+                    });
+
+                    if (cart) {
+                        const deletedCount = await CartItem.destroy({
+                            where: { cartId: cart.cartId },
+                            transaction
+                        });
+                        console.log(`Cleared ${deletedCount} cart items`);
+                    }
+                }
+            }
+
+            await transaction.commit();
+            return res.status(200).end();
+        }
+
+        res.status(200).end();
+    } catch (error) {
+        console.error('Webhook processing error:', error);
+        if (transaction) await transaction.rollback();
+        return res.status(200).json({ success: false });
+    }
+});
+
 
 // GET /api/payment/verify/:orderId - Verify payment status and update order if needed
 router.get('/verify/:orderId', verifyToken, async (req, res) => {
@@ -317,361 +738,6 @@ router.get('/verify/:orderId', verifyToken, async (req, res) => {
   }
 });
 
-// POST /api/payment/create-custom-cake-payment
-router.post('/create-custom-cake-payment', verifyToken, async (req, res) => {
-    try {
-        const { customCakeId, isImageOrder, amount, description, redirect } = req.body;
-
-        // Validate required fields
-        if (!customCakeId || !amount || !redirect?.success || !redirect?.failed) {
-            return res.status(400).json({
-                success: false,
-                error: 'Missing required fields (customCakeId, amount, redirect URLs)'
-            });
-        }
-
-        // Validate amount
-        if (amount <= 0) {
-            return res.status(400).json({
-                success: false,
-                error: 'Amount must be greater than zero'
-            });
-        }
-
-        // Verify custom cake order exists and belongs to user
-        let customOrder;
-        if (isImageOrder) {
-          customOrder = await ImageBasedOrder.findOne({
-            where: { 
-              id: customCakeId,
-              userID: req.user.userID 
-            }
-          });
-        } else {
-          customOrder = await CustomCakeOrder.findOne({
-            where: { 
-              customCakeId: customCakeId,
-              userID: req.user.userID 
-            }
-          });
-        }
-
-        if (!customOrder) {
-            return res.status(404).json({
-                success: false,
-                error: 'Custom cake order not found'
-            });
-        }
-
-        // Check if order is ready for checkout
-        if (isImageOrder && customOrder.status !== 'Feasible') {
-            return res.status(400).json({
-                success: false,
-                error: 'Image-based order is not ready for checkout'
-            });
-        }
-
-        if (!isImageOrder && !['Ready', 'Ready for Checkout', 'Pending'].includes(customOrder.status)) {
-            return res.status(400).json({
-                success: false,
-                error: 'Custom cake order is not ready for checkout'
-            });
-        }
-
-        // Create Paymongo payment link
-        const paymongoResponse = await axios.post(
-            'https://api.paymongo.com/v1/links',
-            {
-                data: {
-                    attributes: {
-                        amount: Math.round(amount),
-                        description: description || `Custom Cake Order`,
-                        remarks: `Custom Cake Order for user ${req.user.userID}`,
-                        currency: 'PHP',
-                        checkout: {
-                            name: req.user.name || 'Customer',
-                            email: req.user.email
-                        },
-                        redirect: {
-                            success: redirect.success,
-                            failed: redirect.failed
-                        },
-                        payment_method_allowed: ['gcash'],
-                        metadata: {
-                            userId: req.user.userID,
-                            customCakeId: customCakeId,
-                            isImageOrder: isImageOrder,
-                            orderType: isImageOrder ? 'image_based_cake' : 'custom_3d_cake',
-                            deliveryDate: req.body.deliveryDate || null,
-                            system: 'Slice N Grind Custom Cakes'
-                        }
-                    }
-                }
-            },
-            {
-                headers: {
-                    'Authorization': `Basic ${Buffer.from(PAYMONGO_SECRET_KEY + ':').toString('base64')}`,
-                    'Content-Type': 'application/json'
-                },
-                timeout: 10000
-            }
-        );
-
-        const paymentLink = paymongoResponse.data.data;
-        const checkoutUrl = paymentLink.attributes.checkout_url;
-
-        console.log('Custom cake payment link created:', {
-            paymentLinkId: paymentLink.id,
-            customCakeId,
-            isImageOrder,
-            amount: (amount/100).toFixed(2),
-            userId: req.user.userID
-        });
-
-        res.json({
-            success: true,
-            checkoutUrl,
-            paymentId: paymentLink.id,
-            sandboxNote: process.env.NODE_ENV === 'development' ?
-                'Use test GCash number 9051111111 for successful payment' : undefined
-        });
-
-    } catch (error) {
-        console.error('Custom Cake Payment Error:', error);
-        
-        let statusCode = 500;
-        let errorMessage = 'Custom cake payment processing failed';
-
-        if (error.response) {
-            statusCode = error.response.status || 500;
-            errorMessage = error.response.data?.errors?.[0]?.detail || errorMessage;
-        }
-
-        res.status(statusCode).json({
-            success: false,
-            error: errorMessage,
-            details: process.env.NODE_ENV === 'development' ? error.message : undefined
-        });
-    }
-});
-
-// POST /api/payment/process-cash-custom-cake - Process cash payment for custom cakes
-router.post('/process-cash-custom-cake', verifyToken, async (req, res) => {
-    try {
-        const { customCakeId, isImageOrder, pickupDate } = req.body;
-
-        if (!customCakeId) {
-            return res.status(400).json({
-                success: false,
-                error: 'Custom cake ID is required'
-            });
-        }
-
-        // Verify custom cake order exists and belongs to user
-        let customOrder;
-        if (isImageOrder) {
-          customOrder = await ImageBasedOrder.findOne({
-            where: { 
-              id: customCakeId,
-              userID: req.user.userID 
-            }
-          });
-        } else {
-          customOrder = await CustomCakeOrder.findOne({
-            where: { 
-              customCakeId: customCakeId,
-              userID: req.user.userID 
-            }
-          });
-        }
-
-        if (!customOrder) {
-            return res.status(404).json({
-                success: false,
-                error: 'Custom cake order not found'
-            });
-        }
-
-        // Update order status for cash payment
-        const updateData = { 
-          status: 'Pending',
-          payment_status: 'pending'
-        };
-        
-        if (pickupDate) {
-          updateData.deliveryDate = pickupDate;
-        }
-
-        if (isImageOrder) {
-          await ImageBasedOrder.update(updateData, { where: { id: customCakeId } });
-        } else {
-          await CustomCakeOrder.update(updateData, { where: { customCakeId: customCakeId } });
-        }
-
-        console.log(`Cash payment processed for custom cake: ${customCakeId}, type: ${isImageOrder ? 'image' : '3d'}`);
-
-        res.json({
-            success: true,
-            message: 'Cash payment processed successfully',
-            orderId: customCakeId,
-            orderType: isImageOrder ? 'image_based' : 'custom_3d'
-        });
-
-    } catch (error) {
-        console.error('Cash payment processing error:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to process cash payment',
-            details: process.env.NODE_ENV === 'development' ? error.message : undefined
-        });
-    }
-});
-
-// POST /api/payment/webhook - Handle Paymongo webhooks
-router.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
-    let transaction;
-    try {
-        const signature = req.headers['paymongo-signature'];
-        const payload = req.body.toString();
-
-        // Verify signature in production
-        if (process.env.NODE_ENV === 'production') {
-            if (!verifyWebhookSignature(signature, payload, PAYMONGO_WEBHOOK_SECRET)) {
-                console.warn('Invalid webhook signature');
-                return res.status(401).send('Invalid signature');
-            }
-        }
-
-        const event = JSON.parse(payload);
-        console.log('Received Paymongo webhook:', event.data.type);
-
-        if (event.data.type === 'payment.paid') {
-            transaction = await sequelize.transaction();
-            const payment = event.data.attributes;
-            const metadata = payment.metadata || {};
-            const paymentId = payment.id;
-            const items = metadata.items || [];
-            const userId = metadata.userId;
-
-            // Check if this is a custom cake order
-            if (metadata.customCakeId) {
-                const { customCakeId, isImageOrder, deliveryDate } = metadata;
-                
-                console.log('Processing custom cake webhook:', {
-                    customCakeId,
-                    isImageOrder,
-                    deliveryDate,
-                    paymentId
-                });
-
-                const updateData = { 
-                    status: 'In Progress',
-                    payment_status: 'paid'
-                };
-                
-                if (deliveryDate) {
-                    updateData.deliveryDate = new Date(deliveryDate);
-                }
-
-                if (isImageOrder) {
-                    await ImageBasedOrder.update(updateData, { 
-                        where: { id: customCakeId },
-                        transaction 
-                    });
-                    console.log(`Updated image-based order ${customCakeId}`);
-                } else {
-                    await CustomCakeOrder.update(updateData, { 
-                        where: { customCakeId: customCakeId },
-                        transaction 
-                    });
-                    console.log(`Updated custom cake order ${customCakeId}`);
-                }
-
-                await transaction.commit();
-                return res.status(200).end();
-            }
-
-            // Handle regular orders
-            let order = await Order.findOne({
-                where: { payment_id: paymentId },
-                transaction
-            });
-
-            if (order && order.payment_verified) {
-                console.log(`Payment ${paymentId} already processed, skipping`);
-                await transaction.commit();
-                return res.status(200).end();
-            }
-
-            if (!order) {
-                // Create new order
-                order = await Order.create({
-                    userID: userId,
-                    total_amount: payment.amount / 100,
-                    status: 'processing',
-                    payment_id: paymentId,
-                    payment_verified: true,
-                    payment_method: 'gcash',
-                    delivery_method: items[0]?.deliveryMethod || 'pickup',
-                    customer_name: payment.checkout?.name || 'Customer',
-                    customer_email: payment.checkout?.email,
-                    customer_phone: payment.checkout?.phone || 'Not provided',
-                    delivery_address: items[0]?.customerInfo?.deliveryAddress || null,
-                    items: items
-                }, { transaction });
-
-                // Create order items
-                if (items.length > 0) {
-                    await OrderItem.bulkCreate(
-                        items.map(item => ({
-                            orderId: order.orderId,
-                            menuId: item.menuId,
-                            sizeId: item.sizeId,
-                            quantity: item.quantity,
-                            price: item.price,
-                            item_name: item.name,
-                            size_name: item.size
-                        })),
-                        { transaction }
-                    );
-                }
-            } else {
-                // Update existing order
-                await order.update({
-                    status: 'processing',
-                    payment_verified: true
-                }, { transaction });
-            }
-
-            // Clear user cart
-            if (userId) {
-                console.log(`Clearing cart for user ${userId}`);
-                const cart = await Cart.findOne({ 
-                    where: { userID: userId },
-                    transaction
-                });
-
-                if (cart) {
-                    const deletedCount = await CartItem.destroy({
-                        where: { cartId: cart.cartId },
-                        transaction
-                    });
-                    console.log(`Cleared ${deletedCount} cart items`);
-                }
-            }
-
-            await transaction.commit();
-            return res.status(200).end();
-        }
-
-        res.status(200).end();
-    } catch (error) {
-        console.error('Webhook processing error:', error);
-        if (transaction) await transaction.rollback();
-        return res.status(200).json({ success: false });
-    }
-});
-
 // GET /api/payment/verify-payment/:paymentId - Verify payment status by payment ID
 router.get('/verify-payment/:paymentId', verifyToken, async (req, res) => {
     try {
@@ -724,5 +790,6 @@ router.get('/verify-payment/:paymentId', verifyToken, async (req, res) => {
         });
     }
 });
+
 
 module.exports = router;

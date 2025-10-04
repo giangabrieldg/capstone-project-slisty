@@ -39,6 +39,14 @@ module.exports = (sequelize, DataTypes) => {
         key: 'customCakeId',
       },
     },
+    imageOrderId: {  
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'ImageBasedOrders',
+      key: 'imageBasedOrderId'  // References new PK
+    }
+  },
     quantity: {
       type: DataTypes.INTEGER,
       allowNull: false,

@@ -11,48 +11,42 @@ const CartItem = require('./cart-item-model')(sequelize, DataTypes);
 const Order = require('./order-model')(sequelize, DataTypes);
 const OrderItem = require('./order-item-model')(sequelize, DataTypes);
 const CustomCakeOrder = require('./custom-cake-model');
-const ImageBasedOrder = require('./image-based-order-model'); // Add this line
+const ImageBasedOrder = require('./image-based-order-model');
 
 // MenuItem ↔ ItemSize
 MenuItem.hasMany(ItemSize, { 
   foreignKey: 'menuId', 
   as: 'sizes', 
   constraints: true, 
-  foreignKeyConstraint: true, 
-  constraintName: 'fk_itemsize_menuitem_hasMany' 
+  foreignKeyConstraint: true 
 });
 ItemSize.belongsTo(MenuItem, { 
   foreignKey: 'menuId', 
   as: 'menuItem', 
   constraints: true, 
-  foreignKeyConstraint: true, 
-  constraintName: 'fk_itemsize_menuitem_belongsTo' 
+  foreignKeyConstraint: true 
 });
 
 // Cart ↔ CartItem
 Cart.hasMany(CartItem, { 
   foreignKey: 'cartId', 
   constraints: true, 
-  foreignKeyConstraint: true, 
-  constraintName: 'fk_cartitem_cart_hasMany' 
+  foreignKeyConstraint: true 
 });
 CartItem.belongsTo(Cart, { 
   foreignKey: 'cartId', 
   constraints: true, 
-  foreignKeyConstraint: true, 
-  constraintName: 'fk_cartitem_cart_belongsTo' 
+  foreignKeyConstraint: true 
 });
 CartItem.belongsTo(MenuItem, { 
   foreignKey: 'menuId', 
   constraints: true, 
-  foreignKeyConstraint: true, 
-  constraintName: 'fk_cartitem_menuitem_belongsTo' 
+  foreignKeyConstraint: true 
 });
 MenuItem.hasMany(CartItem, { 
   foreignKey: 'menuId', 
   constraints: true, 
-  foreignKeyConstraint: true, 
-  constraintName: 'fk_cartitem_menuitem_hasMany' 
+  foreignKeyConstraint: true 
 });
 
 // User ↔ Order
@@ -60,15 +54,13 @@ User.hasMany(Order, {
   foreignKey: 'userID', 
   as: 'orders', 
   constraints: true, 
-  foreignKeyConstraint: true, 
-  constraintName: 'fk_order_user_hasMany' 
+  foreignKeyConstraint: true 
 });
 Order.belongsTo(User, { 
   foreignKey: 'userID', 
   as: 'customer', 
   constraints: true, 
-  foreignKeyConstraint: true, 
-  constraintName: 'fk_order_user_belongsTo' 
+  foreignKeyConstraint: true 
 });
 
 // Order ↔ OrderItem
@@ -76,42 +68,36 @@ Order.hasMany(OrderItem, {
   foreignKey: 'orderId', 
   as: 'orderItems', 
   constraints: true, 
-  foreignKeyConstraint: true, 
-  constraintName: 'fk_orderitem_order_hasMany' 
+  foreignKeyConstraint: true 
 });
 OrderItem.belongsTo(Order, { 
   foreignKey: 'orderId', 
   constraints: true, 
-  foreignKeyConstraint: true, 
-  constraintName: 'fk_orderitem_order_belongsTo' 
+  foreignKeyConstraint: true 
 });
 
 // MenuItem ↔ OrderItem
 MenuItem.hasMany(OrderItem, { 
   foreignKey: 'menuId', 
   constraints: true, 
-  foreignKeyConstraint: true, 
-  constraintName: 'fk_orderitem_menuitem_hasMany' 
+  foreignKeyConstraint: true 
 });
 OrderItem.belongsTo(MenuItem, { 
   foreignKey: 'menuId', 
   constraints: true, 
-  foreignKeyConstraint: true, 
-  constraintName: 'fk_orderitem_menuitem_belongsTo' 
+  foreignKeyConstraint: true 
 });
 
 // ItemSize ↔ OrderItem
 ItemSize.hasMany(OrderItem, { 
   foreignKey: 'sizeId', 
   constraints: true, 
-  foreignKeyConstraint: true, 
-  constraintName: 'fk_orderitem_itemsize_hasMany' 
+  foreignKeyConstraint: true 
 });
 OrderItem.belongsTo(ItemSize, { 
   foreignKey: 'sizeId', 
   constraints: true, 
-  foreignKeyConstraint: true, 
-  constraintName: 'fk_orderitem_itemsize_belongsTo' 
+  foreignKeyConstraint: true 
 });
 
 // User ↔ CustomCakeOrder
@@ -119,59 +105,64 @@ User.hasMany(CustomCakeOrder, {
   foreignKey: 'userID', 
   as: 'customCakeOrders', 
   constraints: true, 
-  foreignKeyConstraint: true, 
-  constraintName: 'fk_customcakeorder_user_hasMany' 
+  foreignKeyConstraint: true 
 });
 CustomCakeOrder.belongsTo(User, { 
   foreignKey: 'userID', 
   as: 'customer', 
   constraints: true, 
-  foreignKeyConstraint: true, 
-  constraintName: 'fk_customcakeorder_user_belongsTo' 
+  foreignKeyConstraint: true 
 });
 
-// User ↔ ImageBasedOrder (ADD THIS ASSOCIATION)
+// User ↔ ImageBasedOrder
 User.hasMany(ImageBasedOrder, { 
   foreignKey: 'userID', 
   as: 'imageBasedOrders', 
   constraints: true, 
-  foreignKeyConstraint: true, 
-  constraintName: 'fk_imagebasedorder_user_hasMany' 
+  foreignKeyConstraint: true 
 });
 ImageBasedOrder.belongsTo(User, { 
   foreignKey: 'userID', 
   as: 'customer', 
   constraints: true, 
-  foreignKeyConstraint: true, 
-  constraintName: 'fk_imagebasedorder_user_belongsTo' 
+  foreignKeyConstraint: true 
 });
 
 // CartItem ↔ CustomCakeOrder
 CustomCakeOrder.hasMany(CartItem, { 
   foreignKey: 'customCakeId', 
   constraints: true, 
-  foreignKeyConstraint: true, 
-  constraintName: 'fk_cartitem_customcake_hasMany' 
+  foreignKeyConstraint: true 
 });
 CartItem.belongsTo(CustomCakeOrder, { 
   foreignKey: 'customCakeId', 
   constraints: true, 
-  foreignKeyConstraint: true, 
-  constraintName: 'fk_cartitem_customcake_belongsTo' 
+  foreignKeyConstraint: true 
 });
 
 // OrderItem ↔ CustomCakeOrder
 CustomCakeOrder.hasMany(OrderItem, { 
   foreignKey: 'customCakeId', 
   constraints: true, 
-  foreignKeyConstraint: true, 
-  constraintName: 'fk_orderitem_customcake_hasMany' 
+  foreignKeyConstraint: true 
 });
 OrderItem.belongsTo(CustomCakeOrder, { 
   foreignKey: 'customCakeId', 
   constraints: true, 
-  foreignKeyConstraint: true, 
-  constraintName: 'fk_orderitem_customcake_belongsTo' 
+  foreignKeyConstraint: true 
+});
+
+// FIXED: OrderItem ↔ ImageBasedOrder (use separate FK to avoid PK mismatch)
+ImageBasedOrder.hasMany(OrderItem, { 
+  foreignKey: 'imageOrderId',  // NEW: FK name (in OrderItem)
+  constraints: true, 
+  foreignKeyConstraint: true 
+});
+OrderItem.belongsTo(ImageBasedOrder, { 
+  foreignKey: 'imageOrderId',
+  as: 'ImageBasedOrder', 
+  constraints: true, 
+  foreignKeyConstraint: true 
 });
 
 // User ↔ ResetToken
@@ -179,15 +170,13 @@ User.hasMany(ResetToken, {
   foreignKey: 'userID',
   as: 'resetTokens',
   constraints: true,
-  foreignKeyConstraint: true,
-  constraintName: 'fk_resettoken_user_hasMany'
+  foreignKeyConstraint: true
 });
 ResetToken.belongsTo(User, {
   foreignKey: 'userID',
   as: 'user',
   constraints: true,
-  foreignKeyConstraint: true,
-  constraintName: 'fk_resettoken_user_belongsTo'
+  foreignKeyConstraint: true
 });
 
 module.exports = {
@@ -201,5 +190,5 @@ module.exports = {
   Order,
   OrderItem,
   CustomCakeOrder,
-  ImageBasedOrder, // Add this to exports
+  ImageBasedOrder,
 };

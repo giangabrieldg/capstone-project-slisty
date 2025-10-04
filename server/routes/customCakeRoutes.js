@@ -482,4 +482,123 @@ router.delete('/image-orders/:orderId', verifyToken, async (req, res) => {
   }
 });
 
+// POST /api/custom-cake/process-cash-payment - Process cash payment for custom cakes
+router.post('/process-cash-payment', verifyToken, async (req, res) => {
+  const transaction = await sequelize.transaction();
+  try {
+    const { customCakeId, isImageOrder, pickupDate, customerInfo, totalAmount } = req.body;
+
+    if (!customCakeId) {
+      await transaction.rollback();
+      return res.status(400).json({
+        success: false,
+        error: 'Custom cake ID is required'
+      });
+    }
+
+    // Verify custom cake order exists and belongs to user
+    let customOrder;
+    if (isImageOrder) {
+      customOrder = await ImageBasedOrder.findOne({
+        where: { 
+          imageBasedOrderId: customCakeId,
+          userID: req.user.userID 
+        },
+        transaction
+      });
+    } else {
+      customOrder = await CustomCakeOrder.findOne({
+        where: { 
+          customCakeId: customCakeId,
+          userID: req.user.userID 
+        },
+        transaction
+      });
+    }
+
+    if (!customOrder) {
+      await transaction.rollback();
+      return res.status(404).json({
+        success: false,
+        error: 'Custom cake order not found'
+      });
+    }
+
+    // Update custom cake order status for cash payment
+    const updateData = { 
+      status: 'Pending',
+      payment_status: 'pending'
+    };
+    
+    if (pickupDate) {
+      updateData.deliveryDate = new Date(pickupDate);
+    }
+
+    if (isImageOrder) {
+      await ImageBasedOrder.update(updateData, { 
+        where: { imageBasedOrderId: customCakeId },
+        transaction 
+      });
+    } else {
+      await CustomCakeOrder.update(updateData, { 
+        where: { customCakeId: customCakeId },
+        transaction 
+      });
+    }
+
+    // Create Order record for the custom cake (so it appears in orders)
+    const order = await Order.create({
+      userID: req.user.userID,
+      total_amount: totalAmount,
+      status: 'pending',
+      payment_method: 'cash',
+      payment_verified: false,
+      delivery_method: 'pickup', // Default for custom cakes
+      pickup_date: pickupDate ? new Date(pickupDate) : null,
+      customer_name: customerInfo?.fullName || req.user.name,
+      customer_email: customerInfo?.email || req.user.email,
+      customer_phone: customerInfo?.phone || req.user.phone,
+      delivery_address: null, // Custom cakes typically pickup
+      items: [{ 
+        customCakeId, 
+        name: isImageOrder ? 'Custom Image Cake' : '3D Custom Cake', 
+        price: totalAmount, 
+        quantity: 1, 
+        size: customOrder.size || 'Custom' 
+      }]
+    }, { transaction });
+
+    // Create OrderItem
+    await OrderItem.create({
+      orderId: order.orderId,
+      customCakeId,
+      quantity: 1,
+      price: totalAmount,
+      item_name: isImageOrder ? 'Custom Image Cake' : '3D Custom Cake',
+      size_name: customOrder.size || 'Custom'
+    }, { transaction });
+
+    await transaction.commit();
+
+    console.log(`Cash payment processed for custom cake: ${customCakeId}, type: ${isImageOrder ? 'image' : '3d'}`);
+
+    res.json({
+      success: true,
+      message: 'Cash payment processed successfully',
+      orderId: order.orderId,
+      customCakeId: customCakeId,
+      orderType: isImageOrder ? 'image_based' : 'custom_3d'
+    });
+
+  } catch (error) {
+    await transaction.rollback();
+    console.error('Cash payment processing error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to process cash payment',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
 module.exports = router;

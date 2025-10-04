@@ -23,123 +23,137 @@ async function fetchCustomCakeOrders() {
       imageData = await imageResponse.json();
     }
 
-    // Clear both tables
     const customTbody = document.querySelector('.cake-orders');
     const imageTbody = document.querySelector('.image-orders');
     customTbody.innerHTML = '';
     imageTbody.innerHTML = '';
 
     // Process custom cake orders (3D designs)
-  if (customData.success && customData.orders) {
-    customData.orders.forEach(order => {
-      const flavor = order.cakeColor === '#8B4513' ? 'Chocolate' : 'White';
-      const icingStyle = order.icingStyle === 'buttercream' ? 'Buttercream' : 'Whipped';
-      const decorations = order.decorations === 'flowers' ? `Flowers (${order.flowerType})` : 
-                          order.decorations === 'toppings' ? 'Toppings' : 
-                          order.decorations === 'balloons' ? 'Balloons' : 'None';
-      const customText = order.messageChoice === 'custom' ? `"${order.customText}"` : 'None';
-      const details = `${flavor} cake, ${order.size}, ${icingStyle} icing, ${order.filling} filling, ${order.bottomBorder} bottom border, ${order.topBorder} top border, ${decorations}, ${customText}`;
-      
-      const displayOrderId = `CC${String(order.customCakeId).padStart(3, '0')}`;
-      const deliveryDate = order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString() : 'Not set';
-      
-      const row = document.createElement('tr');
-      row.innerHTML = `
-        <td>${displayOrderId}</td>
-        <td>${order.customer ? order.customer.name : 'Unknown'}</td>
-        <td>${details}</td>
-        <td>${deliveryDate}</td>
-        <td>
-          ${order.referenceImageUrl ? `<a href="#" class="view-image" data-image-url="${order.referenceImageUrl}" data-image-type="reference" data-bs-toggle="modal" data-bs-target="#imageModal">View</a>` : 'None'}
-        </td>
-        <td>
-          ${order.designImageUrl ? `<a href="#" class="view-image" data-image-url="${order.designImageUrl}" data-image-type="design" data-bs-toggle="modal" data-bs-target="#imageModal">View</a>` : 'None'}
-        </td>
-        <td><span class="status ${order.status.toLowerCase().replace(/ /g, '-')}" data-order-id="${order.customCakeId}" data-is-image-order="false">${order.status}</span></td>
-        <td>${order.price ? `₱${parseFloat(order.price).toFixed(2)}` : 'Not set'}</td>
-        <td>
-          <div class="admin-actions">
-            <select class="form-select status-select" data-order-id="${order.customCakeId}" data-is-image-order="false">
-              <option value="Pending Review" ${order.status === 'Pending Review' ? 'selected' : ''}>Pending Review</option>
-              <option value="Ready for Checkout" ${order.status === 'Ready for Checkout' ? 'selected' : ''}>Ready for Checkout</option>
-              <option value="Pending" ${order.status === 'Pending' ? 'selected' : ''}>Pending</option>
-              <option value="Ready" ${order.status === 'Ready' ? 'selected' : ''}>Ready</option>
-              <option value="In Progress" ${order.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
-              <option value="Ready for Pickup/Delivery" ${order.status === 'Ready for Pickup/Delivery' ? 'selected' : ''}>Ready for Pickup/Delivery</option>
-              <option value="Completed" ${order.status === 'Completed' ? 'selected' : ''}>Completed</option>
-              <option value="Cancelled" ${order.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
-            </select>
-            <button class="btn btn-primary btn-sm update-status mt-1">Update Status</button>
-          </div>
-        </td>
-      `;
-      customTbody.appendChild(row);
-    });
-  }
-
-   // Process image-based orders
-  if (imageData.success && imageData.orders) {
-    imageData.orders.forEach(order => {
-      const displayOrderId = `RCC${String(order.id).padStart(3, '0')}`;
-      const deliveryDate = order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString() : 'Not set';
-      
-      const row = document.createElement('tr');
-      row.innerHTML = `
-        <td>${displayOrderId}</td>
-        <td>${order.customer ? order.customer.name : 'Unknown'}</td>
-        <td>${order.flavor}</td>
-        <td>${order.message || 'None'}</td>
-        <td>${new Date(order.eventDate).toLocaleDateString()}</td>
-        <td>${deliveryDate}</td>
-        <td>${order.notes || 'None'}</td>
-        <td>
-          ${order.imagePath ? `<a href="#" class="view-image" data-image-url="${order.imagePath}" data-image-type="reference" data-bs-toggle="modal" data-bs-target="#imageModal">View</a>` : 'None'}
-        </td>
-        <td><span class="status ${order.status.toLowerCase().replace(/ /g, '-')}" data-order-id="${order.id}" data-is-image-order="true">${order.status}</span></td>
-        <td>${order.price ? `₱${parseFloat(order.price).toFixed(2)}` : 'Not set'}</td>
-        <td>
-          <div class="admin-actions">
-            <select class="form-select status-select mb-2" data-order-id="${order.id}" data-is-image-order="true" id="status-select-${order.id}">
-              <option value="Pending Review" ${order.status === 'Pending Review' ? 'selected' : ''}>Pending Review</option>
-              <option value="Feasible" ${order.status === 'Feasible' ? 'selected' : ''}>Feasible</option>
-              <option value="Not Feasible" ${order.status === 'Not Feasible' ? 'selected' : ''}>Not Feasible</option>
-              ${order.status === 'Feasible' || ['Ready', 'In Progress', 'Ready for Pickup/Delivery', 'Completed', 'Cancelled'].includes(order.status) ? `
+    if (customData.success && customData.orders) {
+      customData.orders.forEach(order => {
+        const flavor = order.cakeColor === '#8B4513' ? 'Chocolate' : 'White';
+        const icingStyle = order.icingStyle === 'buttercream' ? 'Buttercream' : 'Whipped';
+        const decorations = order.decorations === 'flowers' ? `Flowers (${order.flowerType})` : 
+                            order.decorations === 'toppings' ? 'Toppings' : 
+                            order.decorations === 'balloons' ? 'Balloons' : 'None';
+        const customText = order.messageChoice === 'custom' ? `"${order.customText}"` : 'None';
+        const details = `${flavor} cake, ${order.size}, ${icingStyle} icing, ${order.filling} filling, ${order.bottomBorder} bottom border, ${order.topBorder} top border, ${decorations}, ${customText}`;
+        
+        const displayOrderId = `CC${String(order.customCakeId).padStart(3, '0')}`;
+        const deliveryDate = order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString() : 'Not set';
+        
+        // ADDED: Get payment method and status
+        const paymentMethod = order.payment_status === 'paid' ? 'GCash' : 
+                             order.payment_status === 'pending' ? 'Cash' : 'Not set';
+        const paymentStatus = order.payment_status || 'pending';
+        const paymentBadge = paymentStatus === 'paid' ? 
+          '<span class="badge bg-success">Paid</span>' : 
+          '<span class="badge bg-warning text-dark">Pending</span>';
+        
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${displayOrderId}</td>
+          <td>${order.customer ? order.customer.name : 'Unknown'}</td>
+          <td>${details}</td>
+          <td>${deliveryDate}</td>
+          <td>
+            ${order.referenceImageUrl ? `<a href="#" class="view-image" data-image-url="${order.referenceImageUrl}" data-image-type="reference" data-bs-toggle="modal" data-bs-target="#imageModal">View</a>` : 'None'}
+          </td>
+          <td>
+            ${order.designImageUrl ? `<a href="#" class="view-image" data-image-url="${order.designImageUrl}" data-image-type="design" data-bs-toggle="modal" data-bs-target="#imageModal">View</a>` : 'None'}
+          </td>
+          <td><span class="status ${order.status.toLowerCase().replace(/ /g, '-')}" data-order-id="${order.customCakeId}" data-is-image-order="false">${order.status}</span></td>
+          <td>${order.price ? `₱${parseFloat(order.price).toFixed(2)}` : 'Not set'}</td>
+          <td>${paymentMethod} ${paymentBadge}</td>
+          <td>
+            <div class="admin-actions">
+              <select class="form-select status-select" data-order-id="${order.customCakeId}" data-is-image-order="false">
+                <option value="Pending Review" ${order.status === 'Pending Review' ? 'selected' : ''}>Pending Review</option>
+                <option value="Ready for Checkout" ${order.status === 'Ready for Checkout' ? 'selected' : ''}>Ready for Checkout</option>
+                <option value="Pending" ${order.status === 'Pending' ? 'selected' : ''}>Pending</option>
                 <option value="Ready" ${order.status === 'Ready' ? 'selected' : ''}>Ready</option>
                 <option value="In Progress" ${order.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
                 <option value="Ready for Pickup/Delivery" ${order.status === 'Ready for Pickup/Delivery' ? 'selected' : ''}>Ready for Pickup/Delivery</option>
                 <option value="Completed" ${order.status === 'Completed' ? 'selected' : ''}>Completed</option>
                 <option value="Cancelled" ${order.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
-              ` : ''}
-            </select>
-            <div class="price-input mb-2" style="display: ${order.status === 'Feasible' || ['Ready', 'In Progress', 'Ready for Pickup/Delivery', 'Completed'].includes(order.status) ? 'block' : 'none'}">
-              <input type="number" class="form-control form-control-sm price-input-field" placeholder="Set price" value="${order.price || ''}" step="0.01" min="0" ${order.status === 'Not Feasible' || order.status === 'Cancelled' ? 'disabled' : ''}>
+              </select>
+              <button class="btn btn-primary btn-sm update-status mt-1">Update Status</button>
             </div>
-            <button class="btn btn-primary btn-sm update-status">Update</button>
-          </div>
-        </td>
-      `;
-      imageTbody.appendChild(row);
-    });
-  }
+          </td>
+        `;
+        customTbody.appendChild(row);
+      });
+    }
 
-    // If no orders in either tab, show messages
+    // Process image-based orders
+    // In admin-cake.js - FIX the image order ID issue:
+// Process image-based orders
+if (imageData.success && imageData.orders) {
+  imageData.orders.forEach(order => {
+    // FIX: Use imageBasedOrderId instead of id
+    const orderId = order.imageBasedOrderId || order.id;
+    const displayOrderId = `RCC${String(orderId).padStart(3, '0')}`;
+    const deliveryDate = order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString() : 'Not set';
+    
+    const paymentMethod = order.payment_status === 'paid' ? 'GCash' : 
+                         order.payment_status === 'pending' ? 'Cash' : 'Not set';
+    const paymentStatus = order.payment_status || 'pending';
+    const paymentBadge = paymentStatus === 'paid' ? 
+      '<span class="badge bg-success">Paid</span>' : 
+      '<span class="badge bg-warning text-dark">Pending</span>';
+    
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${displayOrderId}</td>
+      <td>${order.customer ? order.customer.name : 'Unknown'}</td>
+      <td>${order.flavor}</td>
+      <td>${order.message || 'None'}</td>
+      <td>${new Date(order.eventDate).toLocaleDateString()}</td>
+      <td>${deliveryDate}</td>
+      <td>${order.notes || 'None'}</td>
+      <td>
+        ${order.imagePath ? `<a href="#" class="view-image" data-image-url="${order.imagePath}" data-image-type="reference" data-bs-toggle="modal" data-bs-target="#imageModal">View</a>` : 'None'}
+      </td>
+      <td><span class="status ${order.status.toLowerCase().replace(/ /g, '-')}" data-order-id="${orderId}" data-is-image-order="true">${order.status}</span></td>
+      <td>${order.price ? `₱${parseFloat(order.price).toFixed(2)}` : 'Not set'}</td>
+      <td>${paymentMethod} ${paymentBadge}</td>
+      <td>
+        <div class="admin-actions">
+          <select class="form-select status-select mb-2" data-order-id="${orderId}" data-is-image-order="true" id="status-select-${orderId}">
+            <option value="Pending Review" ${order.status === 'Pending Review' ? 'selected' : ''}>Pending Review</option>
+            <option value="Feasible" ${order.status === 'Feasible' ? 'selected' : ''}>Feasible</option>
+            <option value="Not Feasible" ${order.status === 'Not Feasible' ? 'selected' : ''}>Not Feasible</option>
+            ${order.status === 'Feasible' || ['Ready', 'In Progress', 'Ready for Pickup/Delivery', 'Completed', 'Cancelled'].includes(order.status) ? `
+              <option value="Ready" ${order.status === 'Ready' ? 'selected' : ''}>Ready</option>
+              <option value="In Progress" ${order.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
+              <option value="Ready for Pickup/Delivery" ${order.status === 'Ready for Pickup/Delivery' ? 'selected' : ''}>Ready for Pickup/Delivery</option>
+              <option value="Completed" ${order.status === 'Completed' ? 'selected' : ''}>Completed</option>
+              <option value="Cancelled" ${order.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
+            ` : ''}
+          </select>
+          <div class="price-input mb-2" style="display: ${order.status === 'Feasible' || ['Ready', 'In Progress', 'Ready for Pickup/Delivery', 'Completed'].includes(order.status) ? 'block' : 'none'}">
+            <input type="number" class="form-control form-control-sm price-input-field" placeholder="Set price" value="${order.price || ''}" step="0.01" min="0" ${order.status === 'Not Feasible' || order.status === 'Cancelled' ? 'disabled' : ''}>
+          </div>
+          <button class="btn btn-primary btn-sm update-status">Update</button>
+        </div>
+      </td>
+    `;
+    imageTbody.appendChild(row);
+  });
+}
+
     if (!customData.orders || customData.orders.length === 0) {
       const row = document.createElement('tr');
-      row.innerHTML = `
-        <td colspan="8" class="text-center">No custom cake orders found</td>
-      `;
+      row.innerHTML = `<td colspan="10" class="text-center">No custom cake orders found</td>`;
       customTbody.appendChild(row);
     }
 
     if (!imageData.orders || imageData.orders.length === 0) {
       const row = document.createElement('tr');
-      row.innerHTML = `
-        <td colspan="10" class="text-center">No image-based orders found</td>
-      `;
+      row.innerHTML = `<td colspan="12" class="text-center">No image-based orders found</td>`;
       imageTbody.appendChild(row);
     }
 
-    // Add event listeners
     setupEventListeners(token);
     
   } catch (error) {

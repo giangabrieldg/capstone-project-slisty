@@ -35,13 +35,12 @@ class CakeAPIService {
   // Calculate price for immediate checkout
   const totalPrice = pricing.base[config.size] + pricing.fillings[config.filling];
   
-  // Validate price for immediate checkout
-  if (!totalPrice || totalPrice <= 0) {
-    return {
-      success: true,
-      data: result,
-      message: "Custom cake order created successfully!"
-    };
+  // Validate price for immediate checkout - FIXED LOGIC
+  if (totalPrice && totalPrice > 0) {
+    formData.append("price", totalPrice);
+    formData.append("requiresReview", "false");
+  } else {
+    formData.append("requiresReview", "true");
   }
 
   // Capture 3D design as image
@@ -107,71 +106,126 @@ class CakeAPIService {
   }
 }
 
-  // NEW: Process custom cake payment
-  async processCustomCakePayment(orderId, isImageOrder, paymentMethod, amount) {
-    if (!this.requireAuth()) return;
+  // UPDATED: Process custom cake payment (unified endpoint, pass deliveryDate)
+async processCustomCakePayment(customCakeId, isImageOrder, paymentMethod, amount, deliveryDate, deliveryMethod, customerInfo) {
+  if (!this.requireAuth()) return;
 
-    const token = this.getToken();
+  const token = this.getToken();
 
-    try {
-      if (paymentMethod === 'gcash') {
-        const response = await fetch('/api/payment/create-custom-cake-payment', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            customCakeId: orderId,
-            isImageOrder: isImageOrder,
-            amount: amount * 100, // Convert to cents
-            description: `Custom Cake Order`,
-            redirect: {
-              success: `${window.location.origin}/public/customer/success.html`,
-              failed: `${window.location.origin}/public/customer/failed.html`
-            }
-          })
-        });
+  try {
+    if (paymentMethod === 'gcash') {
+      const response = await fetch('/api/payment/create-gcash-source', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          customCakeId,
+          isImageOrder,
+          amount: amount * 100,
+          description: isImageOrder ? 'Custom Image Cake Order' : '3D Custom Cake Order',
+          deliveryDate,
+          deliveryMethod,
+          customerInfo,
+          redirect: {
+            success: `${window.location.origin}/public/customer/success.html`,
+            failed: `${window.location.origin}/public/customer/failed.html`
+          }
+        })
+      });
 
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error);
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error);
 
-        return {
-          success: true,
-          data: data,
-          message: "GCash payment initiated"
-        };
-      } else if (paymentMethod === 'cash') {
-        const response = await fetch('/api/payment/process-cash-custom-cake', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            customCakeId: orderId,
-            isImageOrder: isImageOrder
-          })
-        });
+      // Store pending payment data
+      sessionStorage.setItem('pendingPayment', JSON.stringify({
+        paymentId: data.paymentId,
+        timestamp: Date.now(),
+        paymentMethod: 'gcash',
+        isCustomCake: true,
+        orderId: data.orderId
+      }));
 
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error);
-
-        return {
-          success: true,
-          data: data,
-          message: "Cash payment processed successfully"
-        };
-      }
-    } catch (error) {
-      console.error("Payment processing error:", error);
       return {
-        success: false,
-        error: error.message,
-        message: "Payment processing failed. Please try again."
+        success: true,
+        data,
+        message: "GCash payment initiated"
+      };
+    } else if (paymentMethod === 'cash') {
+      // Use the new cash payment endpoint in customCakeRoutes
+      const response = await fetch('/api/custom-cake/process-cash-payment', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          customCakeId,
+          isImageOrder,
+          pickupDate: deliveryDate,
+          customerInfo,
+          totalAmount: amount
+        })
+      });
+
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error);
+
+      return {
+        success: true,
+        data: result,
+        message: "Cash order created successfully"
       };
     }
+  } catch (error) {
+    console.error("Payment processing error:", error);
+    return {
+      success: false,
+      error: error.message,
+      message: "Payment failed. Please try again."
+    };
   }
+}
+
+async processCashPayment(customCakeId, isImageOrder, pickupDate, customerInfo, totalAmount) {
+  if (!this.requireAuth()) return;
+
+  const token = this.getToken();
+  
+  try {
+    const response = await fetch('/api/custom-cake/process-cash-payment', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        customCakeId,
+        isImageOrder,
+        pickupDate,
+        customerInfo,
+        totalAmount
+      })
+    });
+
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error);
+
+    return {
+      success: true,
+      data: result,
+      message: "Cash payment processed successfully"
+    };
+  } catch (error) {
+    console.error("Cash payment processing error:", error);
+    return {
+      success: false,
+      error: error.message,
+      message: "Cash payment failed. Please try again."
+    };
+  }
+}
 
   // Submit image-based order with Google Drive upload
   async submitImageBasedOrder(formElement) {
@@ -243,44 +297,62 @@ class CakeAPIService {
     }
   }
 
-  // Get user's custom orders (both custom and image-based)
-  async getCustomOrders() {
-    if (!this.requireAuth()) return;
+  // UPDATED: Get user's custom orders (unified via /orders/user/me, filter for custom)
+// In custom-cake.js - UPDATE the getCustomOrders method:
+async getCustomOrders() {
+  if (!this.requireAuth()) return;
 
-    const token = this.getToken();
+  const token = this.getToken();
 
-    try {
-      const [customResponse, imageResponse] = await Promise.all([
-        fetch(`${this.baseURL}/orders?token=${encodeURIComponent(token)}`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        }),
-        fetch(`${this.baseURL}/image-orders?token=${encodeURIComponent(token)}`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        })
-      ]);
+  try {
+    // Fetch from both custom cake endpoints directly
+    const [customResponse, imageResponse] = await Promise.all([
+      fetch(`${this.baseURL}/orders`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      }),
+      fetch(`${this.baseURL}/image-orders`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+    ]);
 
-      if (!customResponse.ok || !imageResponse.ok) {
-        throw new Error(`HTTP error! Status: ${customResponse.status || imageResponse.status}`);
-      }
+    let customData = { success: false, orders: [] };
+    let imageData = { success: false, orders: [] };
 
-      const customOrders = await customResponse.json();
-      const imageOrders = await imageResponse.json();
-      return {
-        success: true,
-        data: {
-          customOrders: customOrders.orders,
-          imageOrders: imageOrders.orders
-        }
-      };
-    } catch (error) {
-      console.error("Error fetching orders:", error);
-      return {
-        success: false,
-        error: error.message,
-        message: "Error loading your orders. Please try again."
-      };
+    if (customResponse.ok) {
+      customData = await customResponse.json();
     }
+
+    if (imageResponse.ok) {
+      imageData = await imageResponse.json();
+    }
+
+    // SHOW ALL ORDERS - NO FILTERING
+    const customOrders = customData.success ? customData.orders : [];
+    const imageOrders = imageData.success ? imageData.orders : [];
+
+    console.log('Loaded ALL custom orders:', {
+      total3D: customOrders.length,
+      totalImage: imageOrders.length,
+      all3DOrders: customOrders.map(o => ({ id: o.customCakeId, status: o.status })),
+      allImageOrders: imageOrders.map(o => ({ id: o.imageBasedOrderId, status: o.status }))
+    });
+
+    return {
+      success: true,
+      data: {
+        customOrders,
+        imageOrders
+      }
+    };
+  } catch (error) {
+    console.error("Error fetching custom orders:", error);
+    return {
+      success: false,
+      error: error.message,
+      message: "Error loading orders. Please try again."
+    };
   }
+}
 
   // Delete custom order
   async deleteOrder(orderId, isImageOrder = false) {
@@ -349,18 +421,21 @@ class CakeAPIService {
     }
   }
 
-    async processCustomCakeCheckout(customCakeId, isImageOrder = false, paymentMethod, amount) {
+ async processCustomCakeCheckout(customCakeId, isImageOrder = false, paymentMethod, amount, deliveryDate, deliveryMethod, customerInfo) {
   if (!this.requireAuth()) return;
 
   const token = this.getToken();
   
   try {
-    // Process payment directly
+    // Process payment with all required parameters
     const paymentResponse = await this.processCustomCakePayment(
       customCakeId, 
       isImageOrder, 
       paymentMethod, 
-      amount
+      amount,
+      deliveryDate,
+      deliveryMethod,
+      customerInfo
     );
     
     return paymentResponse;
