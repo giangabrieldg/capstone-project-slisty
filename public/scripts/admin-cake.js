@@ -42,13 +42,8 @@ async function fetchCustomCakeOrders() {
         const displayOrderId = `CC${String(order.customCakeId).padStart(3, '0')}`;
         const deliveryDate = order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString() : 'Not set';
         
-        // ADDED: Get payment method and status
-        const paymentMethod = order.payment_status === 'paid' ? 'GCash' : 
-                             order.payment_status === 'pending' ? 'Cash' : 'Not set';
-        const paymentStatus = order.payment_status || 'pending';
-        const paymentBadge = paymentStatus === 'paid' ? 
-          '<span class="badge bg-success">Paid</span>' : 
-          '<span class="badge bg-warning text-dark">Pending</span>';
+        // Enhanced payment information display
+        const paymentInfo = renderPaymentInfo(order);
         
         const row = document.createElement('tr');
         row.innerHTML = `
@@ -62,21 +57,13 @@ async function fetchCustomCakeOrders() {
           <td>
             ${order.designImageUrl ? `<a href="#" class="view-image" data-image-url="${order.designImageUrl}" data-image-type="design" data-bs-toggle="modal" data-bs-target="#imageModal">View</a>` : 'None'}
           </td>
-          <td><span class="status ${order.status.toLowerCase().replace(/ /g, '-')}" data-order-id="${order.customCakeId}" data-is-image-order="false">${order.status}</span></td>
-          <td>${order.price ? `₱${parseFloat(order.price).toFixed(2)}` : 'Not set'}</td>
-          <td>${paymentMethod} ${paymentBadge}</td>
+          <td>${renderStatusBadge(order.status)}</td>
+          <td>${renderPriceInfo(order)}</td>
+          <td>${paymentInfo}</td>
           <td>
             <div class="admin-actions">
-              <select class="form-select status-select" data-order-id="${order.customCakeId}" data-is-image-order="false">
-                <option value="Pending Review" ${order.status === 'Pending Review' ? 'selected' : ''}>Pending Review</option>
-                <option value="Ready for Checkout" ${order.status === 'Ready for Checkout' ? 'selected' : ''}>Ready for Checkout</option>
-                <option value="Pending" ${order.status === 'Pending' ? 'selected' : ''}>Pending</option>
-                <option value="Ready" ${order.status === 'Ready' ? 'selected' : ''}>Ready</option>
-                <option value="In Progress" ${order.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
-                <option value="Ready for Pickup/Delivery" ${order.status === 'Ready for Pickup/Delivery' ? 'selected' : ''}>Ready for Pickup/Delivery</option>
-                <option value="Completed" ${order.status === 'Completed' ? 'selected' : ''}>Completed</option>
-                <option value="Cancelled" ${order.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
-              </select>
+              ${renderStatusDropdown(order.customCakeId, false, order.status)}
+              ${renderPriceInput(order, false)}
               <button class="btn btn-primary btn-sm update-status mt-1">Update Status</button>
             </div>
           </td>
@@ -86,63 +73,42 @@ async function fetchCustomCakeOrders() {
     }
 
     // Process image-based orders
-    // In admin-cake.js - FIX the image order ID issue:
-// Process image-based orders
-// Process image-based orders
-if (imageData.success && imageData.orders) {
-  imageData.orders.forEach(order => {
-    // FIX: Use imageBasedOrderId instead of id
-    const orderId = order.imageBasedOrderId || order.id;
-    const displayOrderId = `RCC${String(orderId).padStart(3, '0')}`;
-    const deliveryDate = order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString() : 'Not set';
-    
-    const paymentMethod = order.payment_status === 'paid' ? 'GCash' : 
-                         order.payment_status === 'pending' ? 'Cash' : 'Not set';
-    const paymentStatus = order.payment_status || 'pending';
-    const paymentBadge = paymentStatus === 'paid' ? 
-      '<span class="badge bg-success">Paid</span>' : 
-      '<span class="badge bg-warning text-dark">Pending</span>';
-    
-    const row = document.createElement('tr');
-    row.innerHTML = `
-      <td>${displayOrderId}</td>
-      <td>${order.customer ? order.customer.name : 'Unknown'}</td>
-      <td>${order.flavor}</td>
-      <td>${order.size || 'Not specified'}</td> <!-- ADD SIZE DISPLAY -->
-      <td>${order.message || 'None'}</td>
-      <td>${new Date(order.eventDate).toLocaleDateString()}</td>
-      <td>${deliveryDate}</td>
-      <td>${order.notes || 'None'}</td>
-      <td>
-        ${order.imagePath ? `<a href="#" class="view-image" data-image-url="${order.imagePath}" data-image-type="reference" data-bs-toggle="modal" data-bs-target="#imageModal">View</a>` : 'None'}
-      </td>
-      <td><span class="status ${order.status.toLowerCase().replace(/ /g, '-')}" data-order-id="${orderId}" data-is-image-order="true">${order.status}</span></td>
-      <td>${order.price ? `₱${parseFloat(order.price).toFixed(2)}` : 'Not set'}</td>
-      <td>${paymentMethod} ${paymentBadge}</td>
-      <td>
-        <div class="admin-actions">
-          <select class="form-select status-select mb-2" data-order-id="${orderId}" data-is-image-order="true" id="status-select-${orderId}">
-            <option value="Pending Review" ${order.status === 'Pending Review' ? 'selected' : ''}>Pending Review</option>
-            <option value="Feasible" ${order.status === 'Feasible' ? 'selected' : ''}>Feasible</option>
-            <option value="Not Feasible" ${order.status === 'Not Feasible' ? 'selected' : ''}>Not Feasible</option>
-            ${order.status === 'Feasible' || ['Ready', 'In Progress', 'Ready for Pickup/Delivery', 'Completed', 'Cancelled'].includes(order.status) ? `
-              <option value="Ready" ${order.status === 'Ready' ? 'selected' : ''}>Ready</option>
-              <option value="In Progress" ${order.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
-              <option value="Ready for Pickup/Delivery" ${order.status === 'Ready for Pickup/Delivery' ? 'selected' : ''}>Ready for Pickup/Delivery</option>
-              <option value="Completed" ${order.status === 'Completed' ? 'selected' : ''}>Completed</option>
-              <option value="Cancelled" ${order.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
-            ` : ''}
-          </select>
-          <div class="price-input mb-2" style="display: ${order.status === 'Feasible' || ['Ready', 'In Progress', 'Ready for Pickup/Delivery', 'Completed'].includes(order.status) ? 'block' : 'none'}">
-            <input type="number" class="form-control form-control-sm price-input-field" placeholder="Set price" value="${order.price || ''}" step="0.01" min="0" ${order.status === 'Not Feasible' || order.status === 'Cancelled' ? 'disabled' : ''}>
-          </div>
-          <button class="btn btn-primary btn-sm update-status">Update</button>
-        </div>
-      </td>
-    `;
-    imageTbody.appendChild(row);
-  });
-}
+    if (imageData.success && imageData.orders) {
+      imageData.orders.forEach(order => {
+        const orderId = order.imageBasedOrderId || order.id;
+        const displayOrderId = `RCC${String(orderId).padStart(3, '0')}`;
+        const deliveryDate = order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString() : 'Not set';
+        
+        // Enhanced payment information display
+        const paymentInfo = renderPaymentInfo(order);
+        
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${displayOrderId}</td>
+          <td>${order.customer ? order.customer.name : 'Unknown'}</td>
+          <td>${order.flavor}</td>
+          <td>${order.size || 'Not specified'}</td>
+          <td>${order.message || 'None'}</td>
+          <td>${new Date(order.eventDate).toLocaleDateString()}</td>
+          <td>${deliveryDate}</td>
+          <td>${order.notes || 'None'}</td>
+          <td>
+            ${order.imagePath ? `<a href="#" class="view-image" data-image-url="${order.imagePath}" data-image-type="reference" data-bs-toggle="modal" data-bs-target="#imageModal">View</a>` : 'None'}
+          </td>
+          <td>${renderStatusBadge(order.status)}</td>
+          <td>${renderPriceInfo(order)}</td>
+          <td>${paymentInfo}</td>
+          <td>
+            <div class="admin-actions">
+              ${renderStatusDropdown(orderId, true, order.status)}
+              ${renderPriceInput(order, true)}
+              <button class="btn btn-primary btn-sm update-status">Update</button>
+            </div>
+          </td>
+        `;
+        imageTbody.appendChild(row);
+      });
+    }
 
     if (!customData.orders || customData.orders.length === 0) {
       const row = document.createElement('tr');
@@ -164,6 +130,159 @@ if (imageData.success && imageData.orders) {
   }
 }
 
+// Helper function to render price information
+// Fixed renderPaymentInfo with proper null checks for admin interface
+function renderPaymentInfo(order) {
+  const paymentMethod = order.payment_status === 'paid' ? 'GCash' : 
+                       order.payment_status === 'pending' ? 'Cash' : 'Not set';
+  
+  let html = `<div class="payment-info-container">`;
+  
+  // Payment method badge
+  html += `<div class="mb-1">
+    <span class="badge ${order.payment_status === 'paid' ? 'bg-success' : 'bg-warning text-dark'}">
+      ${paymentMethod}
+    </span>
+  </div>`;
+  
+  // Downpayment status - FIXED with null checks
+  if (order.is_downpayment_paid === true) {
+    const downpaymentAmount = parseFloat(order.downpayment_amount) || 0;
+    const remainingBalance = parseFloat(order.remaining_balance) || 0;
+    
+    html += `
+      <div class="downpayment-status mb-2">
+        <span class="badge bg-info">
+          <i class="fas fa-check-circle"></i> Downpayment Paid
+        </span>
+        <div class="mt-1">
+          <small class="text-muted">
+            Paid: ₱${downpaymentAmount.toFixed(2)}<br>
+            Remaining: ₱${remainingBalance.toFixed(2)}
+          </small>
+        </div>
+      </div>`;
+    
+    // Final payment status
+    const finalPaymentBadge = order.final_payment_status === 'paid' 
+      ? '<span class="badge bg-success"><i class="fas fa-check-double"></i> Fully Paid</span>'
+      : '<span class="badge bg-warning text-dark"><i class="fas fa-clock"></i> Balance Due</span>';
+    html += `<div>${finalPaymentBadge}</div>`;
+  } else {
+    // No downpayment yet
+    const statusBadge = order.payment_status === 'paid' 
+      ? '<span class="badge bg-success">Paid</span>'
+      : '<span class="badge bg-secondary">Awaiting Payment</span>';
+    html += `<div>${statusBadge}</div>`;
+  }
+  
+  html += `</div>`;
+  return html;
+}
+
+// Fixed renderPriceInfo with proper null checks
+function renderPriceInfo(order) {
+  if (!order.price) {
+    return '<span class="badge bg-secondary">Price Not Set</span>';
+  }
+  
+  let html = `<div class="price-info">`;
+  html += `<div class="fw-bold">₱${parseFloat(order.price).toFixed(2)}</div>`;
+  
+  // FIXED: Check if downpayment fields exist and are not null
+  const hasDownpaymentData = order.downpayment_amount !== null && 
+                             order.downpayment_amount !== undefined &&
+                             order.remaining_balance !== null &&
+                             order.remaining_balance !== undefined;
+  
+  if (hasDownpaymentData) {
+    const downpaymentAmount = parseFloat(order.downpayment_amount) || 0;
+    const remainingBalance = parseFloat(order.remaining_balance) || 0;
+    
+    html += `
+      <small class="text-muted">
+        <div>50% Down: ₱${downpaymentAmount.toFixed(2)}</div>
+        <div>Balance: ₱${remainingBalance.toFixed(2)}</div>
+      </small>`;
+  }
+  
+  html += `</div>`;
+  return html;
+}
+
+// Helper function to render status badge with icons
+function renderStatusBadge(status) {
+  const statusConfig = {
+    'Pending Review': { class: 'bg-secondary', icon: 'fa-clock' },
+    'Ready for Downpayment': { class: 'bg-primary', icon: 'fa-dollar-sign' },
+    'Downpayment Paid': { class: 'bg-info', icon: 'fa-check-circle' },
+    'In Progress': { class: 'bg-warning text-dark', icon: 'fa-cog' },
+    'Ready for Pickup/Delivery': { class: 'bg-success', icon: 'fa-box' },
+    'Completed': { class: 'bg-success', icon: 'fa-check-double' },
+    'Cancelled': { class: 'bg-danger', icon: 'fa-times-circle' },
+    'Feasible': { class: 'bg-primary', icon: 'fa-thumbs-up' },
+    'Not Feasible': { class: 'bg-danger', icon: 'fa-thumbs-down' }
+  };
+  
+  const config = statusConfig[status] || { class: 'bg-secondary', icon: 'fa-question' };
+  return `<span class="badge ${config.class}"><i class="fas ${config.icon}"></i> ${status}</span>`;
+}
+
+// Helper function to render status dropdown
+function renderStatusDropdown(orderId, isImageOrder, currentStatus) {
+  const baseStatuses = [
+    'Pending Review',
+    'Ready for Downpayment',
+    'Downpayment Paid',
+    'In Progress',
+    'Ready for Pickup/Delivery',
+    'Completed',
+    'Cancelled'
+  ];
+  
+  const imageStatuses = isImageOrder 
+    ? ['Pending Review', 'Feasible', 'Ready for Downpayment', 'Downpayment Paid', 'Not Feasible', 'In Progress', 'Ready for Pickup/Delivery', 'Completed', 'Cancelled']
+    : baseStatuses;
+  
+  let html = `<select class="form-select status-select mb-2" data-order-id="${orderId}" data-is-image-order="${isImageOrder}">`;
+  
+  imageStatuses.forEach(status => {
+    html += `<option value="${status}" ${currentStatus === status ? 'selected' : ''}>${status}</option>`;
+  });
+  
+  html += `</select>`;
+  return html;
+}
+
+// Helper function to render price input
+function renderPriceInput(order, isImageOrder) {
+  const showStatuses = isImageOrder 
+    ? ['Pending Review', 'Feasible', 'Ready for Downpayment']
+    : ['Pending Review', 'Ready for Downpayment'];
+  
+  const shouldShow = showStatuses.includes(order.status);
+  const isDisabled = order.status === 'Not Feasible' || order.status === 'Cancelled';
+  
+  return `
+    <div class="price-input mb-2" style="display: ${shouldShow ? 'block' : 'none'}">
+      <label class="form-label small">Total Price:</label>
+      <input 
+        type="number" 
+        class="form-control form-control-sm price-input-field" 
+        placeholder="Enter total price" 
+        value="${order.price || ''}" 
+        step="0.01" 
+        min="0"
+        ${isDisabled ? 'disabled' : ''}
+      >
+      ${order.price ? `
+        <small class="text-muted d-block mt-1">
+          <i class="fas fa-info-circle"></i> 50% = ₱${(order.price * 0.5).toFixed(2)}
+        </small>
+      ` : ''}
+    </div>`;
+}
+
 function setupEventListeners(token) {
   // Image modal handler
   document.querySelectorAll('.view-image').forEach(link => {
@@ -177,7 +296,7 @@ function setupEventListeners(token) {
     });
   });
 
-  // Status update handler for custom cakes (simple status update)
+  // Status update handler
   document.querySelectorAll('.update-status').forEach(button => {
     button.addEventListener('click', async function () {
       const row = this.closest('tr');
@@ -188,40 +307,43 @@ function setupEventListeners(token) {
 
       try {
         let endpoint, body;
+        const priceInput = row.querySelector('.price-input-field');
+        const price = priceInput ? parseFloat(priceInput.value) : null;
+
+        // Validate price for statuses that require it
+        if (['Feasible', 'Ready for Downpayment'].includes(newStatus) && (!price || isNaN(price) || price <= 0)) {
+          alert('Please enter a valid price (greater than 0) when setting this status.');
+          return;
+        }
 
         if (isImageOrder) {
-          // For image orders - handle different status flows
-          const priceInput = row.querySelector('.price-input-field');
-          const price = priceInput ? parseFloat(priceInput.value) : null;
-
-          if (newStatus === 'Feasible') {
-            if (!price || isNaN(price)) {
-              alert('Price is required when marking as Feasible');
-              return;
-            }
+          // Image-based order logic
+          if (newStatus === 'Feasible' || newStatus === 'Ready for Downpayment') {
             endpoint = `/api/custom-cake/admin/image-orders/${orderId}/price`;
-            body = { price: price, status: newStatus };
-          } else if (newStatus === 'Not Feasible') {
-            endpoint = `/api/custom-cake/image-orders/${orderId}`;
-            body = { status: newStatus };
-          } else if (['Ready', 'In Progress', 'Ready for Pickup/Delivery', 'Completed', 'Cancelled'].includes(newStatus)) {
-            // For progress statuses after Feasible
-            endpoint = `/api/custom-cake/image-orders/${orderId}`;
-            body = { status: newStatus };
-            
-            // If updating price in progress statuses
-            if (price && !isNaN(price)) {
-              endpoint = `/api/custom-cake/admin/image-orders/${orderId}/price`;
-              body = { price: price, status: newStatus };
-            }
+            body = { 
+              price: price, 
+              status: newStatus,
+              downpayment_amount: price * 0.5,
+              remaining_balance: price * 0.5
+            };
           } else {
             endpoint = `/api/custom-cake/image-orders/${orderId}`;
             body = { status: newStatus };
           }
         } else {
-          // For custom cakes - simple status update
-          endpoint = `/api/custom-cake/admin/orders/${orderId}`;
-          body = { status: newStatus };
+          // 3D custom cake logic
+          if (newStatus === 'Ready for Downpayment' && price) {
+            endpoint = `/api/custom-cake/admin/orders/${orderId}/price`;
+            body = { 
+              price: price, 
+              status: newStatus,
+              downpayment_amount: price * 0.5,
+              remaining_balance: price * 0.5
+            };
+          } else {
+            endpoint = `/api/custom-cake/admin/orders/${orderId}`;
+            body = { status: newStatus };
+          }
         }
 
         const response = await fetch(endpoint, {
@@ -235,54 +357,89 @@ function setupEventListeners(token) {
         
         const data = await response.json();
         if (data.success) {
-          const statusSpan = row.querySelector('.status');
-          statusSpan.textContent = newStatus;
-          statusSpan.className = `status ${newStatus.toLowerCase().replace(/ /g, '-')}`;
+          // Show success message
+          showNotification('success', `Order ${orderId} updated successfully!`);
           
-          // For image orders, update price display if set
-          if (isImageOrder && newStatus === 'Feasible') {
-            const priceInput = row.querySelector('.price-input-field');
-            const priceCell = row.cells[8];
-            if (priceCell && priceInput.value) {
-              priceCell.textContent = `₱${parseFloat(priceInput.value).toFixed(2)}`;
-            }
-          }
-          
-          alert(`Order ${orderId} updated successfully!`);
-          fetchCustomCakeOrders(); // Refresh to show updated data
+          // Refresh the table
+          fetchCustomCakeOrders();
         } else {
           throw new Error(data.message || 'Failed to update order');
         }
       } catch (error) {
         console.error('Error updating order:', error);
-        alert(`Failed to update order: ${error.message}`);
+        showNotification('error', `Failed to update order: ${error.message}`);
       }
     });
   });
 
-  // Show/hide price input for image orders when status changes to Feasible
-  document.querySelectorAll('.status-select[data-is-image-order="true"]').forEach(select => {
-  select.addEventListener('change', function() {
-    const row = this.closest('tr');
-    const priceInputDiv = row.querySelector('.price-input');
-    const priceInput = row.querySelector('.price-input-field');
-    
-    if (this.value === 'Feasible' || ['Ready', 'In Progress', 'Ready for Pickup/Delivery', 'Completed'].includes(this.value)) {
-      priceInputDiv.style.display = 'block';
-      priceInput.disabled = false;
-    } else if (this.value === 'Not Feasible' || this.value === 'Cancelled') {
-      priceInputDiv.style.display = 'block';
-      priceInput.disabled = true;
-      priceInput.value = '';
-    } else {
-      priceInputDiv.style.display = 'none';
-    }
+  // Show/hide price input based on status selection
+  document.querySelectorAll('.status-select').forEach(select => {
+    select.addEventListener('change', function() {
+      const row = this.closest('tr');
+      const priceInputDiv = row.querySelector('.price-input');
+      const priceInput = row.querySelector('.price-input-field');
+      const isImageOrder = this.dataset.isImageOrder === 'true';
+      
+      const showPriceStatuses = isImageOrder ? 
+        ['Pending Review', 'Feasible', 'Ready for Downpayment'] : 
+        ['Pending Review', 'Ready for Downpayment'];
+      
+      if (showPriceStatuses.includes(this.value)) {
+        priceInputDiv.style.display = 'block';
+        priceInput.disabled = false;
+      } else if (this.value === 'Not Feasible' || this.value === 'Cancelled') {
+        priceInputDiv.style.display = 'block';
+        priceInput.disabled = true;
+        priceInput.value = '';
+      } else {
+        priceInputDiv.style.display = 'none';
+      }
+    });
   });
-});
+  
+  // Real-time price calculation preview
+  document.querySelectorAll('.price-input-field').forEach(input => {
+    input.addEventListener('input', function() {
+      const price = parseFloat(this.value);
+      const row = this.closest('tr');
+      const existingPreview = row.querySelector('.downpayment-preview');
+      
+      if (existingPreview) {
+        existingPreview.remove();
+      }
+      
+      if (price && !isNaN(price) && price > 0) {
+        const preview = document.createElement('small');
+        preview.className = 'text-muted d-block mt-1 downpayment-preview';
+        preview.innerHTML = `<i class="fas fa-info-circle"></i> 50% Downpayment = ₱${(price * 0.5).toFixed(2)}`;
+        this.parentElement.appendChild(preview);
+      }
+    });
+  });
+}
+
+// Notification helper function
+function showNotification(type, message) {
+  const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+  const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
+  
+  const notification = document.createElement('div');
+  notification.className = `alert ${alertClass} alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3`;
+  notification.style.zIndex = '9999';
+  notification.innerHTML = `
+    <i class="fas ${icon}"></i> ${message}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  `;
+  
+  document.body.appendChild(notification);
+  
+  setTimeout(() => {
+    notification.remove();
+  }, 5000);
 }
 
 // Search functionality
-document.querySelector('.search-bar').addEventListener('input', (e) => {
+document.querySelector('.search-bar')?.addEventListener('input', (e) => {
   const searchTerm = e.target.value.toLowerCase();
   
   const activeTab = document.querySelector('.tab-pane.active');
@@ -298,27 +455,27 @@ document.querySelector('.search-bar').addEventListener('input', (e) => {
   }
 });
 
-// Filter functionality - Update filter options
-document.getElementById('filterForm').addEventListener('submit', (e) => {
+// Filter functionality
+document.getElementById('filterForm')?.addEventListener('submit', (e) => {
   e.preventDefault();
-  const status = document.getElementById('filterStatus').value.toLowerCase().replace(/ /g, '-');
+  const status = document.getElementById('filterStatus').value;
   
   const activeTab = document.querySelector('.tab-pane.active');
   if (activeTab) {
     const tbody = activeTab.querySelector('tbody');
     if (tbody) {
       tbody.querySelectorAll('tr').forEach(row => {
-        const statusSpan = row.querySelector('.status');
-        if (statusSpan) {
-          const rowStatus = statusSpan.className.split(' ')[1];
-          row.style.display = status === '' || rowStatus === status ? '' : 'none';
+        const statusBadge = row.querySelector('.badge');
+        if (statusBadge) {
+          const rowStatus = statusBadge.textContent.trim();
+          row.style.display = status === '' || rowStatus.includes(status) ? '' : 'none';
         }
       });
     }
   }
   
   const modal = bootstrap.Modal.getInstance(document.getElementById('filterModal'));
-  modal.hide();
+  modal?.hide();
 });
 
 // Initialize

@@ -15,9 +15,10 @@ const verifyWebhookSignature = (signature, payload, secret) => {
 };
 
 // POST /api/payment/create-gcash-source - UNIFIED for both normal and custom cake orders
+// POST /api/payment/create-gcash-source - FIXED status validation
 router.post('/create-gcash-source', verifyToken, async (req, res) => {
     try {
-        const { amount, description, items, redirect, customCakeId, isImageOrder, deliveryDate, deliveryMethod, customerInfo } = req.body;
+        const { amount, description, items, redirect, customCakeId, isImageOrder, deliveryDate, deliveryMethod, customerInfo, isDownpayment } = req.body;
 
         // Validate required fields
         if (!amount || !redirect?.success || !redirect?.failed) {
@@ -43,7 +44,7 @@ router.post('/create-gcash-source', verifyToken, async (req, res) => {
 
         const isCustom = !!customCakeId;
         
-        // For custom orders, validate the custom cake exists and is ready
+        // For custom orders, validate the custom cake exists and is ready for payment
         if (isCustom) {
             let customOrder;
             if (isImageOrder) {
@@ -53,12 +54,23 @@ router.post('/create-gcash-source', verifyToken, async (req, res) => {
                         userID: req.user.userID 
                     }
                 });
-                if (!customOrder || customOrder.status !== 'Feasible') {
+                
+                // FIXED: Only accept 'Ready for Downpayment' for downpayment flow
+                if (isDownpayment && customOrder?.status !== 'Ready for Downpayment') {
                     return res.status(400).json({
                         success: false,
-                        error: 'Image-based order not ready for checkout'
+                        error: `Image-based order not ready for downpayment. Current status: ${customOrder?.status || 'Not found'}`
                     });
                 }
+                
+                // For full payment, check if downpayment was paid
+                if (!isDownpayment && customOrder?.status !== 'Downpayment Paid') {
+                    return res.status(400).json({
+                        success: false,
+                        error: `Image-based order requires downpayment first. Current status: ${customOrder?.status || 'Not found'}`
+                    });
+                }
+                
             } else {
                 customOrder = await CustomCakeOrder.findOne({
                     where: { 
@@ -66,10 +78,33 @@ router.post('/create-gcash-source', verifyToken, async (req, res) => {
                         userID: req.user.userID 
                     }
                 });
-                if (!customOrder || !['Ready for Checkout', 'Pending'].includes(customOrder.status)) {
+                
+                // FIXED: Only accept 'Ready for Downpayment' for downpayment flow
+                if (isDownpayment && customOrder?.status !== 'Ready for Downpayment') {
                     return res.status(400).json({
                         success: false,
-                        error: 'Custom cake order not ready for checkout'
+                        error: `Custom cake order not ready for downpayment. Current status: ${customOrder?.status || 'Not found'}`
+                    });
+                }
+                
+                // For full payment, check if downpayment was paid
+                if (!isDownpayment && customOrder?.status !== 'Downpayment Paid') {
+                    return res.status(400).json({
+                        success: false,
+                        error: `Custom cake order requires downpayment first. Current status: ${customOrder?.status || 'Not found'}`
+                    });
+                }
+            }
+
+            // FIXED: Validate downpayment amount matches expected amount
+            if (isDownpayment) {
+                const expectedDownpayment = customOrder.downpayment_amount || (customOrder.price * 0.5);
+                const receivedAmount = amount / 100; // Convert from cents
+                
+                if (Math.abs(receivedAmount - expectedDownpayment) > 0.01) {
+                    return res.status(400).json({
+                        success: false,
+                        error: `Downpayment amount mismatch. Expected: ₱${expectedDownpayment.toFixed(2)}, Received: ₱${receivedAmount.toFixed(2)}`
                     });
                 }
             }
@@ -83,14 +118,14 @@ router.post('/create-gcash-source', verifyToken, async (req, res) => {
             });
         }
 
-        // Create Paymongo payment link with unified metadata
+        // Create Paymongo payment link with proper metadata
         const paymongoPayload = {
             data: {
                 attributes: {
                     amount: Math.round(amount),
-                    description: description || (isCustom ? 'Custom Cake Order' : 'Regular Order'),
+                    description: description || (isCustom ? `Custom Cake ${isDownpayment ? 'Downpayment' : 'Order'}` : 'Regular Order'),
                     remarks: isCustom ? 
-                        `Custom Cake Order for user ${req.user.userID}` : 
+                        `Custom Cake ${isDownpayment ? 'Downpayment' : 'Full Payment'} for user ${req.user.userID}` : 
                         `Order for user ${req.user.userID}`,
                     currency: 'PHP',
                     checkout: {
@@ -104,9 +139,9 @@ router.post('/create-gcash-source', verifyToken, async (req, res) => {
                     payment_method_allowed: ['gcash'],
                     metadata: {
                         userId: req.user.userID,
-                        // Include delivery date for BOTH order types
                         deliveryDate: deliveryDate ? new Date(deliveryDate).toISOString() : null,
                         deliveryMethod: deliveryMethod || 'pickup',
+                        isDownpayment: isDownpayment || false,
                         ...(isCustom && { 
                             customCakeId, 
                             isImageOrder,
@@ -143,6 +178,7 @@ router.post('/create-gcash-source', verifyToken, async (req, res) => {
             checkoutUrl,
             userId: req.user.userID,
             isCustom,
+            isDownpayment: isDownpayment || false,
             deliveryDate: deliveryDate ? new Date(deliveryDate).toISOString() : null,
             createdAt: new Date().toISOString()
         });
@@ -173,7 +209,6 @@ router.post('/create-gcash-source', verifyToken, async (req, res) => {
         });
     }
 });
-
 
 // POST /api/orders/verify-gcash-payment - Verify and create/update order after GCash payment
 router.post('/verify-gcash-payment', verifyToken, async (req, res) => {
@@ -502,7 +537,7 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
             transaction = await sequelize.transaction();
             const payment = event.data.attributes;
             const metadata = payment.metadata || {};
-            const paymentId = payment.id;
+            const paymentId = payment.data?.id || payment.id;
             const userId = metadata.userId;
 
             console.log('Processing webhook payment:', {
@@ -512,42 +547,79 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
                 amount: payment.amount
             });
 
-            // Handle custom cake orders
+            // FIXED: Handle custom cake orders with proper downpayment logic
             if (metadata.customCakeId) {
-                const { customCakeId, isImageOrder, deliveryDate } = metadata;
+                const { customCakeId, isImageOrder, deliveryDate, isDownpayment } = metadata;
                 
-                console.log('Processing custom cake webhook with deliveryDate:', deliveryDate);
+                console.log('Processing custom cake webhook:', {
+                    customCakeId,
+                    isImageOrder,
+                    isDownpayment,
+                    amount: payment.amount
+                });
 
-                const updateData = { 
-                    status: 'In Progress',
-                    payment_status: 'paid'
+                // Prepare update data based on payment type
+                let updateData = {
+                    payment_status: 'paid' // Mark overall payment_status as paid
                 };
                 
-                // Set delivery date from metadata
+                if (isDownpayment) {
+                    // Downpayment received
+                    updateData.status = 'Downpayment Paid';
+                    updateData.is_downpayment_paid = true;
+                    updateData.downpayment_paid_at = new Date();
+                    // Keep final_payment_status as 'pending'
+                } else {
+                    // Final payment received
+                    updateData.status = 'In Progress';
+                    updateData.final_payment_status = 'paid';
+                    // is_downpayment_paid should already be true from earlier
+                }
+                
+                // Set delivery date if provided
                 if (deliveryDate && deliveryDate !== 'null' && deliveryDate !== 'undefined') {
                     const parsedDate = new Date(deliveryDate);
                     if (!isNaN(parsedDate.getTime())) {
                         updateData.deliveryDate = parsedDate;
-                        console.log('Setting custom cake deliveryDate:', updateData.deliveryDate);
                     }
                 }
 
+                // Update the appropriate table
                 if (isImageOrder) {
-                    await ImageBasedOrder.update(updateData, { 
+                    const [updateCount] = await ImageBasedOrder.update(updateData, { 
                         where: { imageBasedOrderId: customCakeId },
                         transaction 
                     });
+                    
+                    if (updateCount === 0) {
+                        console.error(`Image-based order ${customCakeId} not found`);
+                        await transaction.rollback();
+                        return res.status(404).json({ error: 'Order not found' });
+                    }
                 } else {
-                    await CustomCakeOrder.update(updateData, { 
+                    const [updateCount] = await CustomCakeOrder.update(updateData, { 
                         where: { customCakeId: customCakeId },
                         transaction 
                     });
+                    
+                    if (updateCount === 0) {
+                        console.error(`Custom cake order ${customCakeId} not found`);
+                        await transaction.rollback();
+                        return res.status(404).json({ error: 'Order not found' });
+                    }
                 }
 
-                console.log(`Updated custom cake ${customCakeId} with deliveryDate:`, updateData.deliveryDate);
+                console.log(`Updated custom cake ${customCakeId}:`, {
+                    isDownpayment,
+                    status: updateData.status,
+                    final_payment_status: updateData.final_payment_status
+                });
 
+                await transaction.commit();
+                return res.status(200).end();
+                
             } else {
-                // Handle regular orders
+                // Handle regular orders (unchanged)
                 let order = await Order.findOne({
                     where: { payment_id: paymentId },
                     transaction
@@ -564,7 +636,7 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
                 const deliveryMethod = metadata.deliveryMethod || 'pickup';
 
                 if (!order) {
-                    // Create new order with delivery date
+                    // Create new order
                     const orderData = {
                         userID: userId,
                         total_amount: payment.amount / 100,
@@ -585,7 +657,6 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
                         const parsedDate = new Date(deliveryDate);
                         if (!isNaN(parsedDate.getTime())) {
                             orderData.pickup_date = parsedDate;
-                            console.log('Setting regular order pickup_date:', orderData.pickup_date);
                         }
                     }
 
@@ -616,24 +687,22 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
 
                 // Clear user cart
                 if (userId) {
-                    console.log(`Clearing cart for user ${userId}`);
                     const cart = await Cart.findOne({ 
                         where: { userID: userId },
                         transaction
                     });
 
                     if (cart) {
-                        const deletedCount = await CartItem.destroy({
+                        await CartItem.destroy({
                             where: { cartId: cart.cartId },
                             transaction
                         });
-                        console.log(`Cleared ${deletedCount} cart items`);
                     }
                 }
-            }
 
-            await transaction.commit();
-            return res.status(200).end();
+                await transaction.commit();
+                return res.status(200).end();
+            }
         }
 
         res.status(200).end();
@@ -796,6 +865,127 @@ router.get('/verify-payment/:paymentId', verifyToken, async (req, res) => {
                 (error.response?.data?.errors || error.message) : undefined
         });
     }
+});
+
+// POST /api/payment/verify-custom-cake-downpayment - Verify downpayment for custom cakes
+router.post('/verify-custom-cake-downpayment', verifyToken, async (req, res) => {
+  const transaction = await sequelize.transaction();
+  
+  try {
+    const { paymentId, customCakeData } = req.body;
+    
+    console.log('Verifying custom cake downpayment:', { paymentId, customCakeData });
+
+    // Verify payment with Paymongo
+    const verifyResponse = await axios.get(
+      `https://api.paymongo.com/v1/links/${paymentId}`,
+      { 
+        headers: { 'Authorization': `Basic ${Buffer.from(PAYMONGO_SECRET_KEY + ':').toString('base64')}` }, 
+        timeout: 5000 
+      }
+    );
+
+    const paymentData = verifyResponse.data.data;
+    if (paymentData.attributes.status !== 'paid') {
+      await transaction.rollback();
+      return res.status(400).json({ success: false, message: 'Downpayment not completed' });
+    }
+
+    const { customCakeId, isImageOrder, deliveryDate, deliveryMethod, customerInfo, downpaymentAmount } = customCakeData;
+    
+    console.log('Processing custom cake downpayment:', {
+      customCakeId,
+      isImageOrder,
+      deliveryDate,
+      deliveryMethod,
+      downpaymentAmount
+    });
+
+    // Update custom cake order with downpayment status
+    let customOrder;
+    const updateData = { 
+      status: 'Downpayment Paid',
+      payment_status: 'pending', // Still pending for final payment
+      is_downpayment_paid: true,
+      downpayment_paid_at: new Date(),
+      downpayment_amount: downpaymentAmount,
+      deliveryDate: deliveryDate ? new Date(deliveryDate) : null
+    };
+
+    if (isImageOrder) {
+      customOrder = await ImageBasedOrder.findByPk(customCakeId, { transaction });
+      if (!customOrder) {
+        await transaction.rollback();
+        return res.status(404).json({ success: false, error: 'Image-based order not found' });
+      }
+      await customOrder.update(updateData, { transaction });
+    } else {
+      customOrder = await CustomCakeOrder.findByPk(customCakeId, { transaction });
+      if (!customOrder) {
+        await transaction.rollback();
+        return res.status(404).json({ success: false, error: 'Custom cake order not found' });
+      }
+      await customOrder.update(updateData, { transaction });
+    }
+
+    // Create Order record for the downpayment
+    const order = await Order.create({
+      userID: req.user.userID,
+      total_amount: downpaymentAmount,
+      status: 'processing',
+      payment_id: paymentId,
+      payment_verified: true,
+      payment_method: 'gcash',
+      delivery_method: deliveryMethod,
+      pickup_date: customOrder.deliveryDate,
+      customer_name: customerInfo.fullName,
+      customer_email: customerInfo.email,
+      customer_phone: customerInfo.phone,
+      delivery_address: deliveryMethod === 'delivery' ? customerInfo.deliveryAddress : null,
+      items: [{ 
+        customCakeId, 
+        name: isImageOrder ? 'Custom Image Cake (50% Downpayment)' : '3D Custom Cake (50% Downpayment)', 
+        price: downpaymentAmount, 
+        quantity: 1, 
+        size: customOrder.size || 'Custom' 
+      }]
+    }, { transaction });
+
+    // Create OrderItem for downpayment
+    const orderItemData = {
+      orderId: order.orderId,
+      quantity: 1,
+      price: downpaymentAmount,
+      item_name: isImageOrder ? 'Custom Image Cake (50% Downpayment)' : '3D Custom Cake (50% Downpayment)',
+      size_name: customOrder.size || 'Custom'
+    };
+
+    if (isImageOrder) {
+      orderItemData.imageOrderId = customCakeId;
+    } else {
+      orderItemData.customCakeId = customCakeId;
+    }
+
+    await OrderItem.create(orderItemData, { transaction });
+
+    await transaction.commit();
+    
+    res.json({
+      success: true,
+      message: 'Custom cake downpayment verified and order created',
+      order,
+      customOrder
+    });
+
+  } catch (error) {
+    await transaction.rollback();
+    console.error('Custom cake downpayment verification failed:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Downpayment verification failed: ' + error.message,
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
 });
 
 

@@ -162,6 +162,29 @@ body {
     margin-right: 10px;
 }
 
+/* Admin downpayment styles */
+.downpayment-badge {
+    margin-top: 5px;
+}
+
+.downpayment-badge .badge {
+    font-size: 0.7em;
+}
+
+.price-input {
+    transition: all 0.3s ease;
+}
+
+.status-ready-for-downpayment {
+    color: #ffc107;
+    font-weight: 600;
+}
+
+.status-downpayment-paid {
+    color: #17a2b8;
+    font-weight: 600;
+}
+
 .btn-primary {
     background-color: var(--primary-color);
     border-color: var(--primary-color);

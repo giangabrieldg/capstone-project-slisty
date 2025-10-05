@@ -79,12 +79,12 @@ class CheckoutManager {
   }
 
   //load custom cake order details
-  async loadCustomCakeOrder() {
+async loadCustomCakeOrder() {
   const token = localStorage.getItem('token');
   if (!token) return;
 
   try {
-    // Use the correct endpoint based on order type
+    // Use correct endpoint based on order type
     const endpoint = this.customCakeData.isImageOrder 
       ? `/api/custom-cake/image-orders/${this.customCakeData.customCakeId}`
       : `/api/custom-cake/${this.customCakeData.customCakeId}`;
@@ -97,23 +97,94 @@ class CheckoutManager {
     
     const data = await response.json();
     this.customCakeOrder = data.order;
+
+    console.log('Loaded custom cake order details:', {
+      order: this.customCakeOrder,
+      price: this.customCakeOrder.price,
+      type: typeof this.customCakeOrder.price,
+      downpayment_amount: this.customCakeOrder.downpayment_amount,
+      remaining_balance: this.customCakeOrder.remaining_balance
+    });
+
+    // Check if price is properly set
+    if (!this.customCakeOrder.price || this.customCakeOrder.price <= 0) {
+      console.error('Order price not set or invalid:', this.customCakeOrder.price);
+      alert('This order does not have a valid price set. Please contact the bakery.');
+      window.location.href = '/public/customer/my-custom-orders.html';
+      return;
+    }
     
-    // Create a mock cart item for the custom cake
-    this.cartItems = [{
-      menuId: null,
-      name: this.customCakeData.isImageOrder ? 'Custom Image Cake' : '3D Custom Cake',
-      price: this.customCakeData.amount,
-      quantity: 1,
-      size: 'Custom',
-      isCustomCake: true,
-      customCakeId: this.customCakeData.customCakeId,
-      isImageOrder: this.customCakeData.isImageOrder
-    }];
+    // FIXED: Determine payment type based on order type and current status
+    let isDownpayment = false;
+    let paymentAmount = this.customCakeOrder.price;
+    
+    // For image-based orders, accept both "Feasible" and "Ready for Downpayment"
+    const validDownpaymentStatuses = this.customCakeData.isImageOrder 
+      ? ['Feasible', 'Ready for Downpayment']
+      : ['Ready for Downpayment'];
+    
+    if (validDownpaymentStatuses.includes(this.customCakeOrder.status)) {
+      // First payment - downpayment flow
+      isDownpayment = true;
+      // Use downpayment_amount if set, otherwise calculate 50%
+      paymentAmount = this.customCakeOrder.downpayment_amount || (this.customCakeOrder.price * 0.5);
+      
+    } else if (this.customCakeOrder.status === 'Downpayment Paid') {
+      // Second payment - remaining balance
+      isDownpayment = false;
+      paymentAmount = this.customCakeOrder.remaining_balance || (this.customCakeOrder.price * 0.5);
+      
+    } else {
+      // Invalid status for checkout
+      console.error('Invalid order status for checkout:', this.customCakeOrder.status);
+      alert(`This order is not ready for payment. Current status: ${this.customCakeOrder.status}`);
+      window.location.href = '/public/customer/my-custom-orders.html';
+      return;
+    }
+    
+    // Update custom cake data with payment info
+    this.customCakeData.amount = paymentAmount;
+    this.customCakeData.isDownpayment = isDownpayment;
+    this.customCakeData.totalPrice = this.customCakeOrder.price;
+    this.customCakeData.downpaymentAmount = this.customCakeOrder.downpayment_amount || (this.customCakeOrder.price * 0.5);
+    this.customCakeData.remainingBalance = this.customCakeOrder.remaining_balance || (this.customCakeOrder.price * 0.5);
+    
+   // Create mock cart item for display - FIX data types
+const paymentLabel = isDownpayment ? '50% Downpayment' : 'Final Payment (50%)';
+const orderType = this.customCakeData.isImageOrder ? 'Custom Image Cake' : '3D Custom Cake';
+
+// Ensure all prices are numbers
+const totalPrice = parseFloat(this.customCakeOrder.price) || 0;
+const downpaymentAmount = parseFloat(this.customCakeData.downpaymentAmount) || (totalPrice * 0.5);
+const remainingBalance = parseFloat(this.customCakeData.remainingBalance) || (totalPrice * 0.5);
+
+this.cartItems = [{
+  menuId: null,
+  name: `${orderType} - ${paymentLabel}`,
+  price: paymentAmount, // This is already calculated as downpayment or final amount
+  quantity: 1,
+  size: this.customCakeOrder.size || 'Custom',
+  isCustomCake: true,
+  customCakeId: this.customCakeData.customCakeId,
+  isImageOrder: this.customCakeData.isImageOrder,
+  isDownpayment: isDownpayment,
+  totalPrice: totalPrice, // Ensure it's a number
+  downpaymentAmount: downpaymentAmount,
+  remainingBalance: remainingBalance
+}];
+
+console.log('Cart items created:', this.cartItems);
     
     this.renderCartSummary();
+    
   } catch (error) {
-    console.error('Error loading custom cake:', error);
+  console.error('Error loading custom cake order:', {
+    error: error.message,
+    customCakeId: this.customCakeData.customCakeId,
+    isImageOrder: this.customCakeData.isImageOrder
+  });
     alert('Error loading custom cake order. Please try again.');
+    return;
   }
 }
   /**
@@ -349,20 +420,36 @@ class CheckoutManager {
         <div class="card-body">
           <!-- Payment Method Section -->
           <h5 class="mb-3"><i class="fas fa-credit-card"></i> Payment Method</h5>
-          <div class="form-check mb-2">
-            <input class="form-check-input" type="radio" name="paymentMethod" 
-                   id="cash" value="cash">
-            <label class="form-check-label" for="cash">
-              <i class="fas fa-money-bill-wave"></i> Cash on Delivery/Pickup
-            </label>
-          </div>
-          <div class="form-check mb-4">
-            <input class="form-check-input" type="radio" name="paymentMethod" 
-                   id="gcash" value="gcash" checked>
-            <label class="form-check-label" for="gcash">
-              <i class="fas fa-mobile-alt"></i> GCash (PayMongo)
-            </label>
-          </div>
+${this.isCustomCakeCheckout && this.customCakeData.isDownpayment ? `
+  <!-- For custom cake downpayment, force GCash -->
+  <div class="alert alert-info mb-3">
+    <i class="fas fa-info-circle"></i>
+    <strong>Downpayment Policy:</strong> Custom cakes require 50% downpayment via GCash to confirm your order.
+  </div>
+  <div class="form-check mb-4">
+    <input class="form-check-input" type="radio" name="paymentMethod" 
+           id="gcash" value="gcash" checked disabled>
+    <label class="form-check-label" for="gcash">
+      <i class="fas fa-mobile-alt"></i> GCash (Required for 50% Downpayment)
+    </label>
+  </div>
+` : `
+  <!-- For final payment or regular orders, show both options -->
+  <div class="form-check mb-2">
+    <input class="form-check-input" type="radio" name="paymentMethod" 
+           id="cash" value="cash" ${!this.isCustomCakeCheckout ? 'checked' : ''}>
+    <label class="form-check-label" for="cash">
+      <i class="fas fa-money-bill-wave"></i> Cash on Delivery/Pickup
+    </label>
+  </div>
+  <div class="form-check mb-4">
+    <input class="form-check-input" type="radio" name="paymentMethod" 
+           id="gcash" value="gcash" ${this.isCustomCakeCheckout && !this.customCakeData.isDownpayment ? 'checked' : ''}>
+    <label class="form-check-label" for="gcash">
+      <i class="fas fa-mobile-alt"></i> GCash
+    </label>
+  </div>
+`}
 
           <!-- Delivery Method Section -->
           <h5 class="mb-3"><i class="fas fa-shipping-fast"></i> Delivery Method</h5>
@@ -441,36 +528,76 @@ class CheckoutManager {
    * Renders the cart summary and total in the checkout form.
    */
   renderCartSummary() {
-    const cartSummary = document.getElementById('cartSummary');
-    const orderTotal = document.getElementById('orderTotal');
-    if (!cartSummary || !orderTotal) return;
+  const cartSummary = document.getElementById('cartSummary');
+  const orderTotal = document.getElementById('orderTotal');
+  if (!cartSummary || !orderTotal) return;
 
-    if (this.cartItems.length === 0) {
-      cartSummary.innerHTML = '<p>Your cart is empty.</p>';
-      orderTotal.textContent = '₱0.00';
-      return;
-    }
+  if (this.cartItems.length === 0) {
+    cartSummary.innerHTML = '<p>Your cart is empty.</p>';
+    orderTotal.textContent = '₱0.00';
+    return;
+  }
 
-    cartSummary.innerHTML = this.cartItems.map(item => {
-      const price = Number(item.price) || 0;
-      const quantity = Number(item.quantity) || 0;
-      const name = item.name || 'Unknown Item';
+  cartSummary.innerHTML = this.cartItems.map(item => {
+    const price = Number(item.price) || 0;
+    const quantity = Number(item.quantity) || 0;
+    const name = item.name || 'Unknown Item';
+    
+    // Show downpayment information for custom cakes
+    if (item.isCustomCake && item.isDownpayment) {
+      // FIX: Properly handle totalPrice which might be a string or number
+      const totalPrice = typeof item.totalPrice === 'number' ? item.totalPrice : 
+                        parseFloat(item.totalPrice) || this.customCakeOrder?.price || 0;
+      
+      return `
+        <div class="mb-2">
+          <div class="d-flex justify-content-between">
+            <span>${name}${item.size ? ` (${item.size})` : ''} x${quantity}</span>
+            <span>₱${(price * quantity).toFixed(2)}</span>
+          </div>
+          <div class="downpayment-info">
+            <small class="text-muted">
+              <i class="fas fa-info-circle"></i> 
+              50% Downpayment (Total: ₱${totalPrice.toFixed(2)})
+            </small>
+          </div>
+        </div>
+      `;
+    } else {
       return `
         <div class="d-flex justify-content-between mb-2">
           <span>${name}${item.size ? ` (${item.size})` : ''} x${quantity}</span>
           <span>₱${(price * quantity).toFixed(2)}</span>
         </div>
       `;
-    }).join('');
+    }
+  }).join('');
 
-    const total = this.cartItems.reduce((sum, item) => {
-      const price = Number(item.price) || 0;
-      const quantity = Number(item.quantity) || 0;
-      return sum + price * quantity;
-    }, 0);
+  const total = this.cartItems.reduce((sum, item) => {
+  const price = Number(item.price) || 0;
+  const quantity = Number(item.quantity) || 0;
+  return sum + price * quantity;
+}, 0);
 
-    orderTotal.textContent = `₱${total.toFixed(2)}`;
+  orderTotal.textContent = `₱${total.toFixed(2)}`;
+
+  // Add downpayment note for custom cakes
+  if (this.isCustomCakeCheckout && this.customCakeData.isDownpayment) {
+    // FIX: Use the actual total price from the order
+    const totalPrice = this.customCakeOrder?.price ? parseFloat(this.customCakeOrder.price) : 
+                      this.customCakeData.totalPrice ? parseFloat(this.customCakeData.totalPrice) : 0;
+    
+    cartSummary.innerHTML += `
+      <div class="alert alert-info mt-3 mb-0">
+        <small>
+          <i class="fas fa-exclamation-circle"></i>
+          <strong>Downpayment Notice:</strong> You are paying a 50% downpayment of ₱${total.toFixed(2)}. 
+          The remaining balance of ₱${(totalPrice - total).toFixed(2)} will be paid upon pickup/delivery.
+        </small>
+      </div>
+    `;
   }
+}
 
   /**
    * Updates the payment method in checkoutData.
@@ -501,12 +628,11 @@ class CheckoutManager {
   // checkout.js - UPDATED PLACE ORDER METHOD
 // checkout.js - COMPLETELY FIXED placeOrder METHOD
 async placeOrder() {
-  // Define checkoutBtn at the top level to avoid reference errors
   const checkoutBtn = document.querySelector('.checkout-btn');
   const statusMessage = document.getElementById('paymentStatusMessage');
   
   try {
-    // Common validation for both order types
+    // Common validation
     const profile = this.customerProfile;
     const requiredFields = ['name', 'email', 'phone'];
     const missingFields = requiredFields.filter(field => !profile[field]);
@@ -535,27 +661,209 @@ async placeOrder() {
       return;
     }
 
-    // Disable checkout button
+    // Disable button and show status
     if (checkoutBtn) {
       checkoutBtn.disabled = true;
       checkoutBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
     }
 
-    // Show status message
     if (statusMessage) {
       statusMessage.classList.remove('d-none');
       statusMessage.classList.add('show', 'alert-info');
-      document.getElementById('paymentStatusText').textContent = 'Processing your order...';
+      const paymentType = this.customCakeData?.isDownpayment ? 'downpayment' : 'payment';
+      document.getElementById('paymentStatusText').textContent = `Processing your ${paymentType}...`;
     }
 
-    // UNIFIED PAYLOAD STRUCTURE
-    let paymentPayload = {
-      amount: 0,
-      description: '',
-      redirect: {
-        success: `${window.location.origin}/public/customer/success.html`,
-        failed: `${window.location.origin}/public/customer/failed.html`
+    // FIXED: Build proper payment payload based on order type
+    if (this.isCustomCakeCheckout) {
+      await this.processCustomCakePayment(token, profile, checkoutBtn, statusMessage);
+    } else {
+      await this.processRegularOrderPayment(token, profile, checkoutBtn, statusMessage);
+    }
+
+  } catch (error) {
+    console.error('Order placement failed:', error);
+    alert(`Order failed: ${error.message}. Please try again.`);
+    this.resetCheckoutButton(checkoutBtn);
+    this.hideStatusMessage(statusMessage);
+  }
+}
+
+async processCustomCakePayment(token, profile, checkoutBtn, statusMessage) {
+  const isDownpayment = this.customCakeData.isDownpayment;
+  const amount = this.customCakeData.amount; // Already calculated as downpayment or full
+
+  if (isDownpayment && this.checkoutData.paymentMethod !== 'gcash') {
+    alert('Custom cakes require 50% downpayment via GCash. Please use GCash for the downpayment.');
+    this.resetCheckoutButton(checkoutBtn);
+    this.hideStatusMessage(statusMessage);
+    return;
+  }
+  
+  // Validate minimum for GCash
+   if (this.checkoutData.paymentMethod === 'gcash' && amount * 100 < 2000) {
+    alert('GCash payments require a minimum amount of ₱20.00.');
+    this.resetCheckoutButton(checkoutBtn);
+    this.hideStatusMessage(statusMessage);
+    return;
+  }
+
+  // Build payment payload
+  const paymentPayload = {
+    customCakeId: this.customCakeData.customCakeId,
+    isImageOrder: this.customCakeData.isImageOrder,
+    amount: amount * 100, // Convert to cents
+    isDownpayment: isDownpayment,
+    deliveryDate: this.checkoutData.pickupDate,
+    deliveryMethod: this.checkoutData.deliveryMethod,
+    customerInfo: {
+      fullName: profile.name,
+      email: profile.email,
+      phone: profile.phone,
+      deliveryAddress: this.checkoutData.deliveryMethod === 'delivery' ? profile.address : null
+    },
+    description: `${this.customCakeData.isImageOrder ? 'Image-based' : '3D'} Custom Cake ${isDownpayment ? 'Downpayment (50%)' : 'Full Payment'}`,
+    redirect: {
+      success: `${window.location.origin}/public/customer/success.html`,
+      failed: `${window.location.origin}/public/customer/failed.html`
+    }
+  };
+
+  // Store pending data
+  sessionStorage.setItem('pendingCustomCakeOrder', JSON.stringify({
+    ...paymentPayload,
+    totalAmount: amount,
+    paymentMethod: this.checkoutData.paymentMethod
+  }));
+
+  console.log('Custom cake payment payload:', paymentPayload);
+
+  if (this.checkoutData.paymentMethod === 'gcash') {
+    // GCash payment flow
+    const paymentResponse = await fetch('/api/payment/create-gcash-source', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
       },
+      body: JSON.stringify(paymentPayload)
+    });
+
+    const paymentData = await paymentResponse.json();
+    
+    if (!paymentResponse.ok || !paymentData.success) {
+      throw new Error(paymentData.error || 'Payment failed');
+    }
+
+    // Store pending payment
+    sessionStorage.setItem('pendingPayment', JSON.stringify({
+      paymentId: paymentData.paymentId,
+      timestamp: Date.now(),
+      paymentMethod: 'gcash',
+      isCustomCake: true,
+      isDownpayment: isDownpayment
+    }));
+
+    // Open payment window
+    const paymentWindow = window.open(
+      paymentData.checkoutUrl,
+      'GCashPayment',
+      'width=500,height=800,scrollbars=yes'
+    );
+
+    if (paymentWindow) {
+      paymentWindow.focus();
+      if (statusMessage) {
+        const paymentType = isDownpayment ? 'downpayment' : 'payment';
+        document.getElementById('paymentStatusText').textContent = 
+          `Please complete the GCash ${paymentType} in the popup window...`;
+      }
+      this.startPaymentPolling();
+    } else {
+      throw new Error('Popup blocked! Please allow popups for this site.');
+    }
+
+  } else {
+    // Cash payment flow
+    const cashPayload = {
+      customCakeId: this.customCakeData.customCakeId,
+      isImageOrder: this.customCakeData.isImageOrder,
+      pickupDate: this.checkoutData.pickupDate,
+      customerInfo: paymentPayload.customerInfo,
+      totalAmount: amount,
+      isDownpayment: isDownpayment
+    };
+
+    console.log('Cash payment payload:', cashPayload);
+
+    const response = await fetch('/api/custom-cake/process-cash-payment', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(cashPayload)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Cash payment processing failed');
+    }
+
+    const result = await response.json();
+    
+    // Redirect to success page
+    const downpaymentParam = isDownpayment ? '&isDownpayment=true' : '';
+    window.location.href = `/public/customer/success.html?orderId=${this.customCakeData.customCakeId}&isCustomCake=true${downpaymentParam}`;
+  }
+}
+
+async processRegularOrderPayment(token, profile, checkoutBtn, statusMessage) {
+  // Calculate total
+  const orderItems = this.cartItems.map(item => ({
+    menuId: item.menuId,
+    name: item.name,
+    quantity: item.quantity,
+    price: item.price,
+    size: item.size || null,
+    sizeId: item.sizeId || null
+  }));
+
+  const totalAmount = orderItems.reduce((sum, item) => {
+    return sum + (Number(item.price) || 0) * (Number(item.quantity) || 0);
+  }, 0);
+
+  if (totalAmount <= 0) {
+    throw new Error('Total amount must be greater than zero');
+  }
+
+  // Store pending order
+  sessionStorage.setItem('pendingOrder', JSON.stringify({
+    items: orderItems,
+    totalAmount: totalAmount,
+    paymentMethod: this.checkoutData.paymentMethod,
+    deliveryMethod: this.checkoutData.deliveryMethod,
+    pickupDate: this.checkoutData.pickupDate,
+    customerInfo: {
+      fullName: profile.name,
+      email: profile.email,
+      phone: profile.phone,
+      deliveryAddress: this.checkoutData.deliveryMethod === 'delivery' ? profile.address : null
+    }
+  }));
+
+  if (this.checkoutData.paymentMethod === 'gcash') {
+    // Validate minimum
+    if (totalAmount * 100 < 2000) {
+      alert('GCash payments require a minimum amount of ₱20.00.');
+      this.resetCheckoutButton(checkoutBtn);
+      this.hideStatusMessage(statusMessage);
+      return;
+    }
+
+    const paymentPayload = {
+      amount: totalAmount * 100,
+      items: orderItems,
       deliveryDate: this.checkoutData.pickupDate,
       deliveryMethod: this.checkoutData.deliveryMethod,
       customerInfo: {
@@ -563,167 +871,69 @@ async placeOrder() {
         email: profile.email,
         phone: profile.phone,
         deliveryAddress: this.checkoutData.deliveryMethod === 'delivery' ? profile.address : null
+      },
+      description: 'Regular Order',
+      redirect: {
+        success: `${window.location.origin}/public/customer/success.html`,
+        failed: `${window.location.origin}/public/customer/failed.html`
       }
     };
 
-    // Set type-specific data
-    if (this.isCustomCakeCheckout) {
-      paymentPayload.customCakeId = this.customCakeData.customCakeId;
-      paymentPayload.isImageOrder = this.customCakeData.isImageOrder;
-      paymentPayload.amount = this.customCakeData.amount * 100;
-      paymentPayload.description = this.customCakeData.isImageOrder ? 
-        'Custom Image Cake Order' : '3D Custom Cake Order';
-      
-      sessionStorage.setItem('pendingCustomCakeOrder', JSON.stringify({
-        ...paymentPayload,
-        totalAmount: this.customCakeData.amount
-      }));
-      
-    } else {
-      // Normal order items
-      const orderItems = this.cartItems.map(item => ({
-        menuId: item.menuId,
-        name: item.name,
-        quantity: item.quantity,
-        price: item.price,
-        size: item.size || null,
-        sizeId: item.sizeId || null
-      }));
-
-      const totalAmount = orderItems.reduce((sum, item) => {
-        return sum + (Number(item.price) || 0) * (Number(item.quantity) || 0);
-      }, 0);
-
-      if (totalAmount <= 0) {
-        throw new Error('Total amount must be greater than zero');
-      }
-
-      paymentPayload.items = orderItems;
-      paymentPayload.amount = totalAmount * 100;
-      paymentPayload.description = 'Regular Order';
-      
-      sessionStorage.setItem('pendingOrder', JSON.stringify({
-        items: orderItems,
-        totalAmount: totalAmount,
-        paymentMethod: this.checkoutData.paymentMethod,
-        deliveryMethod: this.checkoutData.deliveryMethod,
-        pickupDate: this.checkoutData.pickupDate,
-        customerInfo: paymentPayload.customerInfo
-      }));
-    }
-
-    // Validate GCash minimum
-    if (this.checkoutData.paymentMethod === 'gcash' && paymentPayload.amount < 2000) {
-      alert('GCash payments require a minimum amount of ₱20.00.');
-      this.resetCheckoutButton(checkoutBtn);
-      return;
-    }
-
-    console.log('Sending payment payload:', paymentPayload);
-
-    // UNIFIED PAYMENT ENDPOINT CALL
-    if (this.checkoutData.paymentMethod === 'gcash') {
-      const paymentResponse = await fetch('/api/payment/create-gcash-source', {
+    const paymentResponse = await fetch('/api/payment/create-gcash-source', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(paymentPayload) // Same payload structure for both types
+      body: JSON.stringify(paymentPayload)
     });
 
-      // Parse the response properly
-      let paymentData;
-      try {
-        paymentData = await paymentResponse.json();
-      } catch (parseError) {
-        console.error('Failed to parse payment response:', parseError);
-        throw new Error('Invalid response from payment server');
-      }
-
-      if (!paymentResponse.ok || !paymentData.success) {
-        console.error('Payment API error:', paymentData);
-        throw new Error(paymentData.error || `Payment failed: ${paymentResponse.status}`);
-      }
-
-      // Store pending payment data
-      sessionStorage.setItem('pendingPayment', JSON.stringify({
-        paymentId: paymentData.paymentId,
-        timestamp: Date.now(),
-        paymentMethod: 'gcash',
-        isCustomCake: this.isCustomCakeCheckout,
-        orderId: paymentData.orderId
-      }));
-
-      // Open payment window
-      const paymentWindow = window.open(
-        paymentData.checkoutUrl,
-        'GCashPayment',
-        'width=500,height=800,scrollbars=yes'
-      );
-
-      if (paymentWindow) {
-        paymentWindow.focus();
-        if (statusMessage) {
-          document.getElementById('paymentStatusText').textContent = 
-            'Please complete the GCash payment in the popup window...';
-        }
-      } else {
-        throw new Error('Popup blocked! Please allow popups for this site.');
-      }
-
-      this.startPaymentPolling();
-
-    } else if (this.checkoutData.paymentMethod === 'cash') {
-      // Cash handling
-      if (statusMessage) {
-        document.getElementById('paymentStatusText').textContent = 'Processing cash order...';
-      }
-      
-      let cashEndpoint, cashPayload;
-      
-      if (this.isCustomCakeCheckout) {
-        cashEndpoint = '/api/payment/process-cash-custom-cake';
-        cashPayload = {
-          customCakeId: this.customCakeData.customCakeId,
-          isImageOrder: this.customCakeData.isImageOrder,
-          pickupDate: this.checkoutData.pickupDate
-        };
-      } else {
-        cashEndpoint = '/api/orders/create';
-        cashPayload = JSON.parse(sessionStorage.getItem('pendingOrder'));
-      }
-
-      const response = await fetch(cashEndpoint, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(cashPayload)
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Order creation failed');
-      }
-      
-      const result = await response.json();
-      
-      const successUrl = this.isCustomCakeCheckout ? 
-        `/public/customer/success.html?orderId=${this.customCakeData.customCakeId}&isCustomCake=true` :
-        `/public/customer/success.html?orderId=${result.orderId}`;
-      
-      window.location.href = successUrl;
+    const paymentData = await paymentResponse.json();
+    
+    if (!paymentResponse.ok || !paymentData.success) {
+      throw new Error(paymentData.error || 'Payment failed');
     }
 
-  } catch (error) {
-    console.error('Order placement failed:', error);
-    alert(`Order failed: ${error.message}. Please try again.`);
+    sessionStorage.setItem('pendingPayment', JSON.stringify({
+      paymentId: paymentData.paymentId,
+      timestamp: Date.now(),
+      paymentMethod: 'gcash',
+      isCustomCake: false
+    }));
+
+    const paymentWindow = window.open(
+      paymentData.checkoutUrl,
+      'GCashPayment',
+      'width=500,height=800,scrollbars=yes'
+    );
+
+    if (paymentWindow) {
+      paymentWindow.focus();
+      this.startPaymentPolling();
+    } else {
+      throw new Error('Popup blocked! Please allow popups for this site.');
+    }
+
+  } else {
+    // Cash payment
+    const orderData = JSON.parse(sessionStorage.getItem('pendingOrder'));
     
-    // Reset UI state
-    this.resetCheckoutButton(checkoutBtn);
-    this.hideStatusMessage(statusMessage);
+    const response = await fetch('/api/orders/create', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(orderData)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Order creation failed');
+    }
+
+    const result = await response.json();
+    window.location.href = `/public/customer/success.html?orderId=${result.orderId}`;
   }
 }
 
@@ -930,22 +1140,22 @@ async placeCustomCakeOrder() {
    * 4. Redirects to appropriate page (success/failed)
    * 5. Cleans up session storage
    */
-  async handleReturnFromPaymongo() {
+async handleReturnFromPaymongo() {
   const pendingPayment = sessionStorage.getItem('pendingPayment');
   const pendingOrder = sessionStorage.getItem('pendingOrder');
   const pendingCustomCakeOrder = sessionStorage.getItem('pendingCustomCakeOrder');
   
-    if (!pendingPayment || (!pendingOrder && !pendingCustomCakeOrder)) {
+  if (!pendingPayment || (!pendingOrder && !pendingCustomCakeOrder)) {
     console.log('No pending payment found');
     return;
   }
 
   try {
     const paymentData = JSON.parse(pendingPayment);
-    const { paymentId, isCustomCake } = paymentData;
+    const { paymentId, isCustomCake, isDownpayment } = paymentData;
     const token = localStorage.getItem('token');
 
-    console.log('Verifying payment:', { paymentId, isCustomCake });
+    console.log('Verifying payment:', { paymentId, isCustomCake, isDownpayment });
 
     // Verify payment status with retry logic
     let retries = 3;
@@ -980,14 +1190,21 @@ async placeCustomCakeOrder() {
     // Handle successful payment
     if (result.success && result.isPaid) {
       
-      // Handle custom cake orders
+      // Handle custom cake orders - UPDATED for downpayment
       if (isCustomCake && pendingCustomCakeOrder) {
         const customCakeData = JSON.parse(pendingCustomCakeOrder);
         
-        console.log('Custom cake payment verified, updating with deliveryDate:', customCakeData.deliveryDate);
+        console.log('Custom cake payment verified:', { 
+          isDownpayment, 
+          deliveryDate: customCakeData.deliveryDate 
+        });
         
-        // Call the custom verify endpoint
-        const updateResponse = await fetch('/api/payment/verify-custom-cake-payment', {
+        // Use different endpoint for downpayment vs full payment
+        const verifyEndpoint = isDownpayment ?
+          '/api/payment/verify-custom-cake-downpayment' :
+          '/api/payment/verify-custom-cake-payment';
+        
+        const updateResponse = await fetch(verifyEndpoint, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -997,7 +1214,8 @@ async placeCustomCakeOrder() {
             paymentId,
             customCakeData: {
               ...customCakeData,
-              totalAmount: customCakeData.amount / 100 // Convert back from cents
+              totalAmount: customCakeData.amount / 100, // Convert back from cents
+              downpaymentAmount: isDownpayment ? (customCakeData.amount / 100) : null
             }
           })
         });
@@ -1015,7 +1233,8 @@ async placeCustomCakeOrder() {
         sessionStorage.removeItem('pendingCustomCakeOrder');
         
         // Redirect to success page
-        window.location.href = `/public/customer/success.html?orderId=${customCakeData.customCakeId}&isCustomCake=true`;
+        const downpaymentParam = isDownpayment ? `&isDownpayment=true` : '';
+        window.location.href = `/public/customer/success.html?orderId=${customCakeData.customCakeId}&isCustomCake=true${downpaymentParam}`;
         return;
       }
       

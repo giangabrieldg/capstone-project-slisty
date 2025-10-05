@@ -86,6 +86,40 @@ body {
 }
 
 /* Update the existing status colors if needed */
+/* Downpayment styles */
+.downpayment-badge {
+    margin-top: 5px;
+}
+
+.downpayment-badge .badge {
+    font-size: 0.7em;
+}
+
+.btn-checkout {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    cursor: pointer;
+}
+
+.btn-checkout:hover {
+    background-color: #218838;
+}
+
+/* Status colors for downpayment workflow */
+.status-ready-for-downpayment {
+    color: #ffc107;
+    font-weight: 600;
+}
+
+.status-downpayment-paid {
+    color: #17a2b8;
+    font-weight: 600;
+}
+
 .status-feasible {
     background-color: var(--primary-color);
     color: var(--white-text-color);

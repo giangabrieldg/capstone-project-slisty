@@ -4,7 +4,7 @@
  */
 const express = require('express');
 const router = express.Router();
-const { CustomCakeOrder, ImageBasedOrder, User, sequelize } = require('../models');
+const { CustomCakeOrder, ImageBasedOrder, User, Order, OrderItem, sequelize } = require('../models');
 const verifyToken = require('../middleware/verifyToken');
 const checkDriveAuth = require('../middleware/driveAuth');
 const multer = require('multer');
@@ -74,15 +74,24 @@ router.post('/create', verifyToken, upload.fields([
       designImageUrl = await googleDriveService.uploadImage(req.files.designImage[0]);
     }
 
-    // Set status based on whether review is needed
-    const status = needsReview ? 'Pending Review' : 'Ready for Checkout';
+    // Set status based on whether review is needed 
+   let status;
+   if (needsReview) {
+    status = 'Pending Review';
+   } else {
+    // For immediate checkout with price, set to 'Ready for Downpayment'
+    status = 'Ready for Downpayment';
+   }
 
-    if (!needsReview && (!price || isNaN(parseFloat(price)) || parseFloat(price) <= 0)) {
-  return res.status(400).json({ 
-    success: false, 
-    message: 'Valid price is required for immediate checkout' 
-  });
-}
+  if (!needsReview && (!price || isNaN(parseFloat(price)) || parseFloat(price) <= 0)) {
+    return res.status(400).json({ 
+      success: false, 
+      message: 'Valid price is required for immediate checkout' 
+    });
+  }
+  const finalPrice = price ? parseFloat(price) : null;
+  const downpaymentAmount = finalPrice ? finalPrice * 0.5 : null;
+  const remainingBalance = finalPrice ? finalPrice * 0.5 : null
 
     // Create custom cake order
     const customCakeOrder = await CustomCakeOrder.create({
@@ -106,18 +115,23 @@ router.post('/create', verifyToken, upload.fields([
       price: price ? parseFloat(price) : null,
       status: status,
       payment_status: 'pending',
+      downpayment_amount: downpaymentAmount,
+      remaining_balance: remainingBalance,
+      is_downpayment_paid: false,
+      downpayment_paid_at: null,
+      final_payment_status: 'pending',
       deliveryDate: req.body.deliveryDate || null
     });
 
    res.status(201).json({
-    success: true,
-    message: needsReview 
+   success: true,
+   message: needsReview 
       ? 'Custom cake order created successfully and submitted for review' 
-      : 'Custom cake order created successfully', // Removed "ready for checkout"
-    customCakeId: customCakeOrder.customCakeId,
-    status: customCakeOrder.status,
-    requiresReview: needsReview
-  });
+      : 'Custom cake order created successfully and ready for downpayment',
+   customCakeId: customCakeOrder.customCakeId,
+   status: customCakeOrder.status,
+   requiresReview: needsReview
+   });
   } catch (error) {
     console.error('Error creating custom cake order:', error);
     res.status(500).json({ success: false, message: 'Server error', error: error.message });
@@ -125,7 +139,6 @@ router.post('/create', verifyToken, upload.fields([
 });
 
 // POST /api/custom-cake/image-order - Create a new image-based order
-// In customCakeRoutes.js - UPDATE the image-order endpoint:
 router.post('/image-order', verifyToken, checkDriveAuth, upload.single('image'), async (req, res) => {
   try {
     const { flavor, message, notes, eventDate, size } = req.body; // ADD size
@@ -221,11 +234,66 @@ router.get('/admin/orders', verifyToken, async (req, res) => {
         name: order.customer.name,
         email: order.customer.email,
       } : null,
-      deliveryDate: order.deliveryDate
+      deliveryDate: order.deliveryDate,
+      // Ensure downpayment fields are included
+      downpayment_amount: order.downpayment_amount,
+      remaining_balance: order.remaining_balance,
+      is_downpayment_paid: order.is_downpayment_paid,
+      downpayment_paid_at: order.downpayment_paid_at,
+      final_payment_status: order.final_payment_status
     }));
     res.json({ success: true, orders: formattedOrders });
   } catch (error) {
     console.error('Admin custom cake orders error:', error);
+    res.status(500).json({ success: false, message: 'Server error', error: error.message });
+  }
+});
+
+// GET /api/custom-cake/admin/image-orders - Get all image-based orders (admin/staff only)
+router.get('/admin/image-orders', verifyToken, async (req, res) => {
+  try {
+    if (!['admin', 'staff'].includes(req.user.userLevel.toLowerCase())) {
+      return res.status(403).json({ success: false, message: 'Unauthorized: Admin or staff access required' });
+    }
+
+    const orders = await ImageBasedOrder.findAll({
+      include: [
+        {
+          model: User,
+          as: 'customer',
+          attributes: ['userID', 'name', 'email'],
+          required: false,
+        },
+      ],
+      order: [['createdAt', 'DESC']],
+    });
+    
+    const formattedOrders = orders.map(order => ({
+      ...order.toJSON(),
+      customer: order.customer ? {
+        userID: order.customer.userID,
+        name: order.customer.name,
+        email: order.customer.email,
+      } : null,
+      deliveryDate: order.deliveryDate,
+      // Ensure downpayment fields are included
+      downpayment_amount: order.downpayment_amount,
+      remaining_balance: order.remaining_balance,
+      is_downpayment_paid: order.is_downpayment_paid,
+      downpayment_paid_at: order.downpayment_paid_at,
+      final_payment_status: order.final_payment_status
+    }));
+    
+    res.json({ success: true, orders: formattedOrders });
+  } catch (error) {
+    console.error('Admin image-based orders error:', error);
+    
+    // Handle table doesn't exist error gracefully
+    if (error.name === 'SequelizeDatabaseError' && error.message.includes('doesn\'t exist')) {
+      console.warn('imagebasedorders table does not exist');
+      return res.json({ success: true, orders: [], message: 'No image-based orders found' });
+    }
+    
     res.status(500).json({ success: false, message: 'Server error', error: error.message });
   }
 });
@@ -280,8 +348,8 @@ router.put('/admin/orders/:customCakeId', verifyToken, async (req, res) => {
       return res.status(403).json({ success: false, message: 'Unauthorized: Admin or staff access required' });
     }
     const { status } = req.body;
-    // Update valid statuses for custom cakes
-    if (!['Pending', 'Ready', 'In Progress', 'Ready for Pickup/Delivery', 'Completed', 'Cancelled'].includes(status)) {
+    // UPDATED: Add downpayment statuses to valid statuses
+    if (!['Pending Review', 'Ready for Downpayment', 'Downpayment Paid', 'In Progress', 'Ready for Pickup/Delivery', 'Completed', 'Cancelled'].includes(status)) {
       return res.status(400).json({ success: false, message: 'Invalid status' });
     }
     const order = await CustomCakeOrder.findByPk(req.params.customCakeId);
@@ -303,8 +371,8 @@ router.put('/image-orders/:orderId', verifyToken, async (req, res) => {
       return res.status(403).json({ success: false, message: 'Unauthorized: Admin or staff access required' });
     }
     const { status } = req.body;
-    // Updated valid statuses for image-based orders
-    if (!['Pending Review', 'Feasible', 'Not Feasible', 'Ready', 'In Progress', 'Ready for Pickup/Delivery', 'Completed', 'Cancelled'].includes(status)) {
+    // UPDATED: Add downpayment statuses to valid statuses
+    if (!['Pending Review', 'Feasible', 'Ready for Downpayment', 'Downpayment Paid', 'In Progress', 'Ready for Pickup/Delivery', 'Completed', 'Cancelled', 'Not Feasible'].includes(status)) {
       return res.status(400).json({ success: false, message: 'Invalid status' });
     }
     const order = await ImageBasedOrder.findByPk(req.params.orderId);
@@ -360,7 +428,7 @@ router.put('/admin/orders/:customCakeId/price', verifyToken, async (req, res) =>
       return res.status(403).json({ success: false, message: 'Unauthorized: Admin or staff access required' });
     }
 
-    const { price, status } = req.body;
+    const { price, status, downpayment_amount, remaining_balance } = req.body;
     
     if (!price || isNaN(parseFloat(price)) || parseFloat(price) < 0) {
       return res.status(400).json({ success: false, message: 'Valid price is required' });
@@ -371,15 +439,12 @@ router.put('/admin/orders/:customCakeId/price', verifyToken, async (req, res) =>
       return res.status(404).json({ success: false, message: 'Custom cake order not found' });
     }
 
-    const updateData = { price: parseFloat(price) };
-    
-    // If status is provided and valid, update it too
-    if (status && ['Pending Review', 'Feasible', 'Not Feasible', 'Ready for Checkout'].includes(status)) {
-      updateData.status = status;
-    } else {
-      // Auto-set status to 'Ready for Checkout' when price is set
-      updateData.status = 'Ready for Checkout';
-    }
+    const updateData = { 
+      price: parseFloat(price),
+      downpayment_amount: downpayment_amount || parseFloat(price) * 0.5,
+      remaining_balance: remaining_balance || parseFloat(price) * 0.5,
+      status: 'Ready for Downpayment' // ALWAYS set to ready for downpayment
+    };
 
     await order.update(updateData);
     
@@ -389,7 +454,9 @@ router.put('/admin/orders/:customCakeId/price', verifyToken, async (req, res) =>
       order: {
         customCakeId: order.customCakeId,
         price: order.price,
-        status: order.status
+        status: order.status,
+        downpayment_amount: order.downpayment_amount,
+        remaining_balance: order.remaining_balance
       }
     });
   } catch (error) {
@@ -405,7 +472,7 @@ router.put('/admin/image-orders/:orderId/price', verifyToken, async (req, res) =
       return res.status(403).json({ success: false, message: 'Unauthorized: Admin or staff access required' });
     }
 
-    const { price } = req.body;
+    const { price, status, downpayment_amount, remaining_balance } = req.body;
     
     if (!price || isNaN(parseFloat(price)) || parseFloat(price) < 0) {
       return res.status(400).json({ success: false, message: 'Valid price is required' });
@@ -416,18 +483,24 @@ router.put('/admin/image-orders/:orderId/price', verifyToken, async (req, res) =
       return res.status(404).json({ success: false, message: 'Image-based order not found' });
     }
 
-    await order.update({
+    const updateData = { 
       price: parseFloat(price),
-      status: 'Feasible' // Automatically mark as feasible when price is set
-    });
+      downpayment_amount: downpayment_amount || parseFloat(price) * 0.5,
+      remaining_balance: remaining_balance || parseFloat(price) * 0.5,
+      status: 'Ready for Downpayment' // ALWAYS set to ready for downpayment
+    };
+
+    await order.update(updateData);
     
     res.json({ 
       success: true, 
-      message: 'Price set successfully and marked as feasible', 
+      message: 'Price set successfully and marked as ready for downpayment', 
       order: {
         id: order.id,
         price: order.price,
-        status: order.status
+        status: order.status,
+        downpayment_amount: order.downpayment_amount,
+        remaining_balance: order.remaining_balance
       }
     });
   } catch (error) {
@@ -483,17 +556,34 @@ router.delete('/image-orders/:orderId', verifyToken, async (req, res) => {
   }
 });
 
-// POST /api/custom-cake/process-cash-payment - Process cash payment for custom cakes
+// POST /api/custom-cake/process-cash-payment - FIXED for downpayment
 router.post('/process-cash-payment', verifyToken, async (req, res) => {
   const transaction = await sequelize.transaction();
   try {
-    const { customCakeId, isImageOrder, pickupDate, customerInfo, totalAmount } = req.body;
+    const { customCakeId, isImageOrder, pickupDate, customerInfo, totalAmount, isDownpayment } = req.body;
+
+
+    if (isDownpayment) {
+      await transaction.rollback();
+      return res.status(400).json({
+        success: false,
+        error: 'Custom cakes require GCash for 50% downpayment. Please use GCash for the downpayment.'
+      });
+    }
 
     if (!customCakeId) {
       await transaction.rollback();
       return res.status(400).json({
         success: false,
         error: 'Custom cake ID is required'
+      });
+    }
+
+    if (!totalAmount || totalAmount <= 0) {
+      await transaction.rollback();
+      return res.status(400).json({
+        success: false,
+        error: 'Valid payment amount is required'
       });
     }
 
@@ -525,16 +615,69 @@ router.post('/process-cash-payment', verifyToken, async (req, res) => {
       });
     }
 
-    // Update custom cake order status for cash payment
-    const updateData = { 
-      status: 'Pending',
-      payment_status: 'pending'
+    // FIXED: Validate status based on payment type
+    if (isDownpayment) {
+    // For image orders, accept both 'Feasible' and 'Ready for Downpayment'
+    const validDownpaymentStatuses = isImageOrder 
+      ? ['Feasible', 'Ready for Downpayment']
+      : ['Ready for Downpayment'];
+    
+    if (!validDownpaymentStatuses.includes(customOrder.status)) {
+      await transaction.rollback();
+      return res.status(400).json({
+        success: false,
+        error: `Order not ready for downpayment. Current status: ${customOrder.status}`
+      });
+    }
+  }
+    if (!isDownpayment && customOrder.status !== 'Downpayment Paid') {
+      await transaction.rollback();
+      return res.status(400).json({
+        success: false,
+        error: `Order requires downpayment first. Current status: ${customOrder.status}`
+      });
+    }
+
+    // FIXED: Validate amount matches expected payment
+    if (isDownpayment) {
+      const expectedDownpayment = customOrder.downpayment_amount || (customOrder.price * 0.5);
+      if (Math.abs(totalAmount - expectedDownpayment) > 0.01) {
+        await transaction.rollback();
+        return res.status(400).json({
+          success: false,
+          error: `Downpayment amount mismatch. Expected: ₱${expectedDownpayment.toFixed(2)}, Received: ₱${totalAmount.toFixed(2)}`
+        });
+      }
+    } else {
+      const expectedBalance = customOrder.remaining_balance || (customOrder.price * 0.5);
+      if (Math.abs(totalAmount - expectedBalance) > 0.01) {
+        await transaction.rollback();
+        return res.status(400).json({
+          success: false,
+          error: `Final payment amount mismatch. Expected: ₱${expectedBalance.toFixed(2)}, Received: ₱${totalAmount.toFixed(2)}`
+        });
+      }
+    }
+
+    // FIXED: Update order based on payment type
+    let updateData = { 
+      payment_status: 'pending' // Cash is pending until staff confirms
     };
+    
+    if (isDownpayment) {
+      updateData.status = 'Downpayment Paid';
+      updateData.is_downpayment_paid = true;
+      updateData.downpayment_paid_at = new Date();
+    } else {
+      updateData.status = 'In Progress';
+      updateData.final_payment_status = 'pending'; // Pending until staff confirms
+    }
     
     if (pickupDate) {
       updateData.deliveryDate = new Date(pickupDate);
     }
 
+    // Update custom cake order
     if (isImageOrder) {
       await ImageBasedOrder.update(updateData, { 
         where: { imageBasedOrderId: customCakeId },
@@ -547,48 +690,69 @@ router.post('/process-cash-payment', verifyToken, async (req, res) => {
       });
     }
 
-    // Create Order record for the custom cake (so it appears in orders)
+    // Create Order record
+    const orderItemName = isImageOrder ? 
+      (isDownpayment ? 'Custom Image Cake (50% Downpayment - Cash)' : 'Custom Image Cake (Final Payment - Cash)') :
+      (isDownpayment ? '3D Custom Cake (50% Downpayment - Cash)' : '3D Custom Cake (Final Payment - Cash)');
+
     const order = await Order.create({
       userID: req.user.userID,
       total_amount: totalAmount,
       status: 'pending',
       payment_method: 'cash',
       payment_verified: false,
-      delivery_method: 'pickup', // Default for custom cakes
+      delivery_method: 'pickup',
       pickup_date: pickupDate ? new Date(pickupDate) : null,
       customer_name: customerInfo?.fullName || req.user.name,
       customer_email: customerInfo?.email || req.user.email,
       customer_phone: customerInfo?.phone || req.user.phone,
-      delivery_address: null, // Custom cakes typically pickup
+      delivery_address: null,
       items: [{ 
         customCakeId, 
-        name: isImageOrder ? 'Custom Image Cake' : '3D Custom Cake', 
+        name: orderItemName, 
         price: totalAmount, 
         quantity: 1, 
-        size: customOrder.size || 'Custom' 
+        size: customOrder.size || 'Custom',
+        isDownpayment: isDownpayment
       }]
     }, { transaction });
 
     // Create OrderItem
-    await OrderItem.create({
+    const orderItemData = {
       orderId: order.orderId,
-      customCakeId,
       quantity: 1,
       price: totalAmount,
-      item_name: isImageOrder ? 'Custom Image Cake' : '3D Custom Cake',
+      item_name: orderItemName,
       size_name: customOrder.size || 'Custom'
-    }, { transaction });
+    };
+
+    if (isImageOrder) {
+      orderItemData.imageOrderId = customCakeId;
+    } else {
+      orderItemData.customCakeId = customCakeId;
+    }
+
+    await OrderItem.create(orderItemData, { transaction });
 
     await transaction.commit();
 
-    console.log(`Cash payment processed for custom cake: ${customCakeId}, type: ${isImageOrder ? 'image' : '3d'}`);
+    console.log(`Cash payment processed:`, {
+      customCakeId,
+      orderId: order.orderId,
+      type: isImageOrder ? 'image' : '3d',
+      isDownpayment,
+      amount: totalAmount
+    });
 
     res.json({
       success: true,
-      message: 'Cash payment processed successfully',
+      message: isDownpayment ? 
+        'Cash downpayment recorded. Please pay at the store.' : 
+        'Cash final payment recorded. Please pay at the store.',
       orderId: order.orderId,
       customCakeId: customCakeId,
-      orderType: isImageOrder ? 'image_based' : 'custom_3d'
+      orderType: isImageOrder ? 'image_based' : 'custom_3d',
+      isDownpayment: isDownpayment
     });
 
   } catch (error) {

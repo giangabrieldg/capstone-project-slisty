@@ -38,9 +38,9 @@ const ImageBasedOrder = sequelize.define('ImageBasedOrder', {
     allowNull: true,
   },
   status: {
-    type: DataTypes.ENUM('Pending Review', 'Feasible', 'Not Feasible', 'Ready', 'In Progress', 'Ready for Pickup/Delivery', 'Completed', 'Cancelled'),
-    defaultValue: 'Pending Review',
-  },
+  type: DataTypes.ENUM('Pending Review', 'Feasible', 'Ready for Downpayment', 'Downpayment Paid', 'In Progress', 'Ready for Pickup/Delivery', 'Completed', 'Cancelled', 'Not Feasible'),
+  defaultValue: 'Pending Review',
+},
   price: {
     type: DataTypes.DECIMAL(10, 2),
     allowNull: true,
@@ -51,6 +51,33 @@ const ImageBasedOrder = sequelize.define('ImageBasedOrder', {
     defaultValue: 'pending',
     comment: 'Payment status for the order',
   },
+  downpayment_amount: {
+  type: DataTypes.DECIMAL(10, 2),
+  allowNull: true,
+  comment: '50% downpayment amount',
+},
+remaining_balance: {
+  type: DataTypes.DECIMAL(10, 2),
+  allowNull: true,
+  comment: 'Remaining balance to be paid',
+},
+is_downpayment_paid: {
+  type: DataTypes.BOOLEAN,
+  allowNull: false,
+  defaultValue: false,
+  comment: 'Whether downpayment has been paid',
+},
+downpayment_paid_at: {
+  type: DataTypes.DATE,
+  allowNull: true,
+  comment: 'When downpayment was paid',
+},
+final_payment_status: {
+  type: DataTypes.ENUM('pending', 'paid'),
+  allowNull: false,
+  defaultValue: 'pending',
+  comment: 'Final payment status after downpayment',
+},
   deliveryDate: {
     type: DataTypes.DATE,
     allowNull: true,

@@ -46,41 +46,82 @@ class CustomCakeController {
       "Decorations",
     ];
 
-    // Initialize services
     this.renderer = null;
     this.apiService = new CakeAPIService();
     this.guidedTour = null;
   }
 
-  // Initialize the application
   async init() {
-  // Initialize 3D renderer
-  this.renderer = new Cake3DRenderer("canvas-container");
-  await this.renderer.init();
+    this.renderer = new Cake3DRenderer("canvas-container");
+    await this.renderer.init();
+    this.guidedTour = new GuidedTour(this);
+    this.setupEventListeners();
+    this.setupInitialView();
+    this.updateCake();
+    this.initializeDownpaymentDisplay();
+    this.updateOrderSummary();
+  }
 
-  // Initialize guided tour with reference to this controller
-  this.guidedTour = new GuidedTour(this);
-
-  // Setup event listeners
-  this.setupEventListeners();
-
-  // Initialize UI
-  this.setupInitialView();
-
-  // Update initial display
-  this.updateCake();
-  this.updateOrderSummary();
-  
+  calculateTotalPrice() {
+    const basePrice = this.pricing.base[this.config.size] || 0;
+    const fillingPrice = this.pricing.fillings[this.config.filling] || 0;
+    return basePrice + fillingPrice;
 }
-// checkout custom cake order
+
+// Update your existing updateTotalPrice method to include downpayment
+updateTotalPrice() {
+    // Your existing price calculation logic
+    const totalPrice = this.calculateTotalPrice();
+    const summaryTotal = document.getElementById('summaryTotal');
+    
+    if (summaryTotal) {
+        summaryTotal.innerHTML = `<strong>₱${totalPrice.toFixed(2)}</strong>`;
+    }
+    
+    // NEW: Update downpayment breakdown
+    this.updateDownpaymentBreakdown();
+}
+
+// NEW: Downpayment breakdown calculation
+updateDownpaymentBreakdown() {
+    const totalPrice = this.calculateTotalPrice();
+    const downpayment = totalPrice * 0.5;
+    
+    // Update breakdown display
+    const breakdownTotal = document.getElementById('breakdownTotalPrice');
+    const breakdownDownpayment = document.getElementById('breakdownDownpayment');
+    const breakdownPayNow = document.getElementById('breakdownPayNow');
+    const summaryDownpayment = document.getElementById('summaryDownpayment');
+    
+    if (breakdownTotal) breakdownTotal.textContent = `₱${totalPrice.toFixed(2)}`;
+    if (breakdownDownpayment) breakdownDownpayment.textContent = `₱${downpayment.toFixed(2)}`;
+    if (breakdownPayNow) breakdownPayNow.textContent = `₱${downpayment.toFixed(2)}`;
+    if (summaryDownpayment) summaryDownpayment.textContent = `₱${downpayment.toFixed(2)}`;
+}
+
+// NEW: Initialize downpayment display
+initializeDownpaymentDisplay() {
+    // Initial update
+    this.updateDownpaymentBreakdown();
+    
+    // Update when any customization changes
+    const allOptions = document.querySelectorAll('.size-option-walmart, .filling-option-walmart, [data-price]');
+    allOptions.forEach(option => {
+        option.addEventListener('click', () => {
+            setTimeout(() => this.updateDownpaymentBreakdown(), 100);
+        });
+    });
+}
+
+// NEW: Updated checkout function for downpayment
 async checkoutCustomCake() {
+  // Use the same authentication check as your original working code
   if (!this.apiService.isAuthenticated()) {
     alert('Please log in to checkout your custom cake');
     window.location.href = '/public/customer/login.html';
     return;
   }
 
-  // Calculate total price
   const totalPrice = this.pricing.base[this.config.size] + this.pricing.fillings[this.config.filling];
   
   if (!totalPrice || totalPrice <= 0) {
@@ -89,17 +130,18 @@ async checkoutCustomCake() {
   }
 
   try {
-    // Submit the order first
-    const submitResponse = await this.apiService.submitCustomOrder(
+    // Use the global CakeAPIService class directly instead of this.apiService
+    const apiService = new CakeAPIService();
+    const submitResponse = await apiService.submitCustomOrder(
       this.config, 
       this.pricing, 
       this.renderer
     );
 
     if (submitResponse.success) {
-      // Redirect to checkout with custom cake data
+      const downpaymentAmount = totalPrice * 0.5;
       const customCakeId = submitResponse.data.customCakeId;
-      window.location.href = `/public/customer/checkout.html?customCakeId=${customCakeId}&isImageOrder=false&amount=${totalPrice}`;
+      window.location.href = `/public/customer/checkout.html?customCakeId=${customCakeId}&isImageOrder=false&amount=${downpaymentAmount}&isDownpayment=true`;
     } else {
       throw new Error(submitResponse.message);
     }
@@ -109,14 +151,6 @@ async checkoutCustomCake() {
   }
 }
 
-// Add this helper method to the CustomCakeController class
-selectPaymentMethod() {
-  return new Promise((resolve) => {
-    const useGcash = confirm('Would you like to pay with GCash? Click OK for GCash, Cancel for Cash on Delivery.');
-    resolve(useGcash ? 'gcash' : 'cash');
-  });
-}
-  // Setup event listeners for all UI interactions
   setupEventListeners() {
     this.setupSizeOptions();
     this.setupFlavorOptions();
@@ -131,7 +165,6 @@ selectPaymentMethod() {
     this.setupCustomTextInput();
   }
 
-  // Setup size option event listeners
   setupSizeOptions() {
     document.querySelectorAll(".size-option-walmart").forEach((el) =>
       el.addEventListener("click", () => {
@@ -144,7 +177,6 @@ selectPaymentMethod() {
     );
   }
 
-  // Setup flavor option event listeners
   setupFlavorOptions() {
     document.querySelectorAll(".flavor-option-walmart").forEach((el) =>
       el.addEventListener("click", () => {
@@ -157,7 +189,6 @@ selectPaymentMethod() {
     );
   }
 
-  // Setup icing option event listeners
   setupIcingOptions() {
     document.querySelectorAll(".icing-style-option").forEach((el) =>
       el.addEventListener("click", () => {
@@ -169,7 +200,6 @@ selectPaymentMethod() {
     );
   }
 
-  // Setup color option event listeners
   setupColorOptions() {
     document.querySelectorAll(".color-options-walmart .color-option-walmart").forEach((c) =>
       c.addEventListener("click", () => {
@@ -210,7 +240,6 @@ selectPaymentMethod() {
     );
   }
 
-  // Setup filling option event listeners
   setupFillingOptions() {
     document.querySelectorAll(".filling-option-walmart").forEach((el) =>
       el.addEventListener("click", () => {
@@ -223,7 +252,6 @@ selectPaymentMethod() {
     );
   }
 
-  // Setup border option event listeners
   setupBorderOptions() {
     document.querySelectorAll("#step-5 .border-option-walmart").forEach((el) =>
       el.addEventListener("click", () => {
@@ -231,11 +259,7 @@ selectPaymentMethod() {
         el.classList.add("active");
         this.config.bottomBorder = el.dataset.border;
         const colorSection = document.getElementById("bottomBorderColorSection");
-        if (this.config.bottomBorder !== "none") {
-          colorSection.style.display = "block";
-        } else {
-          colorSection.style.display = "none";
-        }
+        colorSection.style.display = this.config.bottomBorder !== "none" ? "block" : "none";
         this.updateCake();
         this.updateOrderSummary();
       })
@@ -247,18 +271,13 @@ selectPaymentMethod() {
         el.classList.add("active");
         this.config.topBorder = el.dataset.border;
         const colorSection = document.getElementById("topBorderColorSection");
-        if (this.config.topBorder !== "none") {
-          colorSection.style.display = "block";
-        } else {
-          colorSection.style.display = "none";
-        }
+        colorSection.style.display = this.config.topBorder !== "none" ? "block" : "none";
         this.updateCake();
         this.updateOrderSummary();
       })
     );
   }
 
-  // Setup message option event listeners
   setupMessageOptions() {
     document.querySelectorAll(".message-option-walmart").forEach((option) =>
       option.addEventListener("click", () => {
@@ -275,7 +294,6 @@ selectPaymentMethod() {
     );
   }
 
-  // Setup decoration option event listeners
   setupDecorationOptions() {
     document.querySelectorAll(".decoration-option-walmart").forEach((el) =>
       el.addEventListener("click", () => {
@@ -316,26 +334,21 @@ selectPaymentMethod() {
     );
   }
 
-  // Setup custom text input
   setupCustomTextInput() {
     document.getElementById("customTextWalmart").addEventListener("input", (e) => {
-      const charCount = document.getElementById("charCountWalmart");
-      charCount.textContent = e.target.value.length;
+      document.getElementById("charCountWalmart").textContent = e.target.value.length;
       this.config.customText = e.target.value;
       this.updateOrderSummary();
     });
   }
 
-  // Setup image upload functionality
   setupImageUpload() {
     const uploadArea = document.getElementById("uploadArea");
     const imageUpload = document.getElementById("imageUpload");
     const uploadedImageDiv = document.getElementById("uploadedImage");
     const previewImage = document.getElementById("previewImage");
 
-    uploadArea.addEventListener("click", () => {
-      imageUpload.click();
-    });
+    uploadArea.addEventListener("click", () => imageUpload.click());
 
     uploadArea.addEventListener("dragover", (e) => {
       e.preventDefault();
@@ -365,55 +378,38 @@ selectPaymentMethod() {
     });
   }
 
-  // Handle image upload
- handleImageUpload(file) {
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    // Show preview image
-    document.getElementById("previewImage").src = e.target.result;
-    document.getElementById("uploadedImage").style.display = "block";
-    
-    // Hide upload area, show form
-    document.getElementById("uploadArea").style.display = "none";
-    document.getElementById("imageOrderForm").style.display = "block";
-    
-    // Show file name in the form
-    document.getElementById("uploadedFileName").textContent = file.name;
-  };
-  reader.readAsDataURL(file);
-}
+  handleImageUpload(file) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      document.getElementById("previewImage").src = e.target.result;
+      document.getElementById("uploadedImage").style.display = "block";
+      document.getElementById("uploadArea").style.display = "none";
+      document.getElementById("imageOrderForm").style.display = "block";
+      document.getElementById("uploadedFileName").textContent = file.name;
+    };
+    reader.readAsDataURL(file);
+  }
 
-  // Setup image order form
-  // In custom-cake-controller.js - replace the entire setupImageOrderForm method:
-// In custom-cake-controller.js - replace the entire setupImageOrderForm method:
-setupImageOrderForm() {
-  // Set minimum date to tomorrow
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  document.getElementById("eventDate").min = tomorrow.toISOString().split("T")[0];
+  setupImageOrderForm() {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    document.getElementById("eventDate").min = tomorrow.toISOString().split("T")[0];
 
-  // Character count handlers
-  document.getElementById("imageNotes").addEventListener("input", (e) => {
-    document.getElementById("notesCharCount").textContent = e.target.value.length;
-  });
-
-  document.getElementById("imageMessage").addEventListener("input", (e) => {
-    document.getElementById("messageCharCount").textContent = e.target.value.length;
-  });
-
-  // Form submission - FIXED VERSION
-  document.getElementById("imageOrderFormContent").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    
-    // Get the form element directly
-    const result = await this.apiService.submitImageBasedOrder(e.target);
-    
-    this.apiService.handleResponse(result, () => {
-      this.resetImageOrderForm();
+    document.getElementById("imageNotes").addEventListener("input", (e) => {
+      document.getElementById("notesCharCount").textContent = e.target.value.length;
     });
-  });
-}
-  // Reset image order form
+
+    document.getElementById("imageMessage").addEventListener("input", (e) => {
+      document.getElementById("messageCharCount").textContent = e.target.value.length;
+    });
+
+    document.getElementById("imageOrderFormContent").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const result = await this.apiService.submitImageBasedOrder(e.target);
+      this.apiService.handleResponse(result, () => this.resetImageOrderForm());
+    });
+  }
+
   resetImageOrderForm() {
     document.getElementById("imageOrderFormContent").reset();
     document.getElementById("imageOrderForm").style.display = "none";
@@ -422,38 +418,13 @@ setupImageOrderForm() {
     document.getElementById("imageUpload").value = "";
   }
 
-  // Remove uploaded image
-// Update handleImageUpload function
-handleImageUpload(file) {
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    // Show preview image
-    document.getElementById("previewImage").src = e.target.result;
-    document.getElementById("uploadedImage").style.display = "block";
-    
-    // Hide upload area, show form
-    document.getElementById("uploadArea").style.display = "none";
-    document.getElementById("imageOrderForm").style.display = "block";
-    
-    // Show file name in the form
-    document.getElementById("uploadedFileName").textContent = file.name;
-  };
-  reader.readAsDataURL(file);
-}
+  removeUploadedImage() {
+    document.getElementById('imageUpload').value = '';
+    document.getElementById("uploadedImage").style.display = "none";
+    document.getElementById("imageOrderForm").style.display = "none";
+    document.getElementById("uploadArea").style.display = "block";
+  }
 
-removeUploadedImage() {
-  // Reset file input
-  document.getElementById('imageUpload').value = '';
-  
-  // Hide preview and form
-  document.getElementById("uploadedImage").style.display = "none";
-  document.getElementById("imageOrderForm").style.display = "none";
-  
-  // Show upload area again
-  document.getElementById("uploadArea").style.display = "block";
-}
-
-  // Setup initial view
   setupInitialView() {
     document.getElementById("orderSummaryView").style.display = "none";
     document.querySelector(".step-content").style.display = "block";
@@ -461,14 +432,12 @@ removeUploadedImage() {
     this.showStep(1);
   }
 
-  // Update the 3D cake model
   updateCake() {
     if (this.renderer) {
       this.renderer.updateCake(this.config);
     }
   }
 
-  // Update the order summary display
   updateOrderSummary() {
     const sizeLabels = {
       small: '6" Round',
@@ -492,11 +461,9 @@ removeUploadedImage() {
     document.getElementById("summaryFilling").textContent = fillingNames[this.config.filling];
 
     const fillingPriceElement = document.getElementById("summaryFillingPrice");
+    fillingPriceElement.style.display = this.config.filling !== "none" ? "block" : "none";
     if (this.config.filling !== "none") {
       fillingPriceElement.innerHTML = `<strong>+₱${this.pricing.fillings[this.config.filling].toFixed(2)}</strong>`;
-      fillingPriceElement.style.display = "block";
-    } else {
-      fillingPriceElement.style.display = "none";
     }
 
     this.updateBorderSummary();
@@ -507,45 +474,36 @@ removeUploadedImage() {
     document.getElementById("summaryTotal").innerHTML = `<strong>₱${total.toFixed(2)}</strong>`;
   }
 
-  // Update border summary
   updateBorderSummary() {
     const bottomBorderItem = document.getElementById("summaryBottomBorderItem");
+    bottomBorderItem.style.display = this.config.bottomBorder !== "none" ? "flex" : "none";
     if (this.config.bottomBorder !== "none") {
-      bottomBorderItem.style.display = "flex";
       const borderName = this.config.bottomBorder.charAt(0).toUpperCase() + this.config.bottomBorder.slice(1);
       const borderColorName = document.getElementById("selectedBottomBorderColorName").textContent;
       document.getElementById("summaryBottomBorder").textContent = `${borderName} - ${borderColorName}`;
-    } else {
-      bottomBorderItem.style.display = "none";
     }
 
     const topBorderItem = document.getElementById("summaryTopBorderItem");
+    topBorderItem.style.display = this.config.topBorder !== "none" ? "flex" : "none";
     if (this.config.topBorder !== "none") {
-      topBorderItem.style.display = "flex";
       const borderName = this.config.topBorder.charAt(0).toUpperCase() + this.config.topBorder.slice(1);
       const borderColorName = document.getElementById("selectedTopBorderColorName").textContent;
       document.getElementById("summaryTopBorder").textContent = `${borderName} - ${borderColorName}`;
-    } else {
-      topBorderItem.style.display = "none";
     }
   }
 
-  // Update message summary
   updateMessageSummary() {
     const messageItem = document.getElementById("summaryMessageItem");
+    messageItem.style.display = this.config.customText && this.config.messageChoice === "custom" ? "flex" : "none";
     if (this.config.customText && this.config.messageChoice === "custom") {
-      messageItem.style.display = "flex";
       document.getElementById("summaryMessage").textContent = `"${this.config.customText}"`;
-    } else {
-      messageItem.style.display = "none";
     }
   }
 
-  // Update decorations summary
   updateDecorationsSummary() {
     const decorationsItem = document.getElementById("summaryDecorationsItem");
+    decorationsItem.style.display = this.config.decorations !== "none" ? "flex" : "none";
     if (this.config.decorations !== "none") {
-      decorationsItem.style.display = "flex";
       let decorationText = "";
       if (this.config.decorations === "flowers") {
         const flowerNames = {
@@ -557,18 +515,13 @@ removeUploadedImage() {
         const toppingsColorName = document.getElementById("selectedToppingsColorName").textContent;
         decorationText = `Toppings (${toppingsColorName})`;
       } else {
-        const decorationNames = {
-          balloons: "Balloons",
-        };
+        const decorationNames = { balloons: "Balloons" };
         decorationText = decorationNames[this.config.decorations];
       }
       document.getElementById("summaryDecorations").textContent = decorationText;
-    } else {
-      decorationsItem.style.display = "none";
     }
   }
 
-  // Navigate to a specific wizard step
   goToStep(stepNumber) {
     this.currentWizardStep = stepNumber;
     this.showStep(stepNumber);
@@ -577,31 +530,19 @@ removeUploadedImage() {
     document.querySelector(".step-navigation").style.display = "flex";
   }
 
-  // Show the specified wizard step
   showStep(stepNumber) {
-    document.querySelectorAll(".step-section").forEach((section) => {
-      section.classList.remove("active");
-    });
+    document.querySelectorAll(".step-section").forEach((section) => section.classList.remove("active"));
     document.getElementById(`step-${stepNumber}`).classList.add("active");
 
     const flowerSubOptions = document.getElementById("flowerSubOptions");
-    if (stepNumber === 8 && this.config.decorations === "flowers") {
-      flowerSubOptions.style.display = "flex";
-    } else {
-      flowerSubOptions.style.display = "none";
-    }
+    flowerSubOptions.style.display = stepNumber === 8 && this.config.decorations === "flowers" ? "flex" : "none";
 
     const toppingsColorSection = document.getElementById("toppingsColorSection");
-    if (stepNumber === 8 && this.config.decorations === "toppings") {
-      toppingsColorSection.style.display = "block";
-    } else {
-      toppingsColorSection.style.display = "none";
-    }
+    toppingsColorSection.style.display = stepNumber === 8 && this.config.decorations === "toppings" ? "block" : "none";
 
     this.updateNavigationButtons(stepNumber);
   }
 
-  // Update navigation buttons
   updateNavigationButtons(stepNumber) {
     const prevBtn = document.getElementById("prevBtn");
     const nextBtn = document.getElementById("nextBtn");
@@ -622,7 +563,6 @@ removeUploadedImage() {
     }
   }
 
-  // Move to the next wizard step
   nextStep() {
     if (this.currentWizardStep < this.totalWizardSteps) {
       this.currentWizardStep++;
@@ -632,7 +572,6 @@ removeUploadedImage() {
     }
   }
 
-  // Move to the previous wizard step
   prevStep() {
     if (this.currentWizardStep > 1) {
       this.currentWizardStep--;
@@ -640,7 +579,6 @@ removeUploadedImage() {
     }
   }
 
-  // Show the order summary view
   showOrderSummary() {
     document.getElementById("orderSummaryView").style.display = "block";
     document.querySelector(".step-content").style.display = "none";
@@ -648,7 +586,6 @@ removeUploadedImage() {
     this.updateOrderSummary();
   }
 
-  // Show the first wizard step
   showFirstStep() {
     document.getElementById("orderSummaryView").style.display = "none";
     document.querySelector(".step-content").style.display = "block";
@@ -656,7 +593,6 @@ removeUploadedImage() {
     this.goToStep(1);
   }
 
-  // Submit custom cake order
   async submitOrder() {
     if (document.getElementById("imageUpload").files.length > 0) {
       alert("Please use the 'Submit Image Order' button for image-based orders.");
@@ -664,13 +600,9 @@ removeUploadedImage() {
     }
 
     const result = await this.apiService.submitCustomOrder(this.config, this.pricing, this.renderer);
-    
-    this.apiService.handleResponse(result, () => {
-      this.resetForm();
-    });
+    this.apiService.handleResponse(result, () => this.resetForm());
   }
 
-  // Reset the form to initial state
   resetForm() {
     this.config = {
       size: "small",
@@ -698,28 +630,24 @@ removeUploadedImage() {
     this.showFirstStep();
   }
 
-  // Save design as image
   saveDesignImage() {
     if (this.renderer) {
       this.renderer.saveDesignImage();
     }
   }
 
-  // Add to cart (placeholder - requires admin approval)
   addToCart() {
     alert("Please submit your custom cake order for admin review. Once approved, you can add it to your cart from the 'My Custom Orders' page.");
   }
 
-  // Checkout (placeholder - requires admin approval)
-    checkout() {
+  checkout() {
     this.checkoutCustomCake();
   }
 }
 
-// Guided Tour System (moved from original file)
 class GuidedTour {
   constructor(controller) {
-    this.controller = controller; // Reference to CustomCakeController instance
+    this.controller = controller;
     this.currentStep = 0;
     this.isActive = false;
     this.steps = [
@@ -945,18 +873,18 @@ class GuidedTour {
       }
     }
     const stepMapping = {
-      0: 1, // Welcome
-      1: 1, // Size
-      2: 2, // Flavor
-      3: 3, // Icing styles
-      4: 3, // Icing colors
-      5: 4, // Filling
-      6: 5, // Bottom border options
-      7: 5, // Bottom border colors
-      8: 6, // Top border options
-      9: 6, // Top border colors
-      10: 7, // Message
-      11: 8, // Decorations
+      0: 1,
+      1: 1,
+      2: 2,
+      3: 3,
+      4: 3,
+      5: 4,
+      6: 5,
+      7: 5,
+      8: 6,
+      9: 6,
+      10: 7,
+      11: 8,
     };
     const wizardStep = stepMapping[this.currentStep];
     if (wizardStep && this.controller.currentWizardStep !== wizardStep) {
@@ -989,13 +917,11 @@ class GuidedTour {
   }
 }
 
-// Initialize the application when DOM is ready
 document.addEventListener("DOMContentLoaded", async () => {
   window.cakeController = new CustomCakeController();
   await window.cakeController.init();
 });
 
-// Expose global functions for backward compatibility
 window.nextStep = () => window.cakeController?.nextStep();
 window.prevStep = () => window.cakeController?.prevStep();
 window.goToStep = (step) => window.cakeController?.goToStep(step);
@@ -1005,5 +931,4 @@ window.saveDesignImage = () => window.cakeController?.saveDesignImage();
 window.checkout = () => window.cakeController?.checkout();
 window.submitOrder = () => window.cakeController?.submitOrder();
 window.removeUploadedImage = () => window.cakeController?.removeUploadedImage();
-
 window.checkoutCustomCake = () => window.cakeController?.checkoutCustomCake();

@@ -1039,6 +1039,73 @@ body {
     display: none;
 }
 
+/* Downpayment Notice Styles */
+.downpayment-notice {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border: 2px solid #2c9045;
+    border-radius: 12px;
+    padding: 20px;
+    margin: 20px 0;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(44, 144, 69, 0.1);
+}
+
+.downpayment-notice h4 {
+    color: #2c9045;
+    margin-bottom: 12px;
+    font-weight: 600;
+}
+
+.downpayment-badge {
+    background: #2c9045;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    display: inline-block;
+    margin-bottom: 12px;
+}
+
+.payment-breakdown {
+    background: white;
+    border-radius: 8px;
+    padding: 15px;
+    margin: 15px 0;
+    border: 1px solid #e0e0e0;
+}
+
+.payment-item {
+    display: flex;
+    justify-content: space-between;
+    margin: 8px 0;
+    font-size: 0.95rem;
+}
+
+.payment-item.total {
+    border-top: 2px solid #2c9045;
+    padding-top: 10px;
+    margin-top: 12px;
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: #2c9045;
+}
+
+.gcash-required {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 8px;
+    padding: 12px;
+    margin-top: 12px;
+    font-size: 0.9rem;
+    color: #856404;
+}
+
+.gcash-required i {
+    color: #2c9045;
+    margin-right: 8px;
+}
+
 /* Mobile adjustments for tour */
 @media (max-width: 768px) {
     .tour-tooltip {

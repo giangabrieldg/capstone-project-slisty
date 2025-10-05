@@ -74,6 +74,39 @@
           <!-- Order Summary View -->
           <div id="orderSummaryView" class="order-summary">
             <div class="order-summary-header">Your Custom Cake</div>
+
+            <!-- Add Downpayment Notice -->
+            <div class="downpayment-notice">
+              <span class="downpayment-badge">50% Downpayment Required</span>
+              <h4>Secure Your Custom Cake</h4>
+              <p>
+                Pay 50% now via GCash to confirm your order. The remaining 50%
+                can be paid in cash upon pickup/delivery.
+              </p>
+
+              <div class="payment-breakdown">
+                <div class="payment-item">
+                  <span>Total Price:</span>
+                  <span id="breakdownTotalPrice">₱1000.00</span>
+                </div>
+                <div class="payment-item">
+                  <span>50% Downpayment:</span>
+                  <span id="breakdownDownpayment">₱500.00</span>
+                </div>
+                <div class="payment-item total">
+                  <span>Pay Now:</span>
+                  <span id="breakdownPayNow">₱500.00</span>
+                </div>
+              </div>
+
+              <div class="gcash-required">
+                <i class="fas fa-mobile-alt"></i>
+                <strong>GCash Required:</strong> Downpayment must be paid via
+                GCash
+              </div>
+            </div>
+
+            <div class="order-summary-header">Your Custom Cake</div>
             <div class="summary-item" onclick="goToStep(1)">
               <div class="summary-item-left">
                 <span class="summary-check">✓</span>
@@ -191,10 +224,13 @@
                 class="text-sm text-gray-600 mb-2"
                 style="font-size: 1.1rem !important"
               >
-                Subtotal
+                Total Price
               </div>
               <div class="text-2xl font-bold" id="summaryTotal">
                 <strong>₱1000.00</strong>
+              </div>
+              <div class="text-sm text-muted mt-1">
+                Pay now: <strong id="summaryDownpayment">₱500.00</strong> (50%)
               </div>
             </div>
             <div class="summary-buttons">
@@ -202,7 +238,7 @@
                 class="summary-btn primary-btn"
                 onclick="checkoutCustomCake()"
               >
-                Checkout Custom Cake
+                <i class="fas fa-mobile-alt"></i> Pay 50% Downpayment via GCash
               </button>
               <button
                 class="summary-btn secondary-btn"
@@ -1093,8 +1129,8 @@
     <script src="/scripts/include-html.js"></script>
     <script src="/scripts/update-navbar.js"></script>
     <!-- Custom JavaScript -->
-    <script src="/scripts/cake-renderer.js"></script>
     <script src="/scripts/custom-cake.js"></script>
+    <script src="/scripts/cake-renderer.js"></script>
     <script src="/scripts/custom-cake-controller.js"></script>
   </body>
 </html>
