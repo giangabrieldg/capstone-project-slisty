@@ -6,11 +6,6 @@ async function loadCartItems() {
   const checkoutBtn = document.getElementById('checkoutBtn');
   const token = localStorage.getItem('token');
 
-  // Dynamic API URL - same approach as your other modules
-  const API_BASE_URL = window.location.origin === 'http://localhost:3000'
-    ? 'http://localhost:3000'
-    : 'https://capstone-project-slisty.onrender.com';
-
   // Check if user is logged in
   if (!token) {
     cartItemsContainer.innerHTML = '<p class="text-muted">Please log in to view your cart.</p>';
@@ -21,7 +16,7 @@ async function loadCartItems() {
 
   try {
     // Fetch cart items from the server
-    const response = await fetch(`${API_BASE_URL}/api/cart`, {
+    const response = await fetch('http://localhost:3000/api/cart', {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -110,7 +105,7 @@ async function loadCartItems() {
       button.addEventListener('click', async () => {
         const cartItemId = button.getAttribute('data-cart-item-id');
         try {
-          const response = await fetch(`${API_BASE_URL}/api/cart/remove`, {
+          const response = await fetch('http://localhost:3000/api/cart/remove', {
             method: 'DELETE',
             headers: {
               'Content-Type': 'application/json',
