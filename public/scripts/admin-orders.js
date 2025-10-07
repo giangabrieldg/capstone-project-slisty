@@ -56,14 +56,17 @@ class AdminOrdersManager {
     }
   }
   
-
-// @param {Array} orders - Array of order objects
 // Renders orders in the table
 renderOrders(orders) {
   const tbody = document.getElementById('ordersTableBody');
   if (!tbody) return;
 
-  tbody.innerHTML = orders.map(order => {
+  // Additional frontend filtering for safety
+  const normalOrders = orders.filter(order => {
+    return !order.items.some(item => item.customCakeId);
+  });
+
+  tbody.innerHTML = normalOrders.map(order => {
     const statusMap = {
       pending: 'Pending',
       pending_payment: 'Pending Payment', 
@@ -72,6 +75,19 @@ renderOrders(orders) {
       delivered: 'Completed',
       cancelled: 'Cancelled'
     };
+
+    // Define the next status for each current status
+    const nextStatusMap = {
+      pending: 'processing',
+      pending_payment: 'processing',
+      processing: 'shipped',
+      shipped: 'delivered'
+      // delivered and cancelled have no next status
+    };
+
+    const nextStatus = nextStatusMap[order.status];
+    const nextStatusText = nextStatus ? statusMap[nextStatus] : null;
+
     const paymentStatus = order.payment_method === 'cash' ? (order.status === 'delivered' ? 'paid' : 'unpaid') : (order.payment_verified ? 'paid' : 'unpaid');
     const paymentMethod = order.payment_method === 'gcash' ? 'GCash' : 'Cash';
 
@@ -79,34 +95,49 @@ renderOrders(orders) {
     const orderDate = order.createdAt.split('T')[0];
     const pickupDate = order.pickup_date ? order.pickup_date.split('T')[0] : 'Not set';
 
-    // Format customer details
+    // Format customer details with delivery address
     const customerDetails = `
       <div class="customer-info">
         <div class="customer-name fw-bold">${order.customer_name}</div>
         <div class="customer-contact small text-muted">
           ${order.customer_email}<br>${order.customer_phone}
         </div>
-        <div class="payment-method small text-muted">
-          Payment: ${paymentMethod} 
+        <div class="delivery-method small text-muted mt-1">
+          <strong>Method:</strong> ${order.delivery_method.charAt(0).toUpperCase() + order.delivery_method.slice(1)}
+        </div>
+        ${order.delivery_method === 'delivery' && order.delivery_address ? `
+          <div class="delivery-address small text-muted mt-1">
+            <strong>Delivery Address:</strong><br>
+            ${order.delivery_address}
+          </div>
+        ` : ''}
+        <div class="payment-method small text-muted mt-1">
+          <strong>Payment:</strong> ${paymentMethod} 
           <span class="status ${paymentStatus}">${paymentStatus.charAt(0).toUpperCase() + paymentStatus.slice(1)}</span>
         </div>
       </div>
     `;
     
-    // Format items with size information
+    // Format items with size information (only regular menu items)
     const items = order.items
+      .filter(item => !item.customCakeId)
       .map(item => {
         const sizeInfo = item.size ? `Size: ${item.size}<br>` : '';
         return `${item.name}<br>${sizeInfo}Qty: ${item.quantity} - PHP ${(item.price * item.quantity).toFixed(2)}`;
       })
       .join("<br><br>");
     
+    // Skip orders that have no regular items after filtering
+    if (items.length === 0) {
+      return '';
+    }
+    
     return `
       <tr data-order-date="${orderDate}">
         <td>ORD${order.orderId.toString().padStart(3, '0')}</td>
         <td>${customerDetails}</td>
         <td>${orderDate}</td>
-        <td>${pickupDate}</td> <!-- Added pickup date column -->
+        <td>${pickupDate}</td>
         <td>PHP ${Number(order.total_amount).toFixed(2)}</td>
         <td>${items}</td>
         <td>${order.delivery_method.charAt(0).toUpperCase() + order.delivery_method.slice(1)}</td>
@@ -117,22 +148,24 @@ renderOrders(orders) {
               Confirm Payment
             </button>
           ` : ''}
-          <select class="status-select" data-order-id="${order.orderId}">
-            <option value="pending" ${order.status === 'pending' ? 'selected' : ''}>Pending</option>
-            <option value="processing" ${order.status === 'processing' ? 'selected' : ''}>In Progress</option>
-            <option value="shipped" ${order.status === 'shipped' ? 'selected' : ''}>Ready for Delivery</option>
-            <option value="delivered" ${order.status === 'delivered' ? 'selected' : ''}>Completed</option>
-            <option value="cancelled" ${order.status === 'cancelled' ? 'selected' : ''}>Cancelled</option>
-          </select>
-          <button class="update-status-btn" data-order-id="${order.orderId}">Update</button>
+          ${nextStatus ? `
+            <button class="btn btn-primary btn-sm update-status-btn" data-order-id="${order.orderId}" data-next-status="${nextStatus}">
+              Mark as ${nextStatusText}
+            </button>
+          ` : `
+            <span class="text-muted small">No further actions</span>
+          `}
+          ${order.status !== 'cancelled' && order.status !== 'delivered' ? `
+            <button class="btn btn-outline-danger btn-sm cancel-order-btn" data-order-id="${order.orderId}">
+              Cancel Order
+            </button>
+          ` : ''}
         </td>
       </tr>
     `;
   }).join('');
 }
-
-  // Sets up event listeners for search, filter, and actions
-  setupEventListeners() {
+ setupEventListeners() {
   // Search
   document.querySelector('.search-bar').addEventListener('input', () => this.applyFilters());
   // Date picker
@@ -145,18 +178,22 @@ renderOrders(orders) {
   
   // Confirm payment and update status (delegated events)
   document.getElementById('ordersTableBody').addEventListener('click', (e) => {
-    // Find the closest button in case click is on icon inside button
     const confirmBtn = e.target.closest('.confirm-payment');
     const updateBtn = e.target.closest('.update-status-btn');
+    const cancelBtn = e.target.closest('.cancel-order-btn');
     
     if (confirmBtn) {
       this.confirmPayment(confirmBtn.getAttribute('data-order-id'));
     } else if (updateBtn) {
       const orderId = updateBtn.getAttribute('data-order-id');
-      const select = document.querySelector(`.status-select[data-order-id="${orderId}"]`);
-      this.updateOrderStatus(orderId, select.value);
+      const nextStatus = updateBtn.getAttribute('data-next-status');
+      this.updateOrderStatus(orderId, nextStatus);
+    } else if (cancelBtn) {
+      const orderId = cancelBtn.getAttribute('data-order-id');
+      this.cancelOrder(orderId);
     }
   });
+
   
   // Sidebar toggle
   const sidebarToggle = document.querySelector('.sidebar-toggle');
@@ -206,7 +243,7 @@ renderOrders(orders) {
     const dateMatch = !selectedDate || rowOrderDate === selectedDate;
     const pickupDateMatch = !selectedPickupDate || rowPickupDate === selectedPickupDate;
     const searchMatch = orderId.includes(searchTerm) || customerName.includes(searchTerm) || amount.includes(searchTerm);
-    const statusMatch = !status || order.status_key === status;
+    const statusMatch = !status || order.status === status; // ← FIXED: changed status_key to status
     const paymentStatusMatch = !paymentStatus || rowPaymentStatus === paymentStatus;
 
     return dateMatch && pickupDateMatch && searchMatch && statusMatch && paymentStatusMatch;
@@ -239,29 +276,60 @@ renderOrders(orders) {
   }
 
   // Updates order status
-  // @param {string} orderId - Order ID
-  async updateOrderStatus(orderId) {
-    const select = document.querySelector(`.status-select[data-order-id="${orderId}"]`);
-    const newStatus = select.value;
-    const token = localStorage.getItem('token');
-    try {
-      const response = await fetch(`/api/orders/admin/orders/${orderId}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ status: newStatus })
-      });
-      const data = await response.json();
-      if (!data.success) throw new Error(data.message);
-      alert(`Status for Order #ORD${orderId.toString().padStart(3, '0')} updated to ${select.options[select.selectedIndex].text}.`);
-      this.fetchOrders();
-    } catch (error) {
-      console.error('Error updating status:', error);
-      alert('Failed to update status: ' + error.message);
-    }
+  async updateOrderStatus(orderId, newStatus) {
+  const token = localStorage.getItem('token');
+  try {
+    const response = await fetch(`/api/orders/admin/orders/${orderId}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ status: newStatus })
+    });
+    const data = await response.json();
+    if (!data.success) throw new Error(data.message);
+    
+    const statusMap = {
+      processing: 'In Progress',
+      shipped: 'Ready for Delivery', 
+      delivered: 'Completed'
+    };
+    
+    alert(`Order #ORD${orderId.toString().padStart(3, '0')} marked as ${statusMap[newStatus] || newStatus}.`);
+    this.fetchOrders(); // Refresh the orders
+  } catch (error) {
+    console.error('Error updating status:', error);
+    alert('Failed to update status: ' + error.message);
   }
+}
+
+// Cancel order method
+async cancelOrder(orderId) {
+  if (!confirm('Are you sure you want to cancel this order?')) {
+    return;
+  }
+  
+  const token = localStorage.getItem('token');
+  try {
+    const response = await fetch(`/api/orders/admin/orders/${orderId}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ status: 'cancelled' })
+    });
+    const data = await response.json();
+    if (!data.success) throw new Error(data.message);
+    
+    alert(`Order #ORD${orderId.toString().padStart(3, '0')} has been cancelled.`);
+    this.fetchOrders(); // Refresh the orders
+  } catch (error) {
+    console.error('Error cancelling order:', error);
+    alert('Failed to cancel order: ' + error.message);
+  }
+}
 }
 
 // Instantiate the manager
