@@ -1,51 +1,48 @@
-// Wait for the DOM to be fully loaded
+// scripts/customer-inquiries.js
 document.addEventListener('DOMContentLoaded', () => {
-  // Get the inquiry form element
   const inquiryForm = document.getElementById('inquiryForm');
-  if (!inquiryForm) return; // Exit if form is not found
+  if (!inquiryForm) return;
 
-  // Add submit event listener to the form
+  // Use your cleaner approach
+  const API_BASE_URL = window.location.origin === 'http://localhost:3000'
+    ? 'http://localhost:3000'
+    : 'https://capstone-project-slisty.onrender.com';
+
   inquiryForm.addEventListener('submit', async (e) => {
-    e.preventDefault(); // Prevent default form submission
+    e.preventDefault();
 
-    // Extract form input values
     const name = document.getElementById('inquiryName').value;
     const email = document.getElementById('inquiryEmail').value;
     const phone = document.getElementById('inquiryPhone').value;
     const subject = document.getElementById('inquirySubject').value;
     const message = document.getElementById('inquiryMessage').value;
-    const recaptchaToken = grecaptcha.getResponse(); // Get reCAPTCHA token
+    const recaptchaToken = grecaptcha.getResponse();
 
-    // Validate reCAPTCHA
     if (!recaptchaToken) {
       alert('Please complete the reCAPTCHA.');
       return;
     }
 
     try {
-      // Prepare headers for API request
       const token = localStorage.getItem('token');
       const headers = {
         'Content-Type': 'application/json',
       };
-      if (token) headers['Authorization'] = `Bearer ${token}`; // Add JWT token if logged in
+      if (token) headers['Authorization'] = `Bearer ${token}`;
 
-      // Send inquiry data to the backend
-      const response = await fetch('http://localhost:3000/api/inquiries', {
+      // Use the dynamic API_BASE_URL
+      const response = await fetch(`${API_BASE_URL}/api/inquiries`, {
         method: 'POST',
         headers,
         body: JSON.stringify({ name, email, phone, subject, message, recaptchaToken }),
       });
 
-      // Parse response
       const result = await response.json();
       if (response.ok) {
-        // Success: Show confirmation and reset form
         alert('Inquiry submitted successfully! You will receive a confirmation email.');
         inquiryForm.reset();
-        grecaptcha.reset(); // Reset reCAPTCHA widget
+        grecaptcha.reset();
       } else {
-        // Error: Display error message
         alert(`Error: ${result.error}`);
       }
     } catch (error) {
