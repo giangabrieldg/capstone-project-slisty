@@ -2,9 +2,11 @@
  * scripts/menu.js
  * Customer-side menu display script
  */
-const API_BASE_URL = window.location.origin === 'http://localhost:3000'
-  ? 'http://localhost:3000'
-  : 'https://capstone-project-slisty.onrender.com';
+function getApiBaseUrl() {
+  return window.location.origin === 'http://localhost:3000'
+    ? 'http://localhost:3000'
+    : 'https://capstone-project-slisty.onrender.com';
+}
 
 function waitForIncludes(callback) {
   const checkIncludes = () => {
@@ -64,7 +66,7 @@ function renderMenuItems(menuItems, container, showPriceStock = false) {
 
 async function fetchMenuItems() {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/menu`);
+    const response = await fetch(`${getApiBaseUrl()}/api/menu`);
     const menuItems = await response.json();
     if (!response.ok) {
       document.getElementById('menuItems').innerHTML = `<p>Failed to load menu items: ${menuItems.error || 'Server error'}</p>`;
@@ -89,7 +91,7 @@ function setupSearch() {
   searchInput.addEventListener('input', async (e) => {
     const searchTerm = e.target.value.toLowerCase();
     try {
-      const response = await fetch(`${API_BASE_URL}/api/menu`);
+      const response = await fetch(`${getApiBaseUrl()}/api/menu`);
       const menuItems = await response.json();
       if (!response.ok) {
         document.getElementById('menuItems').innerHTML = `<p>Failed to load menu items: ${menuItems.error || 'Server error'}</p>`;
@@ -119,7 +121,7 @@ function setupCategoryFilters() {
       e.target.classList.add('active');
 
       try {
-        const response = await fetch(`${API_BASE_URL}/api/menu`);
+        const response = await fetch(`${getApiBaseUrl()}/api/menu`);
         const menuItems = await response.json();
         if (!response.ok) {
           document.getElementById('menuItems').innerHTML = `<p>Failed to load menu items: ${menuItems.error || 'Server error'}</p>`;
@@ -149,7 +151,7 @@ function setupSort() {
   sortSelect.addEventListener('change', async (e) => {
     const sortBy = e.target.value;
     try {
-      const response = await fetch(`${API_BASE_URL}/api/menu`);
+      const response = await fetch(`${getApiBaseUrl()}/api/menu`);
       let menuItems = await response.json();
       if (!response.ok) {
         document.getElementById('menuItems').innerHTML = `<p>Failed to load menu items: ${menuItems.error || 'Server error'}</p>`;
