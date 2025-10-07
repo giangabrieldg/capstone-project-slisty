@@ -1,5 +1,10 @@
 // update-navbar.js
 
+// Dynamic API URL - same approach as your other modules
+const API_BASE_URL = window.location.origin === 'http://localhost:3000'
+  ? 'http://localhost:3000'
+  : 'https://capstone-project-slisty.onrender.com';
+
 // Function to fetch cart item count from API and update the badge
 async function updateCartCount() {
   const token = localStorage.getItem("token");
@@ -10,7 +15,7 @@ async function updateCartCount() {
   }
 
   try {
-    const response = await fetch('http://localhost:3000/api/cart', {
+    const response = await fetch(`${API_BASE_URL}/api/cart`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -44,6 +49,8 @@ function updateNavbarAndGreeting() {
   const userCartContainer = document.getElementById("userCartContainer");
   const userProfileContainer = document.getElementById("userProfileContainer");
   const userProfileLink = document.getElementById("userProfileLink");
+  const customCakeOrdersItem = document.getElementById("customCakeOrdersItem");
+  
   let userNameSpan = null;
 
   // Check if userProfileLink exists and has a span
@@ -57,22 +64,39 @@ function updateNavbarAndGreeting() {
   }
 
   if (token) {
+    // User is logged in
     userCartContainer.style.display = "block";
     userProfileContainer.style.display = "block";
     userProfileLink.href = "/public/customer/profile.html";
+    
+    // Show custom cake orders link only when logged in
+    if (customCakeOrdersItem) {
+      customCakeOrdersItem.style.display = "block";
+    }
+    
     if (userNameSpan) userNameSpan.textContent = localStorage.getItem("userName") || "User Profile";
+    
     // Update profile.html content if on that page
     if (window.location.pathname.includes("profile.html")) {
       document.getElementById("userName").textContent = localStorage.getItem("userName") || "Guest";
       document.getElementById("userEmail").textContent = localStorage.getItem("userEmail") || "Not set";
     }
+    
     // Update cart count badge
     updateCartCount();
   } else {
+    // User is not logged in
     userCartContainer.style.display = "none";
     userProfileContainer.style.display = "block";
     userProfileLink.href = "/public/customer/login.html";
+    
+    // Hide custom cake orders link when not logged in
+    if (customCakeOrdersItem) {
+      customCakeOrdersItem.style.display = "none";
+    }
+    
     if (userNameSpan) userNameSpan.textContent = "User Profile";
+    
     if (window.location.pathname.includes("profile.html")) {
       document.getElementById("userName").textContent = "Guest";
       document.getElementById("userEmail").textContent = "Not logged in";

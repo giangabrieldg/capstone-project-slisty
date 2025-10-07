@@ -1,16 +1,16 @@
-/**
- * Profile Page Manager
- * Handles profile data fetching, updating, tab switching, cart display, and order history
- */
+ //Handles profile data fetching, updating, tab switching, cart display, and order history
+ 
 class ProfileManager {
     constructor() {
         this.token = localStorage.getItem('token');
+        // Dynamic API URL - same approach as your other modules
+        this.API_BASE_URL = window.location.origin === 'http://localhost:3000'
+            ? 'http://localhost:3000'
+            : 'https://capstone-project-slisty.onrender.com';
         this.init();
     }
 
-    /**
-     * Initialize profile page functionality
-     */
+    //initialiaze page
     async init() {
         if (!this.token) {
             window.location.href = '/public/customer/login.html';
@@ -34,13 +34,10 @@ class ProfileManager {
         this.showSection(section);
     }
 
-    /**
-     * Validate token with server
-     * @returns {Promise<boolean>} - Whether the token is valid
-     */
+    //validate token if still valid
     async validateToken() {
         try {
-            const response = await fetch('http://localhost:3000/api/auth/profile', {
+            const response = await fetch(`${this.API_BASE_URL}/api/auth/profile`, {
                 headers: { 'Authorization': `Bearer ${this.token}` }
             });
             return response.ok;
@@ -50,9 +47,7 @@ class ProfileManager {
         }
     }
 
-    /**
-     * Setup event listeners for navigation and form interactions
-     */
+    //event listeners for profile page
     setupEventListeners() {
         // Tab navigation
         document.querySelectorAll('.sidebar-menu .nav-link').forEach(link => {
@@ -115,10 +110,7 @@ class ProfileManager {
         }
     }
 
-    /**
-     * Show specific section and hide others
-     * @param {string} section - Section ID to display
-     */
+    //section id display
     showSection(section) {
         document.querySelectorAll('.main-content-section').forEach(s => {
             s.style.display = 'none';
@@ -136,12 +128,10 @@ class ProfileManager {
         });
     }
 
-    /**
-     * Load user profile data
-     */
+    //load user data
     async loadProfile() {
         try {
-            const response = await fetch('http://localhost:3000/api/auth/profile', {
+            const response = await fetch(`${this.API_BASE_URL}/api/auth/profile`, {
                 headers: { 'Authorization': `Bearer ${this.token}` }
             });
             if (!response.ok) throw new Error('Failed to load profile');
@@ -154,10 +144,7 @@ class ProfileManager {
         }
     }
 
-    /**
-     * Render profile data
-     * @param {Object} profile - Profile data
-     */
+    //profile/user information
     renderProfile(profile) {
         document.getElementById('userName').textContent = profile.name || 'Not set';
         document.getElementById('userEmail').textContent = profile.email || 'Not set';
@@ -165,12 +152,10 @@ class ProfileManager {
         document.getElementById('userAddress').textContent = profile.address || 'Not set';
     }
 
-    /**
-     * Load user orders
-     */
+    //load user orders
     async loadOrders() {
         try {
-            const response = await fetch('http://localhost:3000/api/orders/user/me', {
+            const response = await fetch(`${this.API_BASE_URL}/api/orders/user/me`, {
                 headers: { 
                     'Authorization': `Bearer ${this.token}`,
                     'Content-Type': 'application/json'
@@ -208,10 +193,7 @@ class ProfileManager {
         }
     }
 
-    /**
-     * Render orders in the orders section
-     * @param {Array} orders - List of orders
-     */
+    //list of orders
     renderOrders(orders) {
         const ordersContent = document.querySelector('.orders-content');
         if (!ordersContent) return;
@@ -260,10 +242,7 @@ class ProfileManager {
         `;
     }
 
-    /**
-     * Toggle edit profile form visibility
-     * @param {boolean} show - Show or hide form
-     */
+    //show or hide edit form
     toggleEditForm(show) {
         const editForm = document.getElementById('editForm');
         const editBtn = document.getElementById('editBtn');
@@ -278,10 +257,7 @@ class ProfileManager {
         }
     }
 
-    /**
-     * Handle profile form submission
-     * @param {Event} e - Form submission event
-     */
+    //profile form submission
     async handleProfileSubmit(e) {
         e.preventDefault();
         const name = document.getElementById('editName').value;
@@ -310,7 +286,7 @@ class ProfileManager {
         if (!isValid) return;
 
         try {
-            const response = await fetch('http://localhost:3000/api/auth/profile/update', {
+            const response = await fetch(`${this.API_BASE_URL}/api/auth/profile/update`, {
                 method: 'PUT',
                 headers: {
                     'Authorization': `Bearer ${this.token}`,
@@ -334,9 +310,7 @@ class ProfileManager {
         }
     }
 
-    /**
-     * Handle logout
-     */
+   //logout function
     handleLogout() {
         localStorage.removeItem('token');
         // Clear all localStorage to prevent any residual data
