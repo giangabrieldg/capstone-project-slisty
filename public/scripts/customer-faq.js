@@ -1,8 +1,13 @@
-// customer-faq.js implementation
+// scripts/customer-faq.js
 document.addEventListener('DOMContentLoaded', () => {
     const faqList = document.getElementById('faqList');
     const faqSearch = document.getElementById('faqSearch');
     
+    // Dynamic API URL - same approach as your inquiries
+    const API_BASE_URL = window.location.origin === 'http://localhost:3000'
+        ? 'http://localhost:3000'
+        : 'https://capstone-project-slisty.onrender.com';
+
     // Function to display FAQs in the accordion
     function displayFaqs(faqs) {
         if (!faqs || faqs.length === 0) {
@@ -56,6 +61,16 @@ document.addEventListener('DOMContentLoaded', () => {
         return div.innerHTML;
     }
     
+    // Function to filter FAQs based on search input
+    function filterFaqs(faqs, searchTerm) {
+        if (!searchTerm) return faqs;
+        
+        return faqs.filter(faq => 
+            faq.question.toLowerCase().includes(searchTerm) || 
+            faq.answer.toLowerCase().includes(searchTerm)
+        );
+    }
+    
     // Function to show loading state
     function showLoading() {
         faqList.innerHTML = `
@@ -82,7 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
         showLoading();
         
         try {
-            const response = await fetch('/api/faqs');
+            const response = await fetch(`${API_BASE_URL}/api/faqs`);
             
             if (!response.ok) {
                 throw new Error(`Server returned ${response.status}: ${response.statusText}`);
