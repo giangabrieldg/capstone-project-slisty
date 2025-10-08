@@ -110,7 +110,7 @@ async loadCustomCakeOrder() {
     if (!this.customCakeOrder.price || this.customCakeOrder.price <= 0) {
       console.error('Order price not set or invalid:', this.customCakeOrder.price);
       alert('This order does not have a valid price set. Please contact the bakery.');
-      window.location.href = '/public/customer/my-custom-orders.html';
+      window.location.href = '/public/customer/custom-orders.html';
       return;
     }
     
@@ -138,7 +138,7 @@ async loadCustomCakeOrder() {
       // Invalid status for checkout
       console.error('Invalid order status for checkout:', this.customCakeOrder.status);
       alert(`This order is not ready for payment. Current status: ${this.customCakeOrder.status}`);
-      window.location.href = '/public/customer/my-custom-orders.html';
+      window.location.href = '/public/customer/custom-orders.html';
       return;
     }
     
