@@ -3,11 +3,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const searchBar = document.querySelector('.search-bar');
   const dateFilter = document.getElementById('dateFilter');
 
-  // Use your cleaner approach
-  const API_BASE_URL = window.location.origin === 'http://localhost:3000'
-    ? 'http://localhost:3000'
-    : 'https://capstone-project-slisty.onrender.com';
-
   async function loadInquiries() {
     try {
       const token = localStorage.getItem('token');
@@ -16,7 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      const response = await fetch(`${API_BASE_URL}/api/inquiries`, {
+      const response = await fetch(`${window.API_BASE_URL}/api/inquiries`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -72,7 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
-          const response = await fetch(`${API_BASE_URL}/api/inquiries/reply`, {
+          const response = await fetch(`${window.API_BASE_URL}/api/inquiries/reply`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

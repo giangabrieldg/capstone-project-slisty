@@ -3,11 +3,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const inquiryForm = document.getElementById('inquiryForm');
   if (!inquiryForm) return;
 
-  // Use your cleaner approach
-  const API_BASE_URL = window.location.origin === 'http://localhost:3000'
-    ? 'http://localhost:3000'
-    : 'https://capstone-project-slisty.onrender.com';
-
   inquiryForm.addEventListener('submit', async (e) => {
     e.preventDefault();
 
@@ -31,7 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (token) headers['Authorization'] = `Bearer ${token}`;
 
       // Use the dynamic API_BASE_URL
-      const response = await fetch(`${API_BASE_URL}/api/inquiries`, {
+      const response = await fetch(`${window.API_BASE_URL}/api/inquiries`, {
         method: 'POST',
         headers,
         body: JSON.stringify({ name, email, phone, subject, message, recaptchaToken }),

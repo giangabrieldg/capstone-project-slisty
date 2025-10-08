@@ -1,9 +1,3 @@
-// update-navbar.js
-
-// Dynamic API URL - same approach as your other modules
-const API_BASE_URL = window.location.origin === 'http://localhost:3000'
-  ? 'http://localhost:3000'
-  : 'https://capstone-project-slisty.onrender.com';
 
 // Function to fetch cart item count from API and update the badge
 async function updateCartCount() {
@@ -15,7 +9,7 @@ async function updateCartCount() {
   }
 
   try {
-    const response = await fetch(`${API_BASE_URL}/api/cart`, {
+    const response = await fetch(`${window.API_BASE_URL}/api/cart`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },

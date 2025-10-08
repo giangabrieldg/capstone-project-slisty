@@ -1,30 +1,7 @@
-// Determine API base URL based on environment
-const API_BASE_URL = 
-  window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? 'http://localhost:3000' // Local backend
-    : 'https://capstone-project-slisty.onrender.com'; // Production backend
 
-console.log('API Base URL:', API_BASE_URL);
-console.log('Current hostname:', window.location.hostname);
-
-// Test the connection
-async function testConnection() {
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/auth/test`);
-    const result = await response.json();
-    console.log('Backend connection test:', result);
-  } catch (error) {
-    console.error('Backend connection failed:', error);
-  }
-}
-
-// Call this when the page loads
-testConnection();
-
-// Fetch and display users from backend
 async function fetchUsers() {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/auth/users`, {
+    const response = await fetch(`${window.API_BASE_URL}/api/auth/users`, {
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('token')}`,
       },
@@ -147,7 +124,7 @@ document.getElementById('addUserForm').addEventListener('submit', async (e) => {
   }
 
   try {
-    const response = await fetch(`${API_BASE_URL}/api/auth/create-staff`, {
+    const response = await fetch(`${window.API_BASE_URL}/api/auth/create-staff`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -193,7 +170,7 @@ function addArchiveToggleListener(checkbox) {
     const userId = checkbox.getAttribute('data-user-id');
     const isArchived = checkbox.checked;
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/users/${userId}/archive`, {
+      const response = await fetch(`${window.API_BASE_URL}/api/auth/users/${userId}/archive`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

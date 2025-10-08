@@ -3,10 +3,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const faqList = document.getElementById('faqList');
     const faqSearch = document.getElementById('faqSearch');
     
-    // Dynamic API URL - same approach as your inquiries
-    const API_BASE_URL = window.location.origin === 'http://localhost:3000'
-        ? 'http://localhost:3000'
-        : 'https://capstone-project-slisty.onrender.com';
 
     // Function to display FAQs in the accordion
     function displayFaqs(faqs) {
@@ -97,7 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
         showLoading();
         
         try {
-            const response = await fetch(`${API_BASE_URL}/api/faqs`);
+            const response = await fetch(`${window.API_BASE_URL}/api/faqs`);
             
             if (!response.ok) {
                 throw new Error(`Server returned ${response.status}: ${response.statusText}`);

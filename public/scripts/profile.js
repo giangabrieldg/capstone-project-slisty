@@ -4,16 +4,13 @@ class ProfileManager {
     constructor() {
         this.token = localStorage.getItem('token');
         // Dynamic API URL - same approach as your other modules
-        this.API_BASE_URL = window.location.origin === 'http://localhost:3000'
-            ? 'http://localhost:3000'
-            : 'https://capstone-project-slisty.onrender.com';
         this.init();
     }
 
     //initialiaze page
     async init() {
         if (!this.token) {
-            window.location.href = '/public/customer/login.html';
+            window.location.href = '/customer/login.html';
             return;
         }
         
@@ -21,7 +18,7 @@ class ProfileManager {
         const isValid = await this.validateToken();
         if (!isValid) {
             localStorage.removeItem('token');
-            window.location.href = '/public/customer/login.html';
+            window.location.href = '/customer/login.html';
             return;
         }
 
@@ -37,7 +34,7 @@ class ProfileManager {
     //validate token if still valid
     async validateToken() {
         try {
-            const response = await fetch(`${this.API_BASE_URL}/api/auth/profile`, {
+            const response = await fetch(`${window.API_BASE_URL}/api/auth/profile`, {
                 headers: { 'Authorization': `Bearer ${this.token}` }
             });
             return response.ok;
@@ -131,7 +128,7 @@ class ProfileManager {
     //load user data
     async loadProfile() {
         try {
-            const response = await fetch(`${this.API_BASE_URL}/api/auth/profile`, {
+            const response = await fetch(`${window.API_BASE_URL}/api/auth/profile`, {
                 headers: { 'Authorization': `Bearer ${this.token}` }
             });
             if (!response.ok) throw new Error('Failed to load profile');
@@ -155,7 +152,7 @@ class ProfileManager {
     //load user orders
     async loadOrders() {
         try {
-            const response = await fetch(`${this.API_BASE_URL}/api/orders/user/me`, {
+            const response = await fetch(`${window.API_BASE_URL}/api/orders/user/me`, {
                 headers: { 
                     'Authorization': `Bearer ${this.token}`,
                     'Content-Type': 'application/json'
@@ -286,7 +283,7 @@ class ProfileManager {
         if (!isValid) return;
 
         try {
-            const response = await fetch(`${this.API_BASE_URL}/api/auth/profile/update`, {
+            const response = await fetch(`${window.API_BASE_URL}/api/auth/profile/update`, {
                 method: 'PUT',
                 headers: {
                     'Authorization': `Bearer ${this.token}`,

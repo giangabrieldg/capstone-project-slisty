@@ -7,18 +7,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const answerInput = document.getElementById('answer');
   const editQuestionInput = document.getElementById('editQuestion');
 
-  // Dynamic API URL - same approach as your inquiries
-  const API_BASE_URL = window.location.origin === 'http://localhost:3000'
-    ? 'http://localhost:3000'
-    : 'https://capstone-project-slisty.onrender.com';
-
   // Load FAQs from backend
   async function loadFaqs() {
     try {
       // Show loading state
       faqsTableBody.innerHTML = '<tr><td colspan="3" class="text-center">Loading FAQs...</td></tr>';
       
-      const response = await fetch(`${API_BASE_URL}/api/faqs`);
+      const response = await fetch(`${window.API_BASE_URL}/api/faqs`);
       if (!response.ok) throw new Error('Failed to fetch FAQs');
       
       const faqs = await response.json();
@@ -73,7 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Delete FAQ
   async function deleteFaq(question) {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/faqs/${encodeURIComponent(question)}`, {
+      const response = await fetch(`${window.API_BASE_URL}/api/faqs/${encodeURIComponent(question)}`, {
         method: 'DELETE',
       });
       
@@ -104,8 +99,8 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const method = editQuestion ? 'PUT' : 'POST';
       const url = editQuestion 
-        ? `${API_BASE_URL}/api/faqs/${encodeURIComponent(editQuestion)}` 
-        : `${API_BASE_URL}/api/faqs`;
+        ? `${window.API_BASE_URL}/api/faqs/${encodeURIComponent(editQuestion)}` 
+        : `${window.API_BASE_URL}/api/faqs`;
       
       const response = await fetch(url, {
         method,

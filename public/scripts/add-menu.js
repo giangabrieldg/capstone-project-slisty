@@ -1,10 +1,6 @@
 //admin menu side script (adding, editing, deleting menu items)
 
 
-const API_BASE_URL = window.location.origin === 'http://localhost:3000'
-  ? 'http://localhost:3000'
-  : 'https://capstone-project-slisty.onrender.com';
-
 async function fetchMenuItems() {
   const token = localStorage.getItem('token');
   if (!token) {
@@ -15,7 +11,7 @@ async function fetchMenuItems() {
 
   try {
     setLoadingState(true, 'Loading menu items...');
-    const response = await fetch(`${API_BASE_URL}/api/menu`, {
+    const response = await fetch(`${window.API_BASE_URL}/api/menu`, {
       headers: { 'Authorization': `Bearer ${token}` },
     });
 
@@ -119,7 +115,7 @@ async function addMenuItem(formData, form) {
 
   try {
     setLoadingState(true, 'Adding item...');
-    const response = await fetch(`${API_BASE_URL}/api/menu`, {
+    const response = await fetch(`${window.API_BASE_URL}/api/menu`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}` },
       body: formData,
@@ -153,7 +149,7 @@ async function updateMenuItem(formData, form) {
 
   try {
     setLoadingState(true, 'Updating item...');
-    const response = await fetch(`${API_BASE_URL}/api/menu/${menuId}`, {
+    const response = await fetch(`${window.API_BASE_URL}/api/menu/${menuId}`, {
       method: 'PUT',
       headers: { 'Authorization': `Bearer ${token}` },
       body: formData,
@@ -190,7 +186,7 @@ async function deleteMenuItem(menuId) {
 
   try {
     setLoadingState(true, 'Deleting item...');
-    const response = await fetch(`${API_BASE_URL}/api/menu/${menuId}`, {
+    const response = await fetch(`${window.API_BASE_URL}/api/menu/${menuId}`, {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${token}` },
     });
@@ -220,7 +216,7 @@ async function openEditModal(menuId) {
 
   try {
     setLoadingState(true, 'Loading item data...');
-    const response = await fetch(`${API_BASE_URL}/api/menu/${menuId}`, {
+    const response = await fetch(`${window.API_BASE_URL}/api/menu/${menuId}`, {
       headers: { 'Authorization': `Bearer ${token}` },
     });
 
@@ -603,7 +599,7 @@ function initializePage() {
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/menu`, {
+      const response = await fetch(`${window.API_BASE_URL}/api/menu`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
 
