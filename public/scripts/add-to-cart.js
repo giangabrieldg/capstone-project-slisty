@@ -1,4 +1,3 @@
-
 // Add event listener for the "Add to Cart" button once the DOM is fully loaded
 document.getElementById('addToCart').addEventListener('click', async () => {
   // Retrieve the authentication token from localStorage
@@ -6,7 +5,7 @@ document.getElementById('addToCart').addEventListener('click', async () => {
   if (!token) {
     // Redirect to login page if user is not authenticated
     alert('Please log in to add items to your cart.');
-    window.location.href = '/public/customer/login.html';
+    window.location.href = '/customer/login.html';
     return;
   }
 
@@ -32,7 +31,7 @@ document.getElementById('addToCart').addEventListener('click', async () => {
 
   try {
     // Fetch product details from the backend
-    const response = await fetch(`http://localhost:3000/api/menu/${productId}`);
+    const response = await fetch(`${window.API_BASE_URL}/api/menu/${productId}`);
     if (!response.ok) {
       throw new Error(`Failed to fetch product details: ${response.statusText}`);
     }
@@ -78,7 +77,7 @@ document.getElementById('addToCart').addEventListener('click', async () => {
     };
 
     // Send cart item to backend
-    const cartResponse = await fetch('http://localhost:3000/api/cart/add', {
+    const cartResponse = await fetch(`${window.API_BASE_URL}/api/cart/add`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -104,7 +103,7 @@ document.getElementById('addToCart').addEventListener('click', async () => {
     console.error('Error adding to cart:', error);
     if (error.message.includes('Invalid or expired token')) {
       alert('Your session has expired. Please log in again.');
-      window.location.href = '/public/customer/login.html';
+      window.location.href = '/customer/login.html';
     } else {
       alert(`Error: ${error.message}`);
     }

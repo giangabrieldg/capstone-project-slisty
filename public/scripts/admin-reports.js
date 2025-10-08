@@ -120,7 +120,7 @@ async function updateReports(startDate, endDate) {
       return;
     }
 
-    const url = `/api/orders/admin/reports?start_date=${startDate}&end_date=${endDate}`;
+    const url = `${window.API_BASE_URL}/api/orders/admin/reports?start_date=${startDate}&end_date=${endDate}`;
     const response = await fetch(url, {
       headers: {
         Authorization: `Bearer ${token}`,

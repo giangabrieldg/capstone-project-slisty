@@ -28,7 +28,7 @@ class AdminDashboard {
         return;
       }
 
-      const response = await fetch("/api/orders/admin/dashboard", {
+       const response = await fetch(`${window.API_BASE_URL}/api/orders/admin/dashboard`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",

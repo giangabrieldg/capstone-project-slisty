@@ -61,7 +61,7 @@ function updateNavbarAndGreeting() {
     // User is logged in
     userCartContainer.style.display = "block";
     userProfileContainer.style.display = "block";
-    userProfileLink.href = "/public/customer/profile.html";
+    userProfileLink.href = "/customer/profile.html";
     
     // Show custom cake orders link only when logged in
     if (customCakeOrdersItem) {
@@ -82,7 +82,7 @@ function updateNavbarAndGreeting() {
     // User is not logged in
     userCartContainer.style.display = "none";
     userProfileContainer.style.display = "block";
-    userProfileLink.href = "/public/customer/login.html";
+    userProfileLink.href = "/customer/login.html";
     
     // Hide custom cake orders link when not logged in
     if (customCakeOrdersItem) {
