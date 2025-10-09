@@ -18,6 +18,10 @@
       integrity="sha384-4Q6Gf2aSP4eDXB8Miphtr37CMZZQ5oXLH2yaXMJ2w8e2ZtHTl7GptT4jmndRuHDT"
       crossorigin="anonymous"
     />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"
+    />
 
     <!-- Google Fonts -->
     <link
@@ -57,7 +61,7 @@
 
     <!-- Main Content -->
     <div class="main-content">
-      <h1 class="text-center mb-4">Customize Your Cake</h1>
+      <h1 class="text-center mb-4 mt-5">Customize Your Cake</h1>
       <div class="cake-customizer">
         <div class="viewer-section" id="cakeViewer">
           <!-- Tour Start Button -->
@@ -109,7 +113,7 @@
             <div class="order-summary-header">Your Custom Cake</div>
             <div class="summary-item" onclick="goToStep(1)">
               <div class="summary-item-left">
-                <span class="summary-check">✓</span>
+                <span class="summary-check"><i class="bi bi-pencil"></i></span>
                 <div class="summary-item-content">
                   <div>
                     <strong>Size:</strong>
@@ -121,7 +125,7 @@
             </div>
             <div class="summary-item" onclick="goToStep(2)">
               <div class="summary-item-left">
-                <span class="summary-check">✓</span>
+                <span class="summary-check"><i class="bi bi-pencil"></i></span>
                 <div class="summary-item-content">
                   <div>
                     <strong>Flavor:</strong>
@@ -132,7 +136,7 @@
             </div>
             <div class="summary-item" onclick="goToStep(3)">
               <div class="summary-item-left">
-                <span class="summary-check">✓</span>
+                <span class="summary-check"><i class="bi bi-pencil"></i></span>
                 <div class="summary-item-content">
                   <div>
                     <strong>Icing:</strong>
@@ -143,7 +147,7 @@
             </div>
             <div class="summary-item" onclick="goToStep(4)">
               <div class="summary-item-left">
-                <span class="summary-check">✓</span>
+                <span class="summary-check"><i class="bi bi-pencil"></i></span>
                 <div class="summary-item-content">
                   <div>
                     <strong>Filling:</strong>
@@ -162,7 +166,7 @@
               style="display: none"
             >
               <div class="summary-item-left">
-                <span class="summary-check">✓</span>
+                <span class="summary-check"><i class="bi bi-pencil"></i></span>
                 <div class="summary-item-content">
                   <div>
                     <strong>Bottom Border:</strong>
@@ -178,7 +182,7 @@
               style="display: none"
             >
               <div class="summary-item-left">
-                <span class="summary-check">✓</span>
+                <span class="summary-check"><i class="bi bi-pencil"></i></span>
                 <div class="summary-item-content">
                   <div>
                     <strong>Top Border:</strong>
@@ -194,7 +198,7 @@
               style="display: none"
             >
               <div class="summary-item-left">
-                <span class="summary-check">✓</span>
+                <span class="summary-check"><i class="bi bi-pencil"></i></span>
                 <div class="summary-item-content">
                   <div>
                     <strong>Message:</strong>
@@ -210,7 +214,7 @@
               style="display: none"
             >
               <div class="summary-item-left">
-                <span class="summary-check">✓</span>
+                <span class="summary-check"><i class="bi bi-pencil"></i></span>
                 <div class="summary-item-content">
                   <div>
                     <strong>Decoration:</strong>
@@ -238,7 +242,7 @@
                 class="summary-btn primary-btn"
                 onclick="checkoutCustomCake()"
               >
-                <i class="fas fa-mobile-alt"></i> Pay 50% Downpayment via GCash
+                Pay 50% Downpayment via GCash
               </button>
               <button
                 class="summary-btn secondary-btn"
@@ -324,7 +328,7 @@
                     class="flavor-circle"
                     style="background: #f3e6c6; border: 2px solid #ddd"
                   ></div>
-                  <span>White</span>
+                  <span>Vanilla</span>
                 </div>
               </div>
             </div>
@@ -456,13 +460,13 @@
                   data-filling="none"
                   data-name="No selection"
                 >
-                  <div class="no-selection-icon">✕</div>
+                  <div class="no-selection-icon active">✕</div>
                   <div class="filling-details">
                     <div class="filling-name">No selection</div>
                   </div>
                 </div>
                 <div
-                  class="filling-option-walmart active"
+                  class="filling-option-walmart"
                   data-filling="strawberry"
                   data-name="Strawberry"
                 >
@@ -485,7 +489,7 @@
                     style="background: #f1e7c3"
                   ></div>
                   <div class="filling-details">
-                    <div class="filling-name">Bavarian creme</div>
+                    <div class="filling-name">Cream</div>
                   </div>
                   <div class="filling-price">Add ₱150.00</div>
                 </div>
@@ -911,7 +915,7 @@
               onclick="prevStep()"
               style="display: none"
             >
-              ← Back
+              ←
             </button>
             <div class="next-step-info">
               <span id="nextStepName">Flavor</span>

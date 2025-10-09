@@ -46,34 +46,34 @@ function renderMenuItems(menuItems) {
       : item.stock === 0;
 
     row.innerHTML = `
-      <td>${formattedMenuId}</td>
-      <td>${item.name}</td>
-      <td>${item.category}</td>
-      <td>
-        <img src="${item.image || 'https://via.placeholder.com/50'}" 
-       alt="${item.name}" 
-       class="menu-image enlarge-image">
-  ${item.image ? `<small class="d-block">${item.image.split('/').pop()}</small>` : ''}
-      </td>
-      <td>${priceDisplay}</td>
-      <td class="${isOutOfStock ? 'text-danger fw-bold' : ''}">
-        ${stockDisplay}
-      </td>
-      <td class="text-truncate" style="max-width: 200px;" title="${item.description || ''}">
-        ${item.description || ''}
-      </td>
-      <td>
-        <div class="d-flex gap-2">
-          <button class="btn btn-warning btn-sm edit-item" data-id="${item.menuId}">
-            <i class="bi bi-pencil"></i>
-          </button>
-          <button class="btn btn-danger btn-sm remove-item" data-id="${item.menuId}">
-            <i class="bi bi-trash"></i>
-          </button>
-        </div>
-      </td>
-    `;
-    tableBody.appendChild(row);
+  <td>${formattedMenuId}</td>
+  <td>${item.name}</td>
+  <td>${item.category}</td>
+  <td>
+    <img src="${item.image || 'https://via.placeholder.com/50'}" 
+         alt="${item.name}" 
+         class="menu-image enlarge-image">
+  </td>
+  <td>${priceDisplay}</td>
+  <td class="${isOutOfStock ? 'fw-bold' : ''}">
+    ${stockDisplay}
+  </td>
+  <td class="text-truncate" style="max-width: 200px;" title="${item.description || ''}">
+    ${item.description || ''}
+  </td>
+  <td>
+    <div class="d-flex gap-2">
+      <button class="btn btn-warning btn-sm edit-item" data-id="${item.menuId}">
+        <i class="bi bi-pencil"></i>
+      </button>
+      <button class="btn btn-danger btn-sm remove-item" data-id="${item.menuId}">
+        <i class="bi bi-trash"></i>
+      </button>
+    </div>
+  </td>
+`;
+tableBody.appendChild(row);
+
   });
 
   addTableEventListeners();

@@ -3,9 +3,11 @@
 :root {
     --primary-color: #2c9045;
     --secondary-color: #bce4cc;
-    --background-color: #bae3ca;
+    --bg-color: #F5F1E9;
+    --secondary-bg-color: #FFFBF0;
     --hover-color: #a8d9b0;
     --text-color: #2d2d2d;
+    --yellow-color: #dab00b;
     --font-poppins: "Poppins", sans-serif;
     --font-baloo: "Baloo 2", sans-serif;
     --footer-bg-color: #2d2d2d;
@@ -34,6 +36,14 @@ body {
     margin: 0 auto;
     max-width: 1400px;
     /* Limit max width for premium feel */
+}
+
+h1 {
+    font-size: 2rem;
+    font-family: var(--font-poppins);
+    color: var(--text-color);
+    font-weight: 600;
+    padding-left: 0.75rem;
 }
 
 .cake-customizer {
@@ -106,14 +116,14 @@ body {
 
 .controls-overlay {
     position: absolute;
-    bottom: 60px;
+    bottom: 120px;
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(0, 0, 0, 0.7);
+    background: var(--primary-color);
     color: #fff;
     padding: 8px 16px;
     border-radius: 20px;
-    font-size: 0.85rem;
+    font-size: 1rem;
     font-family: var(--font-poppins);
 }
 
@@ -177,7 +187,7 @@ body {
 }
 
 .summary-item:hover {
-    background-color: rgba(44, 144, 69, 0.05);
+    background: #bce4cc;
     border-radius: 8px;
     margin: 0 -8px;
     padding: 12px 8px;
@@ -194,7 +204,7 @@ body {
 }
 
 .summary-check {
-    color: var(--primary-color);
+    color: var(--yellow-color);
     font-weight: bold;
 }
 
@@ -1042,7 +1052,7 @@ body {
 /* Downpayment Notice Styles */
 .downpayment-notice {
     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    border: 2px solid #2c9045;
+    border: 2px solid var(--primary-color);
     border-radius: 12px;
     padding: 20px;
     margin: 20px 0;
@@ -1051,13 +1061,13 @@ body {
 }
 
 .downpayment-notice h4 {
-    color: #2c9045;
+    color: var(--primary-color);
     margin-bottom: 12px;
     font-weight: 600;
 }
 
 .downpayment-badge {
-    background: #2c9045;
+    background: var(--primary-color);
     color: white;
     padding: 8px 16px;
     border-radius: 20px;
@@ -1083,16 +1093,16 @@ body {
 }
 
 .payment-item.total {
-    border-top: 2px solid #2c9045;
+    border-top: 2px solid var(--primary-color);
     padding-top: 10px;
     margin-top: 12px;
     font-weight: 600;
     font-size: 1.1rem;
-    color: #2c9045;
+    color: var(--primary-color)
 }
 
 .gcash-required {
-    background: #fff3cd;
+    background: var(--bg-color);
     border: 1px solid #ffeaa7;
     border-radius: 8px;
     padding: 12px;
