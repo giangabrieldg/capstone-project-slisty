@@ -32,11 +32,6 @@ async function initializeAdminSidebar(container) {
   const navLinks = container.querySelectorAll(".sidebar-nav .nav-item");
   const token = localStorage.getItem("token");
 
-  // Dynamic BASE_URL for local and production
-  const BASE_URL = window.location.hostname === "localhost"
-    ? "http://localhost:3000"
-    : "https://capstone-project-slisty.onrender.com";
-
   // Validate user data
   const userData = await validateToken(BASE_URL);
   console.log("User data from API:", userData);
@@ -112,7 +107,7 @@ async function initializeAdminSidebar(container) {
 async function validateToken(BASE_URL) {
   const token = localStorage.getItem("token");
   try {
-    const response = await fetch(`${BASE_URL}/api/auth/profile`, {
+    const response = await fetch(`${window.API_BASE_URL}/api/auth/profile`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     const userData = await response.json();

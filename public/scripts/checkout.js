@@ -86,8 +86,8 @@ async loadCustomCakeOrder() {
   try {
     // Use correct endpoint based on order type
     const endpoint = this.customCakeData.isImageOrder 
-      ? `/api/custom-cake/image-orders/${this.customCakeData.customCakeId}`
-      : `/api/custom-cake/${this.customCakeData.customCakeId}`;
+      ? `${window.API_BASE_URL}/api/custom-cake/image-orders/${this.customCakeData.customCakeId}`
+      : `${window.API_BASE_URL}/api/custom-cake/${this.customCakeData.customCakeId}`;
     
     const response = await fetch(endpoint, {
       headers: { 'Authorization': `Bearer ${token}` }
@@ -261,7 +261,7 @@ console.log('Cart items created:', this.cartItems);
     }
 
     try {
-      const response = await fetch('http://localhost:3000/api/auth/profile', {
+      const response = await fetch(`${window.API_BASE_URL}/api/auth/profile`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (!response.ok) throw new Error('Failed to load profile');
@@ -330,7 +330,7 @@ console.log('Cart items created:', this.cartItems);
     }
 
     try {
-      const response = await fetch('http://localhost:3000/api/cart', {
+      const response = await fetch(`${window.API_BASE_URL}/api/cart`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (!response.ok) throw new Error(`Failed to load cart: ${response.statusText}`);
@@ -740,7 +740,7 @@ async processCustomCakePayment(token, profile, checkoutBtn, statusMessage) {
 
   if (this.checkoutData.paymentMethod === 'gcash') {
     // GCash payment flow
-    const paymentResponse = await fetch('/api/payment/create-gcash-source', {
+    const paymentResponse = await fetch(`${window.API_BASE_URL}/api/payment/create-gcash-source`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -796,7 +796,7 @@ async processCustomCakePayment(token, profile, checkoutBtn, statusMessage) {
 
     console.log('Cash payment payload:', cashPayload);
 
-    const response = await fetch('/api/custom-cake/process-cash-payment', {
+    const response = await fetch(`${window.API_BASE_URL}/api/custom-cake/process-cash-payment`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -879,7 +879,7 @@ async processRegularOrderPayment(token, profile, checkoutBtn, statusMessage) {
       }
     };
 
-    const paymentResponse = await fetch('/api/payment/create-gcash-source', {
+    const paymentResponse = await fetch(`${window.API_BASE_URL}/api/payment/create-gcash-source`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -918,7 +918,7 @@ async processRegularOrderPayment(token, profile, checkoutBtn, statusMessage) {
     // Cash payment
     const orderData = JSON.parse(sessionStorage.getItem('pendingOrder'));
     
-    const response = await fetch('/api/orders/create', {
+    const response = await fetch(`${window.API_BASE_URL}/api/orders/create`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -1053,7 +1053,7 @@ async placeCustomCakeOrder() {
 
       console.log('GCash Payment Payload:', paymentPayload);
 
-      const paymentResponse = await fetch('/api/payment/create-custom-cake-payment', {
+      const paymentResponse = await fetch(`${window.API_BASE_URL}/api/payment/create-custom-cake-payment`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1099,7 +1099,7 @@ async placeCustomCakeOrder() {
           'Processing your custom cake order...';
       }
       
-      const response = await fetch('/api/payment/process-cash-custom-cake', {
+      const response = await fetch(`${window.API_BASE_URL}/api/payment/process-cash-custom-cake`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1163,7 +1163,7 @@ async handleReturnFromPaymongo() {
     
     while (retries > 0) {
       try {
-        response = await fetch(`/api/payment/verify-payment/${paymentId}`, {
+        response = await fetch(`${window.API_BASE_URL}/api/payment/verify-payment/${paymentId}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         
@@ -1201,8 +1201,8 @@ async handleReturnFromPaymongo() {
         
         // Use different endpoint for downpayment vs full payment
         const verifyEndpoint = isDownpayment ?
-          '/api/payment/verify-custom-cake-downpayment' :
-          '/api/payment/verify-custom-cake-payment';
+          `${window.API_BASE_URL}/api/payment/verify-custom-cake-downpayment` :
+          `${window.API_BASE_URL}/api/payment/verify-custom-cake-payment`;
         
         const updateResponse = await fetch(verifyEndpoint, {
           method: 'POST',
@@ -1245,7 +1245,7 @@ async handleReturnFromPaymongo() {
         console.log('Regular order payment verified, creating/updating order...');
         
         // Create or update order
-        const updateResponse = await fetch('/api/orders/verify-gcash-payment', {
+        const updateResponse = await fetch(`${window.API_BASE_URL}/api/orders/verify-gcash-payment`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -1310,7 +1310,7 @@ async handleReturnFromPaymongo() {
     }
 
     try {
-      const response = await fetch(`/api/orders/cancel/${orderId}`, {
+      const response = await fetch(`${window.API_BASE_URL}/api/orders/cancel/${orderId}`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

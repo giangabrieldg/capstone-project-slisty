@@ -6,7 +6,7 @@ if (!localStorage.getItem('token')) {
 // Fetch and display orders
 async function fetchOrders() {
   try {
-    const response = await fetch('/api/orders', {
+    const response = await fetch(`${window.API_BASE_URL}/api/orders`, {
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('token')}`
       }
@@ -40,7 +40,7 @@ async function fetchOrders() {
         const newStatus = prompt('Enter new status (e.g., Processing, Completed):');
         if (newStatus) {
           try {
-            const response = await fetch(`/api/orders/${orderId}/status`, {
+            const response = await fetch(`${window.API_BASE_URL}/api/orders/${orderId}/status`, {
               method: 'PUT',
               headers: {
                 'Content-Type': 'application/json',

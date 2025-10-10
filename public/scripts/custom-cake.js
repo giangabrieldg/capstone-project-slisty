@@ -1,7 +1,7 @@
 // cake-api-service.js - Handles all API calls and backend interactions
 class CakeAPIService {
   constructor() {
-    this.baseURL = '/api/custom-cake';
+    this.baseURL = `${window.API_BASE_URL}/api/custom-cake`;
   }
 
   // Get authentication token from localStorage
@@ -114,7 +114,7 @@ async processCustomCakePayment(customCakeId, isImageOrder, paymentMethod, amount
 
   try {
     if (paymentMethod === 'gcash') {
-      const response = await fetch('/api/payment/create-gcash-source', {
+      const response = await fetch(`${window.API_BASE_URL}/api/payment/create-gcash-source`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -154,7 +154,7 @@ async processCustomCakePayment(customCakeId, isImageOrder, paymentMethod, amount
       };
     } else if (paymentMethod === 'cash') {
       // Use the new cash payment endpoint in customCakeRoutes
-      const response = await fetch('/api/custom-cake/process-cash-payment', {
+      const response = await fetch(`${window.API_BASE_URL}/api/custom-cake/process-cash-payment`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -194,7 +194,7 @@ async processCashPayment(customCakeId, isImageOrder, pickupDate, customerInfo, t
   const token = this.getToken();
   
   try {
-    const response = await fetch('/api/custom-cake/process-cash-payment', {
+    const response = await fetch(`${window.API_BASE_URL}/api/custom-cake/process-cash-payment`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,

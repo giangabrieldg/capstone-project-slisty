@@ -4,10 +4,10 @@ async function fetchCustomCakeOrders() {
     const token = localStorage.getItem('token');
     
     const [customResponse, imageResponse] = await Promise.all([
-      fetch('/api/custom-cake/admin/orders', {
+      fetch(`${window.API_BASE_URL}/api/custom-cake/admin/orders`, {
         headers: { 'Authorization': `Bearer ${token}` },
       }),
-      fetch('/api/custom-cake/admin/image-orders', {
+      fetch(`${window.API_BASE_URL}/api/custom-cake/admin/image-orders`, {
         headers: { 'Authorization': `Bearer ${token}` },
       })
     ]);
@@ -319,7 +319,7 @@ function setupEventListeners(token) {
         if (isImageOrder) {
           // Image-based order logic
           if (newStatus === 'Feasible' || newStatus === 'Ready for Downpayment') {
-            endpoint = `/api/custom-cake/admin/image-orders/${orderId}/price`;
+            endpoint = `${window.API_BASE_URL}/api/custom-cake/admin/image-orders/${orderId}/price`;
             body = { 
               price: price, 
               status: newStatus,
@@ -327,13 +327,13 @@ function setupEventListeners(token) {
               remaining_balance: price * 0.5
             };
           } else {
-            endpoint = `/api/custom-cake/image-orders/${orderId}`;
+            endpoint = `${window.API_BASE_URL}/api/custom-cake/image-orders/${orderId}`;
             body = { status: newStatus };
           }
         } else {
           // 3D custom cake logic
           if (newStatus === 'Ready for Downpayment' && price) {
-            endpoint = `/api/custom-cake/admin/orders/${orderId}/price`;
+            endpoint = `${window.API_BASE_URL}/api/custom-cake/admin/orders/${orderId}/price`;
             body = { 
               price: price, 
               status: newStatus,
@@ -341,7 +341,7 @@ function setupEventListeners(token) {
               remaining_balance: price * 0.5
             };
           } else {
-            endpoint = `/api/custom-cake/admin/orders/${orderId}`;
+            endpoint = `${window.API_BASE_URL}/api/custom-cake/admin/orders/${orderId}`;
             body = { status: newStatus };
           }
         }

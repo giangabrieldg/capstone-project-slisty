@@ -14,8 +14,7 @@ const verifyWebhookSignature = (signature, payload, secret) => {
   return signature === hmac.digest('hex');
 };
 
-// POST /api/payment/create-gcash-source - UNIFIED for both normal and custom cake orders
-// POST /api/payment/create-gcash-source - FIXED status validation
+// /api/payment/create-gcash-source for both normal and custom cake orders
 router.post('/create-gcash-source', verifyToken, async (req, res) => {
     try {
         const { amount, description, items, redirect, customCakeId, isImageOrder, deliveryDate, deliveryMethod, customerInfo, isDownpayment } = req.body;
