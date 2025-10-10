@@ -20,7 +20,7 @@ class AdminOrdersManager {
   async fetchUserInfo() {
     const token = localStorage.getItem('token');
     try {
-      const response = await fetch(`${window.API_BASE_URL}/api/auth/profil`, {
+      const response = await fetch(`${window.API_BASE_URL}/api/auth/profile`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();
@@ -42,7 +42,7 @@ class AdminOrdersManager {
       return;
     }
     try {
-      const response = await fetch('/api/orders/admin/orders', {
+      const response = await fetch(`${window.API_BASE_URL}/api/orders/admin/orders`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();
@@ -279,7 +279,7 @@ renderOrders(orders) {
   async updateOrderStatus(orderId, newStatus) {
   const token = localStorage.getItem('token');
   try {
-    const response = await fetch(`/api/orders/admin/orders/${orderId}`, {
+   const response = await fetch(`${window.API_BASE_URL}/api/orders/admin/orders/${orderId}`, {
       method: 'PUT',
       headers: {
         'Authorization': `Bearer ${token}`,
