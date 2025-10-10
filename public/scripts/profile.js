@@ -137,7 +137,7 @@ class ProfileManager {
         } catch (error) {
             console.error('Error loading profile:', error);
             alert('Error loading profile. Please log in again.');
-            window.location.href = '/public/customer/login.html';
+            window.location.href = '/customer/login.html';
         }
     }
 
@@ -313,11 +313,11 @@ class ProfileManager {
         // Clear all localStorage to prevent any residual data
         localStorage.clear();
         // Prevent back button from showing cached page
-        window.history.pushState(null, null, '/public/customer/login.html');
-        window.location.href = '/public/customer/login.html';
+        window.history.pushState(null, null, '/customer/login.html');
+        window.location.href = '/customer/login.html';
         // Add event listener to prevent back navigation
         window.addEventListener('popstate', () => {
-            window.location.href = '/public/customer/login.html';
+            window.location.href = '/customer/login.html';
         });
     }
 }

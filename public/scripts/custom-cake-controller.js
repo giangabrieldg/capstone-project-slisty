@@ -118,7 +118,7 @@ async checkoutCustomCake() {
   // Use the same authentication check as your original working code
   if (!this.apiService.isAuthenticated()) {
     alert('Please log in to checkout your custom cake');
-    window.location.href = '/public/customer/login.html';
+    window.location.href = '/customer/login.html';
     return;
   }
 
@@ -141,7 +141,7 @@ async checkoutCustomCake() {
     if (submitResponse.success) {
       const downpaymentAmount = totalPrice * 0.5;
       const customCakeId = submitResponse.data.customCakeId;
-      window.location.href = `/public/customer/checkout.html?customCakeId=${customCakeId}&isImageOrder=false&amount=${downpaymentAmount}&isDownpayment=true`;
+      window.location.href = `/customer/checkout.html?customCakeId=${customCakeId}&isImageOrder=false&amount=${downpaymentAmount}&isDownpayment=true`;
     } else {
       throw new Error(submitResponse.message);
     }

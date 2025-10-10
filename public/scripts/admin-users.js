@@ -9,7 +9,7 @@ async function fetchUsers() {
     if (!response.ok) {
       if (response.status === 401) {
         localStorage.removeItem('token');
-        window.location.href = '/public/customer/login.html';
+        window.location.href = '/customer/login.html';
         throw new Error('Unauthorized: Please log in again');
       }
       throw new Error('Failed to fetch users');
@@ -119,7 +119,7 @@ document.getElementById('addUserForm').addEventListener('submit', async (e) => {
   const token = localStorage.getItem('token');
   if (!token) {
     alert('Please log in again');
-    window.location.href = '/public/customer/login.html';
+    window.location.href = '/customer/login.html';
     return;
   }
 
@@ -137,7 +137,7 @@ document.getElementById('addUserForm').addEventListener('submit', async (e) => {
       const errorResult = await response.json();
       if (response.status === 401) {
         localStorage.removeItem('token');
-        window.location.href = '/public/customer/login.html';
+        window.location.href = '/customer/login.html';
         throw new Error('Unauthorized: Please log in again');
       }
       throw new Error(errorResult.message || 'Failed to add user');
@@ -181,7 +181,7 @@ function addArchiveToggleListener(checkbox) {
       if (!response.ok) {
         if (response.status === 401) {
           localStorage.removeItem('token');
-          window.location.href = '/public/customer/login.html';
+          window.location.href = '/customer/login.html';
           throw new Error('Unauthorized: Please log in again');
         }
         throw new Error('Failed to update user status');

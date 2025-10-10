@@ -42,7 +42,7 @@ function renderMenuItems(menuItems, container, showPriceStock = false) {
             <p class="card-text description">${item.description || 'No description available'}</p>
           </div>
           <div class="card-details">
-            <a href="/public/customer/products.html?id=${item.menuId || ''}" class="${viewDetailsClass}">
+            <a href="/customer/products.html?id=${item.menuId || ''}" class="${viewDetailsClass}">
               ${hasStock ? 'View Details' : 'Out of Stock'}
             </a>
           </div>

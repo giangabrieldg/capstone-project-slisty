@@ -5,7 +5,7 @@ async function fetchMenuItems() {
   const token = localStorage.getItem('token');
   if (!token) {
     alert('Please log in to access the menu');
-    window.location.href = '/public/login.html';
+    window.location.href = '/login.html';
     return;
   }
 
@@ -109,7 +109,7 @@ async function addMenuItem(formData, form) {
   const token = localStorage.getItem('token');
   if (!token) {
     alert('Please log in to add a menu item');
-    window.location.href = '/public/login.html';
+    window.location.href = '/login.html';
     return;
   }
 
@@ -143,7 +143,7 @@ async function updateMenuItem(formData, form) {
 
   if (!token) {
     alert('Please log in to update a menu item');
-    window.location.href = '/public/login.html';
+    window.location.href = '/login.html';
     return;
   }
 
@@ -180,7 +180,7 @@ async function deleteMenuItem(menuId) {
   const token = localStorage.getItem('token');
   if (!token) {
     alert('Please log in to delete a menu item');
-    window.location.href = '/public/login.html';
+    window.location.href = '/login.html';
     return;
   }
 
@@ -210,7 +210,7 @@ async function openEditModal(menuId) {
   const token = localStorage.getItem('token');
   if (!token) {
     alert('Please log in to edit a menu item');
-    window.location.href = '/public/login.html';
+    window.location.href = '/login.html';
     return;
   }
 
@@ -519,7 +519,7 @@ function initializePage() {
   const token = localStorage.getItem('token');
   if (!token) {
     alert('Please log in to access the admin panel');
-    window.location.href = '/public/login.html';
+    window.location.href = '/login.html';
     return;
   }
 

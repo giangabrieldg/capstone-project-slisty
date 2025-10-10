@@ -1,6 +1,6 @@
 // Check if staff is authenticated
 if (!localStorage.getItem('token')) {
-  window.location.href = '/public/customer/login.html';
+  window.location.href = '/customer/login.html';
 }
 
 // Fetch and display orders

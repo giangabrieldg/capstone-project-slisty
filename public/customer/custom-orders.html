@@ -589,7 +589,7 @@
           }
 
           // Redirect to checkout with proper parameters
-          const checkoutUrl = `/public/customer/checkout.html?customCakeId=${orderId}&isImageOrder=${isImageOrder}&amount=${paymentAmount}&isDownpayment=${isDownpayment}`;
+          const checkoutUrl = `/customer/checkout.html?customCakeId=${orderId}&isImageOrder=${isImageOrder}&amount=${paymentAmount}&isDownpayment=${isDownpayment}`;
 
           console.log("Redirecting to:", checkoutUrl);
           window.location.href = checkoutUrl;

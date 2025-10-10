@@ -18,7 +18,7 @@ class CakeAPIService {
   requireAuth() {
     if (!this.isAuthenticated()) {
       alert('Please log in to submit a custom cake order');
-      window.location.href = '/public/customer/login.html';
+      window.location.href = '/customer/login.html';
       return false;
     }
     return true;
@@ -129,8 +129,8 @@ async processCustomCakePayment(customCakeId, isImageOrder, paymentMethod, amount
           deliveryMethod,
           customerInfo,
           redirect: {
-            success: `${window.location.origin}/public/customer/success.html`,
-            failed: `${window.location.origin}/public/customer/failed.html`
+            success: `${window.location.origin}/customer/success.html`,
+            failed: `${window.location.origin}/customer/failed.html`
           }
         })
       });

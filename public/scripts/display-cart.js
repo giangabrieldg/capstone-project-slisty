@@ -10,7 +10,7 @@ async function loadCartItems() {
   if (!token) {
     cartItemsContainer.innerHTML = '<p class="text-muted">Please log in to view your cart.</p>';
     checkoutBtn.disabled = true;
-    cartItemsContainer.innerHTML += '<p><a href="/public/customer/login.html" class="btn btn-primary">Log In</a></p>';
+    cartItemsContainer.innerHTML += '<p><a href="/customer/login.html" class="btn btn-primary">Log In</a></p>';
     return;
   }
 
@@ -56,7 +56,7 @@ async function loadCartItems() {
 
     // Add checkout button event listener
     checkoutBtn.addEventListener('click', function() {
-      window.location.href = '/public/customer/checkout.html';
+      window.location.href = '/customer/checkout.html';
     });
 
     // Build table for cart items
@@ -124,7 +124,7 @@ async function loadCartItems() {
           console.error('Remove item error:', error);
           if (error.message.includes('Invalid or expired token')) {
             alert('Your session has expired. Please log in again.');
-            window.location.href = '/public/customer/login.html';
+            window.location.href = '/customer/login.html';
           } else {
             alert(`Error removing item: ${error.message}`);
           }
@@ -136,7 +136,7 @@ async function loadCartItems() {
     console.error('Fetch cart error:', error.message);
     cartItemsContainer.innerHTML = `<p class="text-danger">Error loading cart: ${error.message}</p>`;
     if (error.message.includes('Invalid or expired token')) {
-      cartItemsContainer.innerHTML += '<p><a href="/public/customer/login.html" class="btn btn-primary">Log In</a></p>';
+      cartItemsContainer.innerHTML += '<p><a href="/customer/login.html" class="btn btn-primary">Log In</a></p>';
     }
     checkoutBtn.disabled = true;
   }

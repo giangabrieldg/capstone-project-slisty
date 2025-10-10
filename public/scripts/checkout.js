@@ -110,7 +110,7 @@ async loadCustomCakeOrder() {
     if (!this.customCakeOrder.price || this.customCakeOrder.price <= 0) {
       console.error('Order price not set or invalid:', this.customCakeOrder.price);
       alert('This order does not have a valid price set. Please contact the bakery.');
-      window.location.href = '/public/customer/custom-orders.html';
+      window.location.href = '/customer/custom-orders.html';
       return;
     }
     
@@ -138,7 +138,7 @@ async loadCustomCakeOrder() {
       // Invalid status for checkout
       console.error('Invalid order status for checkout:', this.customCakeOrder.status);
       alert(`This order is not ready for payment. Current status: ${this.customCakeOrder.status}`);
-      window.location.href = '/public/customer/custom-orders.html';
+      window.location.href = '/customer/custom-orders.html';
       return;
     }
     
@@ -208,7 +208,7 @@ console.log('Cart items created:', this.cartItems);
             statusMessage.classList.add('alert-warning', 'show');
             statusMessage.classList.remove('d-none', 'alert-info');
             document.getElementById('paymentStatusText').innerHTML = 
-              'Payment verification is taking longer than expected. Please check your <a href="/public/customer/orders.html">orders page</a>.';
+              'Payment verification is taking longer than expected. Please check your <a href="/customer/orders.html">orders page</a>.';
           }
         }
         return;
@@ -243,7 +243,7 @@ console.log('Cart items created:', this.cartItems);
           clearInterval(pollInterval);
           sessionStorage.removeItem('pendingPayment');
           sessionStorage.removeItem('pendingOrder');
-          window.location.href = '/public/customer/failed.html';
+          window.location.href = '/customer/failed.html';
         }
       }
     }, 5000); // Poll every 5 seconds
@@ -256,7 +256,7 @@ console.log('Cart items created:', this.cartItems);
     const token = localStorage.getItem('token');
     if (!token) {
       console.warn('No token found, redirecting to login');
-      window.location.href = '/public/customer/login.html';
+      window.location.href = '/customer/login.html';
       return;
     }
 
@@ -272,7 +272,7 @@ console.log('Cart items created:', this.cartItems);
     } catch (error) {
       console.error('Error loading customer profile:', error);
       alert('Error loading profile. Please update your profile and try again.');
-      window.location.href = '/public/customer/profile.html';
+      window.location.href = '/customer/profile.html';
     }
   }
 
@@ -298,7 +298,7 @@ console.log('Cart items created:', this.cartItems);
         <strong>Delivery Address:</strong> <span class="profile-data">${profile.address || 'Not set'}</span>
       </div>
       <div class="text-center">
-        <a href="/public/customer/profile.html" class="btn btn-outline-primary btn-sm">
+        <a href="/customer/profile.html" class="btn btn-outline-primary btn-sm">
           <i class="fas fa-edit"></i> Update Profile
         </a>
       </div>
@@ -325,7 +325,7 @@ console.log('Cart items created:', this.cartItems);
     const token = localStorage.getItem('token');
     if (!token) {
       console.warn('No token found, redirecting to login');
-      window.location.href = '/public/customer/login.html';
+      window.location.href = '/customer/login.html';
       return;
     }
 
@@ -639,13 +639,13 @@ async placeOrder() {
     
     if (missingFields.length > 0) {
       alert(`Please complete your profile (${missingFields.join(', ')}) before placing an order.`);
-      window.location.href = '/public/customer/profile.html';
+      window.location.href = '/customer/profile.html';
       return;
     }
 
     if (this.checkoutData.deliveryMethod === 'delivery' && !profile.address) {
       alert('Please provide a delivery address in your profile for home delivery.');
-      window.location.href = '/public/customer/profile.html';
+      window.location.href = '/customer/profile.html';
       return;
     }
 
@@ -657,7 +657,7 @@ async placeOrder() {
     const token = localStorage.getItem('token');
     if (!token) {
       alert('Session expired. Please login again.');
-      window.location.href = '/public/customer/login.html';
+      window.location.href = '/customer/login.html';
       return;
     }
 
@@ -724,8 +724,8 @@ async processCustomCakePayment(token, profile, checkoutBtn, statusMessage) {
     },
     description: `${this.customCakeData.isImageOrder ? 'Image-based' : '3D'} Custom Cake ${isDownpayment ? 'Downpayment (50%)' : 'Full Payment'}`,
     redirect: {
-      success: `${window.location.origin}/public/customer/success.html`,
-      failed: `${window.location.origin}/public/customer/failed.html`
+      success: `${window.location.origin}/customer/success.html`,
+      failed: `${window.location.origin}/customer/failed.html`
     }
   };
 
@@ -814,7 +814,7 @@ async processCustomCakePayment(token, profile, checkoutBtn, statusMessage) {
     
     // Redirect to success page
     const downpaymentParam = isDownpayment ? '&isDownpayment=true' : '';
-    window.location.href = `/public/customer/success.html?orderId=${this.customCakeData.customCakeId}&isCustomCake=true${downpaymentParam}`;
+    window.location.href = `/customer/success.html?orderId=${this.customCakeData.customCakeId}&isCustomCake=true${downpaymentParam}`;
   }
 }
 
@@ -874,8 +874,8 @@ async processRegularOrderPayment(token, profile, checkoutBtn, statusMessage) {
       },
       description: 'Regular Order',
       redirect: {
-        success: `${window.location.origin}/public/customer/success.html`,
-        failed: `${window.location.origin}/public/customer/failed.html`
+        success: `${window.location.origin}/customer/success.html`,
+        failed: `${window.location.origin}/customer/failed.html`
       }
     };
 
@@ -933,7 +933,7 @@ async processRegularOrderPayment(token, profile, checkoutBtn, statusMessage) {
     }
 
     const result = await response.json();
-    window.location.href = `/public/customer/success.html?orderId=${result.orderId}`;
+    window.location.href = `/customer/success.html?orderId=${result.orderId}`;
   }
 }
 
@@ -967,13 +967,13 @@ async placeCustomCakeOrder() {
   
   if (missingFields.length > 0) {
     alert(`Please complete your profile (${missingFields.join(', ')}) before placing an order.`);
-    window.location.href = '/public/customer/profile.html';
+    window.location.href = '/customer/profile.html';
     return;
   }
 
   if (this.checkoutData.deliveryMethod === 'delivery' && !profile.address) {
     alert('Please provide a delivery address in your profile for home delivery.');
-    window.location.href = '/public/customer/profile.html';
+    window.location.href = '/customer/profile.html';
     return;
   }
 
@@ -985,7 +985,7 @@ async placeCustomCakeOrder() {
   const token = localStorage.getItem('token');
   if (!token) {
     alert('Session expired. Please login again.');
-    window.location.href = '/public/customer/login.html';
+    window.location.href = '/customer/login.html';
     return;
   }
 
@@ -1035,8 +1035,8 @@ async placeCustomCakeOrder() {
       }
 
       console.log('Initiating GCash payment for custom cake with deliveryDate:', this.checkoutData.pickupDate);
-      const successUrl = `${window.location.origin}/public/customer/success.html`;
-      const failedUrl = `${window.location.origin}/public/customer/failed.html`;
+      const successUrl = `${window.location.origin}/customer/success.html`;
+      const failedUrl = `${window.location.origin}/customer/failed.html`;
 
       // FIXED: Ensure deliveryDate is properly sent
       const paymentPayload = {
@@ -1114,7 +1114,7 @@ async placeCustomCakeOrder() {
       
       if (!response.ok) throw new Error('Custom cake order creation failed');
       const result = await response.json();
-      window.location.href = `/public/customer/success.html?orderId=${this.customCakeData.customCakeId}&isCustomCake=true`;
+      window.location.href = `/customer/success.html?orderId=${this.customCakeData.customCakeId}&isCustomCake=true`;
     }
 
   } catch (error) {
@@ -1234,7 +1234,7 @@ async handleReturnFromPaymongo() {
         
         // Redirect to success page
         const downpaymentParam = isDownpayment ? `&isDownpayment=true` : '';
-        window.location.href = `/public/customer/success.html?orderId=${customCakeData.customCakeId}&isCustomCake=true${downpaymentParam}`;
+        window.location.href = `/customer/success.html?orderId=${customCakeData.customCakeId}&isCustomCake=true${downpaymentParam}`;
         return;
       }
       
@@ -1271,7 +1271,7 @@ async handleReturnFromPaymongo() {
         sessionStorage.removeItem('pendingOrder');
         
         // Redirect to success page
-        window.location.href = `/public/customer/success.html?orderId=${order.orderId}`;
+        window.location.href = `/customer/success.html?orderId=${order.orderId}`;
       }
       
     } else if (result.status === 'failed') {
@@ -1280,7 +1280,7 @@ async handleReturnFromPaymongo() {
       sessionStorage.removeItem('pendingPayment');
       sessionStorage.removeItem('pendingOrder');
       sessionStorage.removeItem('pendingCustomCakeOrder');
-      window.location.href = '/public/customer/failed.html';
+      window.location.href = '/customer/failed.html';
       
     } else {
       // Payment still pending
@@ -1305,7 +1305,7 @@ async handleReturnFromPaymongo() {
     const token = localStorage.getItem('token');
     if (!token) {
       console.warn('No token found, redirecting to login');
-      window.location.href = '/public/customer/login.html';
+      window.location.href = '/customer/login.html';
       return;
     }
 
@@ -1322,7 +1322,7 @@ async handleReturnFromPaymongo() {
       const result = await response.json();
       console.log('Order canceled:', result.message);
       alert('Order has been canceled.');
-      window.location.href = '/public/customer/cart.html';
+      window.location.href = '/customer/cart.html';
     } catch (error) {
       console.error('Error canceling order:', error);
       alert('Error canceling order. Please try again.');

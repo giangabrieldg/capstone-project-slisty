@@ -38,7 +38,7 @@ class AdminOrdersManager {
     const token = localStorage.getItem('token');
     if (!token) {
       alert('Please login as admin or staff');
-      window.location.href = '/public/index.html';
+      window.location.href = '/index.html';
       return;
     }
     try {

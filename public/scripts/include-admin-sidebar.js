@@ -46,7 +46,7 @@ async function initializeAdminSidebar(container) {
   if (!token || !userData)  {
     localStorage.clear();
     sessionStorage.clear();
-    window.location.href = "/public/customer/login.html";
+    window.location.href = "/customer/login.html";
     return;
   }
 
@@ -97,10 +97,10 @@ async function initializeAdminSidebar(container) {
       e.preventDefault();
       localStorage.clear();
       sessionStorage.clear();
-      window.history.pushState(null, null, '/public/customer/login.html');
-      window.location.href = "/public/customer/login.html";
+      window.history.pushState(null, null, '/customer/login.html');
+      window.location.href = "/customer/login.html";
       window.addEventListener('popstate', () => {
-        window.location.href = '/public/customer/login.html';
+        window.location.href = '/customer/login.html';
       });
     });
   } else {
