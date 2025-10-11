@@ -21,51 +21,77 @@ class CheckoutManager {
    * Initializes the checkout process, sets up event listeners, and checks for payment return.
    */
   init() {
-    console.log('Initializing checkout manager...');
+  console.log('Initializing checkout manager...');
 
-    this.isCustomCakeCheckout = this.checkForCustomCake();
-  
-    if (this.isCustomCakeCheckout) {
-      this.loadCustomCakeOrder();
-    } else {
-        this.loadCartItems();
-    }
+  this.isCustomCakeCheckout = this.checkForCustomCake();
 
-    this.loadCustomerProfile();
-    this.setupEventListeners();
-    this.renderCheckoutForm();
-
-    // Clean up stale pending order/payment data
-    const pendingPayment = sessionStorage.getItem('pendingPayment');
-    if (pendingPayment) {
-      const { timestamp } = JSON.parse(pendingPayment);
-      const now = Date.now();
-      const timeout = 30 * 60 * 1000; // 30 minutes
-      if (now - timestamp > timeout) {
-        sessionStorage.removeItem('pendingPayment');
-        sessionStorage.removeItem('pendingOrder');
-        console.log('Cleared stale pending payment/order');
-      } else if (window.location.pathname.includes('checkout.html')) {
-        console.log('Pending payment detected, checking status...');
-        this.handleReturnFromPaymongo(); // Check immediately
-        this.startPaymentPolling();
-      }
-    }
-
-    // Trigger payment verification if on success.html
-    if (window.location.pathname.includes('success.html')) {
-      console.log('Detected success.html, running handleReturnFromPaymongo');
-      this.handleReturnFromPaymongo();
-    }
-
-    // Add beforeunload listener to warn about pending payments
-    window.addEventListener('beforeunload', (event) => {
-      if (sessionStorage.getItem('pendingPayment') && this.checkoutData.paymentMethod === 'gcash') {
-        event.preventDefault();
-        event.returnValue = 'You have a pending payment. Navigating away may cancel your order. Are you sure?';
-      }
-    });
+  if (this.isCustomCakeCheckout) {
+    this.loadCustomCakeOrder();
+  } else {
+    this.loadCartItems();
   }
+
+  this.loadCustomerProfile();
+  this.setupEventListeners();
+  this.renderCheckoutForm();
+
+  const isPageRefresh = performance.navigation.type === 1 || 
+                        performance.getEntriesByType('navigation')[0]?.type === 'reload';
+
+  // Clean up stale pending order/payment data
+  const pendingPayment = sessionStorage.getItem('pendingPayment');
+  
+  if (pendingPayment) {
+    const { timestamp, paymentMethod } = JSON.parse(pendingPayment);
+    const now = Date.now();
+    const timeout = 30 * 60 * 1000; // 30 minutes
+    const timeSincePendingPayment = now - timestamp;
+
+    console.log('Pending payment found:', {
+      isPageRefresh,
+      timeSincePendingPayment: `${(timeSincePendingPayment / 1000).toFixed(0)}s`,
+      paymentMethod,
+      timeout: `${(timeout / 1000).toFixed(0)}s`
+    });
+
+    // ⭐ IF USER REFRESHED THE PAGE, CLEAR STALE PAYMENT DATA
+    if (isPageRefresh) {
+      console.warn('Page refresh detected - clearing stale pending payment');
+      sessionStorage.removeItem('pendingPayment');
+      sessionStorage.removeItem('pendingOrder');
+      sessionStorage.removeItem('pendingCustomCakeOrder');
+      return; // Don't continue with polling
+    }
+
+    // ⭐ IF PAYMENT IS OLDER THAN TIMEOUT, CLEAR IT
+    if (timeSincePendingPayment > timeout) {
+      sessionStorage.removeItem('pendingPayment');
+      sessionStorage.removeItem('pendingOrder');
+      sessionStorage.removeItem('pendingCustomCakeOrder');
+      console.log('Cleared stale pending payment/order');
+    } 
+    // ⭐ IF NOT A REFRESH AND PAYMENT IS STILL VALID, CHECK STATUS
+    else if (window.location.pathname.includes('checkout.html')) {
+      console.log('Pending payment is fresh, checking status...');
+      this.handleReturnFromPaymongo(); // Check immediately
+      this.startPaymentPolling();
+    }
+  }
+
+  // Trigger payment verification if on success.html
+  if (window.location.pathname.includes('success.html')) {
+    console.log('Detected success.html, running handleReturnFromPaymongo');
+    this.handleReturnFromPaymongo();
+  }
+
+  // Add beforeunload listener to warn about pending payments
+  window.addEventListener('beforeunload', (event) => {
+    if (sessionStorage.getItem('pendingPayment') && this.checkoutData.paymentMethod === 'gcash') {
+      event.preventDefault();
+      event.returnValue = 'You have a pending payment. Navigating away may cancel your order. Are you sure?';
+    }
+  });
+}
 
     checkForCustomCake() {
     const urlParams = new URLSearchParams(window.location.search);
@@ -689,30 +715,36 @@ async placeOrder() {
   }
 }
 
+
+// In checkout.js - UPDATED processCustomCakePayment method
+
 async processCustomCakePayment(token, profile, checkoutBtn, statusMessage) {
   const isDownpayment = this.customCakeData.isDownpayment;
-  const amount = this.customCakeData.amount; // Already calculated as downpayment or full
+  const amount = this.customCakeData.amount;
 
+  // ⭐ FIRST CHECK: Cash payment for downpayment is NOT allowed
   if (isDownpayment && this.checkoutData.paymentMethod !== 'gcash') {
+    console.warn('SECURITY: Attempted cash payment for downpayment');
     alert('Custom cakes require 50% downpayment via GCash. Please use GCash for the downpayment.');
+    sessionStorage.removeItem('pendingCustomCakeOrder');
+    sessionStorage.removeItem('pendingPayment');
     this.resetCheckoutButton(checkoutBtn);
     this.hideStatusMessage(statusMessage);
-    return;
+    return; // Stop execution immediately
   }
-  
-  // Validate minimum for GCash
-   if (this.checkoutData.paymentMethod === 'gcash' && amount * 100 < 2000) {
+
+  // ⭐ SECOND CHECK: GCash minimum validation
+  if (this.checkoutData.paymentMethod === 'gcash' && amount * 100 < 2000) {
     alert('GCash payments require a minimum amount of ₱20.00.');
     this.resetCheckoutButton(checkoutBtn);
     this.hideStatusMessage(statusMessage);
     return;
   }
 
-  // Build payment payload
   const paymentPayload = {
     customCakeId: this.customCakeData.customCakeId,
     isImageOrder: this.customCakeData.isImageOrder,
-    amount: amount * 100, // Convert to cents
+    amount: amount * 100,
     isDownpayment: isDownpayment,
     deliveryDate: this.checkoutData.pickupDate,
     deliveryMethod: this.checkoutData.deliveryMethod,
@@ -729,7 +761,7 @@ async processCustomCakePayment(token, profile, checkoutBtn, statusMessage) {
     }
   };
 
-  // Store pending data
+  // ⭐ Only store pending data AFTER all validations pass
   sessionStorage.setItem('pendingCustomCakeOrder', JSON.stringify({
     ...paymentPayload,
     totalAmount: amount,
@@ -755,7 +787,6 @@ async processCustomCakePayment(token, profile, checkoutBtn, statusMessage) {
       throw new Error(paymentData.error || 'Payment failed');
     }
 
-    // Store pending payment
     sessionStorage.setItem('pendingPayment', JSON.stringify({
       paymentId: paymentData.paymentId,
       timestamp: Date.now(),
@@ -764,7 +795,6 @@ async processCustomCakePayment(token, profile, checkoutBtn, statusMessage) {
       isDownpayment: isDownpayment
     }));
 
-    // Open payment window
     const paymentWindow = window.open(
       paymentData.checkoutUrl,
       'GCashPayment',
@@ -778,13 +808,23 @@ async processCustomCakePayment(token, profile, checkoutBtn, statusMessage) {
         document.getElementById('paymentStatusText').textContent = 
           `Please complete the GCash ${paymentType} in the popup window...`;
       }
+      // ⭐ ONLY start polling for GCash payments
       this.startPaymentPolling();
     } else {
       throw new Error('Popup blocked! Please allow popups for this site.');
     }
 
-  } else {
-    // Cash payment flow
+  } else if (this.checkoutData.paymentMethod === 'cash') {
+    // ⭐ CASH PAYMENT - STRICT VALIDATION
+    if (isDownpayment) {
+      console.warn('SECURITY: Prevented cash downpayment');
+      sessionStorage.removeItem('pendingCustomCakeOrder');
+      sessionStorage.removeItem('pendingPayment');
+      this.resetCheckoutButton(checkoutBtn);
+      this.hideStatusMessage(statusMessage);
+      throw new Error('Downpayment cannot be paid with cash. Use GCash only.');
+    }
+
     const cashPayload = {
       customCakeId: this.customCakeData.customCakeId,
       isImageOrder: this.customCakeData.isImageOrder,
@@ -807,12 +847,19 @@ async processCustomCakePayment(token, profile, checkoutBtn, statusMessage) {
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.error || 'Cash payment processing failed');
+      // ⭐ Clean up on backend error
+      sessionStorage.removeItem('pendingCustomCakeOrder');
+      sessionStorage.removeItem('pendingPayment');
+      throw new Error(errorData.error || errorData.message || 'Cash payment processing failed');
     }
 
     const result = await response.json();
     
-    // Redirect to success page
+    // ⭐ Clear pending data for cash payment (no polling needed)
+    sessionStorage.removeItem('pendingCustomCakeOrder');
+    sessionStorage.removeItem('pendingPayment');
+    
+    // Redirect immediately for cash
     const downpaymentParam = isDownpayment ? '&isDownpayment=true' : '';
     window.location.href = `/customer/success.html?orderId=${this.customCakeData.customCakeId}&isCustomCake=true${downpaymentParam}`;
   }
@@ -909,13 +956,14 @@ async processRegularOrderPayment(token, profile, checkoutBtn, statusMessage) {
 
     if (paymentWindow) {
       paymentWindow.focus();
+      // ⭐ ONLY start polling for GCash payments
       this.startPaymentPolling();
     } else {
       throw new Error('Popup blocked! Please allow popups for this site.');
     }
 
   } else {
-    // Cash payment
+    // ⭐ CASH PAYMENT - NO POLLING NEEDED
     const orderData = JSON.parse(sessionStorage.getItem('pendingOrder'));
     
     const response = await fetch(`${window.API_BASE_URL}/api/orders/create`, {
@@ -933,6 +981,12 @@ async processRegularOrderPayment(token, profile, checkoutBtn, statusMessage) {
     }
 
     const result = await response.json();
+    
+    // ⭐ Clear pending data for cash payment (no polling needed)
+    sessionStorage.removeItem('pendingOrder');
+    sessionStorage.removeItem('pendingPayment'); // Make sure no stale payment data
+    
+    // Redirect immediately for cash
     window.location.href = `/customer/success.html?orderId=${result.orderId}`;
   }
 }

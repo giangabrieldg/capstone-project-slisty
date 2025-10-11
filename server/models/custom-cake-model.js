@@ -14,6 +14,30 @@ const CustomCakeOrder = sequelize.define('CustomCakeOrder', {
     allowNull: false,
     comment: 'Foreign key linking to the User who placed the order',
   },
+  delivery_method: {
+  type: DataTypes.ENUM('pickup', 'delivery'),
+  allowNull: false,
+  defaultValue: 'pickup'
+  },
+  delivery_address: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  customer_name: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  customer_email: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    validate: {
+      isEmail: true
+    }
+  },
+  customer_phone: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
   size: {
     type: DataTypes.STRING,
     allowNull: false,
@@ -97,7 +121,7 @@ const CustomCakeOrder = sequelize.define('CustomCakeOrder', {
 status: {
   type: DataTypes.ENUM('Pending Review', 'Ready for Downpayment', 'Downpayment Paid', 'In Progress', 'Ready for Pickup/Delivery', 'Completed', 'Cancelled'),
   defaultValue: 'Pending Review',
-},
+ },
   price: {
   type: DataTypes.DECIMAL(10, 2),
   allowNull: true,  
@@ -109,39 +133,38 @@ status: {
     defaultValue: 'pending',
     comment: 'Payment status for the order',
   },
-  // Add to CustomCakeOrder model after the existing fields:
-downpayment_amount: {
-  type: DataTypes.DECIMAL(10, 2),
-  allowNull: true,
-  comment: '50% downpayment amount',
-},
-remaining_balance: {
-  type: DataTypes.DECIMAL(10, 2),
-  allowNull: true,
-  comment: 'Remaining balance to be paid',
-},
-is_downpayment_paid: {
-  type: DataTypes.BOOLEAN,
-  allowNull: false,
-  defaultValue: false,
-  comment: 'Whether downpayment has been paid',
-},
-downpayment_paid_at: {
-  type: DataTypes.DATE,
-  allowNull: true,
-  comment: 'When downpayment was paid',
-},
-final_payment_status: {
-  type: DataTypes.ENUM('pending', 'paid'),
-  allowNull: false,
-  defaultValue: 'pending',
-  comment: 'Final payment status after downpayment',
-},
-  deliveryDate: {
-  type: DataTypes.DATE,
-  allowNull: true,
-  comment: 'Scheduled delivery or pickup date',
+  downpayment_amount: {
+    type: DataTypes.DECIMAL(10, 2),
+    allowNull: true,
+    comment: '50% downpayment amount',
   },
+  remaining_balance: {
+    type: DataTypes.DECIMAL(10, 2),
+    allowNull: true,
+    comment: 'Remaining balance to be paid',
+  },
+  is_downpayment_paid: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false,
+    comment: 'Whether downpayment has been paid',
+  },
+  downpayment_paid_at: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    comment: 'When downpayment was paid',
+  },
+  final_payment_status: {
+    type: DataTypes.ENUM('pending', 'paid'),
+    allowNull: false,
+    defaultValue: 'pending',
+    comment: 'Final payment status after downpayment',
+  },
+    deliveryDate: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    comment: 'Scheduled delivery or pickup date',
+    },
 }, {
   tableName: 'CustomCakeOrders',
   timestamps: true,

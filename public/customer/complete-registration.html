@@ -157,7 +157,7 @@
             alert(data.message);
             if (response.ok) {
               // Use relative path for redirect - works in both environments
-              window.location.href = "/public/customer/login.html";
+              window.location.href = "/customer/login.html";
             } else {
               if (data.message === "Invalid or expired token") {
                 alert(

@@ -28,7 +28,7 @@ class CustomCakeController {
       fillings: {
         none: 0,
         strawberry: 150,
-        bavarian: 150,
+        cream: 150,
       },
     };
 
@@ -456,7 +456,7 @@ async checkoutCustomCake() {
     const fillingNames = {
       none: "None",
       strawberry: "Strawberry",
-      bavarian: "Bavarian Creme",
+      Cream: "Cream",
     };
     document.getElementById("summaryFilling").textContent = fillingNames[this.config.filling];
 

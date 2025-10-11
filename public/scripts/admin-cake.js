@@ -41,31 +41,49 @@ async function fetchCustomCakeOrders() {
         
         const displayOrderId = `CC${String(order.customCakeId).padStart(3, '0')}`;
         const deliveryDate = order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString() : 'Not set';
+        const orderDate = order.orderDate ? new Date(order.orderDate).toLocaleDateString() : 
+                         order.createdAt ? new Date(order.createdAt).toLocaleDateString() : 'Unknown';
         
         // Enhanced payment information display
         const paymentInfo = renderPaymentInfo(order);
         
+        // Format customer details with delivery address
+        const customerDetails = `
+          <div class="customer-info">
+            <div class="customer-name fw-bold">${order.customer_name || (order.customer ? order.customer.name : 'Unknown')}</div>
+            <div class="customer-contact small text-muted">
+              ${order.customer_email || (order.customer ? order.customer.email : 'N/A')}<br>${order.customer_phone || 'N/A'}
+            </div>
+            <div class="delivery-method small text-muted mt-1">
+              <strong>Method:</strong> ${order.delivery_method ? order.delivery_method.charAt(0).toUpperCase() + order.delivery_method.slice(1) : 'Pickup'}
+            </div>
+            ${order.delivery_method === 'delivery' && order.delivery_address ? `
+              <div class="delivery-address small text-muted mt-1">
+                <strong>Delivery Address:</strong><br>
+                ${order.delivery_address}
+              </div>
+            ` : ''}
+          </div>
+        `;
+        
         const row = document.createElement('tr');
         row.innerHTML = `
           <td>${displayOrderId}</td>
-          <td>${order.customer ? order.customer.name : 'Unknown'}</td>
+          <td>${customerDetails}</td>
           <td>${details}</td>
+          <td>${orderDate}</td>
           <td>${deliveryDate}</td>
-          <td>
+          <td class="text-center">
             ${order.referenceImageUrl ? `<a href="#" class="view-image" data-image-url="${order.referenceImageUrl}" data-image-type="reference" data-bs-toggle="modal" data-bs-target="#imageModal">View</a>` : 'None'}
           </td>
-          <td>
+          <td class="text-center">
             ${order.designImageUrl ? `<a href="#" class="view-image" data-image-url="${order.designImageUrl}" data-image-type="design" data-bs-toggle="modal" data-bs-target="#imageModal">View</a>` : 'None'}
           </td>
           <td>${renderStatusBadge(order.status)}</td>
           <td>${renderPriceInfo(order)}</td>
           <td>${paymentInfo}</td>
-          <td>
-            <div class="admin-actions">
-              ${renderStatusDropdown(order.customCakeId, false, order.status)}
-              ${renderPriceInput(order, false)}
-              <button class="btn btn-primary btn-sm update-status mt-1">Update Status</button>
-            </div>
+          <td class="admin-actions-cell">
+            ${renderStatusActions(order.customCakeId, false, order.status, order)}
           </td>
         `;
         customTbody.appendChild(row);
@@ -78,32 +96,50 @@ async function fetchCustomCakeOrders() {
         const orderId = order.imageBasedOrderId || order.id;
         const displayOrderId = `RCC${String(orderId).padStart(3, '0')}`;
         const deliveryDate = order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString() : 'Not set';
+        const orderDate = order.orderDate ? new Date(order.orderDate).toLocaleDateString() : 
+                         order.createdAt ? new Date(order.createdAt).toLocaleDateString() : 'Unknown';
         
         // Enhanced payment information display
         const paymentInfo = renderPaymentInfo(order);
         
+        // Format customer details with delivery address
+        const customerDetails = `
+          <div class="customer-info">
+            <div class="customer-name fw-bold">${order.customer_name || (order.customer ? order.customer.name : 'Unknown')}</div>
+            <div class="customer-contact small text-muted">
+              ${order.customer_email || (order.customer ? order.customer.email : 'N/A')}<br>${order.customer_phone || 'N/A'}
+            </div>
+            <div class="delivery-method small text-muted mt-1">
+              <strong>Method:</strong> ${order.delivery_method ? order.delivery_method.charAt(0).toUpperCase() + order.delivery_method.slice(1) : 'Pickup'}
+            </div>
+            ${order.delivery_method === 'delivery' && order.delivery_address ? `
+              <div class="delivery-address small text-muted mt-1">
+                <strong>Delivery Address:</strong><br>
+                ${order.delivery_address}
+              </div>
+            ` : ''}
+          </div>
+        `;
+        
         const row = document.createElement('tr');
         row.innerHTML = `
           <td>${displayOrderId}</td>
-          <td>${order.customer ? order.customer.name : 'Unknown'}</td>
+          <td>${customerDetails}</td>
           <td>${order.flavor}</td>
           <td>${order.size || 'Not specified'}</td>
           <td>${order.message || 'None'}</td>
           <td>${new Date(order.eventDate).toLocaleDateString()}</td>
+          <td>${orderDate}</td>
           <td>${deliveryDate}</td>
           <td>${order.notes || 'None'}</td>
-          <td>
+          <td class="text-center">
             ${order.imagePath ? `<a href="#" class="view-image" data-image-url="${order.imagePath}" data-image-type="reference" data-bs-toggle="modal" data-bs-target="#imageModal">View</a>` : 'None'}
           </td>
           <td>${renderStatusBadge(order.status)}</td>
           <td>${renderPriceInfo(order)}</td>
           <td>${paymentInfo}</td>
-          <td>
-            <div class="admin-actions">
-              ${renderStatusDropdown(orderId, true, order.status)}
-              ${renderPriceInput(order, true)}
-              <button class="btn btn-primary btn-sm update-status">Update</button>
-            </div>
+          <td class="admin-actions-cell">
+            ${renderStatusActions(orderId, true, order.status, order)}
           </td>
         `;
         imageTbody.appendChild(row);
@@ -112,13 +148,13 @@ async function fetchCustomCakeOrders() {
 
     if (!customData.orders || customData.orders.length === 0) {
       const row = document.createElement('tr');
-      row.innerHTML = `<td colspan="10" class="text-center">No custom cake orders found</td>`;
+      row.innerHTML = `<td colspan="11" class="text-center">No custom cake orders found</td>`;
       customTbody.appendChild(row);
     }
 
     if (!imageData.orders || imageData.orders.length === 0) {
       const row = document.createElement('tr');
-      row.innerHTML = `<td colspan="13" class="text-center">No image-based orders found</td>`;
+      row.innerHTML = `<td colspan="14" class="text-center">No image-based orders found</td>`;
       imageTbody.appendChild(row);
     }
 
@@ -131,65 +167,14 @@ async function fetchCustomCakeOrders() {
 }
 
 // Helper function to render price information
-// Fixed renderPaymentInfo with proper null checks for admin interface
-function renderPaymentInfo(order) {
-  const paymentMethod = order.payment_status === 'paid' ? 'GCash' : 
-                       order.payment_status === 'pending' ? 'Cash' : 'Not set';
-  
-  let html = `<div class="payment-info-container">`;
-  
-  // Payment method badge
-  html += `<div class="mb-1">
-    <span class="badge ${order.payment_status === 'paid' ? 'bg-success' : 'bg-warning text-dark'}">
-      ${paymentMethod}
-    </span>
-  </div>`;
-  
-  // Downpayment status - FIXED with null checks
-  if (order.is_downpayment_paid === true) {
-    const downpaymentAmount = parseFloat(order.downpayment_amount) || 0;
-    const remainingBalance = parseFloat(order.remaining_balance) || 0;
-    
-    html += `
-      <div class="downpayment-status mb-2">
-        <span class="badge bg-info">
-          <i class="fas fa-check-circle"></i> Downpayment Paid
-        </span>
-        <div class="mt-1">
-          <small class="text-muted">
-            Paid: ₱${downpaymentAmount.toFixed(2)}<br>
-            Remaining: ₱${remainingBalance.toFixed(2)}
-          </small>
-        </div>
-      </div>`;
-    
-    // Final payment status
-    const finalPaymentBadge = order.final_payment_status === 'paid' 
-      ? '<span class="badge bg-success"><i class="fas fa-check-double"></i> Fully Paid</span>'
-      : '<span class="badge bg-warning text-dark"><i class="fas fa-clock"></i> Balance Due</span>';
-    html += `<div>${finalPaymentBadge}</div>`;
-  } else {
-    // No downpayment yet
-    const statusBadge = order.payment_status === 'paid' 
-      ? '<span class="badge bg-success">Paid</span>'
-      : '<span class="badge bg-secondary">Awaiting Payment</span>';
-    html += `<div>${statusBadge}</div>`;
-  }
-  
-  html += `</div>`;
-  return html;
-}
-
-// Fixed renderPriceInfo with proper null checks
 function renderPriceInfo(order) {
   if (!order.price) {
-    return '<span class="badge bg-secondary">Price Not Set</span>';
+    return '<span class="status pending">Price Not Set</span>';
   }
   
   let html = `<div class="price-info">`;
   html += `<div class="fw-bold">₱${parseFloat(order.price).toFixed(2)}</div>`;
   
-  // FIXED: Check if downpayment fields exist and are not null
   const hasDownpaymentData = order.downpayment_amount !== null && 
                              order.downpayment_amount !== undefined &&
                              order.remaining_balance !== null &&
@@ -210,83 +195,245 @@ function renderPriceInfo(order) {
   return html;
 }
 
-// Helper function to render status badge with icons
-function renderStatusBadge(status) {
-  const statusConfig = {
-    'Pending Review': { class: 'bg-secondary', icon: 'fa-clock' },
-    'Ready for Downpayment': { class: 'bg-primary', icon: 'fa-dollar-sign' },
-    'Downpayment Paid': { class: 'bg-info', icon: 'fa-check-circle' },
-    'In Progress': { class: 'bg-warning text-dark', icon: 'fa-cog' },
-    'Ready for Pickup/Delivery': { class: 'bg-success', icon: 'fa-box' },
-    'Completed': { class: 'bg-success', icon: 'fa-check-double' },
-    'Cancelled': { class: 'bg-danger', icon: 'fa-times-circle' },
-    'Feasible': { class: 'bg-primary', icon: 'fa-thumbs-up' },
-    'Not Feasible': { class: 'bg-danger', icon: 'fa-thumbs-down' }
-  };
+// Helper function to render payment info (FIXED: Completed orders show "paid")
+function renderPaymentInfo(order) {
+  // If status is completed, payment should be marked as paid
+  if (order.status === 'Completed') {
+    return `<div class="payment-info-container">
+      <span class="status paid">Paid</span>
+    </div>`;
+  }
+    
+  let html = `<div class="payment-info-container">`;
   
-  const config = statusConfig[status] || { class: 'bg-secondary', icon: 'fa-question' };
-  return `<span class="badge ${config.class}"><i class="fas ${config.icon}"></i> ${status}</span>`;
-}
-
-// Helper function to render status dropdown
-function renderStatusDropdown(orderId, isImageOrder, currentStatus) {
-  const baseStatuses = [
-    'Pending Review',
-    'Ready for Downpayment',
-    'Downpayment Paid',
-    'In Progress',
-    'Ready for Pickup/Delivery',
-    'Completed',
-    'Cancelled'
-  ];
+  // Downpayment status
+  if (order.is_downpayment_paid === true) {
+    const downpaymentAmount = parseFloat(order.downpayment_amount) || 0;
+    const remainingBalance = parseFloat(order.remaining_balance) || 0;
+    
+    html += `
+      <div class="downpayment-status mb-2">
+        <span class="status paid">
+          Downpayment Paid
+        </span>
+        <div class="mt-1">
+          <small class="text-muted">
+            Paid: ₱${downpaymentAmount.toFixed(2)}<br>
+            Remaining: ₱${remainingBalance.toFixed(2)}
+          </small>
+        </div>
+      </div>`;
+    
+    // Final payment status
+    const finalPaymentBadge = order.final_payment_status === 'paid' 
+      ? '<span class="status paid">Fully Paid</span>'
+      : '<span class="status unpaid">Balance Due</span>';
+    html += `<div>${finalPaymentBadge}</div>`;
+  } else {
+    // No downpayment yet
+    const statusBadge = order.payment_status === 'paid' 
+      ? '<span class="status paid">Paid</span>'
+      : '<span class="status unpaid">Awaiting Payment</span>';
+    html += `<div>${statusBadge}</div>`;
+  }
   
-  const imageStatuses = isImageOrder 
-    ? ['Pending Review', 'Feasible', 'Ready for Downpayment', 'Downpayment Paid', 'Not Feasible', 'In Progress', 'Ready for Pickup/Delivery', 'Completed', 'Cancelled']
-    : baseStatuses;
-  
-  let html = `<select class="form-select status-select mb-2" data-order-id="${orderId}" data-is-image-order="${isImageOrder}">`;
-  
-  imageStatuses.forEach(status => {
-    html += `<option value="${status}" ${currentStatus === status ? 'selected' : ''}>${status}</option>`;
-  });
-  
-  html += `</select>`;
+  html += `</div>`;
   return html;
 }
 
-// Helper function to render price input
-function renderPriceInput(order, isImageOrder) {
-  const showStatuses = isImageOrder 
-    ? ['Pending Review', 'Feasible', 'Ready for Downpayment']
-    : ['Pending Review', 'Ready for Downpayment'];
+// Helper function to render status badge (UPDATED with admin-orders color scheme)
+function renderStatusBadge(status) {
+  const statusMap = {
+    'Pending Review': { class: 'pending', text: 'Pending Review' },
+    'Ready for Downpayment': { class: 'ready-for-dp', text: 'Ready for Downpayment' },
+    'Downpayment Paid': { class: 'dp-paid', text: 'Downpayment Paid' },
+    'In Progress': { class: 'in-progress', text: 'In Progress' },
+    'Ready for Pickup/Delivery': { class: 'ready', text: 'Ready for Pickup/Delivery' },
+    'Completed': { class: 'delivered', text: 'Completed' },
+    'Cancelled': { class: 'cancelled', text: 'Cancelled' },
+    'Not Feasible': { class: 'cancelled', text: 'Not Feasible' }
+  };
   
-  const shouldShow = showStatuses.includes(order.status);
-  const isDisabled = order.status === 'Not Feasible' || order.status === 'Cancelled';
-  
-  return `
-    <div class="price-input mb-2" style="display: ${shouldShow ? 'block' : 'none'}">
-      <label class="form-label small">Total Price:</label>
-      <input 
-        type="number" 
-        class="form-control form-control-sm price-input-field" 
-        placeholder="Enter total price" 
-        value="${order.price || ''}" 
-        step="0.01" 
-        min="0"
-        ${isDisabled ? 'disabled' : ''}
-      >
-      ${order.price ? `
-        <small class="text-muted d-block mt-1">
-          <i class="fas fa-info-circle"></i> 50% = ₱${(order.price * 0.5).toFixed(2)}
-        </small>
-      ` : ''}
-    </div>`;
+  const config = statusMap[status] || { class: 'pending', text: status };
+  return `<span class="status ${config.class}">${config.text}</span>`;
 }
 
+// Helper function to render status actions
+function renderStatusActions(orderId, isImageOrder, currentStatus, order) {
+  let html = '<div class="admin-actions">';
+  
+  if (isImageOrder) {
+    html += renderImageOrderActions(orderId, currentStatus, order);
+  } else {
+    html += renderCustomCakeActions(orderId, currentStatus, order);
+  }
+  
+  // Cancel button for active orders
+  if (currentStatus !== 'Cancelled' && currentStatus !== 'Completed' && currentStatus !== 'Not Feasible') {
+    html += `<button class="btn btn-outline-danger btn-sm cancel-order-btn mt-2" data-order-id="${orderId}" data-is-image-order="${isImageOrder}">
+      Cancel Order
+    </button>`;
+  }
+  
+  html += '</div>';
+  return html;
+}
+
+// Image-based order actions
+function renderImageOrderActions(orderId, currentStatus, order) {
+  let html = '';
+  const showPriceInput = ['Pending Review', 'Feasible', 'Ready for Downpayment'].includes(currentStatus);
+  
+  // Price input for relevant statuses
+  if (showPriceInput && currentStatus !== 'Not Feasible') {
+    html += `
+      <div class="price-input mb-2">
+        <label class="form-label small">Total Price:</label>
+        <input 
+          type="number" 
+          class="form-control form-control-sm price-input-field" 
+          placeholder="Enter total price" 
+          value="${order.price || ''}" 
+          step="0.01" 
+          min="0"
+        >
+        ${order.price ? `
+          <small class="text-muted d-block mt-1">
+            <i class="fas fa-info-circle"></i> 50% = ₱${(order.price * 0.5).toFixed(2)}
+          </small>
+        ` : ''}
+      </div>`;
+  }
+  
+  // Action buttons based on current status
+  switch(currentStatus) {
+    case 'Pending Review':
+      html += `
+        <button class="btn btn-success btn-sm mark-feasible mb-2" data-order-id="${orderId}">
+          Mark as Feasible
+        </button>
+        <button class="btn btn-danger btn-sm mark-not-feasible w-100" data-order-id="${orderId}">
+          Not Feasible
+        </button>`;
+      break;
+      
+    case 'Feasible':
+      if (order.price) {
+        html += `
+          <button class="btn btn-primary btn-sm ready-downpayment w-100" data-order-id="${orderId}">
+            Ready for Downpayment
+          </button>`;
+      } else {
+        html += `<small class="text-warning d-block mb-1"><i class="fas fa-exclamation-triangle"></i> Set price first</small>`;
+      }
+      break;
+      
+    case 'Ready for Downpayment':
+      html += `
+        <button class="btn btn-primary btn-sm downpayment-paid w-100" data-order-id="${orderId}">
+          Downpayment Paid
+        </button>`;
+      break;
+      
+    case 'Downpayment Paid':
+      html += `
+        <button class="btn btn-primary btn-sm mark-in-progress w-100" data-order-id="${orderId}">
+          Mark In Progress
+        </button>`;
+      break;
+      
+    case 'In Progress':
+      html += `
+        <button class="btn btn-primary btn-sm ready-pickup w-100" data-order-id="${orderId}">
+          Ready for Pickup/Delivery
+        </button>`;
+      break;
+      
+    case 'Ready for Pickup/Delivery':
+      html += `
+        <button class="btn btn-primary btn-sm mark-completed w-100" data-order-id="${orderId}">
+          Mark Completed
+        </button>`;
+      break;
+      
+    case 'Not Feasible':
+    case 'Cancelled':
+    case 'Completed':
+      html += `<span class="text-muted small">No further actions</span>`;
+      break;
+  }
+  
+  return html;
+}
+
+// 3D Custom Cake actions
+function renderCustomCakeActions(orderId, currentStatus, order) {
+  let html = '';
+  const showPriceInput = currentStatus === 'Ready for Downpayment';
+  
+  // Price input for Ready for Downpayment status
+  if (showPriceInput) {
+    html += `
+      <div class="price-input mb-2">
+        <label class="form-label small">Total Price:</label>
+        <input 
+          type="number" 
+          class="form-control form-control-sm price-input-field" 
+          placeholder="Enter total price" 
+          value="${order.price || ''}" 
+          step="0.01" 
+          min="0"
+        >
+        ${order.price ? `
+          <small class="text-muted d-block mt-1">
+            <i class="fas fa-info-circle"></i> 50% = ₱${(order.price * 0.5).toFixed(2)}
+          </small>
+        ` : ''}
+      </div>`;
+  }
+  
+  // Action buttons based on current status
+  switch(currentStatus) {
+    case 'Downpayment Paid':
+      html += `
+        <button class="btn btn-primary btn-sm mark-in-progress w-100" data-order-id="${orderId}">
+          Mark In Progress
+        </button>`;
+      break;
+      
+    case 'In Progress':
+      html += `
+        <button class="btn btn-primary btn-sm ready-pickup w-100" data-order-id="${orderId}">
+          Ready for Pickup/Delivery
+        </button>`;
+      break;
+      
+    case 'Ready for Pickup/Delivery':
+      html += `
+        <button class="btn btn-primary btn-sm mark-completed w-100" data-order-id="${orderId}">
+          Mark Completed
+        </button>`;
+      break;
+      
+    case 'Cancelled':
+    case 'Completed':
+      html += `<span class="text-muted small">No further actions</span>`;
+      break;
+      
+    default:
+      html += `<span class="text-muted small">${currentStatus}</span>`;
+      break;
+  }
+  
+  return html;
+}
+
+// Setup event listeners
 function setupEventListeners(token) {
   // Image modal handler
   document.querySelectorAll('.view-image').forEach(link => {
-    link.addEventListener('click', () => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
       const modalImage = document.querySelector('#imageModal img');
       const modalTitle = document.querySelector('#imageModal .modal-title');
       const imageType = link.dataset.imageType;
@@ -296,107 +443,104 @@ function setupEventListeners(token) {
     });
   });
 
-  // Status update handler
-  document.querySelectorAll('.update-status').forEach(button => {
-    button.addEventListener('click', async function () {
-      const row = this.closest('tr');
-      const select = row.querySelector('.status-select');
-      const orderId = select.dataset.orderId;
-      const isImageOrder = select.dataset.isImageOrder === 'true';
-      const newStatus = select.value;
+  // Status action handlers
+  document.addEventListener('click', async function(e) {
+    const target = e.target.closest('button');
+    if (!target) return;
 
-      try {
-        let endpoint, body;
-        const priceInput = row.querySelector('.price-input-field');
-        const price = priceInput ? parseFloat(priceInput.value) : null;
+    const orderId = target.dataset.orderId;
+    const isImageOrder = target.dataset.isImageOrder === 'true';
+    
+    try {
+      let endpoint, body, newStatus;
+      const row = target.closest('tr');
+      const priceInput = row?.querySelector('.price-input-field');
+      const price = priceInput ? parseFloat(priceInput.value) : null;
 
-        // Validate price for statuses that require it
-        if (['Feasible', 'Ready for Downpayment'].includes(newStatus) && (!price || isNaN(price) || price <= 0)) {
-          alert('Please enter a valid price (greater than 0) when setting this status.');
+      // Handle different button types
+      if (target.classList.contains('mark-feasible')) {
+        if (!price || isNaN(price) || price <= 0) {
+          alert('Please enter a valid price before marking as feasible.');
           return;
         }
-
-        if (isImageOrder) {
-          // Image-based order logic
-          if (newStatus === 'Feasible' || newStatus === 'Ready for Downpayment') {
-            endpoint = `${window.API_BASE_URL}/api/custom-cake/admin/image-orders/${orderId}/price`;
-            body = { 
-              price: price, 
-              status: newStatus,
-              downpayment_amount: price * 0.5,
-              remaining_balance: price * 0.5
-            };
-          } else {
-            endpoint = `${window.API_BASE_URL}/api/custom-cake/image-orders/${orderId}`;
-            body = { status: newStatus };
-          }
-        } else {
-          // 3D custom cake logic
-          if (newStatus === 'Ready for Downpayment' && price) {
-            endpoint = `${window.API_BASE_URL}/api/custom-cake/admin/orders/${orderId}/price`;
-            body = { 
-              price: price, 
-              status: newStatus,
-              downpayment_amount: price * 0.5,
-              remaining_balance: price * 0.5
-            };
-          } else {
-            endpoint = `${window.API_BASE_URL}/api/custom-cake/admin/orders/${orderId}`;
-            body = { status: newStatus };
-          }
-        }
-
-        const response = await fetch(endpoint, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-          body: JSON.stringify(body),
-        });
-        
-        const data = await response.json();
-        if (data.success) {
-          // Show success message
-          showNotification('success', `Order ${orderId} updated successfully!`);
-          
-          // Refresh the table
-          fetchCustomCakeOrders();
-        } else {
-          throw new Error(data.message || 'Failed to update order');
-        }
-      } catch (error) {
-        console.error('Error updating order:', error);
-        showNotification('error', `Failed to update order: ${error.message}`);
+        endpoint = `${window.API_BASE_URL}/api/custom-cake/admin/image-orders/${orderId}/price`;
+        newStatus = 'Feasible';
+        body = { 
+          price: price, 
+          status: newStatus,
+          downpayment_amount: price * 0.5,
+          remaining_balance: price * 0.5
+        };
       }
-    });
-  });
-
-  // Show/hide price input based on status selection
-  document.querySelectorAll('.status-select').forEach(select => {
-    select.addEventListener('change', function() {
-      const row = this.closest('tr');
-      const priceInputDiv = row.querySelector('.price-input');
-      const priceInput = row.querySelector('.price-input-field');
-      const isImageOrder = this.dataset.isImageOrder === 'true';
-      
-      const showPriceStatuses = isImageOrder ? 
-        ['Pending Review', 'Feasible', 'Ready for Downpayment'] : 
-        ['Pending Review', 'Ready for Downpayment'];
-      
-      if (showPriceStatuses.includes(this.value)) {
-        priceInputDiv.style.display = 'block';
-        priceInput.disabled = false;
-      } else if (this.value === 'Not Feasible' || this.value === 'Cancelled') {
-        priceInputDiv.style.display = 'block';
-        priceInput.disabled = true;
-        priceInput.value = '';
+      else if (target.classList.contains('mark-not-feasible')) {
+        endpoint = `${window.API_BASE_URL}/api/custom-cake/image-orders/${orderId}`;
+        newStatus = 'Not Feasible';
+        body = { status: newStatus };
+      }
+      else if (target.classList.contains('ready-downpayment')) {
+        endpoint = `${window.API_BASE_URL}/api/custom-cake/image-orders/${orderId}`;
+        newStatus = 'Ready for Downpayment';
+        body = { status: newStatus };
+      }
+      else if (target.classList.contains('downpayment-paid')) {
+        endpoint = `${window.API_BASE_URL}/api/custom-cake/image-orders/${orderId}`;
+        newStatus = 'Downpayment Paid';
+        body = { status: newStatus };
+      }
+      else if (target.classList.contains('mark-in-progress')) {
+        endpoint = isImageOrder 
+          ? `${window.API_BASE_URL}/api/custom-cake/image-orders/${orderId}`
+          : `${window.API_BASE_URL}/api/custom-cake/admin/orders/${orderId}`;
+        newStatus = 'In Progress';
+        body = { status: newStatus };
+      }
+      else if (target.classList.contains('ready-pickup')) {
+        endpoint = isImageOrder 
+          ? `${window.API_BASE_URL}/api/custom-cake/image-orders/${orderId}`
+          : `${window.API_BASE_URL}/api/custom-cake/admin/orders/${orderId}`;
+        newStatus = 'Ready for Pickup/Delivery';
+        body = { status: newStatus };
+      }
+      else if (target.classList.contains('mark-completed')) {
+        endpoint = isImageOrder 
+          ? `${window.API_BASE_URL}/api/custom-cake/image-orders/${orderId}`
+          : `${window.API_BASE_URL}/api/custom-cake/admin/orders/${orderId}`;
+        newStatus = 'Completed';
+        body = { status: newStatus };
+      }
+      else if (target.classList.contains('cancel-order-btn')) {
+        if (!confirm('Are you sure you want to cancel this order?')) return;
+        endpoint = isImageOrder 
+          ? `${window.API_BASE_URL}/api/custom-cake/image-orders/${orderId}`
+          : `${window.API_BASE_URL}/api/custom-cake/admin/orders/${orderId}`;
+        newStatus = 'Cancelled';
+        body = { status: newStatus };
       } else {
-        priceInputDiv.style.display = 'none';
+        return;
       }
-    });
+
+      const response = await fetch(endpoint, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(body),
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        showNotification('success', `Order ${orderId} updated to ${newStatus}!`);
+        fetchCustomCakeOrders();
+      } else {
+        throw new Error(data.message || 'Failed to update order');
+      }
+    } catch (error) {
+      console.error('Error updating order:', error);
+      showNotification('error', `Failed to update order: ${error.message}`);
+    }
   });
-  
+
   // Real-time price calculation preview
   document.querySelectorAll('.price-input-field').forEach(input => {
     input.addEventListener('input', function() {
@@ -465,7 +609,7 @@ document.getElementById('filterForm')?.addEventListener('submit', (e) => {
     const tbody = activeTab.querySelector('tbody');
     if (tbody) {
       tbody.querySelectorAll('tr').forEach(row => {
-        const statusBadge = row.querySelector('.badge');
+        const statusBadge = row.querySelector('.status');
         if (statusBadge) {
           const rowStatus = statusBadge.textContent.trim();
           row.style.display = status === '' || rowStatus.includes(status) ? '' : 'none';

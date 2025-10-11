@@ -1,0 +1,503 @@
+/* custom-orders.css */
+:root {
+    --primary-color: #2c9045;
+    --secondary-color: #e6f3ea;
+    --background-color: #ffffff;
+    --secondary-background-color: #f5f1e9;
+    --text-color: #2d2d2d;
+    --hover-color: #0f5e23;
+    --secondary-text-color: #5e5d5d;
+    --white-text-color: #f9f6ee;
+    --font-poppins: "Poppins", sans-serif;
+    --font-baloo: "Baloo 2", sans-serif;
+}
+
+body {
+    font-family: var(--font-poppins);
+    background-color: var(--background-color);
+    color: var(--text-color);
+}
+
+.container-main {
+    margin-top: 20px;
+    padding: 20px;
+}
+
+/* Header styling */
+.custom-cake-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding: 15px 25px;
+    background-color: var(--background-color);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+}
+
+.custom-cake-header h2 {
+    color: var(--text-color);
+    font-weight: 700;
+    font-size: 1.8rem;
+    margin: 0;
+}
+
+.header-actions {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.search-bar {
+    width: 200px;
+    padding: 8px 12px;
+    border: 1px solid var(--secondary-color);
+    border-radius: 4px;
+    font-family: var(--font-poppins);
+}
+
+.search-bar:focus {
+    border-color: var(--primary-color);
+    outline: none;
+    box-shadow: 0 0 5px rgba(44, 144, 69, 0.3);
+}
+
+.filter-btn {
+    background-color: var(--primary-color);
+    border: none;
+    color: var(--white-text-color);
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    font-family: var(--font-poppins);
+}
+
+.filter-btn:hover {
+    background-color: var(--hover-color);
+}
+
+/* Table container */
+.table-container {
+    background: var(--background-color);
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+}
+
+.table {
+    background-color: var(--background-color);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 0;
+}
+
+.table thead th {
+    background-color: var(--secondary-color);
+    color: var(--text-color);
+    border: none;
+    font-weight: 600;
+    padding: 15px;
+    text-align: left;
+    font-size: 0.9rem;
+}
+
+.table tbody tr {
+    transition: all 0.2s ease;
+}
+
+.table tbody tr:hover {
+    background-color: rgba(44, 144, 69, 0.05);
+}
+
+.table th,
+.table td {
+    vertical-align: middle;
+    padding: 12px 15px;
+    border: none;
+    border-bottom: 1px solid #dee2e6;
+    font-size: 0.9rem;
+}
+
+.table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Status badge styling - matching admin-cake */
+.status {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    display: inline-block;
+}
+
+.status.pending {
+    background-color: #e2e3e5;
+    color: #383d41;
+}
+
+.status.ready-for-dp {
+    background-color: #cdf1ff;
+    color: #047d85;
+}
+
+.status.dp-paid {
+    background-color: #d1ecf1;
+    color: #0c5460;
+}
+
+.status.in-progress {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.status.ready {
+    background-color: #cce5ff;
+    color: #004085;
+}
+
+.status.delivered {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.status.cancelled {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.status.paid {
+    background-color: #d1ecf1;
+    color: #0c5460;
+}
+
+.status.unpaid {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+/* Order info styling */
+.order-id {
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+.order-details {
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: var(--secondary-text-color);
+}
+
+.delivery-date {
+    color: var(--text-color);
+    font-weight: 500;
+}
+
+.no-image-text {
+    color: var(--secondary-text-color);
+    font-style: italic;
+    font-size: 0.85rem;
+}
+
+/* Order type badges */
+.order-type-badge {
+    text-align: center;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    display: inline-block;
+}
+
+.order-type-3d {
+    background-color: var(--primary-color);
+    color: var(--white-text-color);
+}
+
+.order-type-image {
+    background-color: #6c757d;
+    color: var(--white-text-color);
+}
+
+/* Price styling */
+.price-container {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.total-price {
+    font-weight: 700;
+    color: var(--text-color);
+}
+
+.price-breakdown {
+    font-size: 0.8rem;
+    color: var(--secondary-text-color);
+}
+
+.price-tbd {
+    color: var(--secondary-text-color);
+    font-style: italic;
+    font-size: 0.85rem;
+}
+
+/* Payment display */
+.payment-display {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: flex-start;
+}
+
+/* Buttons */
+.btn {
+    font-family: var(--font-poppins);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-sm {
+    padding: 6px 10px;
+    font-size: 0.85rem;
+}
+
+.btn-link {
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+.btn-link:hover {
+    color: var(--hover-color);
+    text-decoration: underline;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    border: none;
+    color: var(--white-text-color);
+}
+
+.btn-primary:hover {
+    background-color: var(--hover-color);
+}
+
+/* Modal styling */
+.modal-content {
+    border-radius: 8px;
+    border: none;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+    background-color: var(--primary-color);
+    color: var(--white-text-color);
+    border-bottom: none;
+    border-radius: 8px 8px 0 0;
+}
+
+.modal-header .btn-close {
+    filter: invert(1);
+}
+
+.modal-img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+}
+
+.form-select,
+.form-label {
+    font-family: var(--font-poppins);
+}
+
+.form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(44, 144, 69, 0.25);
+}
+
+/* Empty state */
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--secondary-text-color);
+}
+
+.empty-state .icon {
+    font-size: 3rem;
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+}
+
+.empty-state h4 {
+    color: var(--text-color);
+    margin-bottom: 1rem;
+    font-family: var(--font-baloo);
+}
+
+/* Badge styles */
+.badge {
+    padding: 6px 10px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.bg-success {
+    background-color: #28a745 !important;
+}
+
+.bg-warning {
+    background-color: #ffc107 !important;
+}
+
+.bg-info {
+    background-color: #17a2b8 !important;
+}
+
+.bg-secondary {
+    background-color: #6c757d !important;
+}
+
+.text-dark {
+    color: var(--text-color) !important;
+}
+
+/* Utility classes */
+.d-flex {
+    display: flex;
+}
+
+.justify-content-between {
+    justify-content: space-between;
+}
+
+.mb-3 {
+    margin-bottom: 1rem;
+}
+
+.mb-1,
+.mt-1 {
+    margin-bottom: 0.25rem;
+}
+
+.mt-2 {
+    margin-top: 0.5rem;
+}
+
+.d-block {
+    display: block;
+}
+
+.w-100 {
+    width: 100%;
+}
+
+.text-muted {
+    color: var(--secondary-text-color);
+}
+
+.small {
+    font-size: 0.85rem;
+}
+
+/* Responsive design */
+@media (max-width: 992px) {
+    .custom-cake-header {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .header-actions {
+        width: 100%;
+        flex-direction: column;
+    }
+
+    .search-bar,
+    .filter-btn {
+        width: 100%;
+    }
+}
+
+@media (max-width: 768px) {
+    .container-main {
+        padding: 15px;
+    }
+
+    .custom-cake-header h2 {
+        font-size: 1.5rem;
+    }
+
+    .table-container {
+        padding: 1rem;
+    }
+
+    .table {
+        font-size: 0.85rem;
+    }
+
+    .table th,
+    .table td {
+        padding: 10px 8px;
+    }
+
+    .table thead th {
+        font-size: 0.8rem;
+    }
+
+    .btn-sm {
+        padding: 5px 8px;
+        font-size: 0.75rem;
+    }
+
+    .status {
+        padding: 4px 8px;
+        font-size: 0.75rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .container-main {
+        padding: 10px;
+    }
+
+    .custom-cake-header {
+        padding: 10px 15px;
+    }
+
+    .custom-cake-header h2 {
+        font-size: 1.3rem;
+    }
+
+    .table-container {
+        padding: 0.75rem;
+    }
+
+    .table {
+        font-size: 0.8rem;
+    }
+
+    .table th,
+    .table td {
+        padding: 8px 5px;
+    }
+
+    .table thead th {
+        font-size: 0.7rem;
+    }
+
+    .order-details {
+        font-size: 0.8rem;
+    }
+
+    .btn-sm {
+        padding: 4px 6px;
+        font-size: 0.7rem;
+    }
+
+    .status {
+        padding: 3px 6px;
+        font-size: 0.7rem;
+    }
+}

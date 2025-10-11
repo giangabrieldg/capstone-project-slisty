@@ -26,7 +26,9 @@ class CakeAPIService {
 
   // Submit custom cake order with 3D design
   // UPDATE the submitCustomOrder method in CakeAPIService:
-  async submitCustomOrder(config, pricing, renderer) {
+// In cake-api-service.js - UPDATE submitCustomOrder method
+
+async submitCustomOrder(config, pricing, renderer) {
   if (!this.requireAuth()) return;
 
   const formData = new FormData();
@@ -70,9 +72,38 @@ class CakeAPIService {
   formData.append("messageChoice", config.messageChoice);
   formData.append("toppingsColor", config.toppingsColor);
   formData.append("price", totalPrice);
-
-  // Set requiresReview to false for immediate checkout
   formData.append("requiresReview", "false");
+
+
+  // Load customer profile to get name, email, phone
+  try {
+    const profileResponse = await fetch(`${window.API_BASE_URL}/api/auth/profile`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    
+    if (profileResponse.ok) {
+      const profileData = await profileResponse.json();
+      formData.append("customer_name", profileData.name || "");
+      formData.append("customer_email", profileData.email || "");
+      formData.append("customer_phone", profileData.phone || "");
+      formData.append("delivery_method", "pickup"); // Default to pickup
+      formData.append("delivery_address", profileData.address || "");
+    } else {
+      console.error("Failed to load profile for customer info");
+      return {
+        success: false,
+        error: "Failed to load customer profile",
+        message: "Please complete your profile before ordering."
+      };
+    }
+  } catch (error) {
+    console.error("Error loading customer profile:", error);
+    return {
+      success: false,
+      error: error.message,
+      message: "Error loading your profile. Please try again."
+    };
+  }
 
   // Add reference image if uploaded
   const imageUpload = document.getElementById("imageUpload");
@@ -87,7 +118,8 @@ class CakeAPIService {
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
+      const errorData = await response.json();
+      throw new Error(errorData.message || `HTTP error! Status: ${response.status}`);
     }
 
     const result = await response.json();
@@ -273,6 +305,36 @@ async submitImageBasedOrder(formElement) {
   formData.append('eventDate', eventDate);
   formData.append('image', imageUpload.files[0]);
 
+  // Load customer profile to get name, email, phone - ADD THIS SECTION
+  try {
+    const profileResponse = await fetch(`${window.API_BASE_URL}/api/auth/profile`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    
+    if (profileResponse.ok) {
+      const profileData = await profileResponse.json();
+      formData.append("customer_name", profileData.name || "");
+      formData.append("customer_email", profileData.email || "");
+      formData.append("customer_phone", profileData.phone || "");
+      formData.append("delivery_method", "pickup"); // Default to pickup
+      formData.append("delivery_address", profileData.address || "");
+    } else {
+      console.error("Failed to load profile for customer info");
+      return {
+        success: false,
+        error: "Failed to load customer profile",
+        message: "Please complete your profile before ordering."
+      };
+    }
+  } catch (error) {
+    console.error("Error loading customer profile:", error);
+    return {
+      success: false,
+      error: error.message,
+      message: "Error loading your profile. Please try again."
+    };
+  }
+
   try {
     const response = await fetch(`${this.baseURL}/image-order?token=${encodeURIComponent(token)}`, {
       method: "POST",
@@ -280,7 +342,15 @@ async submitImageBasedOrder(formElement) {
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
+      // Try to get more detailed error message from response
+      let errorMessage = `HTTP error! Status: ${response.status}`;
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.message || errorMessage;
+      } catch (e) {
+        // If we can't parse JSON error response, use default message
+      }
+      throw new Error(errorMessage);
     }
 
     const result = await response.json();

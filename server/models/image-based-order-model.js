@@ -11,6 +11,30 @@ const ImageBasedOrder = sequelize.define('ImageBasedOrder', {
     type: DataTypes.INTEGER,
     allowNull: false,
   },
+  delivery_method: {
+  type: DataTypes.ENUM('pickup', 'delivery'),
+  allowNull: false,
+  defaultValue: 'pickup'
+  },
+  delivery_address: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  customer_name: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  customer_email: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    validate: {
+      isEmail: true
+    }
+  },
+  customer_phone: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },  
   imagePath: {
     type: DataTypes.STRING,
     allowNull: false,

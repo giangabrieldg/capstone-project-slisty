@@ -32,8 +32,8 @@ async function initializeAdminSidebar(container) {
   const navLinks = container.querySelectorAll(".sidebar-nav .nav-item");
   const token = localStorage.getItem("token");
 
-  // Validate user data
-  const userData = await validateToken(BASE_URL);
+  // Validate user data - FIXED: Remove BASE_URL parameter
+  const userData = await validateToken(); // ✅ Removed BASE_URL parameter
   console.log("User data from API:", userData);
   console.log("Token exists:", !!localStorage.getItem("token"));
 
@@ -103,8 +103,8 @@ async function initializeAdminSidebar(container) {
   }
 }
 
-// Validate token with server
-async function validateToken(BASE_URL) {
+// Validate token with server - FIXED: Remove BASE_URL parameter
+async function validateToken() { // ✅ Removed BASE_URL parameter
   const token = localStorage.getItem("token");
   try {
     const response = await fetch(`${window.API_BASE_URL}/api/auth/profile`, {
