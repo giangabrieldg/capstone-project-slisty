@@ -71,7 +71,7 @@ renderOrders(orders) {
       pending: 'Pending',
       pending_payment: 'Pending Payment', 
       processing: 'In Progress',
-      shipped: 'Ready for Delivery',
+      shipped: 'Ready for Pickup/Delivery',
       delivered: 'Completed',
       cancelled: 'Cancelled'
     };
@@ -261,7 +261,7 @@ renderOrders(orders) {
     
     const statusMap = {
       processing: 'In Progress',
-      shipped: 'Ready for Delivery', 
+      shipped: 'Ready for Pickup/Delivery', 
       delivered: 'Completed'
     };
     

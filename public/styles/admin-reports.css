@@ -209,11 +209,12 @@ body {
 
 /* Status badge styling */
 .status {
+    text-align: center;
     padding: 6px 12px;
     border-radius: 20px;
     font-size: 0.85rem;
     font-weight: 500;
-    text-transform: capitalize;
+    display: inline-block;
 }
 
 .status.pending {
@@ -221,14 +222,19 @@ body {
     color: #383d41;
 }
 
-.status.shipped {
-    background-color: #cce5ff;
-    color: #004085;
+.status.ready-for-dp {
+    background-color: #cdf1ff;
+    color: #047d85;
 }
 
-.status.processing {
+.status.in-progress {
     background-color: #fff3cd;
     color: #856404;
+}
+
+.status.ready {
+    background-color: #cce5ff;
+    color: #004085;
 }
 
 .status.delivered {
@@ -237,6 +243,17 @@ body {
 }
 
 .status.cancelled {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.status.paid,
+.status.dp-paid {
+    background-color: #d1ecf1;
+    color: #0c5460;
+}
+
+.status.unpaid {
     background-color: #f8d7da;
     color: #721c24;
 }

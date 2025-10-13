@@ -1,11 +1,37 @@
 <aside class="sidebar">
   <div class="sidebar-header">
     <div class="user-info">
-      <div class="user-icon"></div>
+      <!-- Replaced user icon with notification icon -->
+      <div class="notification-toggle" id="notificationToggle">
+        <i class="bi bi-bell"></i>
+        <span class="notification-count badge bg-danger">0</span>
+      </div>
       <span class="user-name" id="userName">Admin Name</span>
       <span class="user-role" id="userRole">Admin</span>
     </div>
   </div>
+
+  <!-- Notifications Section - Initially hidden -->
+  <div
+    class="notifications-sidebar-section"
+    id="notificationsSection"
+    style="display: none"
+  >
+    <div class="sidebar-section-header">
+      <h6>
+        <i class="bi bi-bell-fill icon"></i>
+        Notifications
+        <span class="notification-count-badge badge bg-danger">0</span>
+      </h6>
+    </div>
+    <div class="notifications-list" id="notificationsList">
+      <div class="notification-empty-state">
+        <i class="bi bi-check-circle text-muted"></i>
+        <small class="text-muted">No new notifications</small>
+      </div>
+    </div>
+  </div>
+
   <nav class="sidebar-nav">
     <a href="admin-dashboard.html" class="nav-item dashboard">
       <i class="bi bi-speedometer2 icon"></i>

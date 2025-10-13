@@ -69,11 +69,10 @@ class AdminDashboard {
         // Get time 30 minutes ago for new orders
         const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
 
-        // Filter today's custom cake orders with downpayment paid or later statuses
+        
         const todaysCustomCakeOrders = customCakeOrders.filter(order => {
           const orderDate = this.getOrderDate(order);
           const isToday = orderDate >= todayStart && orderDate < todayEnd;
-          // Show if today AND (downpayment paid OR later statuses)
           const statuses = ['Downpayment Paid', 'In Progress', 'Ready for Pickup/Delivery', 'Completed'];
           return isToday && statuses.includes(order.status);
         });
@@ -81,12 +80,10 @@ class AdminDashboard {
         const todaysImageBasedOrders = imageBasedOrders.filter(order => {
           const orderDate = this.getOrderDate(order);
           const isToday = orderDate >= todayStart && orderDate < todayEnd;
-          // Show if today AND (downpayment paid OR later statuses)
           const statuses = ['Downpayment Paid', 'In Progress', 'Ready for Pickup/Delivery', 'Completed'];
           return isToday && statuses.includes(order.status);
         });
 
-        // Find new custom cake orders (last 30 minutes)
         this.newCustomCakes = [
           ...customCakeOrders.filter(order => {
             const orderDate = this.getOrderDate(order);
@@ -197,19 +194,8 @@ class AdminDashboard {
 
   // Map custom cake status to regular order status for styling
   mapCustomCakeStatus(customCakeStatus) {
-    const statusMap = {
-      'Pending Review': 'pending',
-      'Ready for Downpayment': 'pending_payment',
-      'Downpayment Paid': 'processing',
-      'In Progress': 'processing',
-      'Ready for Pickup/Delivery': 'shipped',
-      'Completed': 'delivered',
-      'Cancelled': 'cancelled',
-      'Not Feasible': 'cancelled',
-      'Feasible': 'pending'
-    };
-    
-    return statusMap[customCakeStatus] || 'pending';
+    // Return the actual status text instead of keys
+    return customCakeStatus;
   }
 
   renderDashboard() {
@@ -253,7 +239,7 @@ class AdminDashboard {
     });
   }
 
-  renderOrdersTable() {
+ renderOrdersTable() {
     const tbody = document.getElementById("ordersTodayBody");
     if (!tbody) return;
 
@@ -266,13 +252,16 @@ class AdminDashboard {
       return;
     }
 
+    // Use the comprehensive status map
     const statusMap = {
-      pending: { text: "Pending", class: "pending" },
-      pending_payment: { text: "Pending Payment", class: "pending" },
-      processing: { text: "In Progress", class: "in-progress" },
-      shipped: { text: "Ready for Delivery", class: "ready" },
-      delivered: { text: "Completed", class: "completed" },
-      cancelled: { text: "Cancelled", class: "cancelled" },
+      'Pending Review': { class: 'pending', text: 'Pending Review' },
+      'Ready for Downpayment': { class: 'ready-for-dp', text: 'Ready for Downpayment' },
+      'Downpayment Paid': { class: 'dp-paid', text: 'Downpayment Paid' },
+      'In Progress': { class: 'in-progress', text: 'In Progress' },
+      'Ready for Pickup/Delivery': { class: 'ready', text: 'Ready for Pickup/Delivery' },
+      'Completed': { class: 'delivered', text: 'Completed' },
+      'Cancelled': { class: 'cancelled', text: 'Cancelled' },
+      'Not Feasible': { class: 'cancelled', text: 'Not Feasible' }
     };
 
     tbody.innerHTML = this.orders
@@ -283,7 +272,8 @@ class AdminDashboard {
           { hour: "2-digit", minute: "2-digit" }
         )}`;
 
-        const statusInfo = statusMap[order.status_key] || {
+        // Use order.status directly with the comprehensive map
+        const statusInfo = statusMap[order.status] || {
           text: order.status,
           class: "pending",
         };
@@ -297,13 +287,13 @@ class AdminDashboard {
           )
           .join("<br>");
 
-        // Check if this is a new order (last 30 minutes) - for both regular and custom cakes
+        // Check if this is a new order
         const isNewOrder = this.newOrders.some(
           (newOrder) => newOrder.orderId === order.orderId
         ) || this.newCustomCakes.some(
           (newCake) => {
             const cakeId = newCake.customCakeId ? `CC${String(newCake.customCakeId).padStart(3, '0')}` : 
-                           newCake.imageBasedOrderId ? `RCC${String(newCake.imageBasedOrderId).padStart(3, '0')}` : '';
+                          newCake.imageBasedOrderId ? `RCC${String(newCake.imageBasedOrderId).padStart(3, '0')}` : '';
             return cakeId === order.orderId;
           }
         );
@@ -350,7 +340,6 @@ class AdminDashboard {
       })
       .join("");
 
-    // Add CSS for different order types
     this.addOrderTypeStyles();
   }
 
@@ -400,28 +389,54 @@ class AdminDashboard {
   }
 
   updateNotificationBadge() {
-    const notificationCount = document.querySelector(
-      ".notification-count"
+    // Dashboard notification badge
+    const dashboardNotificationCount = document.querySelector(
+        ".content .notification-count"  // More specific selector for dashboard
     );
-    const notificationIcon = document.querySelector(".notification i");
+    
+    // Sidebar notification badge (the one in the bell icon)
+    const sidebarNotificationCount = document.querySelector(
+        ".sidebar-header .notification-count"  // Specific selector for sidebar
+    );
+    
+    // Sidebar notification badge (in the section header)
+    const sidebarNotificationBadge = document.querySelector(
+        ".notification-count-badge"
+    );
 
-    if (notificationCount) {
-      notificationCount.textContent = this.notifications.total;
-      notificationCount.style.display =
-        this.notifications.total > 0 ? "flex" : "none";
+    // Update dashboard badge
+    if (dashboardNotificationCount) {
+        dashboardNotificationCount.textContent = this.notifications.total;
+        dashboardNotificationCount.style.display =
+            this.notifications.total > 0 ? "flex" : "none";
+    }
+
+    // Update sidebar notification count (bell icon)
+    if (sidebarNotificationCount) {
+        sidebarNotificationCount.textContent = this.notifications.total;
+        sidebarNotificationCount.style.display =
+            this.notifications.total > 0 ? "inline-block" : "none";
+    }
+
+    // Update sidebar notification badge (section header)
+    if (sidebarNotificationBadge) {
+        sidebarNotificationBadge.textContent = this.notifications.total;
+        sidebarNotificationBadge.style.display =
+            this.notifications.total > 0 ? "inline-block" : "none";
     }
 
     // Change icon color if there are notifications
+    const notificationIcon = document.querySelector(".notification i");
     if (notificationIcon) {
-      if (this.notifications.total > 0) {
-        notificationIcon.classList.add("text-warning");
-        notificationIcon.classList.remove("text-muted");
-      } else {
-        notificationIcon.classList.remove("text-warning");
-        notificationIcon.classList.add("text-muted");
-      }
+        if (this.notifications.total > 0) {
+            notificationIcon.classList.add("text-warning");
+            notificationIcon.classList.remove("text-muted");
+        } else {
+            notificationIcon.classList.remove("text-warning");
+            notificationIcon.classList.add("text-muted");
+        }
     }
-  }
+}
 
   updateLastUpdateTime() {
     const updateElement = document.querySelector("[data-last-update]");

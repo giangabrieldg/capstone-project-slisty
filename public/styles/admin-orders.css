@@ -170,44 +170,46 @@ body {
 }
 
 /* Status select and update button */
+/* Status select and update button */
 .status-select {
-    padding: 5px;
+    padding: 5px 10px;
     border: 1px solid var(--secondary-color);
     border-radius: 4px;
     font-family: var(--font-poppins);
     margin-right: 10px;
 }
 
+.update-status-btn,
+.cancel-order-btn {
+    width: 75%;
+    font-family: var(--font-poppins);
+    font-size: 0.9rem;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin: 10px;
+}
+
 .update-status-btn {
     background-color: var(--primary-color);
     border: none;
     color: var(--white-text-color);
-    padding: 5px 10px;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
 }
 
 .update-status-btn:hover {
     background-color: var(--hover-color);
 }
 
-/* Action buttons */
-.confirm-payment {
-    background-color: var(--primary-color);
-    border: none;
-    color: var(--white-text-color);
-    padding: 5px 10px;
-    border-radius: 4px;
-    font-family: var(--font-poppins);
-    font-size: 0.9rem;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-    margin-right: 5px;
+.cancel-order-btn {
+    background-color: transparent;
+    border: 1px solid #dc3545;
+    color: #dc3545;
 }
 
-.confirm-payment:hover {
-    background-color: var(--hover-color);
+.cancel-order-btn:hover {
+    background-color: #dc3545;
+    color: var(--white-text-color);
 }
 
 /* Responsive adjustments for small screens */
