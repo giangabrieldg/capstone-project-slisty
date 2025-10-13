@@ -293,7 +293,14 @@ router.get('/user/me', verifyToken, async (req, res) => {
       }],
     });
 
-    res.json({ success: true, orders: formatOrders(orders) });
+    // FIXED: Filter to ONLY return orders WITHOUT any custom cake items
+    const regularOrdersOnly = orders.filter(order => {
+      // Exclude entire order if it contains ANY custom cake items
+      const hasCustomCake = order.orderItems.some(item => item.customCakeId);
+      return !hasCustomCake;
+    });
+
+    res.json({ success: true, orders: formatOrders(regularOrdersOnly) });
   } catch (error) {
     console.error('Error in /user/me:', error);
     res.status(500).json({
@@ -403,7 +410,13 @@ router.get('/admin/orders', verifyToken, checkAdminOrStaff, async (req, res) => 
       order: [['createdAt', 'DESC']],
     });
 
-    res.json({ success: true, orders: formatOrders(orders) });
+    // FIXED: Filter out orders with custom cakes
+    const regularOrdersOnly = orders.filter(order => {
+      const hasCustomCake = order.orderItems.some(item => item.customCakeId);
+      return !hasCustomCake;
+    });
+
+    res.json({ success: true, orders: formatOrders(regularOrdersOnly) });
   } catch (error) {
     console.error('Admin orders error:', error);
     res.status(500).json({ success: false, message: 'Server error' });
@@ -417,7 +430,7 @@ router.get('/admin/dashboard', verifyToken, checkAdminOrStaff, async (req, res) 
     const todayStart = new Date(today);
     const todayEnd = new Date(today + ' 23:59:59');
 
-    // Get today's orders
+    // Get today's REGULAR orders (exclude custom cakes)
     const todaysOrders = await Order.findAll({
       where: {
         createdAt: { [Op.between]: [todayStart, todayEnd] }
@@ -433,6 +446,12 @@ router.get('/admin/dashboard', verifyToken, checkAdminOrStaff, async (req, res) 
       order: [['createdAt', 'DESC']]
     });
 
+    // FIXED: Filter out orders with custom cakes from dashboard
+    const regularOrdersOnly = todaysOrders.filter(order => {
+      const hasCustomCake = order.orderItems.some(item => item.customCakeId);
+      return !hasCustomCake;
+    });
+
     // Get today's new customers (users created today)
     const newCustomers = await User.findAll({
       where: {
@@ -443,13 +462,13 @@ router.get('/admin/dashboard', verifyToken, checkAdminOrStaff, async (req, res) 
     // Get pending custom cake orders for notifications
     const pendingCustomCakes = await CustomCakeOrder.findAll({
       where: {
-        status: 'Pending',
+        status: 'Pending Review',
         createdAt: { [Op.between]: [todayStart, todayEnd] }
       },
       limit: 10
     });
 
-    // Get new orders in the last 30 minutes for notifications
+    // Get new orders in the last 30 minutes for notifications (REGULAR ORDERS ONLY)
     const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
     const newOrders = await Order.findAll({
       where: {
@@ -464,18 +483,21 @@ router.get('/admin/dashboard', verifyToken, checkAdminOrStaff, async (req, res) 
       limit: 10
     });
 
-    // Calculate summary statistics
-    const totalRevenue = todaysOrders.reduce((sum, order) => sum + parseFloat(order.total_amount), 0);
-    const customCakeOrders = todaysOrders.filter(order => 
-      order.orderItems.some(item => item.customCakeId)
-    ).length;
+    // Filter new orders to exclude custom cakes
+    const newRegularOrders = newOrders.filter(order => {
+      const hasCustomCake = order.orderItems.some(item => item.customCakeId);
+      return !hasCustomCake;
+    });
+
+    // Calculate summary statistics (from regular orders only)
+    const totalRevenue = regularOrdersOnly.reduce((sum, order) => sum + parseFloat(order.total_amount), 0);
 
     // Format orders for response
     function formatOrderId(orderId) {
       return 'ORD' + orderId.toString().padStart(3, '0');
     }
 
-    const formattedOrders = todaysOrders.map(order => ({
+    const formattedOrders = regularOrdersOnly.map(order => ({
       orderId: formatOrderId(order.orderId),
       customer_name: order.customer_name,
       customer_email: order.customer_email,
@@ -487,16 +509,15 @@ router.get('/admin/dashboard', verifyToken, checkAdminOrStaff, async (req, res) 
       payment_method: order.payment_method || 'unknown',
       delivery_method: order.delivery_method || 'unknown',
       items: order.orderItems.map(item => ({
-        name: item.customCakeId ? `Custom Cake (${item.CustomCakeOrder?.size})` : item.MenuItem?.name || item.item_name,
-        size: item.size_name || item.CustomCakeOrder?.size || null,
+        name: item.MenuItem?.name || item.item_name,
+        size: item.size_name || null,
         quantity: parseInt(item.quantity) || 0,
         price: parseFloat(item.price) || 0,
-        customCakeId: item.customCakeId
       }))
     }));
 
     // Format new orders for notifications
-    const formattedNewOrders = newOrders.map(order => ({
+    const formattedNewOrders = newRegularOrders.map(order => ({
       orderId: formatOrderId(order.orderId),
       customer_name: order.customer_name,
       items: order.orderItems.map(item => item.item_name).join(', '),
@@ -507,8 +528,8 @@ router.get('/admin/dashboard', verifyToken, checkAdminOrStaff, async (req, res) 
       success: true,
       summary: {
         total_revenue: totalRevenue,
-        total_orders: todaysOrders.length,
-        custom_cake_orders: customCakeOrders,
+        total_orders: regularOrdersOnly.length,
+        regular_orders: regularOrdersOnly.length,
         new_customers: newCustomers.length
       },
       orders: formattedOrders,
@@ -550,13 +571,19 @@ router.get('/admin/reports', verifyToken, checkAdminOrStaff, async (req, res) =>
       order: [['createdAt', 'DESC']]
     });
 
+    // FIXED: Filter to regular orders only
+    const regularOrdersOnly = orders.filter(order => {
+      const hasCustomCake = order.orderItems.some(item => item.customCakeId);
+      return !hasCustomCake;
+    });
+
     // Format order ID with leading zeros (ORD001, ORD012, etc.)
     function formatOrderId(orderId) {
         return 'ORD' + orderId.toString().padStart(3, '0');
     }
 
     // Format orders for response
-    const formattedOrders = orders.map(order => ({
+    const formattedOrders = regularOrdersOnly.map(order => ({
         orderId: formatOrderId(order.orderId), 
         customer_name: order.customer_name,
         total_amount: parseFloat(order.total_amount) || 0,
@@ -567,15 +594,14 @@ router.get('/admin/reports', verifyToken, checkAdminOrStaff, async (req, res) =>
         payment_method: order.payment_method || 'unknown',
         delivery_method: order.delivery_method || 'unknown',
         items: order.orderItems.map(item => ({
-            name: item.customCakeId ? `Custom Cake (${item.CustomCakeOrder?.size})` : item.MenuItem?.name || item.item_name,
-            size: item.size_name || item.CustomCakeOrder?.size || null,
+            name: item.MenuItem?.name || item.item_name,
+            size: item.size_name || null,
             quantity: parseInt(item.quantity) || 0,
             price: parseFloat(item.price) || 0,
-            customCakeId: item.customCakeId
         }))
     }));
 
-    // Get daily orders count for chart
+    // Get daily orders count for chart (regular orders only)
     const dailyOrders = await Order.findAll({
       attributes: [
         [sequelize.fn('DATE', sequelize.col('createdAt')), 'date'],
@@ -591,7 +617,8 @@ router.get('/admin/reports', verifyToken, checkAdminOrStaff, async (req, res) =>
     // Get popular items from order items
     const allOrderItems = await OrderItem.findAll({
       where: {
-        createdAt: { [Op.between]: [new Date(startDate), new Date(endDate + ' 23:59:59')] }
+        createdAt: { [Op.between]: [new Date(startDate), new Date(endDate + ' 23:59:59')] },
+        customCakeId: null // Only regular menu items
       }
     });
 
@@ -606,11 +633,8 @@ router.get('/admin/reports', verifyToken, checkAdminOrStaff, async (req, res) =>
       .sort((a, b) => b.total_quantity - a.total_quantity)
       .slice(0, 10);
 
-    // Calculate summary
-    const totalRevenue = orders.reduce((sum, order) => sum + parseFloat(order.total_amount), 0);
-    const customCakeOrders = orders.filter(order => 
-      order.orderItems.some(item => item.customCakeId)
-    ).length;
+    // Calculate summary (regular orders only)
+    const totalRevenue = regularOrdersOnly.reduce((sum, order) => sum + parseFloat(order.total_amount), 0);
 
     res.json({
       success: true,
@@ -618,10 +642,10 @@ router.get('/admin/reports', verifyToken, checkAdminOrStaff, async (req, res) =>
       daily_orders: dailyOrders,
       popular_items: popularItems,
       summary: {
-        total_orders: orders.length,
+        total_orders: regularOrdersOnly.length,
         total_revenue: totalRevenue,
-        custom_cake_orders: customCakeOrders,
-        average_order_value: orders.length ? totalRevenue / orders.length : 0
+        regular_orders: regularOrdersOnly.length,
+        average_order_value: regularOrdersOnly.length ? totalRevenue / regularOrdersOnly.length : 0
       },
       date_range: { start_date: startDate, end_date: endDate }
     });

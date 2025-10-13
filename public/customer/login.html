@@ -132,7 +132,6 @@
       });
     </script>
 
-    <!-- Inline main functionality -->
     <script>
       const BASE_URL =
         window.location.hostname === "localhost"
@@ -156,13 +155,16 @@
 
           const data = await res.json();
           if (res.ok) {
-            localStorage.setItem("token", data.token);
-            localStorage.setItem(
+            // Use sessionStorage instead of localStorage
+            sessionStorage.setItem("token", data.token);
+            sessionStorage.setItem(
               "userName",
               data.user.name || data.user.email.split("@")[0] || "User"
             );
-            localStorage.setItem("userEmail", data.user.email);
-            localStorage.setItem("userLevel", data.user.userLevel);
+            sessionStorage.setItem("userEmail", data.user.email);
+            sessionStorage.setItem("userLevel", data.user.userLevel);
+
+            console.log("Google login successful - session data stored");
             window.location.href = data.redirectUrl;
           } else {
             showMessage(data.message || "Google login failed");
@@ -193,13 +195,16 @@
 
             const data = await response.json();
             if (response.ok) {
-              localStorage.setItem("token", data.token);
-              localStorage.setItem(
+              // Use sessionStorage instead of localStorage
+              sessionStorage.setItem("token", data.token);
+              sessionStorage.setItem(
                 "userName",
                 data.user?.name || email.split("@")[0]
               );
-              localStorage.setItem("userEmail", email);
-              localStorage.setItem("userLevel", data.user?.userLevel);
+              sessionStorage.setItem("userEmail", email);
+              sessionStorage.setItem("userLevel", data.user?.userLevel);
+
+              console.log("Login successful - session data stored");
               window.location.href = data.redirectUrl;
             } else {
               showMessage(data.message || "Login failed");

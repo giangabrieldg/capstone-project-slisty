@@ -1,5 +1,5 @@
 // Check if staff is authenticated
-if (!localStorage.getItem('token')) {
+if (!sessionStorage.getItem('token')) {
   window.location.href = '/customer/login.html';
 }
 
@@ -8,7 +8,7 @@ async function fetchOrders() {
   try {
     const response = await fetch(`${window.API_BASE_URL}/api/orders`, {
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
+        'Authorization': `Bearer ${sessionStorage.getItem('token')}`
       }
     });
     if (!response.ok) throw new Error('Failed to fetch orders');
@@ -44,7 +44,7 @@ async function fetchOrders() {
               method: 'PUT',
               headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                'Authorization': `Bearer ${sessionStorage.getItem('token')}`
               },
               body: JSON.stringify({ status: newStatus })
             });

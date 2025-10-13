@@ -2,7 +2,7 @@
  
 class ProfileManager {
     constructor() {
-        this.token = localStorage.getItem('token');
+        this.token = sessionStorage.getItem('token');
         // Dynamic API URL - same approach as your other modules
         this.init();
     }
@@ -17,7 +17,7 @@ class ProfileManager {
         // Validate token with server before proceeding
         const isValid = await this.validateToken();
         if (!isValid) {
-            localStorage.removeItem('token');
+            sessionStorage.removeItem('token');
             window.location.href = '/customer/login.html';
             return;
         }
@@ -309,8 +309,9 @@ class ProfileManager {
 
    //logout function
     handleLogout() {
-        localStorage.removeItem('token');
+        sessionStorage.removeItem('token');
         // Clear all localStorage to prevent any residual data
+        sessionStorage.clear();
         localStorage.clear();
         // Prevent back button from showing cached page
         window.history.pushState(null, null, '/customer/login.html');

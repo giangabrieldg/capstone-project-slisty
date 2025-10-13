@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function loadInquiries() {
     try {
-      const token = localStorage.getItem('token');
+      const token = sessionStorage.getItem('token');
       if (!token) {
         inquiriesTableBody.innerHTML = '<tr><td colspan="7">Please log in.</td></tr>';
         return;
@@ -71,7 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${localStorage.getItem('token')}`,
+              'Authorization': `Bearer ${sessionStorage.getItem('token')}`,
             },
             body: JSON.stringify({ inquiryId, reply: replyText }),
           });

@@ -18,7 +18,7 @@ class AdminOrdersManager {
 
   // Fetches user info to display in sidebar
   async fetchUserInfo() {
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     try {
       const response = await fetch(`${window.API_BASE_URL}/api/auth/profile`, {
         headers: { 'Authorization': `Bearer ${token}` }
@@ -35,7 +35,7 @@ class AdminOrdersManager {
 
   // Fetches orders from backend
   async fetchOrders() {
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     if (!token) {
       alert('Please login as admin or staff');
       window.location.href = '/index.html';
@@ -143,11 +143,6 @@ renderOrders(orders) {
         <td>${order.delivery_method.charAt(0).toUpperCase() + order.delivery_method.slice(1)}</td>
         <td><span class="status ${order.status}">${statusMap[order.status]}</span></td>
         <td>
-          ${!order.payment_verified && order.payment_method === 'cash' ? `
-            <button class="btn btn-success btn-sm confirm-payment" data-order-id="${order.orderId}">
-              Confirm Payment
-            </button>
-          ` : ''}
           ${nextStatus ? `
             <button class="btn btn-primary btn-sm update-status-btn" data-order-id="${order.orderId}" data-next-status="${nextStatus}">
               Mark as ${nextStatusText}
@@ -176,15 +171,12 @@ renderOrders(orders) {
     bootstrap.Modal.getInstance(document.getElementById('filterModal')).hide();
   });
   
-  // Confirm payment and update status (delegated events)
+  // Update status and cancel order (delegated events)
   document.getElementById('ordersTableBody').addEventListener('click', (e) => {
-    const confirmBtn = e.target.closest('.confirm-payment');
     const updateBtn = e.target.closest('.update-status-btn');
     const cancelBtn = e.target.closest('.cancel-order-btn');
     
-    if (confirmBtn) {
-      this.confirmPayment(confirmBtn.getAttribute('data-order-id'));
-    } else if (updateBtn) {
+    if (updateBtn) {
       const orderId = updateBtn.getAttribute('data-order-id');
       const nextStatus = updateBtn.getAttribute('data-next-status');
       this.updateOrderStatus(orderId, nextStatus);
@@ -251,33 +243,10 @@ renderOrders(orders) {
 
   this.renderOrders(filteredOrders);
 }
- 
-  // Confirms payment for an order
-  // @param {string} orderId - Order ID
-  async confirmPayment(orderId) {
-    const token = localStorage.getItem('token');
-    try {
-      const response = await fetch(`${window.API_BASE_URL}/api/orders/${orderId}/status`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ status: 'processing', payment_verified: true })
-      });
-      const data = await response.json();
-      if (!data.success) throw new Error(data.message);
-      alert(`Payment confirmed for Order #ORD${orderId.toString().padStart(3, '0')}.`);
-      this.fetchOrders();
-    } catch (error) {
-      console.error('Error confirming payment:', error);
-      alert('Failed to confirm payment: ' + error.message);
-    }
-  }
 
   // Updates order status
   async updateOrderStatus(orderId, newStatus) {
-  const token = localStorage.getItem('token');
+  const token = sessionStorage.getItem('token');
   try {
    const response = await fetch(`${window.API_BASE_URL}/api/orders/admin/orders/${orderId}`, {
       method: 'PUT',
@@ -310,7 +279,7 @@ async cancelOrder(orderId) {
     return;
   }
   
-  const token = localStorage.getItem('token');
+  const token = sessionStorage.getItem('token');
   try {
     const response = await fetch(`${window.API_BASE_URL}/api/orders/admin/orders/${orderId}`, {
       method: 'PUT',

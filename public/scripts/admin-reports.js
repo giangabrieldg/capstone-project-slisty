@@ -114,7 +114,7 @@ async function updateReports(startDate, endDate) {
 
   setLoadingState(true);
   try {
-    const token = localStorage.getItem("token");
+    const token = sessionStorage.getItem("token");
     if (!token) {
       window.location.href = "/login.html";
       return;

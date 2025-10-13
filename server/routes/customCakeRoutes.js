@@ -312,59 +312,6 @@ router.get('/admin/image-orders', verifyToken, async (req, res) => {
         name: order.customer.name,
         email: order.customer.email,
       } : null,
-      deliveryDate: order.deliveryDate,
-      downpayment_amount: order.downpayment_amount,
-      remaining_balance: order.remaining_balance,
-      is_downpayment_paid: order.is_downpayment_paid,
-      downpayment_paid_at: order.downpayment_paid_at,
-      final_payment_status: order.final_payment_status,
-      delivery_method: order.delivery_method,
-      delivery_address: order.delivery_address,
-      customer_name: order.customer_name,
-      customer_email: order.customer_email,
-      customer_phone: order.customer_phone
-    }));
-    
-    res.json({ success: true, orders: formattedOrders });
-  } catch (error) {
-    console.error('Admin image-based orders error:', error);
-    
-    // Handle table doesn't exist error gracefully
-    if (error.name === 'SequelizeDatabaseError' && error.message.includes('doesn\'t exist')) {
-      console.warn('imagebasedorders table does not exist');
-      return res.json({ success: true, orders: [], message: 'No image-based orders found' });
-    }
-    
-    res.status(500).json({ success: false, message: 'Server error', error: error.message });
-  }
-});
-
-// GET /api/custom-cake/admin/image-orders - Get all image-based orders (admin/staff only)
-router.get('/admin/image-orders', verifyToken, async (req, res) => {
-  try {
-    if (!['admin', 'staff'].includes(req.user.userLevel.toLowerCase())) {
-      return res.status(403).json({ success: false, message: 'Unauthorized: Admin or staff access required' });
-    }
-
-    const orders = await ImageBasedOrder.findAll({
-      include: [
-        {
-          model: User,
-          as: 'customer',
-          attributes: ['userID', 'name', 'email'],
-          required: false,
-        },
-      ],
-      order: [['createdAt', 'DESC']],
-    });
-    
-    const formattedOrders = orders.map(order => ({
-      ...order.toJSON(),
-      customer: order.customer ? {
-        userID: order.customer.userID,
-        name: order.customer.name,
-        email: order.customer.email,
-      } : null,
       deliveryDate: order.deliveryDate
     }));
     
@@ -406,13 +353,12 @@ router.put('/admin/orders/:customCakeId', verifyToken, async (req, res) => {
 });
 
 // PUT /api/custom-cake/image-orders/:orderId - Update image-based order status (admin/staff only)
-router.put('/image-orders/:orderId', verifyToken, async (req, res) => {
+router.put('/admin/image-orders/:orderId', verifyToken, async (req, res) => {
   try {
     if (!['admin', 'staff'].includes(req.user.userLevel.toLowerCase())) {
       return res.status(403).json({ success: false, message: 'Unauthorized: Admin or staff access required' });
     }
     const { status } = req.body;
-    // UPDATED: Add downpayment statuses to valid statuses
     if (!['Pending Review', 'Feasible', 'Ready for Downpayment', 'Downpayment Paid', 'In Progress', 'Ready for Pickup/Delivery', 'Completed', 'Cancelled', 'Not Feasible'].includes(status)) {
       return res.status(400).json({ success: false, message: 'Invalid status' });
     }

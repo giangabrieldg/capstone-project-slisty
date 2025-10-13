@@ -4,7 +4,7 @@
 async function loadCartItems() {
   const cartItemsContainer = document.getElementById('cartItemsContainer');
   const checkoutBtn = document.getElementById('checkoutBtn');
-  const token = localStorage.getItem('token');
+  const token = sessionStorage.getItem('token');
 
   // Check if user is logged in
   if (!token) {

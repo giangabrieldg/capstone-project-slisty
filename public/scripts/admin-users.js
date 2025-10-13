@@ -3,12 +3,12 @@ async function fetchUsers() {
   try {
     const response = await fetch(`${window.API_BASE_URL}/api/auth/users`, {
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        'Authorization': `Bearer ${sessionStorage.getItem('token')}`,
       },
     });
     if (!response.ok) {
       if (response.status === 401) {
-        localStorage.removeItem('token');
+        sessionStorage.removeItem('token');
         window.location.href = '/customer/login.html';
         throw new Error('Unauthorized: Please log in again');
       }
@@ -116,7 +116,7 @@ document.getElementById('addUserForm').addEventListener('submit', async (e) => {
     return;
   }
 
-  const token = localStorage.getItem('token');
+  const token = sessionStorage.getItem('token');
   if (!token) {
     alert('Please log in again');
     window.location.href = '/customer/login.html';
@@ -136,7 +136,7 @@ document.getElementById('addUserForm').addEventListener('submit', async (e) => {
     if (!response.ok) {
       const errorResult = await response.json();
       if (response.status === 401) {
-        localStorage.removeItem('token');
+        sessionStorage.removeItem('token');
         window.location.href = '/customer/login.html';
         throw new Error('Unauthorized: Please log in again');
       }
@@ -174,13 +174,13 @@ function addArchiveToggleListener(checkbox) {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${sessionStorage.getItem('token')}`,
         },
         body: JSON.stringify({ isArchived }),
       });
       if (!response.ok) {
         if (response.status === 401) {
-          localStorage.removeItem('token');
+          sessionStorage.removeItem('token');
           window.location.href = '/customer/login.html';
           throw new Error('Unauthorized: Please log in again');
         }

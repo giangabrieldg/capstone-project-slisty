@@ -28,7 +28,7 @@ class CustomCakeController {
       fillings: {
         none: 0,
         strawberry: 150,
-        cream: 150,
+        bavarian: 150,
       },
     };
 
@@ -147,7 +147,7 @@ async checkoutCustomCake() {
     }
   } catch (error) {
     console.error('Checkout process error:', error);
-    alert('Checkout failed: ' + error.message);
+    ToastNotifications.showToast('Checkout failed: ' + error.message, 'error');
   }
 }
 
@@ -456,7 +456,7 @@ async checkoutCustomCake() {
     const fillingNames = {
       none: "None",
       strawberry: "Strawberry",
-      Cream: "Cream",
+      bavarian: "Cream",
     };
     document.getElementById("summaryFilling").textContent = fillingNames[this.config.filling];
 

@@ -30,12 +30,12 @@ async function initializeAdminSidebar(container) {
   const toggleButton = document.querySelector(".sidebar-toggle");
   const sidebar = container.querySelector(".sidebar");
   const navLinks = container.querySelectorAll(".sidebar-nav .nav-item");
-  const token = localStorage.getItem("token");
+  const token = sessionStorage.getItem("token"); // Changed to sessionStorage
 
   // Validate user data - FIXED: Remove BASE_URL parameter
   const userData = await validateToken(); // ✅ Removed BASE_URL parameter
   console.log("User data from API:", userData);
-  console.log("Token exists:", !!localStorage.getItem("token"));
+  console.log("Token exists:", !!sessionStorage.getItem("token")); // Changed to sessionStorage
 
   // Validate token on page load
   if (!token || !userData)  {
@@ -105,7 +105,7 @@ async function initializeAdminSidebar(container) {
 
 // Validate token with server - FIXED: Remove BASE_URL parameter
 async function validateToken() { // ✅ Removed BASE_URL parameter
-  const token = localStorage.getItem("token");
+  const token = sessionStorage.getItem("token"); // Changed to sessionStorage
   try {
     const response = await fetch(`${window.API_BASE_URL}/api/auth/profile`, {
       headers: { 'Authorization': `Bearer ${token}` }

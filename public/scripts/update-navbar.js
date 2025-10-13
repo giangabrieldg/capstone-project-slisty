@@ -1,7 +1,6 @@
-
 // Function to fetch cart item count from API and update the badge
 async function updateCartCount() {
-  const token = localStorage.getItem("token");
+  const token = sessionStorage.getItem("token"); // Changed to sessionStorage
   const cartCountBadge = document.getElementById("cartCountBadge");
 
   if (!token || !cartCountBadge) {
@@ -39,7 +38,7 @@ async function updateCartCount() {
 }
 
 function updateNavbarAndGreeting() {
-  const token = localStorage.getItem("token");
+  const token = sessionStorage.getItem("token"); // Changed to sessionStorage
   const userCartContainer = document.getElementById("userCartContainer");
   const userProfileContainer = document.getElementById("userProfileContainer");
   const userProfileLink = document.getElementById("userProfileLink");
@@ -68,12 +67,12 @@ function updateNavbarAndGreeting() {
       customCakeOrdersItem.style.display = "block";
     }
     
-    if (userNameSpan) userNameSpan.textContent = localStorage.getItem("userName") || "User Profile";
+    if (userNameSpan) userNameSpan.textContent = sessionStorage.getItem("userName") || "User Profile"; // Changed to sessionStorage
     
     // Update profile.html content if on that page
     if (window.location.pathname.includes("profile.html")) {
-      document.getElementById("userName").textContent = localStorage.getItem("userName") || "Guest";
-      document.getElementById("userEmail").textContent = localStorage.getItem("userEmail") || "Not set";
+      document.getElementById("userName").textContent = sessionStorage.getItem("userName") || "Guest"; // Changed to sessionStorage
+      document.getElementById("userEmail").textContent = sessionStorage.getItem("userEmail") || "Not set"; // Changed to sessionStorage
     }
     
     // Update cart count badge

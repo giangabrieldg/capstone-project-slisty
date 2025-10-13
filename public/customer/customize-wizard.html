@@ -1123,6 +1123,36 @@
         </div>
       </div>
     </div>
+    <div id="profileValidationModal" class="profile-validation-modal">
+      <div class="profile-modal-content">
+        <div class="modal-header">
+          <h3>Complete Your Profile</h3>
+        </div>
+        <div class="modal-body">
+          <div class="modal-message" id="profileModalMessage"></div>
+          <div
+            class="missing-fields-list"
+            id="missingFieldsList"
+            style="display: none"
+          >
+            <strong>Missing Information:</strong>
+            <ul id="missingFieldsItems"></ul>
+          </div>
+          <p style="color: #666; font-size: 0.9rem">
+            We need this information to process your order and ensure smooth
+            delivery.
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button class="modal-btn btn-outline" id="cancelProfileUpdate">
+            Maybe Later
+          </button>
+          <button class="modal-btn btn-primary" id="updateProfileNow">
+            Update Profile Now
+          </button>
+        </div>
+      </div>
+    </div>
     <!-- Footer -->
     <div data-include-html="/includes/footer.html"></div>
     <script
@@ -1136,5 +1166,6 @@
     <script src="/scripts/custom-cake.js"></script>
     <script src="/scripts/cake-renderer.js"></script>
     <script src="/scripts/custom-cake-controller.js"></script>
+    <script src="/scripts/toast-notification.js"></script>
   </body>
 </html>

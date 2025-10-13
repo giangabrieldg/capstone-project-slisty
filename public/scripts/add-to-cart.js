@@ -1,7 +1,7 @@
 // Add event listener for the "Add to Cart" button once the DOM is fully loaded
 document.getElementById('addToCart').addEventListener('click', async () => {
   // Retrieve the authentication token from localStorage
-  const token = localStorage.getItem('token');
+  const token = sessionStorage.getItem('token');
   if (!token) {
     // Redirect to login page if user is not authenticated
     alert('Please log in to add items to your cart.');
@@ -9,12 +9,9 @@ document.getElementById('addToCart').addEventListener('click', async () => {
     return;
   }
 
-  // Extract product ID from URL query parameters
   const urlParams = new URLSearchParams(window.location.search);
   const productId = urlParams.get('id');
-  // Get the requested quantity from the input field
   const quantity = parseInt(document.getElementById('quantityInput').value);
-  // Get the product name for success message
   const productName = document.getElementById('productName').textContent;
 
   // Validate quantity

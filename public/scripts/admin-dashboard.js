@@ -6,9 +6,11 @@ class AdminDashboard {
       total: 0,
       new_orders: 0,
       pending_custom_cakes: 0,
+      new_custom_cakes: 0 // Added this for new custom cake orders
     };
     this.newOrders = [];
     this.pendingCustomCakes = [];
+    this.newCustomCakes = []; // Added to track new custom cake orders
     this.lastUpdate = null;
     this.init();
   }
@@ -22,63 +24,20 @@ class AdminDashboard {
 
   async loadDashboardData() {
     try {
-      const token = localStorage.getItem("token");
+      const token = sessionStorage.getItem("token");
       if (!token) {
         window.location.href = "/login.html";
         return;
       }
 
-      // Fetch dashboard data and custom cake orders in parallel
-      const [dashboardResponse, customCakesData] = await Promise.all([
+      // Fetch all data in parallel
+      const [dashboardResponse, customCakeData, imageBasedData] = await Promise.all([
         fetch(`${window.API_BASE_URL}/api/orders/admin/dashboard`, {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
         }),
-        this.fetchCustomCakeOrders(token)
-      ]);
-
-      if (!dashboardResponse.ok) {
-        throw new Error("Failed to fetch dashboard data");
-      }
-
-      const data = await dashboardResponse.json();
-
-      if (data.success) {
-        this.orders = data.orders;
-        this.summary = data.summary;
-        this.notifications = data.notifications;
-        this.newOrders = data.new_orders || [];
-        this.pendingCustomCakes = data.pending_custom_cakes || [];
-        this.lastUpdate = new Date();
-        
-        // Store custom cake orders for ID mapping
-        this.customCakeOrders = customCakesData.customCakeOrders || [];
-        this.imageBasedOrders = customCakesData.imageBasedOrders || [];
-        
-        // Update summary with custom cake counts
-        this.summary.custom_cake_orders = this.customCakeOrders.length + this.imageBasedOrders.length;
-        this.summary.custom_cake_3d_orders = this.customCakeOrders.length;
-        this.summary.custom_cake_image_orders = this.imageBasedOrders.length;
-        
-        this.renderDashboard();
-
-        // Show notification alert if there are new orders
-        if (this.newOrders.length > 0) {
-          this.showNewOrdersNotification();
-        }
-      }
-    } catch (error) {
-      console.error("Error loading dashboard:", error);
-      this.showError("Failed to load dashboard data");
-    }
-  }
-
-  // New method to fetch custom cake orders for ID mapping
-  async fetchCustomCakeOrders(token) {
-    try {
-      const [customCakeResponse, imageBasedResponse] = await Promise.all([
         fetch(`${window.API_BASE_URL}/api/custom-cake/admin/orders`, {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -93,34 +52,164 @@ class AdminDashboard {
         })
       ]);
 
-      let customCakeOrders = [];
-      let imageBasedOrders = [];
-
-      if (customCakeResponse.ok) {
-        const customCakeData = await customCakeResponse.json();
-        if (customCakeData.success && customCakeData.orders) {
-          customCakeOrders = customCakeData.orders;
-        }
+      if (!dashboardResponse.ok) {
+        throw new Error("Failed to fetch dashboard data");
       }
 
-      if (imageBasedResponse.ok) {
-        const imageBasedData = await imageBasedResponse.json();
-        if (imageBasedData.success && imageBasedData.orders) {
-          imageBasedOrders = imageBasedData.orders;
+      const data = await dashboardResponse.json();
+      const customCakeOrders = customCakeData.ok ? (await customCakeData.json()).orders || [] : [];
+      const imageBasedOrders = imageBasedData.ok ? (await imageBasedData.json()).orders || [] : [];
+
+      if (data.success) {
+        // Get today's date for filtering
+        const today = new Date();
+        const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        const todayEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+        
+        // Get time 30 minutes ago for new orders
+        const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
+
+        // Filter today's custom cake orders with downpayment paid or later statuses
+        const todaysCustomCakeOrders = customCakeOrders.filter(order => {
+          const orderDate = this.getOrderDate(order);
+          const isToday = orderDate >= todayStart && orderDate < todayEnd;
+          // Show if today AND (downpayment paid OR later statuses)
+          const statuses = ['Downpayment Paid', 'In Progress', 'Ready for Pickup/Delivery', 'Completed'];
+          return isToday && statuses.includes(order.status);
+        });
+
+        const todaysImageBasedOrders = imageBasedOrders.filter(order => {
+          const orderDate = this.getOrderDate(order);
+          const isToday = orderDate >= todayStart && orderDate < todayEnd;
+          // Show if today AND (downpayment paid OR later statuses)
+          const statuses = ['Downpayment Paid', 'In Progress', 'Ready for Pickup/Delivery', 'Completed'];
+          return isToday && statuses.includes(order.status);
+        });
+
+        // Find new custom cake orders (last 30 minutes)
+        this.newCustomCakes = [
+          ...customCakeOrders.filter(order => {
+            const orderDate = this.getOrderDate(order);
+            return orderDate >= thirtyMinutesAgo && order.status === 'Downpayment Paid';
+          }),
+          ...imageBasedOrders.filter(order => {
+            const orderDate = this.getOrderDate(order);
+            return orderDate >= thirtyMinutesAgo && order.status === 'Downpayment Paid';
+          })
+        ];
+
+        // Combine all orders: regular orders + today's paid custom cake orders
+        const allOrders = [
+          ...data.orders.map(order => ({ ...order, order_type: 'regular' })), // Add type marker
+          ...this.formatCustomCakeOrdersForDashboard(todaysCustomCakeOrders, 'CC'),
+          ...this.formatCustomCakeOrdersForDashboard(todaysImageBasedOrders, 'RCC')
+        ];
+
+        // Sort all orders by date (newest first)
+        allOrders.sort((a, b) => new Date(b.order_date) - new Date(a.order_date));
+
+        this.orders = allOrders;
+        this.summary = data.summary;
+        
+        // Update notifications to include custom cakes
+        this.notifications = {
+          ...data.notifications,
+          new_custom_cakes: this.newCustomCakes.length,
+          total: (data.notifications.new_orders || 0) + 
+                 (data.notifications.pending_custom_cakes || 0) + 
+                 this.newCustomCakes.length
+        };
+        
+        this.newOrders = data.new_orders || [];
+        this.pendingCustomCakes = data.pending_custom_cakes || [];
+        this.lastUpdate = new Date();
+        
+        // Update summary with today's custom cake counts (only paid ones)
+        this.summary.total_custom_cakes = todaysCustomCakeOrders.length + todaysImageBasedOrders.length;
+        this.summary.custom_cake_3d_orders = todaysCustomCakeOrders.length;
+        this.summary.custom_cake_image_orders = todaysImageBasedOrders.length;
+        
+        this.renderDashboard();
+
+        // Show notification alert if there are new orders (regular or custom)
+        if (this.newOrders.length > 0 || this.newCustomCakes.length > 0) {
+          this.showNewOrdersNotification();
         }
       }
-
-      return {
-        customCakeOrders,
-        imageBasedOrders
-      };
     } catch (error) {
-      console.error("Error fetching custom cake orders:", error);
-      return {
-        customCakeOrders: [],
-        imageBasedOrders: []
-      };
+      console.error("Error loading dashboard:", error);
+      this.showError("Failed to load dashboard data");
     }
+  }
+
+  // Helper method to filter today's orders
+  filterTodaysOrders(orders, todayStart, todayEnd) {
+    return orders.filter(order => {
+      const orderDate = this.getOrderDate(order);
+      return orderDate >= todayStart && orderDate < todayEnd;
+    });
+  }
+
+  // Helper method to get order date from different date fields
+  getOrderDate(order) {
+    if (order.orderDate) return new Date(order.orderDate);
+    if (order.createdAt) return new Date(order.createdAt);
+    if (order.updatedAt) return new Date(order.updatedAt);
+    if (order.order_date) return new Date(order.order_date);
+    return new Date();
+  }
+
+  // Format custom cake orders for dashboard display
+  formatCustomCakeOrdersForDashboard(orders, prefix) {
+    return orders.map(order => {
+      const isImageBased = prefix === 'RCC';
+      const orderId = isImageBased ? order.imageBasedOrderId : order.customCakeId;
+      const orderDate = this.getOrderDate(order);
+      
+      // Ensure price is a number
+      const totalAmount = order.price ? parseFloat(order.price) : 0;
+      
+      return {
+        orderId: `${prefix}${String(orderId).padStart(3, '0')}`,
+        customer_name: order.customer_name || (order.customer?.name || 'Unknown'),
+        customer_email: order.customer_email || (order.customer?.email || 'No email'),
+        total_amount: totalAmount,
+        status: order.status,
+        status_key: this.mapCustomCakeStatus(order.status),
+        order_date: orderDate,
+        delivery_method: order.delivery_method || 'pickup',
+        payment_method: 'gcash', // Custom cakes use GCash for downpayment
+        items: [{
+          name: isImageBased ? 'Image-Based Cake' : '3D Custom Cake',
+          size: order.size || 'Not specified',
+          quantity: 1,
+          price: totalAmount,
+          customCakeId: orderId,
+          is_custom_cake: true,
+          is_image_based: isImageBased
+        }],
+        order_type: isImageBased ? 'image_cake' : 'custom_cake',
+        is_custom_cake: true,
+        is_image_based: isImageBased
+      };
+    });
+  }
+
+  // Map custom cake status to regular order status for styling
+  mapCustomCakeStatus(customCakeStatus) {
+    const statusMap = {
+      'Pending Review': 'pending',
+      'Ready for Downpayment': 'pending_payment',
+      'Downpayment Paid': 'processing',
+      'In Progress': 'processing',
+      'Ready for Pickup/Delivery': 'shipped',
+      'Completed': 'delivered',
+      'Cancelled': 'cancelled',
+      'Not Feasible': 'cancelled',
+      'Feasible': 'pending'
+    };
+    
+    return statusMap[customCakeStatus] || 'pending';
   }
 
   renderDashboard() {
@@ -131,27 +220,25 @@ class AdminDashboard {
   }
 
   updateSummaryCards() {
-    // Revenue
+    // Revenue - from regular orders only
     document.querySelector(
       '[data-summary="revenue"]'
     ).textContent = `PHP ${
-      this.summary.total_revenue?.toFixed(2) || "0.00"
+      (this.summary.total_revenue || 0).toFixed(2)
     }`;
     
-    // Total Orders
-    document.querySelector('[data-summary="orders"]').textContent =
-      this.summary.total_orders || "0";
+    // Total Orders - from regular orders only
+    document.querySelector('[data-summary="orders"]').textContent = 
+      this.summary.total_orders || 0;
     
-    // Custom Cakes - Show total with breakdown on hover
+    // Custom Cakes - Today's total (separate from regular orders)
     const customCakesElement = document.querySelector('[data-summary="custom-cakes"]');
-    const totalCustomCakes = this.summary.custom_cake_orders || 0;
+    const totalCustomCakes = this.summary.total_custom_cakes || 0;
     const customCake3DCount = this.summary.custom_cake_3d_orders || 0;
     const imageBasedCount = this.summary.custom_cake_image_orders || 0;
     
     customCakesElement.textContent = totalCustomCakes;
-    
-    // Add tooltip with breakdown
-    customCakesElement.title = `3D Custom Cakes: ${customCake3DCount}\nImage-based: ${imageBasedCount}`;
+    customCakesElement.title = `Today's Custom Cakes:\n3D Custom: ${customCake3DCount}\nImage-based: ${imageBasedCount}`;
     customCakesElement.setAttribute('data-bs-toggle', 'tooltip');
     customCakesElement.setAttribute('data-bs-placement', 'top');
     
@@ -161,8 +248,8 @@ class AdminDashboard {
     
     // Initialize tooltips
     const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-      return new bootstrap.Tooltip(tooltipTriggerEl);
+    tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+      new bootstrap.Tooltip(tooltipTriggerEl);
     });
   }
 
@@ -210,18 +297,35 @@ class AdminDashboard {
           )
           .join("<br>");
 
-        // Check if this is a new order (last 30 minutes)
+        // Check if this is a new order (last 30 minutes) - for both regular and custom cakes
         const isNewOrder = this.newOrders.some(
           (newOrder) => newOrder.orderId === order.orderId
+        ) || this.newCustomCakes.some(
+          (newCake) => {
+            const cakeId = newCake.customCakeId ? `CC${String(newCake.customCakeId).padStart(3, '0')}` : 
+                           newCake.imageBasedOrderId ? `RCC${String(newCake.imageBasedOrderId).padStart(3, '0')}` : '';
+            return cakeId === order.orderId;
+          }
         );
+        
         const rowClass = isNewOrder ? "new-order" : "";
 
-        // Format order ID based on order type - FIXED to use actual custom cake IDs
-        const formattedOrderId = this.formatOrderId(order);
+        // Format order ID with appropriate prefix and styling
+        const orderIdCell = this.getOrderIdCell(order);
+
+        // Ensure total_amount is a number
+        const totalAmount = typeof order.total_amount === 'number' 
+          ? order.total_amount 
+          : parseFloat(order.total_amount) || 0;
+
+        // Payment method display
+        const paymentMethodDisplay = order.payment_method === 'gcash' 
+          ? 'GCash' 
+          : (order.payment_method === 'cash' ? 'Cash' : 'Custom Cake');
 
         return `
         <tr class="${rowClass}">
-          <td>${formattedOrderId}</td>
+          <td>${orderIdCell}</td>
           <td>
             <div class="customer-info">
               <div class="customer-name">${order.customer_name}</div>
@@ -235,11 +339,8 @@ class AdminDashboard {
             order.delivery_method.charAt(0).toUpperCase() +
             order.delivery_method.slice(1)
           }</td>
-          <td>PHP ${order.total_amount.toFixed(2)}</td>
-          <td>${
-            order.payment_method.charAt(0).toUpperCase() +
-            order.payment_method.slice(1)
-          }</td>
+          <td>PHP ${totalAmount.toFixed(2)}</td>
+          <td>${paymentMethodDisplay}</td>
           <td>${items}</td>
           <td><span class="status ${statusInfo.class}">${
                 statusInfo.text
@@ -248,102 +349,54 @@ class AdminDashboard {
       `;
       })
       .join("");
+
+    // Add CSS for different order types
+    this.addOrderTypeStyles();
   }
 
-  // UPDATED: Method to format order IDs using actual custom cake IDs
-  formatOrderId(order) {
-    // Check if this order contains custom cake items
-    const hasCustomCake = order.items && order.items.some(item => 
-      item.is_custom_cake === true || 
-      item.product_type === 'custom_cake' ||
-      (item.name && item.name.toLowerCase().includes('custom cake')) ||
-      item.customCakeId
-    );
-    
-    const hasImageBasedCake = order.items && order.items.some(item => 
-      item.is_image_based === true || 
-      item.product_type === 'image_based_cake' ||
-      (item.name && item.name.toLowerCase().includes('image based')) ||
-      item.imageBasedOrderId
-    );
-
-    // Try to find matching custom cake order by customer email/name and date
-    if (hasImageBasedCake || hasCustomCake) {
-      const customerEmail = order.customer_email;
-      const customerName = order.customer_name;
-      const orderDate = new Date(order.order_date);
-      
-      // Look for image-based custom cake order
-      if (hasImageBasedCake) {
-        const imageBasedOrder = this.findMatchingCustomCakeOrder(
-          this.imageBasedOrders, 
-          customerEmail, 
-          customerName, 
-          orderDate,
-          'imageBasedOrderId'
-        );
-        
-        if (imageBasedOrder) {
-          return `#RCC${String(imageBasedOrder.imageBasedOrderId).padStart(3, '0')}`;
-        }
-      }
-      
-      // Look for 3D custom cake order
-      if (hasCustomCake) {
-        const customCakeOrder = this.findMatchingCustomCakeOrder(
-          this.customCakeOrders, 
-          customerEmail, 
-          customerName, 
-          orderDate,
-          'customCakeId'
-        );
-        
-        if (customCakeOrder) {
-          return `#CC${String(customCakeOrder.customCakeId).padStart(3, '0')}`;
-        }
-      }
-      
-      // If no match found but we know it's a custom cake, use generic format
-      if (hasImageBasedCake) {
-        return `#RCC???`;
-      } else if (hasCustomCake) {
-        return `#CC???`;
-      }
+  // Generate order ID cell with appropriate styling
+  getOrderIdCell(order) {
+    if (order.order_type === 'custom_cake') {
+      return `<span class="order-id custom-cake-id" title="3D Custom Cake">${order.orderId}</span>`;
+    } else if (order.order_type === 'image_cake') {
+      return `<span class="order-id image-cake-id" title="Image-Based Custom Cake">${order.orderId}</span>`;
+    } else {
+      return `<span class="order-id regular-id">${order.orderId}</span>`;
     }
-    
-    // Regular orders
-    return `#${order.orderId}`;
   }
 
-  // Helper method to find matching custom cake order
-  findMatchingCustomCakeOrder(customCakeOrders, customerEmail, customerName, orderDate, idField) {
-    return customCakeOrders.find(cakeOrder => {
-      // Match by email (most reliable)
-      if (cakeOrder.customer_email && customerEmail && 
-          cakeOrder.customer_email.toLowerCase() === customerEmail.toLowerCase()) {
-        return true;
-      }
-      
-      // Match by name
-      if (cakeOrder.customer_name && customerName && 
-          cakeOrder.customer_name.toLowerCase() === customerName.toLowerCase()) {
-        return true;
-      }
-      
-      // Match by customer object email/name
-      if (cakeOrder.customer) {
-        if (cakeOrder.customer.email && customerEmail && 
-            cakeOrder.customer.email.toLowerCase() === customerEmail.toLowerCase()) {
-          return true;
+  // Add CSS for different order type styling
+  addOrderTypeStyles() {
+    if (!document.getElementById('order-type-styles')) {
+      const style = document.createElement('style');
+      style.id = 'order-type-styles';
+      style.textContent = `
+        .order-id {
+          font-weight: 600;
+          padding: 2px 6px;
+          border-radius: 3px;
         }
-        if (cakeOrder.customer.name && customerName && 
-            cakeOrder.customer.name.toLowerCase() === customerName.toLowerCase()) {
-          return true;
+
+        .order-id.regular-id, .order-id.custom-cake-id, .order-id.image-cake-id{
+          color: #2c9045;
         }
-      }
-      
-      return false;
-    });
+
+        .new-order {
+          background-color: #f0f8f5 !important;
+          border-left: 4px solid #2c9045;
+        }
+
+        .new-order .order-id.regular-id {
+          animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.6; }
+        }
+      `;
+      document.head.appendChild(style);
+    }
   }
 
   updateNotificationBadge() {
@@ -378,13 +431,23 @@ class AdminDashboard {
   }
 
   showNewOrdersNotification() {
-    if (this.newOrders.length > 0) {
+    const totalNewOrders = this.newOrders.length + this.newCustomCakes.length;
+    if (totalNewOrders > 0) {
       const notification = document.createElement("div");
-      notification.className =
-        "alert alert-info alert-dismissible fade show";
+      notification.className = "alert alert-info alert-dismissible fade show";
+      
+      let message = '';
+      if (this.newOrders.length > 0 && this.newCustomCakes.length > 0) {
+        message = `<strong>${this.newOrders.length} new regular order(s)</strong> and <strong>${this.newCustomCakes.length} new custom cake order(s)</strong> in the last 30 minutes`;
+      } else if (this.newOrders.length > 0) {
+        message = `<strong>${this.newOrders.length} new regular order(s)</strong> in the last 30 minutes`;
+      } else {
+        message = `<strong>${this.newCustomCakes.length} new custom cake order(s)</strong> in the last 30 minutes`;
+      }
+      
       notification.innerHTML = `
         <i class="bi bi-bell-fill me-2"></i>
-        <strong>${this.newOrders.length} new order(s)</strong> in the last 30 minutes
+        ${message}
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
       `;
       document.querySelector(".content").prepend(notification);
@@ -438,7 +501,7 @@ class AdminDashboard {
     if (this.newOrders.length > 0) {
       content += `
         <div class="mb-4">
-          <h6><i class="bi bi-cart-plus text-primary me-2"></i> New Orders (${
+          <h6><i class="bi bi-cart-plus text-primary me-2"></i> New Regular Orders (${
             this.newOrders.length
           })</h6>
           <div class="list-group">
@@ -448,12 +511,42 @@ class AdminDashboard {
               <div class="list-group-item">
                 <div class="d-flex justify-content-between align-items-center">
                   <div>
-                    <strong>${this.formatOrderIdForNotification(order)}</strong> - ${order.customer_name}
+                    <strong>${order.orderId}</strong> - ${order.customer_name}
                     <br><small class="text-muted">${order.items}</small>
                   </div>
                   <small class="text-muted">${new Date(
                     order.time
                   ).toLocaleTimeString()}</small>
+                </div>
+              </div>
+            `
+              )
+              .join("")}
+          </div>
+        </div>
+      `;
+    }
+
+    if (this.newCustomCakes.length > 0) {
+      content += `
+        <div class="mb-4">
+          <h6><i class="bi bi-cake2 text-success me-2"></i> New Custom Cake Orders (${
+            this.newCustomCakes.length
+          })</h6>
+          <div class="list-group">
+            ${this.newCustomCakes
+              .map(
+                (cake) => `
+              <div class="list-group-item">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <strong>${this.formatCustomCakeId(cake)}</strong> - ${cake.customer_name || 'Unknown Customer'}
+                    <br><small class="text-muted">Size: ${cake.size || 'Not specified'}, Type: ${cake.imageBasedOrderId ? 'Image-Based' : '3D Custom'}</small>
+                  </div>
+                  <div class="text-end">
+                    <small class="text-muted">${this.getOrderDate(cake).toLocaleTimeString()}</small>
+                    <br><span class="badge bg-success">Downpayment Paid</span>
+                  </div>
                 </div>
               </div>
             `
@@ -498,28 +591,13 @@ class AdminDashboard {
     return content;
   }
 
-  // Helper method to format order IDs in notifications
-  formatOrderIdForNotification(order) {
-    // Use the same logic as formatOrderId but for notification objects
-    if (order.orderId && order.orderId.startsWith('CC')) {
-      return `#${order.orderId}`;
-    }
-    if (order.orderId && order.orderId.startsWith('RCC')) {
-      return `#${order.orderId}`;
-    }
-    
-    // For new orders in notifications, we might not have the custom cake data
-    // So we'll use the regular order ID for now
-    return `#${order.orderId}`;
-  }
-
   // Helper method to format custom cake IDs
   formatCustomCakeId(cake) {
     if (cake.customCakeId) {
-      return `#CC${String(cake.customCakeId).padStart(3, '0')}`;
+      return `<span style="color: #e91e63; font-weight: bold;">CC${String(cake.customCakeId).padStart(3, '0')}</span>`;
     }
     if (cake.imageBasedOrderId) {
-      return `#RCC${String(cake.imageBasedOrderId).padStart(3, '0')}`;
+      return `<span style="color: #ff9800; font-weight: bold;">RCC${String(cake.imageBasedOrderId).padStart(3, '0')}</span>`;
     }
     return `Custom Cake Order`;
   }

@@ -60,7 +60,7 @@
       document.addEventListener("DOMContentLoaded", async () => {
         // Clear cart
         try {
-          const token = localStorage.getItem("token");
+          const token = sessionStorage.getItem("token");
           if (token) {
             const response = await fetch("/api/cart/clear", {
               method: "POST",
@@ -78,7 +78,7 @@
         const urlParams = new URLSearchParams(window.location.search);
         const orderId = urlParams.get("orderId");
         const paymentData = JSON.parse(
-          localStorage.getItem("currentPayment") || "{}"
+          sessionStorage.getItem("currentPayment") || "{}"
         );
 
         if (paymentData.paymentId && paymentData.orderId === orderId) {
@@ -98,7 +98,7 @@
               </div>
             `;
             }
-            localStorage.removeItem("currentPayment");
+            sessionStorage.removeItem("currentPayment");
           } catch (error) {
             console.error("Payment verification failed:", error);
           }
