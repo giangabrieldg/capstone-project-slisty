@@ -8,17 +8,32 @@
     --text-color: #2D2D2D;
     --badge-color: #d9534f;
     --font-poppins: 'Poppins', sans-serif;
+    --yellow: #d3ad30;
 }
 
 /* ---------------Navbar--------------- */
 .navbar {
     background-color: #BAE3CA !important;
+    box-shadow: 0 4px 6px -1px rgba(51, 51, 51, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    padding: 0.5rem 1rem;
+    position: sticky;
+    top: 0;
+    z-index: 1030;
 }
 
 .logo-text {
     color: var(--primary-color);
     font-weight: 700;
     font-size: 24px;
+    font-family: var(--font-poppins);
+    letter-spacing: -0.02em;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.logo-text:hover {
+    color: #257a3b;
+    transform: translateY(-1px);
 }
 
 /* Uniform nav link & icon styling */
@@ -28,26 +43,39 @@
     align-items: center;
     gap: 0.75rem;
     width: 100%;
-    padding: 0.5rem 1rem;
+    padding: 0.75rem 1rem;
     font-size: 18px;
     color: var(--text-color);
     font-family: var(--font-poppins);
     text-decoration: none;
     background: none;
     border: none;
-    transition: background-color 0.3s ease, color 0.3s ease;
+    transition: all 0.3s ease;
+    border-radius: 0.5rem;
+    position: relative;
+    cursor: pointer;
 }
 
+/* Fixed hover styles - changed .navbar-item to .nav-item */
 .navbar-nav .nav-link:hover,
 .navbar-nav .nav-link.active,
+.nav-item .nav-link:hover,
+.nav-item .nav-link.active,
 .icon-btn:hover {
-    color: var(--hover-color);
-    background-color: var(--hover-color);
-    border-radius: 0.375rem;
+    color: var(--text-color);
+    background-color: var(--yellow);
+    /* Using your yellow variable */
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .icon-btn:focus {
     outline: none;
+}
+
+.icon-btn:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
 }
 
 .icon-btn svg {
@@ -55,11 +83,18 @@
     stroke: var(--text-color);
     fill: none;
     stroke-width: 1.5;
-    transition: stroke 0.3s ease;
+    transition: all 0.3s ease;
+    width: 1.25em;
+    height: 1.25em;
 }
 
+.navbar-nav .nav-link:hover svg,
 .icon-btn:hover svg {
-    stroke: var(--hover-color);
+    transform: scale(1.1);
+}
+
+.navbar-nav .nav-link.active svg {
+    stroke: var(--text-color);
 }
 
 /* Login button styles */
@@ -70,45 +105,323 @@
     font-size: 18px;
     font-weight: 500;
     border: none;
-    border-radius: 0.375rem;
-    padding: 0.5rem 1rem;
-    transition: background-color 0.3s ease, transform 0.2s ease;
+    border-radius: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    transition: all 0.3s ease;
     text-decoration: none;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 0.75rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .btn-primary:hover {
     background-color: #257a3b;
-    /* Darker shade of primary color for hover */
     color: white;
-    transform: translateY(-1px);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .btn-primary:focus {
     outline: none;
     box-shadow: 0 0 0 0.2rem rgba(44, 144, 69, 0.25);
-    /* Focus ring using primary color */
+}
+
+.btn-primary:active {
+    transform: translateY(0);
 }
 
 /* Cart count badge styles */
 .cart-count-badge {
     position: absolute;
-    top: 2px;
-    left: 40%;
-    transform: translateX(70%);
+    top: -6px;
+    right: -6px;
     background-color: var(--badge-color);
     color: white;
-    font-size: 0.6rem;
-    font-weight: bold;
-    padding: 2px 6px;
-    border-radius: 50%;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 2px 5px;
+    border-radius: 10px;
+    min-width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     pointer-events: none;
     user-select: none;
+    border: 2px solid #BAE3CA;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    line-height: 1;
+    animation: badge-pulse 2s infinite;
+}
+
+@keyframes badge-pulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.05);
+    }
+}
+
+/* Notification Dropdown Styles */
+.notification-dropdown {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    width: 350px;
+    max-height: 500px;
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    z-index: 1050;
+    display: none;
+    flex-direction: column;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: all 0.3s ease;
+}
+
+.notification-dropdown.show {
+    display: flex;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.notification-header {
+    padding: 1rem;
+    border-bottom: 1px solid #dee2e6;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f8f9fa;
+    border-radius: 8px 8px 0 0;
+}
+
+.notification-header h6 {
+    margin: 0;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.notification-clear {
+    background: none;
+    border: none;
+    color: var(--primary-color);
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.notification-clear:hover {
+    color: #257a3b;
+}
+
+.notification-list {
+    flex: 1;
+    overflow-y: auto;
+    max-height: 400px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary-color) #f1f1f1;
+}
+
+.notification-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.notification-list::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.notification-list::-webkit-scrollbar-thumb {
+    background: var(--primary-color);
+    border-radius: 3px;
+}
+
+.notification-item {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #f1f1f1;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.notification-item:hover {
+    background-color: #f8f9fa;
+    transform: translateX(4px);
+}
+
+.notification-item:last-child {
+    border-bottom: none;
+}
+
+.notification-title {
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: 0.25rem;
+    color: #333;
+}
+
+.notification-message {
+    font-size: 0.85rem;
+    color: #666;
+    margin-bottom: 0.25rem;
+    line-height: 1.3;
+}
+
+.notification-time {
+    font-size: 0.75rem;
+    color: #999;
+    text-align: right;
+}
+
+.no-notifications {
+    padding: 2rem 1rem;
+    text-align: center;
+    color: #999;
+    font-style: italic;
+}
+
+.notification-footer {
+    padding: 0.75rem 1rem;
+    border-top: 1px solid #dee2e6;
+    text-align: center;
+    background: #f8f9fa;
+    border-radius: 0 0 8px 8px;
+}
+
+.notification-footer a {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: color 0.3s ease;
+}
+
+.notification-footer a:hover {
+    color: #257a3b;
+    text-decoration: underline;
+}
+
+/* Backdrop for mobile */
+.notification-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1049;
     display: none;
 }
+
+.notification-backdrop.show {
+    display: block;
+}
+
+.notification-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+}
+
+.notification-item.unread {
+    background-color: #f0f7ff;
+    border-left: 3px solid #007bff;
+}
+
+.notification-item.unread .notification-title {
+    font-weight: 700;
+    color: #0056b3;
+}
+
+.unread-indicator {
+    color: #007bff;
+    font-size: 16px;
+    margin-left: 8px;
+    display: inline-block;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+.notification-item {
+    padding: 12px 15px;
+    border-bottom: 1px solid #e9ecef;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-left: 3px solid transparent;
+}
+
+.notification-item:hover {
+    background-color: #f8f9fa;
+}
+
+.notification-item:last-child {
+    border-bottom: none;
+}
+
+/* Or for fixed positioning, ensure proper stacking */
+@media (min-width: 992px) {
+    .notification-dropdown {
+        position: fixed;
+        top: 70px;
+        right: 20px;
+        z-index: 1100;
+        /* Higher than offcanvas */
+    }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .notification-dropdown {
+        width: 300px;
+        right: 10px;
+        top: 70px;
+    }
+
+    .navbar-nav .nav-link,
+    .icon-btn {
+        padding: 1rem 1.25rem;
+        font-size: 16px;
+    }
+
+    .btn-primary {
+        width: 100%;
+        margin: 0.5rem 0;
+        padding: 1rem 1.5rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .notification-dropdown {
+        width: calc(100vw - 20px);
+        right: 10px;
+        left: 10px;
+    }
+
+    .navbar {
+        padding: 0.5rem;
+    }
+}
+
 
 /* Responsive adjustments for navbar */
 @media (min-width: 992px) {
@@ -119,6 +432,8 @@
     .icon-btn:hover {
         background-color: transparent !important;
         border-radius: 0;
+        transform: none;
+        box-shadow: none;
     }
 
     /* Hide nav text (like "User Profile" and "Cart") on large screens */
@@ -128,7 +443,33 @@
 
     /* Adjust button appearance for large screens */
     .btn-primary {
-        padding: 0.25rem 0.75rem;
+        padding: 0.5rem 1rem;
         font-size: 16px;
+    }
+
+    .navbar-nav .nav-link:hover svg,
+    .icon-btn:hover svg {
+        transform: scale(1.1);
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+
+    .navbar-nav .nav-link,
+    .icon-btn,
+    .btn-primary,
+    .notification-dropdown,
+    .notification-item,
+    .cart-count-badge {
+        transition: none;
+        animation: none;
+    }
+
+    .navbar-nav .nav-link:hover,
+    .icon-btn:hover,
+    .btn-primary:hover,
+    .notification-item:hover {
+        transform: none;
     }
 }

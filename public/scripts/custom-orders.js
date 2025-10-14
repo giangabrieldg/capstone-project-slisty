@@ -166,8 +166,8 @@ function populateOrdersTable(customOrders, imageOrders) {
 function renderStatusBadge(status) {
   const statusMap = {
     'Pending Review': { class: 'pending', text: 'Pending Review' },
-    'Ready for Downpayment': { class: 'ready-for-dp', text: 'Ready for DP' },
-    'Downpayment Paid': { class: 'dp-paid', text: 'DP Paid' },
+    'Ready for Downpayment': { class: 'ready-for-dp', text: 'Ready for Downpayment' },
+    'Downpayment Paid': { class: 'dp-paid', text: 'Downpayment Paid' },
     'In Progress': { class: 'in-progress', text: 'In Progress' },
     'Ready for Pickup/Delivery': { class: 'ready', text: 'Ready' },
     'Completed': { class: 'delivered', text: 'Completed' },
@@ -214,7 +214,7 @@ function renderPriceDisplay(order) {
 function renderPaymentDisplay(order) {
   // If completed, show as paid
   if (order.status === 'Completed') {
-    return '<span class="status paid"><i class="fas fa-check"></i> Paid</span>';
+    return '<span class="status paid"> Paid</span>';
   }
 
   let html = `<div class="payment-display">`;
@@ -247,7 +247,7 @@ function renderPaymentDisplay(order) {
   } else {
     html +=
       order.payment_status === "paid"
-        ? '<div class="mt-2"><span class="badge bg-success"><i class="fas fa-check"></i> Paid</span></div>'
+        ? '<div class="mt-2"><span class="badge bg-success">Paid</span></div>'
         : '<div class="mt-2"><span class="badge bg-secondary"><i class="fas fa-clock"></i> Awaiting</span></div>';
   }
 
@@ -274,7 +274,7 @@ function renderActionButtons(order, isImageOrder) {
       const downpaymentAmount = order.downpayment_amount || order.price * 0.5;
       return `
         <button class="btn btn-sm btn-primary" onclick="checkoutOrder(${orderId}, true)">
-          <i class="fas fa-mobile-alt"></i> Pay DP
+        Pay Downpayment
         </button>`;
     }
 
@@ -286,7 +286,7 @@ function renderActionButtons(order, isImageOrder) {
     }
 
     if (order.final_payment_status === "paid") {
-      return `<span class="badge bg-success"><i class="fas fa-check-double"></i> Fully Paid</span>`;
+      return `<span class="badge bg-success"> Fully Paid</span>`;
     }
 
     return `<span class="text-muted small">${order.status}</span>`;
@@ -303,7 +303,7 @@ function renderActionButtons(order, isImageOrder) {
       const downpaymentAmount = order.downpayment_amount || order.price * 0.5;
       return `
         <button class="btn btn-sm btn-primary" onclick="checkoutOrder(${orderId}, false)">
-          <i class="fas fa-dollar-sign"></i> Pay DP
+          Pay Downpayment
         </button>`;
     }
 
@@ -315,7 +315,7 @@ function renderActionButtons(order, isImageOrder) {
     }
 
     if (order.final_payment_status === "paid") {
-      return `<span class="badge bg-success"><i class="fas fa-check-double"></i> Fully Paid</span>`;
+      return `<span class="badge bg-success"> Fully Paid</span>`;
     }
 
     return `<span class="text-muted small">${order.status}</span>`;

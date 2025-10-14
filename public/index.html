@@ -24,29 +24,11 @@
       href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css"
       rel="stylesheet"
     />
+    <link rel="stylesheet" href="/styles/navbar.css" />
     <link rel="stylesheet" href="/styles/style.css" />
     <link rel="stylesheet" href="/styles/footer.css" />
   </head>
   <body>
-    <style>
-      .cart-count-badge {
-        position: absolute;
-        top: 2px;
-        /* Align to the top edge of the parent */
-        left: 40%;
-        /* Center horizontally relative to the parent */
-        transform: translateX(70%);
-        background-color: #d9534f;
-        color: white;
-        font-size: 0.6rem;
-        font-weight: bold;
-        padding: 2px 6px;
-        border-radius: 50%;
-        pointer-events: none;
-        user-select: none;
-        display: none;
-      }
-    </style>
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg bg-transparent">
       <div class="container">
@@ -121,34 +103,88 @@
                   Customize Cake
                 </a>
               </li>
+              <li
+                class="nav-item"
+                id="customCakeOrdersItem"
+                style="display: none"
+              >
+                <a
+                  class="nav-link d-flex align-items-center gap-2 px-3 py-2 w-100"
+                  href="customer/custom-orders.html"
+                >
+                  Custom Cake Orders
+                </a>
+              </li>
+
+              <!-- Notification Item -->
+              <li
+                class="nav-item"
+                id="notificationContainer"
+                style="display: none"
+              >
+                <a
+                  href="#"
+                  class="nav-link d-flex align-items-center gap-2 px-3 py-2 w-100 icon-btn position-relative"
+                  aria-label="Notifications"
+                  onclick="toggleNotifications(event)"
+                >
+                  <div class="icon-wrapper position-relative">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="24"
+                      height="24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      viewBox="0 0 16 16"
+                    >
+                      <path d="M12 6a4 4 0 0 0-8 0c0 5-3 7-3 7h14s-3-2-3-7" />
+                      <path d="M9.5 14a1.5 1.5 0 0 1-3 0" />
+                    </svg>
+                    <!-- Notification badge -->
+                    <span
+                      id="notificationBadge"
+                      class="cart-count-badge"
+                      style="display: none"
+                      >0</span
+                    >
+                  </div>
+                  <span class="nav-text">Notifications</span>
+                </a>
+              </li>
+
               <li class="nav-item" id="userCartContainer" style="display: none">
                 <a
-                  href="customer/profile.html#cart"
+                  href="profile.html#cart"
                   class="nav-link d-flex align-items-center gap-2 px-3 py-2 w-100 icon-btn position-relative"
                   aria-label="Cart"
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="24"
-                    height="24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.5"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    viewBox="0 0 16 16"
-                  >
-                    <path d="M5.5 4V3a2.5 2.5 0 0 1 5 0v1" />
-                    <rect x="2" y="4" width="12" height="10" rx="1" ry="1" />
-                  </svg>
-                  <span>Cart</span>
-                  <!-- Cart item count badge -->
-                  <span
-                    id="cartCountBadge"
-                    class="cart-count-badge"
-                    style="display: none"
-                    >0</span
-                  >
+                  <div class="icon-wrapper position-relative">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="24"
+                      height="24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      viewBox="0 0 16 16"
+                    >
+                      <path d="M5.5 4V3a2.5 2.5 0 0 1 5 0v1" />
+                      <rect x="2" y="4" width="12" height="10" rx="1" ry="1" />
+                    </svg>
+                    <!-- Cart item count badge -->
+                    <span
+                      id="cartCountBadge"
+                      class="cart-count-badge"
+                      style="display: none"
+                      >0</span
+                    >
+                  </div>
+                  <span class="nav-text">Cart</span>
                 </a>
               </li>
               <li class="nav-item" id="userProfileContainer">
@@ -171,7 +207,7 @@
                     <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
                     <path d="M2 14c0-2 2-4 6-4s6 2 6 4" />
                   </svg>
-                  <span>User Profile</span>
+                  <span class="nav-text">User Profile</span>
                 </a>
               </li>
             </ul>
@@ -179,6 +215,25 @@
         </div>
       </div>
     </nav>
+    <div id="notificationDropdown" class="notification-dropdown">
+      <div class="notification-header">
+        <h6>Notifications</h6>
+        <button
+          type="button"
+          class="btn-close"
+          onclick="closeNotifications()"
+        ></button>
+      </div>
+      <div class="notification-list" id="notificationList">
+        <!-- Notifications will be loaded here -->
+      </div>
+      <div class="notification-footer">
+        <a href="#" onclick="viewAllNotifications()">View All</a>
+      </div>
+    </div>
+
+    <!-- Notification Backdrop -->
+    <div class="notification-backdrop" onclick="closeNotifications()"></div>
 
     <!-- Hero Section -->
     <section

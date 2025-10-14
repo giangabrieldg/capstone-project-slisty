@@ -63,54 +63,6 @@ body {
     transform: scale(1);
 }
 
-/* Navbar */
-.logo-text {
-    color: var(--primary-color);
-    font-weight: 700;
-    font-size: 24px;
-}
-
-/* Link & Icon Styling */
-.navbar-nav .nav-link,
-.icon-btn {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    width: 100%;
-    padding: 0.5rem 1rem;
-    font-size: 18px;
-    color: var(--text-color);
-    font-family: var(--font-poppins);
-    text-decoration: none;
-    background: none;
-    border: none;
-    transition: background-color 0.3s ease, color 0.3s ease;
-}
-
-.navbar-nav .nav-link:hover,
-.navbar-nav .nav-link.active,
-.icon-btn:hover {
-    color: var(--hover-color);
-    background-color: var(--hover-color);
-    border-radius: 0.375rem;
-}
-
-.icon-btn:focus {
-    outline: none;
-}
-
-.icon-btn svg {
-    display: block;
-    stroke: var(--text-color);
-    fill: none;
-    stroke-width: 1.5;
-    transition: stroke 0.3s ease;
-}
-
-.icon-btn:hover svg {
-    stroke: var(--hover-color);
-}
-
 /* Hero Section */
 .hero-btn {
     background-color: var(--primary-color);

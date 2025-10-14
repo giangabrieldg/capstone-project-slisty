@@ -116,6 +116,7 @@ try {
   const customCakeRoutes = require('./routes/customCakeRoutes');
   const { cleanupAbandonedOrders } = require('./server-side-scripts/cleanup.js');
   const faqRoutes = require('./routes/faqRoutes');
+  const notificationRoutes = require('./routes/notificationRoutes');
 
   console.log('Registering routes...');
   app.use('/api/inquiries', inquiriesRoutes);
@@ -126,6 +127,7 @@ try {
   app.use('/api/orders', orderRoutes);
   app.use('/api/custom-cake', customCakeRoutes);
   app.use('/api/faqs', faqRoutes);
+  app.use('/api/notifications', notificationRoutes);
   console.log('Routes registered successfully');
 
   // OAuth setup

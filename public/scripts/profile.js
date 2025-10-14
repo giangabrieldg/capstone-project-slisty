@@ -192,52 +192,90 @@ class ProfileManager {
 
     //list of orders
     renderOrders(orders) {
-        const ordersContent = document.querySelector('.orders-content');
-        if (!ordersContent) return;
+    const ordersContent = document.querySelector('.orders-content');
+    if (!ordersContent) return;
 
-        if (orders.length === 0) {
-            ordersContent.innerHTML = '<p>No orders found.</p>';
-            return;
-        }
-
+    if (orders.length === 0) {
         ordersContent.innerHTML = `
-            <div class="table-responsive">
-                <table class="table table-striped">
-                    <thead>
-                        <tr>
-                            <th>Order ID</th>
-                            <th>Date</th>
-                            <th>Total</th>
-                            <th>Items</th>
-                            <th>Delivery</th>
-                            <th>Payment</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${orders.map(order => {
-                            const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
-                            return `
-                                <tr>
-                                    <td>${order.orderId}</td>
-                                    <td>${new Date(order.createdAt).toLocaleDateString()}</td>
-                                    <td>₱${Number(order.total_amount).toFixed(2)}</td>
-                                    <td>
-                                        ${items.map(item => `
-                                            ${item.name}${item.size ? ` (${item.size})` : ''} x${item.quantity}
-                                        `).join('<br>')}
-                                    </td>
-                                    <td>${order.delivery_method}</td>
-                                    <td>${order.payment_method}</td>
-                                    <td>${order.status}</td>
-                                </tr>
-                            `;
-                        }).join('')}
-                    </tbody>
-                </table>
+            <div class="orders-empty">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                </svg>
+                <h4>No orders yet</h4>
+                <p>Your order history will appear here once you make your first purchase.</p>
+                <a href="/customer/menu.html" class="btn btn-success">Start Shopping</a>
             </div>
         `;
+        return;
     }
+
+    // Status map for display text
+    const statusMap = {
+        pending: 'Pending',
+        pending_payment: 'Pending Payment', 
+        processing: 'In Progress',
+        shipped: 'Ready for Pickup/Delivery',
+        delivered: 'Completed',
+        cancelled: 'Cancelled'
+    };
+
+    ordersContent.innerHTML = `
+        <div class="table-responsive">
+            <table class="orders-table">
+                <thead>
+                    <tr>
+                        <th>Order ID</th>
+                        <th>Date</th>
+                        <th>Total</th>
+                        <th>Items</th>
+                        <th>Delivery</th>
+                        <th>Payment</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${orders.map(order => {
+                        const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+                        const formattedOrderId = 'ORD' + order.orderId.toString().padStart(3, '0');
+                        const orderDate = new Date(order.createdAt);
+                        const statusText = statusMap[order.status] || order.status;
+                        
+                        return `
+                            <tr>
+                                <td data-label="Order ID">${formattedOrderId}</td>
+                                <td data-label="Date" class="order-date">${orderDate.toLocaleDateString('en-US', { 
+                                    year: 'numeric', 
+                                    month: 'short', 
+                                    day: 'numeric' 
+                                })}</td>
+                                <td data-label="Total" class="order-price">₱${Number(order.total_amount).toFixed(2)}</td>
+                                <td data-label="Items" class="order-items">
+                                    ${items.map(item => `
+                                        <div class="order-item">
+                                            <span class="item-name">${item.name}</span>
+                                            <span class="item-details">
+                                                ${item.size ? `${item.size} • ` : ''}Qty: ${item.quantity}
+                                            </span>
+                                        </div>
+                                    `).join('')}
+                                </td>
+                                <td data-label="Delivery">
+                                    <span class="order-method">${order.delivery_method}</span>
+                                </td>
+                                <td data-label="Payment">
+                                    <span class="order-method">${order.payment_method}</span>
+                                </td>
+                                <td data-label="Status">
+                                    <span class="status-badge status-${order.status.toLowerCase()}">${statusText}</span>
+                                </td>
+                            </tr>
+                        `;
+                    }).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+}
 
     //show or hide edit form
     toggleEditForm(show) {

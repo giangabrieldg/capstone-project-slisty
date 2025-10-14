@@ -5,6 +5,7 @@
 const express = require('express');
 const router = express.Router();
 const { CustomCakeOrder, ImageBasedOrder, User, Order, OrderItem, sequelize } = require('../models');
+const { Notification } = require('../models');
 const verifyToken = require('../middleware/verifyToken');
 const checkDriveAuth = require('../middleware/driveAuth');
 const multer = require('multer');
@@ -34,6 +35,32 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
 });
 
+const createCustomCakeNotification = async (userID, title, message, orderId, type = 'custom_cake') => {
+  try {
+    const notificationKey = type === 'image_order' ? `image_${orderId}` : `cake_${orderId}`;
+    
+    // Create or update notification
+    const [notification] = await Notification.findOrCreate({
+      where: {
+        userID: userID,
+        notificationKey: notificationKey
+      },
+      defaults: {
+        isRead: false
+      }
+    });
+    
+    // If notification already exists, reset it to unread
+    if (notification.isRead) {
+      await notification.update({ isRead: false });
+    }
+    
+    console.log('✅ Created/updated notification for', type, ':', orderId);
+  } catch (error) {
+    console.error('Error creating custom cake notification:', error);
+  }
+};
+
 //Create a new custom cake order (3D design)
 router.post('/create', verifyToken, upload.fields([
   { name: 'referenceImage', maxCount: 1 },
@@ -43,7 +70,7 @@ router.post('/create', verifyToken, upload.fields([
     const {
       size, cakeColor, icingStyle, icingColor, filling, bottomBorder, topBorder,
       bottomBorderColor, topBorderColor, decorations, flowerType, customText,
-      messageChoice, toppingsColor, price, requiresReview = 'false',
+      messageChoice, toppingsColor, price,
       delivery_method = 'pickup',
       delivery_address = null,
       customer_name,
@@ -51,14 +78,16 @@ router.post('/create', verifyToken, upload.fields([
       customer_phone
     } = req.body;
 
+    // ⭐ REMOVED: requiresReview parameter since all 3D cakes don't need review
+
     // Validate required fields
-     if (!size || !cakeColor || !icingStyle || !icingColor || !filling || !bottomBorder ||
+    if (!size || !cakeColor || !icingStyle || !icingColor || !filling || !bottomBorder ||
         !topBorder || !bottomBorderColor || !topBorderColor || !decorations ||
         !messageChoice || !toppingsColor || !customer_name || !customer_email || !customer_phone) {
       return res.status(400).json({ success: false, message: 'Missing required fields' });
     }
 
-     // Validate delivery method
+    // Validate delivery method
     if (!['pickup', 'delivery'].includes(delivery_method)) {
       return res.status(400).json({ success: false, message: 'Invalid delivery method' });
     }
@@ -68,14 +97,11 @@ router.post('/create', verifyToken, upload.fields([
       return res.status(400).json({ success: false, message: 'Delivery address is required for delivery orders' });
     }
 
-    // Determine if this requires admin review
-    const needsReview = requiresReview === 'true';
-    
-    // ⭐ CRITICAL: If immediate checkout, price is REQUIRED
-    if (!needsReview && (!price || isNaN(parseFloat(price)) || parseFloat(price) <= 0)) {
+    // ⭐ CRITICAL FIX: All 3D cakes require price and go directly to downpayment
+    if (!price || isNaN(parseFloat(price)) || parseFloat(price) <= 0) {
       return res.status(400).json({ 
         success: false, 
-        message: 'Valid price is required for immediate checkout. Please ensure your profile is complete before ordering.' 
+        message: 'Valid price is required for 3D custom cakes. Please ensure your profile is complete before ordering.' 
       });
     }
 
@@ -92,20 +118,13 @@ router.post('/create', verifyToken, upload.fields([
       designImageUrl = await googleDriveService.uploadImage(req.files.designImage[0]);
     }
 
-    // Set status based on whether review is needed 
-   let status;
-   if (needsReview) {
-    status = 'Pending Review';
-   } else {
-    // For immediate checkout with price, set to 'Ready for Downpayment'
-    status = 'Ready for Downpayment';
-   }
+    //FIXED: All 3D cakes go directly to Ready for Downpayment
+    const status = 'Ready for Downpayment';
+    const finalPrice = parseFloat(price);
+    const downpaymentAmount = finalPrice * 0.5;
+    const remainingBalance = finalPrice * 0.5;
 
-  const finalPrice = price ? parseFloat(price) : null;
-  const downpaymentAmount = finalPrice ? finalPrice * 0.5 : null;
-  const remainingBalance = finalPrice ? finalPrice * 0.5 : null
-
-    // Create custom cake order
+    //CRITICAL: Create ONLY ONE custom cake order
     const customCakeOrder = await CustomCakeOrder.create({
       userID: req.user.userID,
       size,
@@ -140,20 +159,25 @@ router.post('/create', verifyToken, upload.fields([
       customer_phone
     });
 
-   res.status(201).json({
-   success: true,
-   message: needsReview 
-      ? 'Custom cake order created successfully and submitted for review' 
-      : 'Custom cake order created successfully and ready for downpayment',
-   customCakeId: customCakeOrder.customCakeId,
-   status: customCakeOrder.status,
-   requiresReview: needsReview
-   });
+    console.log('Created 3D custom cake order:', {
+      customCakeId: customCakeOrder.customCakeId,
+      status: customCakeOrder.status,
+      price: customCakeOrder.price,
+      type: '3D Custom Cake - No Review Needed'
+    });
+
+    res.status(201).json({
+      success: true,
+      message: '3D custom cake order created successfully and ready for downpayment',
+      customCakeId: customCakeOrder.customCakeId,
+      status: customCakeOrder.status
+    });
   } catch (error) {
-    console.error('Error creating custom cake order:', error);
+    console.error('Error creating 3D custom cake order:', error);
     res.status(500).json({ success: false, message: 'Server error', error: error.message });
   }
 });
+
 
 
 // POST /api/custom-cake/image-order - Create a new image-based order
@@ -344,6 +368,15 @@ router.put('/admin/orders/:customCakeId', verifyToken, async (req, res) => {
     if (!order) {
       return res.status(404).json({ success: false, message: 'Custom cake order not found' });
     }
+
+    // CREATE NOTIFICATION
+    await createCustomCakeNotification(
+      order.userID,
+      'Custom Cake Update',
+      `Your custom cake order status has been updated to: ${status}`,
+      order.customCakeId
+    );
+
     await order.update({ status });
     res.json({ success: true, message: 'Custom cake order status updated', order });
   } catch (error) {
@@ -366,6 +399,16 @@ router.put('/admin/image-orders/:orderId', verifyToken, async (req, res) => {
     if (!order) {
       return res.status(404).json({ success: false, message: 'Image-based order not found' });
     }
+
+     // CREATE NOTIFICATION
+    await createCustomCakeNotification(
+      order.userID,
+      'Image Order Update',
+      `Your image order status has been updated to: ${status}`,
+      order.imageBasedOrderId,
+      'image_order'
+    );
+
     await order.update({ status });
     res.json({ success: true, message: 'Image-based order status updated', order });
   } catch (error) {

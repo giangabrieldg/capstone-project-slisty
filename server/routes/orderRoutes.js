@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const sequelize = require('../config/database');
 const { Order, Cart, CartItem, MenuItem, ItemSize, OrderItem, User, CustomCakeOrder } = require('../models');
+const { Notification } = require('../models');
 const verifyToken = require('../middleware/verifyToken');
 const { Op } = require('sequelize');
 
@@ -126,6 +127,33 @@ const formatOrders = (orders) => {
         })),
     }))
     .filter(order => order.items.length > 0); // Only include orders with regular items
+};
+
+ // Helper function to create order notifications
+const createOrderNotification = async (userID, title, message, orderId) => {
+  try {
+    const notificationKey = `order_${orderId}`;
+    
+    // Create or update notification
+    const [notification] = await Notification.findOrCreate({
+      where: {
+        userID: userID,
+        notificationKey: notificationKey
+      },
+      defaults: {
+        isRead: false
+      }
+    });
+    
+    // If notification already exists, reset it to unread
+    if (notification.isRead) {
+      await notification.update({ isRead: false });
+    }
+    
+    console.log('✅ Created/updated notification for order:', orderId);
+  } catch (error) {
+    console.error('Error creating order notification:', error);
+  }
 };
 
 // POST /api/orders/create - Create new order
@@ -666,6 +694,15 @@ router.put('/admin/orders/:orderId', verifyToken, checkAdminOrStaff, async (req,
     if (!order) {
       return res.status(404).json({ success: false, message: 'Order not found' });
     }
+
+     // UPDATE: Create notification when status changes
+    await createOrderNotification(
+      order.userID,
+      'Order Status Updated',
+      `Your order #ORD${order.orderId.toString().padStart(3, '0')} status has been updated to: ${formatStatus(status)}`,
+      order.orderId
+    );
+
     await order.update({ status });
     res.json({ success: true, message: 'Order status updated', order });
   } catch (error) {

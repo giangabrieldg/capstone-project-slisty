@@ -144,12 +144,12 @@ body {
     color: #004085;
 }
 
-.status.processing {
+re .status.processing {
     background-color: #fff3cd;
     color: #856404;
 }
 
-.status.delivered {
+.status.delived {
     background-color: #d4edda;
     color: #155724;
 }
@@ -169,8 +169,6 @@ body {
     color: #721c24;
 }
 
-/* Status select and update button */
-/* Status select and update button */
 .status-select {
     padding: 5px 10px;
     border: 1px solid var(--secondary-color);

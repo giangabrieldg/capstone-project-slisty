@@ -125,6 +125,7 @@ body {
 
 /* Status badge styling - matching admin-cake */
 .status {
+    text-align: center;
     padding: 6px 12px;
     border-radius: 20px;
     font-size: 0.85rem;
