@@ -19,6 +19,7 @@ const checkAdminOrStaff = (req, res, next) => {
 const statusMap = {
   pending: 'Pending',
   pending_payment: 'Pending Payment',
+  order_received: 'Order Received',
   processing: 'In Progress',
   shipped: 'Ready for Delivery',
   delivered: 'Completed',
@@ -168,11 +169,18 @@ router.post('/create', verifyToken, async (req, res) => {
       return res.status(400).json({ success: false, message: 'Missing required fields' });
     }
 
+    let initialStatus;
+    if (paymentMethod === 'gcash') {
+      initialStatus = 'pending_payment';
+    } else {
+      initialStatus = 'order_received';
+    }    
+
     // Create order
     const order = await Order.create({
       userID: req.user.userID,
       total_amount: totalAmount,
-      status: paymentMethod === 'gcash' ? 'pending_payment' : 'pending',
+      status: initialStatus,
       payment_method: paymentMethod,
       payment_verified: paymentMethod === 'cash',
       delivery_method: deliveryMethod,
@@ -218,7 +226,7 @@ router.post('/verify-gcash-payment', verifyToken, async (req, res) => {
       order = await Order.create({
         userID: req.user.userID,
         total_amount: orderData.totalAmount,
-        status: 'processing',
+        status: 'order_received',
         payment_method: 'gcash',
         payment_verified: true,
         payment_id: paymentId,
@@ -235,7 +243,7 @@ router.post('/verify-gcash-payment', verifyToken, async (req, res) => {
       await clearCart(req.user.userID, transaction);
     } else if (order.status === 'pending_payment') {
       await order.update({
-        status: 'processing',
+        status: 'order_received',
         payment_verified: true,
         pickup_date: orderData.pickupDate,
       }, { transaction });
@@ -687,7 +695,7 @@ router.get('/admin/reports', verifyToken, checkAdminOrStaff, async (req, res) =>
 router.put('/admin/orders/:orderId', verifyToken, checkAdminOrStaff, async (req, res) => {
   const { status } = req.body;
   try {
-    if (!['pending', 'pending_payment', 'processing', 'shipped', 'delivered', 'cancelled'].includes(status)) {
+    if (!['pending', 'pending_payment', 'order_received','processing', 'shipped', 'delivered', 'cancelled'].includes(status)) {
       return res.status(400).json({ success: false, message: 'Invalid status' });
     }
     const order = await Order.findByPk(req.params.orderId);

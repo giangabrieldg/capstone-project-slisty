@@ -70,6 +70,7 @@ renderOrders(orders) {
     const statusMap = {
       pending: 'Pending',
       pending_payment: 'Pending Payment', 
+      order_received: 'Order Received', // NEW STATUS
       processing: 'In Progress',
       shipped: 'Ready for Pickup/Delivery',
       delivered: 'Completed',
@@ -78,8 +79,9 @@ renderOrders(orders) {
 
     // Define the next status for each current status
     const nextStatusMap = {
-      pending: 'processing',
-      pending_payment: 'processing',
+      pending: 'order_received',
+      pending_payment: 'order_received',
+      order_received: 'processing', // NEW FLOW
       processing: 'shipped',
       shipped: 'delivered'
       // delivered and cancelled have no next status
@@ -88,7 +90,9 @@ renderOrders(orders) {
     const nextStatus = nextStatusMap[order.status];
     const nextStatusText = nextStatus ? statusMap[nextStatus] : null;
 
-    const paymentStatus = order.payment_method === 'cash' ? (order.status === 'delivered' ? 'paid' : 'unpaid') : (order.payment_verified ? 'paid' : 'unpaid');
+    const paymentStatus = order.payment_method === 'cash' ? 
+      (order.status === 'delivered' ? 'paid' : 'unpaid') : 
+      (order.payment_verified ? 'paid' : 'unpaid');
     const paymentMethod = order.payment_method === 'gcash' ? 'GCash' : 'Cash';
 
     // Format order date and pickup date similarly
@@ -160,6 +164,8 @@ renderOrders(orders) {
     `;
   }).join('');
 }
+
+
  setupEventListeners() {
   // Search
   document.querySelector('.search-bar').addEventListener('input', () => this.applyFilters());
@@ -235,7 +241,7 @@ renderOrders(orders) {
     const dateMatch = !selectedDate || rowOrderDate === selectedDate;
     const pickupDateMatch = !selectedPickupDate || rowPickupDate === selectedPickupDate;
     const searchMatch = orderId.includes(searchTerm) || customerName.includes(searchTerm) || amount.includes(searchTerm);
-    const statusMatch = !status || order.status === status; // ← FIXED: changed status_key to status
+    const statusMatch = !status || order.status === status;
     const paymentStatusMatch = !paymentStatus || rowPaymentStatus === paymentStatus;
 
     return dateMatch && pickupDateMatch && searchMatch && statusMatch && paymentStatusMatch;
@@ -260,6 +266,7 @@ renderOrders(orders) {
     if (!data.success) throw new Error(data.message);
     
     const statusMap = {
+      order_received: 'Order Received', // NEW STATUS
       processing: 'In Progress',
       shipped: 'Ready for Pickup/Delivery', 
       delivered: 'Completed'

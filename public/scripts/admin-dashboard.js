@@ -257,6 +257,7 @@ class AdminDashboard {
       'Pending Review': { class: 'pending', text: 'Pending Review' },
       'Ready for Downpayment': { class: 'ready-for-dp', text: 'Ready for Downpayment' },
       'Downpayment Paid': { class: 'dp-paid', text: 'Downpayment Paid' },
+      'Order Received': { class: 'order-received', text: 'Order Received' },
       'In Progress': { class: 'in-progress', text: 'In Progress' },
       'Ready for Pickup/Delivery': { class: 'ready', text: 'Ready for Pickup/Delivery' },
       'Completed': { class: 'delivered', text: 'Completed' },

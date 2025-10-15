@@ -144,12 +144,17 @@ body {
     color: #004085;
 }
 
-re .status.processing {
+.status.order_received {
+    background-color: #d1f2eb;
+    color: #117a65;
+}
+
+.status.processing {
     background-color: #fff3cd;
     color: #856404;
 }
 
-.status.delived {
+.status.delivered {
     background-color: #d4edda;
     color: #155724;
 }

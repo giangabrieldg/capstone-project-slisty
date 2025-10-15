@@ -232,6 +232,11 @@ body {
     color: #856404;
 }
 
+.status.order-received {
+    background-color: #d1f2eb;
+    color: #117a65;
+}
+
 .status.ready {
     background-color: #cce5ff;
     color: #004085;
