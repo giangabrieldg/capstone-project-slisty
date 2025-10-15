@@ -165,10 +165,31 @@ status: {
     allowNull: true,
     comment: 'Scheduled delivery or pickup date',
     },
+  updatedBy: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'Users',
+        key: 'userID'
+      },
+      onUpdate: 'CASCADE',
+      onDelete: 'SET NULL'
+    }
 }, {
   tableName: 'CustomCakeOrders',
   timestamps: true,
   comment: 'Stores custom cake order details and status',
 });
+
+CustomCakeOrder.associate = (models) => {
+  CustomCakeOrder.belongsTo(models.User, { 
+    foreignKey: 'userID', 
+    as: 'customer' 
+  });
+  CustomCakeOrder.belongsTo(models.User, { 
+    foreignKey: 'updatedBy', 
+    as: 'updater' 
+  });
+};
 
 module.exports = CustomCakeOrder;

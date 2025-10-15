@@ -115,6 +115,12 @@ const formatOrders = (orders) => {
         name: order.customer.name,
         email: order.customer.email,
       } : null,
+      updater: order.updater ? { // ADD UPDATER INFO
+        userID: order.updater.userID,
+        name: order.updater.name,
+        email: order.updater.email,
+        userLevel: order.updater.userLevel
+      } : null,
       items: order.orderItems
         .filter(item => !item.customCakeId) // Only show non-custom cake items
         .map(item => ({
@@ -433,6 +439,7 @@ router.get('/admin/orders', verifyToken, checkAdminOrStaff, async (req, res) => 
       where,
       include: [
         { model: User, as: 'customer', attributes: ['userID', 'name', 'email'] },
+        { model: User, as: 'updater', attributes: ['userID', 'name', 'email', 'userLevel'] }, // ADD THIS INCLUDE
         {
           model: OrderItem,
           as: 'orderItems',
@@ -691,11 +698,10 @@ router.get('/admin/reports', verifyToken, checkAdminOrStaff, async (req, res) =>
   }
 });
 
-// PUT /api/orders/admin/orders/:orderId - Update order status (admin and staff only)
 router.put('/admin/orders/:orderId', verifyToken, checkAdminOrStaff, async (req, res) => {
   const { status } = req.body;
   try {
-    if (!['pending', 'pending_payment', 'order_received','processing', 'shipped', 'delivered', 'cancelled'].includes(status)) {
+    if (!['pending', 'pending_payment', 'order_received', 'processing', 'shipped', 'delivered', 'cancelled'].includes(status)) {
       return res.status(400).json({ success: false, message: 'Invalid status' });
     }
     const order = await Order.findByPk(req.params.orderId);
@@ -703,7 +709,7 @@ router.put('/admin/orders/:orderId', verifyToken, checkAdminOrStaff, async (req,
       return res.status(404).json({ success: false, message: 'Order not found' });
     }
 
-     // UPDATE: Create notification when status changes
+    // UPDATE: Create notification when status changes
     await createOrderNotification(
       order.userID,
       'Order Status Updated',
@@ -711,7 +717,12 @@ router.put('/admin/orders/:orderId', verifyToken, checkAdminOrStaff, async (req,
       order.orderId
     );
 
-    await order.update({ status });
+    // UPDATE: Capture who updated the order
+    await order.update({ 
+      status, 
+      updatedBy: req.user.userID // admin/staff user ID who made the update
+    });
+
     res.json({ success: true, message: 'Order status updated', order });
   } catch (error) {
     console.error('Error updating order status:', error);

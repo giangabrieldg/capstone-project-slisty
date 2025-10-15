@@ -233,6 +233,45 @@ body {
     gap: 4px;
 }
 
+/* Updated By Info Styling */
+.updated-by-info {
+    padding: 0.5rem 0;
+    min-width: 120px;
+}
+
+.updater-name {
+    font-size: 0.9rem;
+    margin-bottom: 0.1rem;
+}
+
+.updater-role {
+    font-size: 0.8rem;
+    text-transform: capitalize;
+}
+
+.update-time {
+    font-size: 0.75rem;
+    color: #6c757d !important;
+}
+
+/* Make sure tables are responsive */
+.table-responsive {
+    overflow-x: auto;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .updated-by-info {
+        min-width: 100px;
+    }
+
+    .updater-name,
+    .updater-role,
+    .update-time {
+        font-size: 0.8rem;
+    }
+}
+
 /* Admin actions cell */
 .admin-actions-cell {
     vertical-align: top;

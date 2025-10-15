@@ -124,6 +124,26 @@ body {
     font-size: 0.85rem;
 }
 
+/* Updated By Info Styling */
+.updated-by-info {
+    padding: 0.5rem 0;
+}
+
+.updater-name {
+    font-size: 0.9rem;
+    margin-bottom: 0.1rem;
+}
+
+.updater-role {
+    font-size: 0.8rem;
+    text-transform: capitalize;
+}
+
+.update-time {
+    font-size: 0.75rem;
+    color: #6c757d !important;
+}
+
 /*Status badge styling */
 .status {
     text-align: center;
@@ -250,6 +270,19 @@ body {
     .confirm-payment {
         width: 100%;
         margin-bottom: 5px;
+    }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .updated-by-info {
+        min-width: 120px;
+    }
+
+    .updater-name,
+    .updater-role,
+    .update-time {
+        font-size: 0.8rem;
     }
 }
 

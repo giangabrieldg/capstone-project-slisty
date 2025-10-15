@@ -57,6 +57,7 @@ class AdminOrdersManager {
   }
   
 // Renders orders in the table
+// Renders orders in the table
 renderOrders(orders) {
   const tbody = document.getElementById('ordersTableBody');
   if (!tbody) return;
@@ -70,7 +71,7 @@ renderOrders(orders) {
     const statusMap = {
       pending: 'Pending',
       pending_payment: 'Pending Payment', 
-      order_received: 'Order Received', // NEW STATUS
+      order_received: 'Order Received',
       processing: 'In Progress',
       shipped: 'Ready for Pickup/Delivery',
       delivered: 'Completed',
@@ -81,7 +82,7 @@ renderOrders(orders) {
     const nextStatusMap = {
       pending: 'order_received',
       pending_payment: 'order_received',
-      order_received: 'processing', // NEW FLOW
+      order_received: 'processing',
       processing: 'shipped',
       shipped: 'delivered'
       // delivered and cancelled have no next status
@@ -135,6 +136,26 @@ renderOrders(orders) {
     if (items.length === 0) {
       return '';
     }
+
+    // Format updated by information
+    const updatedByInfo = order.updater ? `
+      <div class="updated-by-info">
+        <div class="updater-name fw-bold">${order.updater.name}</div>
+        <div class="updater-role small text-muted">
+          ${order.updater.userLevel}
+        </div>
+        ${order.updatedAt ? `
+          <div class="update-time small text-muted">
+            ${new Date(order.updatedAt).toLocaleDateString()} 
+            ${new Date(order.updatedAt).toLocaleTimeString()}
+          </div>
+        ` : ''}
+      </div>
+    ` : `
+      <div class="updated-by-info">
+        <div class="text-muted small">Not updated yet</div>
+      </div>
+    `;
     
     return `
       <tr data-order-date="${orderDate}">
@@ -146,6 +167,7 @@ renderOrders(orders) {
         <td>${items}</td>
         <td>${order.delivery_method.charAt(0).toUpperCase() + order.delivery_method.slice(1)}</td>
         <td><span class="status ${order.status}">${statusMap[order.status]}</span></td>
+        <td>${updatedByInfo}</td> <!-- NEW COLUMN -->
         <td>
           ${nextStatus ? `
             <button class="btn btn-primary btn-sm update-status-btn" data-order-id="${order.orderId}" data-next-status="${nextStatus}">

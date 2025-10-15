@@ -88,6 +88,16 @@ module.exports = (sequelize, DataTypes) => {
           }
         }
       }
+    },
+    updatedBy: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'Users',
+        key: 'userID'
+      },
+      onUpdate: 'CASCADE',
+      onDelete: 'SET NULL'
     }
   }, {
     tableName: 'Orders',
@@ -101,6 +111,9 @@ module.exports = (sequelize, DataTypes) => {
       },
       {
         fields: ['payment_verified']
+      },
+      {
+        fields: ['updatedBy']
       }
     ]
   });
@@ -108,6 +121,7 @@ module.exports = (sequelize, DataTypes) => {
   Order.associate = (models) => {
     Order.belongsTo(models.User, { foreignKey: 'userID', as: 'user' });
     Order.hasMany(models.OrderItem, { foreignKey: 'orderId', as: 'orderItems' });
+    Order.belongsTo(models.User, { foreignKey: 'updatedBy', as: 'updater' })
   };
 
   return Order;

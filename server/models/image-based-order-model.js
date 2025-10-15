@@ -107,9 +107,30 @@ final_payment_status: {
     allowNull: true,
     comment: 'Scheduled delivery or pickup date',
   },
+updatedBy: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'Users',
+        key: 'userID'
+      },
+      onUpdate: 'CASCADE',
+      onDelete: 'SET NULL'
+    }
 }, {
   tableName: 'ImageBasedOrders',
   timestamps: true,
 });
+ImageBasedOrder.associate = (models) => {
+  ImageBasedOrder.belongsTo(models.User, { 
+    foreignKey: 'userID', 
+    as: 'customer' 
+  });
+  ImageBasedOrder.belongsTo(models.User, { 
+    foreignKey: 'updatedBy', 
+    as: 'updater' 
+  });
+};
+
 
 module.exports = ImageBasedOrder;

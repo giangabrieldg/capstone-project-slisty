@@ -281,6 +281,12 @@ router.get('/admin/orders', verifyToken, async (req, res) => {
           attributes: ['userID', 'name', 'email'],
           required: false,
         },
+        { // ADD THIS INCLUDE
+          model: User,
+          as: 'updater',
+          attributes: ['userID', 'name', 'email', 'userLevel'],
+          required: false,
+        },
       ],
       order: [['createdAt', 'DESC']],
     });
@@ -290,6 +296,12 @@ router.get('/admin/orders', verifyToken, async (req, res) => {
         userID: order.customer.userID,
         name: order.customer.name,
         email: order.customer.email,
+      } : null,
+      updater: order.updater ? { // ADD UPDATER INFO
+        userID: order.updater.userID,
+        name: order.updater.name,
+        email: order.updater.email,
+        userLevel: order.updater.userLevel
       } : null,
       deliveryDate: order.deliveryDate,
       downpayment_amount: order.downpayment_amount,
@@ -325,6 +337,12 @@ router.get('/admin/image-orders', verifyToken, async (req, res) => {
           attributes: ['userID', 'name', 'email'],
           required: false,
         },
+        { // ADD THIS INCLUDE
+          model: User,
+          as: 'updater',
+          attributes: ['userID', 'name', 'email', 'userLevel'],
+          required: false,
+        },
       ],
       order: [['createdAt', 'DESC']],
     });
@@ -335,6 +353,12 @@ router.get('/admin/image-orders', verifyToken, async (req, res) => {
         userID: order.customer.userID,
         name: order.customer.name,
         email: order.customer.email,
+      } : null,
+      updater: order.updater ? { // ADD UPDATER INFO
+        userID: order.updater.userID,
+        name: order.updater.name,
+        email: order.updater.email,
+        userLevel: order.updater.userLevel
       } : null,
       deliveryDate: order.deliveryDate
     }));
@@ -353,7 +377,6 @@ router.get('/admin/image-orders', verifyToken, async (req, res) => {
   }
 });
 
-// PUT /api/custom-cake/admin/orders/:customCakeId - Update custom cake order status (admin/staff only)
 router.put('/admin/orders/:customCakeId', verifyToken, async (req, res) => {
   try {
     if (!['admin', 'staff'].includes(req.user.userLevel.toLowerCase())) {
@@ -377,7 +400,12 @@ router.put('/admin/orders/:customCakeId', verifyToken, async (req, res) => {
       order.customCakeId
     );
 
-    await order.update({ status });
+    // UPDATE: Capture who updated the order
+    await order.update({ 
+      status,
+      updatedBy: req.user.userID // Add the admin/staff user ID who made the update
+    });
+    
     res.json({ success: true, message: 'Custom cake order status updated', order });
   } catch (error) {
     console.error('Error updating custom cake order status:', error);
@@ -400,7 +428,7 @@ router.put('/admin/image-orders/:orderId', verifyToken, async (req, res) => {
       return res.status(404).json({ success: false, message: 'Image-based order not found' });
     }
 
-     // CREATE NOTIFICATION
+    // CREATE NOTIFICATION
     await createCustomCakeNotification(
       order.userID,
       'Image Order Update',
@@ -409,7 +437,12 @@ router.put('/admin/image-orders/:orderId', verifyToken, async (req, res) => {
       'image_order'
     );
 
-    await order.update({ status });
+    // UPDATE: Capture who updated the order
+    await order.update({ 
+      status,
+      updatedBy: req.user.userID // Add the admin/staff user ID who made the update
+    });
+    
     res.json({ success: true, message: 'Image-based order status updated', order });
   } catch (error) {
     console.error('Error updating image-based order status:', error);
@@ -473,7 +506,8 @@ router.put('/admin/orders/:customCakeId/price', verifyToken, async (req, res) =>
       price: parseFloat(price),
       downpayment_amount: downpayment_amount || parseFloat(price) * 0.5,
       remaining_balance: remaining_balance || parseFloat(price) * 0.5,
-      status: 'Ready for Downpayment' // ALWAYS set to ready for downpayment
+      status: 'Ready for Downpayment', // ALWAYS set to ready for downpayment
+      updatedBy: req.user.userID // ADD THIS
     };
 
     await order.update(updateData);
@@ -517,7 +551,8 @@ router.put('/admin/image-orders/:orderId/price', verifyToken, async (req, res) =
       price: parseFloat(price),
       downpayment_amount: downpayment_amount || parseFloat(price) * 0.5,
       remaining_balance: remaining_balance || parseFloat(price) * 0.5,
-      status: 'Ready for Downpayment' // ALWAYS set to ready for downpayment
+      status: 'Ready for Downpayment', // ALWAYS set to ready for downpayment
+      updatedBy: req.user.userID // ADD THIS
     };
 
     await order.update(updateData);

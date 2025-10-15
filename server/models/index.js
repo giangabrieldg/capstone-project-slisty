@@ -64,6 +64,20 @@ Order.belongsTo(User, {
   foreignKeyConstraint: true 
 });
 
+// User ↔ Order (for updater) 
+User.hasMany(Order, { 
+  foreignKey: 'updatedBy', 
+  as: 'updatedOrders', 
+  constraints: true, 
+  foreignKeyConstraint: true 
+});
+Order.belongsTo(User, { 
+  foreignKey: 'updatedBy', 
+  as: 'updater', 
+  constraints: true, 
+  foreignKeyConstraint: true 
+});
+
 // Order ↔ OrderItem
 Order.hasMany(OrderItem, { 
   foreignKey: 'orderId', 
@@ -129,6 +143,34 @@ ImageBasedOrder.belongsTo(User, {
   foreignKeyConstraint: true 
 });
 
+// User ↔ CustomCakeOrder (for updater)
+User.hasMany(CustomCakeOrder, { 
+  foreignKey: 'updatedBy', 
+  as: 'customCakesUpdatedByUser', 
+  constraints: true, 
+  foreignKeyConstraint: true 
+});
+CustomCakeOrder.belongsTo(User, { 
+  foreignKey: 'updatedBy', 
+  as: 'updater', 
+  constraints: true, 
+  foreignKeyConstraint: true 
+});
+
+// User ↔ ImageBasedOrder (for updater)
+User.hasMany(ImageBasedOrder, { 
+  foreignKey: 'updatedBy', 
+  as: 'imageOrdersUpdatedByUser', 
+  constraints: true, 
+  foreignKeyConstraint: true 
+});
+ImageBasedOrder.belongsTo(User, { 
+  foreignKey: 'updatedBy', 
+  as: 'updater', 
+  constraints: true, 
+  foreignKeyConstraint: true 
+});
+
 // CartItem ↔ CustomCakeOrder
 CustomCakeOrder.hasMany(CartItem, { 
   foreignKey: 'customCakeId', 
@@ -153,9 +195,9 @@ OrderItem.belongsTo(CustomCakeOrder, {
   foreignKeyConstraint: true 
 });
 
-// FIXED: OrderItem ↔ ImageBasedOrder (use separate FK to avoid PK mismatch)
+// OrderItem ↔ ImageBasedOrder 
 ImageBasedOrder.hasMany(OrderItem, { 
-  foreignKey: 'imageOrderId',  // NEW: FK name (in OrderItem)
+  foreignKey: 'imageOrderId',  
   constraints: true, 
   foreignKeyConstraint: true 
 });

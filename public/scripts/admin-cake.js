@@ -30,65 +30,86 @@ async function fetchCustomCakeOrders() {
 
     // Process custom cake orders (3D designs)
     if (customData.success && customData.orders) {
-      customData.orders.forEach(order => {
-        const flavor = order.cakeColor === '#8B4513' ? 'Chocolate' : 'White';
-        const icingStyle = order.icingStyle === 'buttercream' ? 'Buttercream' : 'Whipped';
-        const decorations = order.decorations === 'flowers' ? `Flowers (${order.flowerType})` : 
-                            order.decorations === 'toppings' ? 'Toppings' : 
-                            order.decorations === 'balloons' ? 'Balloons' : 'None';
-        const customText = order.messageChoice === 'custom' ? `"${order.customText}"` : 'None';
-        const details = `${flavor} cake, ${order.size}, ${icingStyle} icing, ${order.filling} filling, ${order.bottomBorder} bottom border, ${order.topBorder} top border, ${decorations}, ${customText}`;
-        
-        const displayOrderId = `CC${String(order.customCakeId).padStart(3, '0')}`;
-        const deliveryDate = order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString() : 'Not set';
-        const orderDate = order.orderDate ? new Date(order.orderDate).toLocaleDateString() : 
-                         order.createdAt ? new Date(order.createdAt).toLocaleDateString() : 'Unknown';
-        
-        // Enhanced payment information display
-        const paymentInfo = renderPaymentInfo(order);
-        
-        // Format customer details with delivery address
-        const customerDetails = `
-          <div class="customer-info">
-            <div class="customer-name fw-bold">${order.customer_name || (order.customer ? order.customer.name : 'Unknown')}</div>
-            <div class="customer-contact small text-muted">
-              ${order.customer_email || (order.customer ? order.customer.email : 'N/A')}<br>${order.customer_phone || 'N/A'}
-            </div>
-            <div class="delivery-method small text-muted mt-1">
-              <strong>Method:</strong> ${order.delivery_method.charAt(0).toUpperCase() + order.delivery_method.slice(1)}
-            </div>
-            ${order.delivery_method === 'delivery' && order.delivery_address ? `
-              <div class="delivery-address small text-muted mt-1">
-                <strong>Delivery Address:</strong><br>
-                ${order.delivery_address}
-              </div>
-            ` : ''}
+  customData.orders.forEach(order => {
+    const flavor = order.cakeColor === '#8B4513' ? 'Chocolate' : 'White';
+    const icingStyle = order.icingStyle === 'buttercream' ? 'Buttercream' : 'Whipped';
+    const decorations = order.decorations === 'flowers' ? `Flowers (${order.flowerType})` : 
+                        order.decorations === 'toppings' ? 'Toppings' : 
+                        order.decorations === 'balloons' ? 'Balloons' : 'None';
+    const customText = order.messageChoice === 'custom' ? `"${order.customText}"` : 'None';
+    const details = `${flavor} cake, ${order.size}, ${icingStyle} icing, ${order.filling} filling, ${order.bottomBorder} bottom border, ${order.topBorder} top border, ${decorations}, ${customText}`;
+    
+    const displayOrderId = `CC${String(order.customCakeId).padStart(3, '0')}`;
+    const deliveryDate = order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString() : 'Not set';
+    const orderDate = order.orderDate ? new Date(order.orderDate).toLocaleDateString() : 
+                     order.createdAt ? new Date(order.createdAt).toLocaleDateString() : 'Unknown';
+    
+    // Enhanced payment information display
+    const paymentInfo = renderPaymentInfo(order);
+    
+    // Format customer details with delivery address
+    const customerDetails = `
+      <div class="customer-info">
+        <div class="customer-name fw-bold">${order.customer_name || (order.customer ? order.customer.name : 'Unknown')}</div>
+        <div class="customer-contact small text-muted">
+          ${order.customer_email || (order.customer ? order.customer.email : 'N/A')}<br>${order.customer_phone || 'N/A'}
+        </div>
+        <div class="delivery-method small text-muted mt-1">
+          <strong>Method:</strong> ${order.delivery_method.charAt(0).toUpperCase() + order.delivery_method.slice(1)}
+        </div>
+        ${order.delivery_method === 'delivery' && order.delivery_address ? `
+          <div class="delivery-address small text-muted mt-1">
+            <strong>Delivery Address:</strong><br>
+            ${order.delivery_address}
           </div>
-        `;
-        
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td>${displayOrderId}</td>
-          <td>${customerDetails}</td>
-          <td>${details}</td>
-          <td>${orderDate}</td>
-          <td>${deliveryDate}</td>
-          <td class="text-center">
-            ${order.referenceImageUrl ? `<a href="#" class="view-image" data-image-url="${order.referenceImageUrl}" data-image-type="reference" data-bs-toggle="modal" data-bs-target="#imageModal">View</a>` : 'None'}
-          </td>
-          <td class="text-center">
-            ${order.designImageUrl ? `<a href="#" class="view-image" data-image-url="${order.designImageUrl}" data-image-type="design" data-bs-toggle="modal" data-bs-target="#imageModal">View</a>` : 'None'}
-          </td>
-          <td>${renderStatusBadge(order.status)}</td>
-          <td>${renderPriceInfo(order)}</td>
-          <td>${paymentInfo}</td>
-          <td class="admin-actions-cell">
-            ${renderStatusActions(order.customCakeId, false, order.status, order)}
-          </td>
-        `;
-        customTbody.appendChild(row);
-      });
-    }
+        ` : ''}
+      </div>
+    `;
+
+    // Format updated by information
+    const updatedByInfo = order.updater ? `
+      <div class="updated-by-info">
+        <div class="updater-name fw-bold">${order.updater.name}</div>
+        <div class="updater-role small text-muted">
+          ${order.updater.userLevel}
+        </div>
+        ${order.updatedAt ? `
+          <div class="update-time small text-muted">
+            ${new Date(order.updatedAt).toLocaleDateString()} 
+            ${new Date(order.updatedAt).toLocaleTimeString()}
+          </div>
+        ` : ''}
+      </div>
+    ` : `
+      <div class="updated-by-info">
+        <div class="text-muted small">Not updated yet</div>
+      </div>
+    `;
+    
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${displayOrderId}</td>
+      <td>${customerDetails}</td>
+      <td>${details}</td>
+      <td>${orderDate}</td>
+      <td>${deliveryDate}</td>
+      <td class="text-center">
+        ${order.referenceImageUrl ? `<a href="#" class="view-image" data-image-url="${order.referenceImageUrl}" data-image-type="reference" data-bs-toggle="modal" data-bs-target="#imageModal">View</a>` : 'None'}
+      </td>
+      <td class="text-center">
+        ${order.designImageUrl ? `<a href="#" class="view-image" data-image-url="${order.designImageUrl}" data-image-type="design" data-bs-toggle="modal" data-bs-target="#imageModal">View</a>` : 'None'}
+      </td>
+      <td>${renderStatusBadge(order.status)}</td>
+      <td>${renderPriceInfo(order)}</td>
+      <td>${paymentInfo}</td>
+      <td>${updatedByInfo}</td> <!-- NEW COLUMN -->
+      <td class="admin-actions-cell">
+        ${renderStatusActions(order.customCakeId, false, order.status, order)}
+      </td>
+    `;
+    customTbody.appendChild(row);
+  });
+}
 
     // Process image-based orders
     if (imageData.success && imageData.orders) {
@@ -97,7 +118,7 @@ async function fetchCustomCakeOrders() {
         const displayOrderId = `RCC${String(orderId).padStart(3, '0')}`;
         const deliveryDate = order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString() : 'Not set';
         const orderDate = order.orderDate ? new Date(order.orderDate).toLocaleDateString() : 
-                         order.createdAt ? new Date(order.createdAt).toLocaleDateString() : 'Unknown';
+                        order.createdAt ? new Date(order.createdAt).toLocaleDateString() : 'Unknown';
         
         // Enhanced payment information display
         const paymentInfo = renderPaymentInfo(order);
@@ -120,6 +141,26 @@ async function fetchCustomCakeOrders() {
             ` : ''}
           </div>
         `;
+
+        // Format updated by information for image orders
+        const updatedByInfo = order.updater ? `
+          <div class="updated-by-info">
+            <div class="updater-name fw-bold">${order.updater.name}</div>
+            <div class="updater-role small text-muted">
+              ${order.updater.userLevel}
+            </div>
+            ${order.updatedAt ? `
+              <div class="update-time small text-muted">
+                ${new Date(order.updatedAt).toLocaleDateString()} 
+                ${new Date(order.updatedAt).toLocaleTimeString()}
+              </div>
+            ` : ''}
+          </div>
+        ` : `
+          <div class="updated-by-info">
+            <div class="text-muted small">Not updated yet</div>
+          </div>
+        `;
         
         const row = document.createElement('tr');
         row.innerHTML = `
@@ -138,6 +179,7 @@ async function fetchCustomCakeOrders() {
           <td>${renderStatusBadge(order.status)}</td>
           <td>${renderPriceInfo(order)}</td>
           <td>${paymentInfo}</td>
+          <td>${updatedByInfo}</td> <!-- NEW COLUMN -->
           <td class="admin-actions-cell">
             ${renderStatusActions(orderId, true, order.status, order)}
           </td>
@@ -146,17 +188,17 @@ async function fetchCustomCakeOrders() {
       });
     }
 
-    if (!customData.orders || customData.orders.length === 0) {
-      const row = document.createElement('tr');
-      row.innerHTML = `<td colspan="11" class="text-center">No custom cake orders found</td>`;
-      customTbody.appendChild(row);
-    }
+   if (!customData.orders || customData.orders.length === 0) {
+    const row = document.createElement('tr');
+    row.innerHTML = `<td colspan="12" class="text-center">No custom cake orders found</td>`; // Changed from 11 to 12
+    customTbody.appendChild(row);
+  }
 
-    if (!imageData.orders || imageData.orders.length === 0) {
-      const row = document.createElement('tr');
-      row.innerHTML = `<td colspan="14" class="text-center">No image-based orders found</td>`;
-      imageTbody.appendChild(row);
-    }
+  if (!imageData.orders || imageData.orders.length === 0) {
+    const row = document.createElement('tr');
+    row.innerHTML = `<td colspan="15" class="text-center">No image-based orders found</td>`; // Changed from 14 to 15
+    imageTbody.appendChild(row);
+  }
 
     setupEventListeners(token);
     
