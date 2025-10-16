@@ -113,10 +113,6 @@ const sendVerificationEmail = async (email, token, subject = 'Verify Your Email 
         ${isPasswordReset ? 'Reset Password' : 'Verify Email'}
       </a>
       <p style="color: #5e5d5d;">This link expires in 1 hour.</p>
-      <p style="color: #5e5d5d;">If you can't click the button, copy this link:</p>
-      <p style="font-size: 12px; word-break: break-all; background: #f5f5f5; padding: 10px; border-radius: 4px;">
-        ${isPasswordReset ? resetUrl : defaultVerificationUrl}
-      </p>
       <p style="color: #5e5d5d;">Best regards,<br>Slice N Grind Team</p>
     </div>
   `;

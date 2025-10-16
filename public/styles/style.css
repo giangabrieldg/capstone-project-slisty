@@ -374,22 +374,6 @@ img.img-fluid.rounded {
     }
 }
 
-
-/* Responsive adjustments for navbar */
-@media (min-width: 992px) {
-
-    .navbar-nav .nav-link:hover,
-    .navbar-nav .nav-link.active,
-    .icon-btn:hover {
-        background-color: transparent !important;
-        border-radius: 0;
-    }
-
-    .icon-btn span {
-        display: none;
-    }
-}
-
 /* Responsive adjustments for hero section */
 @media (max-width: 768px) {
     .hero-title {

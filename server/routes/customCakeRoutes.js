@@ -78,8 +78,6 @@ router.post('/create', verifyToken, upload.fields([
       customer_phone
     } = req.body;
 
-    // ⭐ REMOVED: requiresReview parameter since all 3D cakes don't need review
-
     // Validate required fields
     if (!size || !cakeColor || !icingStyle || !icingColor || !filling || !bottomBorder ||
         !topBorder || !bottomBorderColor || !topBorderColor || !decorations ||
@@ -97,7 +95,7 @@ router.post('/create', verifyToken, upload.fields([
       return res.status(400).json({ success: false, message: 'Delivery address is required for delivery orders' });
     }
 
-    // ⭐ CRITICAL FIX: All 3D cakes require price and go directly to downpayment
+    // ⭐ CRITICAL FIX: All 3D cakes require price
     if (!price || isNaN(parseFloat(price)) || parseFloat(price) <= 0) {
       return res.status(400).json({ 
         success: false, 
@@ -118,13 +116,13 @@ router.post('/create', verifyToken, upload.fields([
       designImageUrl = await googleDriveService.uploadImage(req.files.designImage[0]);
     }
 
-    //FIXED: All 3D cakes go directly to Ready for Downpayment
-    const status = 'Ready for Downpayment';
+    // ⭐ FIX: Create order with PENDING status instead of Ready for Downpayment
+    const status = 'Pending Payment'; // CHANGED FROM 'Ready for Downpayment'
     const finalPrice = parseFloat(price);
     const downpaymentAmount = finalPrice * 0.5;
     const remainingBalance = finalPrice * 0.5;
 
-    //CRITICAL: Create ONLY ONE custom cake order
+    // Create custom cake order with PENDING status
     const customCakeOrder = await CustomCakeOrder.create({
       userID: req.user.userID,
       size,
@@ -144,7 +142,7 @@ router.post('/create', verifyToken, upload.fields([
       referenceImageUrl,
       designImageUrl,
       price: finalPrice,
-      status: status,
+      status: status, // CHANGED: Now 'Pending Payment'
       payment_status: 'pending',
       downpayment_amount: downpaymentAmount,
       remaining_balance: remainingBalance,
@@ -159,16 +157,16 @@ router.post('/create', verifyToken, upload.fields([
       customer_phone
     });
 
-    console.log('Created 3D custom cake order:', {
+    console.log('Created 3D custom cake order with Pending Payment:', {
       customCakeId: customCakeOrder.customCakeId,
       status: customCakeOrder.status,
       price: customCakeOrder.price,
-      type: '3D Custom Cake - No Review Needed'
+      type: '3D Custom Cake - Pending Payment'
     });
 
     res.status(201).json({
       success: true,
-      message: '3D custom cake order created successfully and ready for downpayment',
+      message: '3D custom cake order created successfully. Please proceed to payment.',
       customCakeId: customCakeOrder.customCakeId,
       status: customCakeOrder.status
     });
@@ -377,6 +375,70 @@ router.get('/admin/image-orders', verifyToken, async (req, res) => {
   }
 });
 
+// POST /api/custom-cake/confirm-payment - Update order status after successful payment
+router.post('/confirm-payment', verifyToken, async (req, res) => {
+  try {
+    const { customCakeId, isImageOrder, paymentId, deliveryDate, isDownpayment } = req.body;
+
+    if (!customCakeId) {
+      return res.status(400).json({ success: false, message: 'Custom cake ID is required' });
+    }
+
+    // Get the order
+    const OrderModel = isImageOrder ? ImageBasedOrder : CustomCakeOrder;
+    const order = await OrderModel.findByPk(customCakeId);
+
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+
+    // Verify ownership
+    if (order.userID !== req.user.userID) {
+      return res.status(403).json({ success: false, message: 'Unauthorized access to order' });
+    }
+
+    // Update order based on payment type
+    let updateData = {
+      payment_status: 'paid',
+      deliveryDate: deliveryDate || order.deliveryDate
+    };
+
+    if (isDownpayment) {
+      // Downpayment received
+      updateData.status = 'Downpayment Paid';
+      updateData.is_downpayment_paid = true;
+      updateData.downpayment_paid_at = new Date();
+    } else {
+      // Final payment received
+      updateData.status = 'In Progress';
+      updateData.final_payment_status = 'paid';
+    }
+
+    console.log('Updating custom cake order after payment:', {
+      customCakeId,
+      previousStatus: order.status,
+      newStatus: updateData.status,
+      isDownpayment
+    });
+
+    await order.update(updateData);
+
+    res.json({
+      success: true,
+      message: `Custom cake order ${isDownpayment ? 'downpayment' : 'payment'} confirmed`,
+      order: {
+        customCakeId: order.customCakeId || order.imageBasedOrderId,
+        status: order.status,
+        isDownpayment
+      }
+    });
+
+  } catch (error) {
+    console.error('Error confirming custom cake payment:', error);
+    res.status(500).json({ success: false, message: 'Server error', error: error.message });
+  }
+});
+
 router.put('/admin/orders/:customCakeId', verifyToken, async (req, res) => {
   try {
     if (!['admin', 'staff'].includes(req.user.userLevel.toLowerCase())) {
@@ -384,7 +446,7 @@ router.put('/admin/orders/:customCakeId', verifyToken, async (req, res) => {
     }
     const { status } = req.body;
     // UPDATED: Add downpayment statuses to valid statuses
-    if (!['Pending Review', 'Ready for Downpayment', 'Downpayment Paid', 'In Progress', 'Ready for Pickup/Delivery', 'Completed', 'Cancelled'].includes(status)) {
+    if (!['Pending Payment', 'Pending Review', 'Ready for Downpayment', 'Downpayment Paid', 'In Progress', 'Ready for Pickup/Delivery', 'Completed', 'Cancelled'].includes(status)) {
       return res.status(400).json({ success: false, message: 'Invalid status' });
     }
     const order = await CustomCakeOrder.findByPk(req.params.customCakeId);
@@ -420,7 +482,7 @@ router.put('/admin/image-orders/:orderId', verifyToken, async (req, res) => {
       return res.status(403).json({ success: false, message: 'Unauthorized: Admin or staff access required' });
     }
     const { status } = req.body;
-    if (!['Pending Review', 'Feasible', 'Ready for Downpayment', 'Downpayment Paid', 'In Progress', 'Ready for Pickup/Delivery', 'Completed', 'Cancelled', 'Not Feasible'].includes(status)) {
+    if (!['Pending Payment', 'Pending Review', 'Feasible', 'Ready for Downpayment', 'Downpayment Paid', 'In Progress', 'Ready for Pickup/Delivery', 'Completed', 'Cancelled', 'Not Feasible'].includes(status)) {
       return res.status(400).json({ success: false, message: 'Invalid status' });
     }
     const order = await ImageBasedOrder.findByPk(req.params.orderId);

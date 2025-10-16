@@ -62,7 +62,18 @@ const ImageBasedOrder = sequelize.define('ImageBasedOrder', {
     allowNull: true,
   },
   status: {
-  type: DataTypes.ENUM('Pending Review', 'Feasible', 'Ready for Downpayment', 'Downpayment Paid', 'In Progress', 'Ready for Pickup/Delivery', 'Completed', 'Cancelled', 'Not Feasible'),
+  type: DataTypes.ENUM(
+    'Pending Payment',     
+    'Pending Review', 
+    'Feasible', 
+    'Ready for Downpayment', 
+    'Downpayment Paid', 
+    'In Progress', 
+    'Ready for Pickup/Delivery', 
+    'Completed', 
+    'Cancelled', 
+    'Not Feasible'
+  ),
   defaultValue: 'Pending Review',
 },
   price: {

@@ -282,7 +282,7 @@ function renderActionButtons(order, isImageOrder) {
       order.is_downpayment_paid === true &&
       order.final_payment_status !== "paid"
     ) {
-      return `<span class="badge bg-info">Balance Due at Pickup</span>`;
+      return `<span class="text-muted small">Balance Due at Pickup</span>`;
     }
 
     if (order.final_payment_status === "paid") {
@@ -311,7 +311,7 @@ function renderActionButtons(order, isImageOrder) {
       order.is_downpayment_paid === true &&
       order.final_payment_status !== "paid"
     ) {
-      return `<span class="badge bg-info">Balance Due at Pickup</span>`;
+      return `<span class="text-muted small">Balance Due at Pickup</span>`;
     }
 
     if (order.final_payment_status === "paid") {

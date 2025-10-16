@@ -212,7 +212,8 @@ class ProfileManager {
     // Status map for display text
     const statusMap = {
         pending: 'Pending',
-        pending_payment: 'Pending Payment', 
+        pending_payment: 'Pending Payment',
+        order_received: 'Order Received', 
         processing: 'In Progress',
         shipped: 'Ready for Pickup/Delivery',
         delivered: 'Completed',

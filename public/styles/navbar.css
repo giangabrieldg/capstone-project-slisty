@@ -8,7 +8,6 @@
     --text-color: #2D2D2D;
     --badge-color: #d9534f;
     --font-poppins: 'Poppins', sans-serif;
-    --yellow: #d3ad30;
 }
 
 /* ---------------Navbar--------------- */
@@ -62,11 +61,10 @@
 .nav-item .nav-link:hover,
 .nav-item .nav-link.active,
 .icon-btn:hover {
-    color: var(--text-color);
-    background-color: var(--yellow);
-    /* Using your yellow variable */
+    color: var(--hover-color);
     transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+
 }
 
 .icon-btn:focus {
@@ -91,6 +89,7 @@
 .navbar-nav .nav-link:hover svg,
 .icon-btn:hover svg {
     transform: scale(1.1);
+    stroke: var(--hover-color);
 }
 
 .navbar-nav .nav-link.active svg {
@@ -430,7 +429,6 @@
     .navbar-nav .nav-link:hover,
     .navbar-nav .nav-link.active,
     .icon-btn:hover {
-        background-color: transparent !important;
         border-radius: 0;
         transform: none;
         box-shadow: none;

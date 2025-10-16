@@ -119,9 +119,18 @@ const CustomCakeOrder = sequelize.define('CustomCakeOrder', {
   comment: 'URL of the 3D design image',
   },
 status: {
-  type: DataTypes.ENUM('Pending Review', 'Ready for Downpayment', 'Downpayment Paid', 'In Progress', 'Ready for Pickup/Delivery', 'Completed', 'Cancelled'),
+  type: DataTypes.ENUM(
+    'Pending Payment',      // NEW - for 3D cakes
+    'Pending Review',       // For image-based cakes
+    'Ready for Downpayment', // After admin sets price
+    'Downpayment Paid',     // After downpayment
+    'In Progress',          // Being made
+    'Ready for Pickup/Delivery', // Ready
+    'Completed',            // Done
+    'Cancelled'             // Cancelled
+  ),
   defaultValue: 'Pending Review',
- },
+},
   price: {
   type: DataTypes.DECIMAL(10, 2),
   allowNull: true,  
