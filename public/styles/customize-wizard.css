@@ -125,6 +125,7 @@ h1 {
     border-radius: 20px;
     font-size: 1rem;
     font-family: var(--font-poppins);
+    z-index: 100
 }
 
 .customization-panel {
@@ -1273,6 +1274,14 @@ h1 {
     .tour-start-btn {
         top: 30px;
         padding: 10px 16px;
+        font-size: 0.85rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .controls-overlay {
+        bottom: 10px;
+        padding: 6px 12px;
         font-size: 0.85rem;
     }
 }
