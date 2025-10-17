@@ -75,11 +75,11 @@ async function createDefaultAdmin() {
       await User.create({
         email: adminEmail,
         password: hashedPassword,
-        name: 'Admin User',
-        username: 'admin',
+        name: 'Admin User2',
+        username: 'admin2',
         userLevel: 'Admin',
         isVerified: true,
-        employeeID: 'E000',
+        employeeID: 'E001',
       });
       console.log('Default admin user created:', adminEmail);
     } else {
