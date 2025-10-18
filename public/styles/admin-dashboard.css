@@ -29,37 +29,8 @@ body {
     transition: margin-left 0.3s ease-in-out, width 0.3s ease-in-out;
 }
 
-/* Responsive adjustments for medium and smaller screens */
-@media (max-width: 992px) {
-    .content {
-        margin-left: 0;
-        width: 100%;
-        padding: 20px;
-    }
-
-    body.sidebar-visible .content {
-        margin-left: 250px;
-        width: calc(100% - 250px);
-    }
-}
-
-/* Responsive adjustments for small screens */
-@media (max-width: 576px) {
-    .content {
-        padding: 15px;
-    }
-
-    body.sidebar-visible .content {
-        margin-left: 200px;
-        width: calc(100% - 200px);
-    }
-}
-
 /* Dashboard header with title and notification */
 .dashboard-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
     margin-bottom: 30px;
     padding: 15px 25px;
     background-color: var(--background-color);
@@ -67,11 +38,28 @@ body {
     border-radius: 8px;
 }
 
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
 .dashboard-header h2 {
     color: var(--text-color);
     font-weight: 700;
     font-size: 1.8rem;
     margin: 0;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.last-update {
+    font-size: 0.9rem;
+    color: var(--secondary-text-color);
 }
 
 .custom-outline-green {
@@ -113,7 +101,7 @@ body {
     justify-content: center;
 }
 
-/* Sales summary grid - Removed flex properties, relying on Bootstrap grid */
+/* Sales summary grid */
 .sales-summary {
     margin-bottom: 30px;
 }
@@ -129,7 +117,7 @@ body {
     align-items: center;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
-    min-width: 200px;
+    height: 100%;
 }
 
 .summary-card:hover {
@@ -157,12 +145,20 @@ body {
     font-size: 0.9rem;
 }
 
-/* Orders table heading */
+/* Orders table section */
+.order-table {
+    margin-bottom: 30px;
+}
+
+.table-header {
+    margin-bottom: 15px;
+}
+
 .order-table h3 {
     color: var(--text-color);
     font-weight: 700;
-    margin-bottom: 15px;
     font-size: 1.5rem;
+    margin: 0;
 }
 
 /* Table styling */
@@ -171,6 +167,7 @@ body {
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     overflow: hidden;
+    margin-bottom: 0;
 }
 
 .table th {
@@ -179,6 +176,7 @@ body {
     color: var(--text-color);
     background-color: var(--secondary-color);
     padding: 15px;
+    white-space: nowrap;
 }
 
 .table td {
@@ -201,6 +199,7 @@ body {
     font-size: 0.85rem;
     font-weight: 500;
     display: inline-block;
+    white-space: nowrap;
 }
 
 .status.pending {
@@ -249,18 +248,250 @@ body {
     color: #721c24;
 }
 
-/* Responsive adjustments for small screens */
-@media (max-width: 576px) {
+/* ===== MOBILE RESPONSIVE STYLES ===== */
+
+/* Tablet and below */
+@media (max-width: 992px) {
+    .content {
+        margin-left: 0;
+        width: 100%;
+        padding: 20px;
+    }
+}
+
+/* Mobile - Medium */
+@media (max-width: 768px) {
+    .content {
+        margin-left: 70px;
+        width: calc(100% - 70px);
+        padding: 15px;
+    }
+
+    .dashboard-header {
+        padding: 12px 15px;
+        margin-bottom: 20px;
+    }
+
+    .header-content {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .dashboard-header h2 {
+        font-size: 1.4rem;
+    }
+
+    .header-actions {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .last-update {
+        font-size: 0.8rem;
+    }
+
+    /* Summary cards - 2 columns on mobile */
+    .sales-summary .row {
+        margin: 0 -5px;
+    }
+
+    .sales-summary [class*="col-"] {
+        padding: 0 5px;
+        margin-bottom: 10px;
+    }
+
     .summary-card {
-        margin-bottom: 15px;
+        padding: 15px 10px;
+    }
+
+    .summary-card .icon {
+        font-size: 1.5rem;
+        margin-bottom: 8px;
+    }
+
+    .summary-card h4 {
+        font-size: 1.1rem;
+        margin-bottom: 5px;
+    }
+
+    .summary-card p {
+        font-size: 0.75rem;
+    }
+
+    /* Table adjustments */
+    .order-table h3 {
+        font-size: 1.2rem;
     }
 
     .table-responsive {
-        font-size: 0.85rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .table {
+        font-size: 0.8rem;
     }
 
     .table th,
     .table td {
+        padding: 10px 8px;
+        font-size: 0.75rem;
+    }
+
+    /* Hide less critical columns on mobile */
+    .th-datetime,
+    .th-delivery,
+    .th-payment,
+    .table td:nth-child(3),
+    .table td:nth-child(4),
+    .table td:nth-child(6) {
+        display: none;
+    }
+
+    .status {
+        padding: 4px 8px;
+        font-size: 0.7rem;
+    }
+}
+
+/* Mobile - Small */
+@media (max-width: 576px) {
+    .content {
+        margin-left: 60px;
+        width: calc(100% - 60px);
+        padding: 12px;
+    }
+
+    .dashboard-header {
+        padding: 10px 12px;
+        margin-bottom: 15px;
+    }
+
+    .dashboard-header h2 {
+        font-size: 1.2rem;
+    }
+
+    .notification {
+        font-size: 1.3rem;
+    }
+
+    .notification .notification-count {
+        width: 18px;
+        height: 18px;
+        font-size: 0.65rem;
+    }
+
+    .last-update {
+        font-size: 0.7rem;
+    }
+
+    .sales-summary {
+        margin-bottom: 20px;
+    }
+
+    .summary-card {
+        padding: 12px 8px;
+    }
+
+    .summary-card .icon {
+        font-size: 1.3rem;
+        margin-bottom: 6px;
+    }
+
+    .summary-card h4 {
+        font-size: 1rem;
+    }
+
+    .summary-card p {
+        font-size: 0.7rem;
+    }
+
+    .order-table h3 {
+        font-size: 1.1rem;
+        margin-bottom: 10px;
+    }
+
+    .table th,
+    .table td {
+        padding: 8px 6px;
+        font-size: 0.7rem;
+    }
+
+    /* Hide more columns on very small screens */
+    .th-details,
+    .table td:nth-child(7) {
+        display: none;
+    }
+
+    .status {
+        padding: 3px 6px;
+        font-size: 0.65rem;
+    }
+}
+
+/* Extra small devices */
+@media (max-width: 400px) {
+    .content {
+        margin-left: 55px;
+        width: calc(100% - 55px);
         padding: 10px;
+    }
+
+    .dashboard-header h2 {
+        font-size: 1.1rem;
+    }
+
+    .summary-card h4 {
+        font-size: 0.95rem;
+    }
+
+    .summary-card p {
+        font-size: 0.65rem;
+    }
+}
+
+/* Landscape orientation adjustments for mobile */
+@media (max-width: 768px) and (orientation: landscape) {
+    .content {
+        padding: 10px;
+    }
+
+    .sales-summary [class*="col-"] {
+        flex: 0 0 25%;
+        max-width: 25%;
+    }
+
+    .summary-card {
+        padding: 10px;
+    }
+
+    .summary-card .icon {
+        font-size: 1.2rem;
+        margin-bottom: 5px;
+    }
+
+    .summary-card h4 {
+        font-size: 0.95rem;
+    }
+
+    .summary-card p {
+        font-size: 0.7rem;
+    }
+}
+
+/* Ensure proper scrolling on mobile */
+@media (max-width: 768px) {
+    body {
+        overflow-x: hidden;
+    }
+
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .table {
+        min-width: 600px;
     }
 }

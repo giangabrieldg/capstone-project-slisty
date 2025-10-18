@@ -1,29 +1,19 @@
 /* Define CSS variables for consistent theming */
 :root {
     --primary-color: #2c9045;
-    /* Primary brand color */
     --secondary-color: #e6f3ea;
-    /* Light background for cards */
     --background-color: #ffffff;
-    /* Main background */
     --secondary-background-color: #f5f1e9;
-    /* Secondary background */
     --text-color: #2d2d2d;
-    /* Primary text color */
     --hover-color: #0f5e23;
     --secondary-text-color: #5e5d5d;
-    /* Secondary text color */
     --white-text-color: #f9f6ee;
-    /* Text color for sidebar */
     --font-poppins: "Poppins", sans-serif;
-    /* Main font */
     --font-baloo: "Baloo 2", sans-serif;
-    /* Heading font */
     --yellow-color: #ffeb3b;
-    /* Yellow for alternative actions */
 }
 
-/* Base body styles */
+/* Base Styles */
 body {
     background-color: var(--background-color);
     font-family: var(--font-poppins);
@@ -32,7 +22,7 @@ body {
     overflow-x: hidden;
 }
 
-/* Main content area styling, offset for sidebar */
+/* Main Content */
 .content {
     margin-left: 250px;
     padding: 30px;
@@ -40,39 +30,13 @@ body {
     transition: margin-left 0.3s ease-in-out, width 0.3s ease-in-out;
 }
 
-/* Responsive adjustments for medium and smaller screens */
-@media (max-width: 992px) {
-    .content {
-        margin-left: 0;
-        width: 100%;
-        padding: 20px;
-    }
-
-    body.sidebar-visible .content {
-        margin-left: 250px;
-        width: calc(100% - 250px);
-    }
-}
-
-/* Responsive adjustments for small screens */
-@media (max-width: 576px) {
-    .content {
-        padding: 15px;
-    }
-
-    body.sidebar-visible .content {
-        margin-left: 200px;
-        width: calc(100% - 200px);
-    }
-}
-
-/* FAQs and Inquiries Management header */
+/* FAQ Management Header */
 .faq-management-header {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    flex-direction: column;
+    gap: 15px;
     margin-bottom: 30px;
-    padding: 15px 25px;
+    padding: 20px;
     background-color: var(--background-color);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     border-radius: 8px;
@@ -86,21 +50,19 @@ body {
 }
 
 .header-actions {
-    gap: 5px;
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    gap: 10px;
 }
 
+/* Search Bar and Date Picker */
 .search-bar,
 .date-picker {
-    width: 200px;
-    padding: 5px 10px;
+    width: 100%;
+    padding: 8px 12px;
     border: 1px solid var(--secondary-color);
     border-radius: 4px;
-}
-
-.date-picker {
-    margin-left: 5px;
+    transition: border-color 0.2s ease;
 }
 
 .search-bar:focus,
@@ -110,6 +72,7 @@ body {
     box-shadow: 0 0 5px rgba(44, 144, 69, 0.3);
 }
 
+/* Add FAQ Button */
 .add-faq-btn {
     background-color: var(--primary-color);
     border: none;
@@ -117,35 +80,41 @@ body {
     padding: 10px 20px;
     border-radius: 4px;
     cursor: pointer;
+    font-weight: 500;
     transition: background-color 0.2s ease;
+    white-space: nowrap;
 }
 
 .add-faq-btn:hover {
     background-color: var(--hover-color);
 }
 
-/* Tabs styling */
+/* Nav Tabs */
 .nav-tabs {
     margin-bottom: 20px;
+    border-bottom: 2px solid var(--secondary-color);
 }
 
-.nav-link {
+.nav-tabs .nav-link {
     color: var(--text-color);
-    font-family: var(--font-poppins);
+    font-weight: 500;
+    padding: 10px 20px;
+    border: none;
+    transition: all 0.2s ease;
+}
+
+.nav-tabs .nav-link:hover {
+    color: var(--primary-color);
+}
+
+.nav-tabs .nav-link.active {
+    color: var(--primary-color);
     font-weight: 600;
+    border-bottom: 3px solid var(--primary-color);
+    background-color: transparent;
 }
 
-.nav-link.active {
-    background-color: var(--primary-color);
-    color: var(--white-text-color);
-    border-color: var(--primary-color);
-}
-
-.nav-link:hover {
-    background-color: var(--secondary-color);
-}
-
-/* Inquiries and FAQs tables */
+/* Inquiries and FAQs Tables */
 .inquiries-table h3,
 .faqs-table h3 {
     color: var(--text-color);
@@ -154,34 +123,42 @@ body {
     font-size: 1.5rem;
 }
 
+/* Table Styles */
 .table {
     background-color: var(--background-color);
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     overflow: hidden;
+    margin-bottom: 0;
 }
 
 .table th {
-    font-family: var(--font-poppins);
     font-weight: 600;
     color: var(--text-color);
     background-color: var(--secondary-color);
     padding: 15px;
+    white-space: nowrap;
 }
 
 .table td {
-    font-family: var(--font-poppins);
     color: var(--text-color);
     padding: 15px;
     vertical-align: middle;
 }
 
-/* Status badge styling */
+.table td small {
+    color: var(--secondary-text-color);
+    font-size: 0.85rem;
+}
+
+/* Status Badge Styling */
 .status {
     padding: 6px 12px;
     border-radius: 20px;
     font-size: 0.85rem;
     font-weight: 500;
+    display: inline-block;
+    white-space: nowrap;
 }
 
 .status.pending {
@@ -194,8 +171,42 @@ body {
     color: #155724;
 }
 
-/* Action buttons */
-.edit-reply,
+/* Action Buttons */
+/* Inquiry buttons - keep green for send-reply */
+.edit-reply {
+    background-color: var(--yellow-color);
+    border: none;
+    color: #333;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-family: var(--font-poppins);
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    margin-right: 5px;
+}
+
+.edit-reply:hover {
+    background-color: #fdd835;
+}
+
+.send-reply {
+    background-color: var(--primary-color);
+    border: none;
+    color: var(--white-text-color);
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-family: var(--font-poppins);
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.send-reply:hover {
+    background-color: var(--hover-color);
+}
+
+/* FAQ buttons - matching menu page style (icon only) */
 .edit-faq {
     background-color: var(--yellow-color);
     border: none;
@@ -207,29 +218,14 @@ body {
     cursor: pointer;
     transition: background-color 0.2s ease;
     margin-right: 5px;
+    min-width: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.edit-reply:hover,
 .edit-faq:hover {
     background-color: #fdd835;
-}
-
-.send-reply,
-#faqModal .btn-success {
-    background-color: var(--primary-color);
-    border: none;
-    color: var(--white-text-color);
-    padding: 5px 10px;
-    border-radius: 4px;
-    font-family: var(--font-poppins);
-    font-size: 0.9rem;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-}
-
-.send-reply:hover,
-#faqModal .btn-success:hover {
-    background-color: var(--hover-color);
 }
 
 .remove-faq {
@@ -242,55 +238,298 @@ body {
     font-size: 0.9rem;
     cursor: pointer;
     transition: background-color 0.2s ease;
+    min-width: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .remove-faq:hover {
     background-color: #c82333;
 }
 
-/* Responsive adjustments for small screens */
-@media (max-width: 576px) {
+/* Modal Styling */
+.modal-content {
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+.modal-header {
+    background-color: var(--secondary-color);
+    border-bottom: 1px solid var(--primary-color);
+}
+
+.modal-title {
+    color: var(--text-color);
+    font-weight: 600;
+    font-family: var(--font-baloo);
+}
+
+.form-select,
+.form-control {
+    border: 1px solid var(--secondary-color);
+}
+
+.form-select:focus,
+.form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 5px rgba(44, 144, 69, 0.3);
+}
+
+#faqModal .btn-success {
+    background-color: var(--primary-color);
+    border: none;
+    color: var(--white-text-color);
+}
+
+#faqModal .btn-success:hover {
+    background-color: var(--hover-color);
+}
+
+/* ===== RESPONSIVE STYLES ===== */
+
+/* Desktop */
+@media (min-width: 992px) {
     .faq-management-header {
-        flex-direction: column;
-        gap: 15px;
-        padding: 15px;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
     }
 
     .header-actions {
-        flex-direction: column;
+        flex-direction: row;
+        align-items: center;
+        width: auto;
         gap: 10px;
-        width: 100%;
     }
 
     .search-bar,
-    .date-picker,
-    .add-faq-btn {
+    .date-picker {
+        width: 200px;
+    }
+}
+
+/* Tablet and below */
+@media (max-width: 991px) {
+    .content {
+        margin-left: 0;
         width: 100%;
+        padding: 20px;
+    }
+
+    body.sidebar-visible .content {
+        margin-left: 250px;
+        width: calc(100% - 250px);
+    }
+}
+
+/* Mobile - Medium */
+@media (max-width: 768px) {
+    .content {
+        margin-left: 70px;
+        width: calc(100% - 70px);
+        padding: 15px;
+    }
+
+    body.sidebar-visible .content {
+        margin-left: 70px;
+        width: calc(100% - 70px);
+    }
+
+    .faq-management-header {
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+
+    .faq-management-header h2 {
+        font-size: 1.4rem;
     }
 
     .nav-tabs {
-        flex-direction: column;
+        margin-bottom: 15px;
     }
 
-    .nav-link {
-        width: 100%;
-        text-align: center;
+    .nav-tabs .nav-link {
+        padding: 8px 15px;
+        font-size: 0.9rem;
     }
 
-    .table-responsive {
+    .inquiries-table h3,
+    .faqs-table h3 {
+        font-size: 1.2rem;
+        margin-bottom: 12px;
+    }
+
+    .table {
         font-size: 0.85rem;
     }
 
     .table th,
     .table td {
-        padding: 10px;
+        padding: 10px 8px;
+    }
+
+    .status {
+        padding: 4px 8px;
+        font-size: 0.75rem;
     }
 
     .edit-reply,
-    .send-reply,
     .edit-faq,
+    .send-reply,
     .remove-faq {
+        padding: 5px 10px;
+        font-size: 0.85rem;
+        margin-right: 3px;
+    }
+}
+
+/* Mobile - Small */
+@media (max-width: 576px) {
+    .content {
+        margin-left: 60px;
+        width: calc(100% - 60px);
+        padding: 12px;
+    }
+
+    body.sidebar-visible .content {
+        margin-left: 200px;
+        width: calc(100% - 200px);
+    }
+
+    .faq-management-header {
+        padding: 12px;
+        gap: 12px;
+    }
+
+    .faq-management-header h2 {
+        font-size: 1.2rem;
+    }
+
+    .header-actions {
+        gap: 8px;
+    }
+
+    .add-faq-btn {
+        padding: 8px 15px;
+        font-size: 0.9rem;
+    }
+
+    .nav-tabs .nav-link {
+        padding: 6px 12px;
+        font-size: 0.85rem;
+    }
+
+    .inquiries-table h3,
+    .faqs-table h3 {
+        font-size: 1.1rem;
+    }
+
+    .table {
+        font-size: 0.75rem;
+    }
+
+    .table th,
+    .table td {
+        padding: 8px 6px;
+    }
+
+    .status {
+        padding: 3px 6px;
+        font-size: 0.7rem;
+    }
+
+    .edit-reply,
+    .edit-faq,
+    .send-reply,
+    .remove-faq {
+        padding: 4px 8px;
+        font-size: 0.75rem;
+        margin-right: 2px;
+        margin-bottom: 3px;
+    }
+
+    /* Stack action buttons vertically on very small screens */
+    .table td:last-child {
+        white-space: normal;
+    }
+}
+
+/* Extra Small Devices */
+@media (max-width: 400px) {
+    .content {
+        margin-left: 55px;
+        width: calc(100% - 55px);
+        padding: 10px;
+    }
+
+    .faq-management-header h2 {
+        font-size: 1.1rem;
+    }
+
+    .nav-tabs .nav-link {
+        padding: 5px 10px;
+        font-size: 0.8rem;
+    }
+
+    .inquiries-table h3,
+    .faqs-table h3 {
+        font-size: 1rem;
+    }
+
+    .table th,
+    .table td {
+        padding: 6px 4px;
+        font-size: 0.7rem;
+    }
+
+    .edit-reply,
+    .edit-faq,
+    .send-reply,
+    .remove-faq {
+        padding: 3px 6px;
+        font-size: 0.7rem;
+        display: block;
         width: 100%;
-        margin-bottom: 5px;
+        margin-bottom: 3px;
+    }
+}
+
+/* Ensure Proper Table Scrolling */
+@media (max-width: 768px) {
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .table {
+        min-width: 700px;
+    }
+}
+
+/* Landscape Mode for Mobile */
+@media (max-width: 768px) and (orientation: landscape) {
+    .content {
+        padding: 10px;
+    }
+
+    .faq-management-header {
+        padding: 10px;
+    }
+}
+
+/* Form Adjustments for Mobile */
+@media (max-width: 576px) {
+    .modal-dialog {
+        margin: 0.5rem;
+    }
+
+    .modal-body {
+        padding: 15px;
+    }
+
+    textarea.form-control {
+        font-size: 0.9rem;
     }
 }

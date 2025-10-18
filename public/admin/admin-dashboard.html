@@ -26,74 +26,83 @@
     />
   </head>
   <body>
-    <!-- Sidebar toggle button for mobile view -->
-    <button class="sidebar-toggle" aria-label="Toggle sidebar">
-      <i class="bi bi-list"></i>
-    </button>
     <div data-include-admin-sidebar="/includes/sidebar-admin.html"></div>
 
     <!-- Main layout container with flexbox for sidebar and content -->
     <div class="d-flex">
       <main class="content">
         <div class="dashboard-header">
-          <h2>Today's Sales</h2>
-          <div class="d-flex align-items-center">
-            <div class="last-update me-3">
-              Last update: <span data-last-update>--:--:--</span>
-            </div>
-            <div class="notification" role="button" aria-label="Notifications">
-              <i class="bi bi-bell-fill"></i>
-              <span class="notification-count">0</span>
+          <div class="header-content">
+            <h2>Today's Sales</h2>
+            <div class="header-actions">
+              <div class="last-update">
+                Last update: <span data-last-update>--:--:--</span>
+              </div>
+              <div
+                class="notification"
+                role="button"
+                aria-label="Notifications"
+              >
+                <i class="bi bi-bell-fill"></i>
+                <span class="notification-count">0</span>
+              </div>
             </div>
           </div>
         </div>
+
         <!-- Sales summary cards -->
-        <div class="sales-summary row">
-          <div class="col-lg-3 col-md-6 col-12">
-            <div class="summary-card">
-              <i class="bi bi-cash icon"></i>
-              <h4 data-summary="revenue">₱0.00</h4>
-              <p>Total Revenue</p>
+        <div class="sales-summary">
+          <div class="row g-3">
+            <div class="col-lg-3 col-md-6 col-6">
+              <div class="summary-card">
+                <i class="bi bi-cash icon"></i>
+                <h4 data-summary="revenue">₱0.00</h4>
+                <p>Total Revenue</p>
+              </div>
             </div>
-          </div>
-          <div class="col-lg-3 col-md-6 col-12">
-            <div class="summary-card">
-              <i class="bi bi-basket icon"></i>
-              <h4 data-summary="orders">0</h4>
-              <p>Total Orders</p>
+            <div class="col-lg-3 col-md-6 col-6">
+              <div class="summary-card">
+                <i class="bi bi-basket icon"></i>
+                <h4 data-summary="orders">0</h4>
+                <p>Total Orders</p>
+              </div>
             </div>
-          </div>
-          <div class="col-lg-3 col-md-6 col-12">
-            <div class="summary-card">
-              <i class="bi bi-bag-check icon"></i>
-              <h4 data-summary="custom-cakes">0</h4>
-              <p>Custom Cake Orders</p>
+            <div class="col-lg-3 col-md-6 col-6">
+              <div class="summary-card">
+                <i class="bi bi-bag-check icon"></i>
+                <h4 data-summary="custom-cakes">0</h4>
+                <p>Custom Cake Orders</p>
+              </div>
             </div>
-          </div>
-          <div class="col-lg-3 col-md-6 col-12">
-            <div class="summary-card">
-              <i class="bi bi-people icon"></i>
-              <h4 data-summary="customers">0</h4>
-              <p>New Customers</p>
+            <div class="col-lg-3 col-md-6 col-6">
+              <div class="summary-card">
+                <i class="bi bi-people icon"></i>
+                <h4 data-summary="customers">0</h4>
+                <p>New Customers</p>
+              </div>
             </div>
           </div>
         </div>
+
         <!-- Orders table -->
         <div class="order-table">
-          <h3>Orders Today</h3>
+          <div class="table-header">
+            <h3>Orders Today</h3>
+          </div>
+
           <!-- Responsive table wrapper -->
           <div class="table-responsive">
             <table class="table table-hover">
               <thead>
                 <tr>
-                  <th>Order ID</th>
-                  <th>Name</th>
-                  <th>Date & Time</th>
-                  <th>Delivery Method</th>
-                  <th>Amount</th>
-                  <th>Payment Method</th>
-                  <th>Order Details</th>
-                  <th>Status</th>
+                  <th class="th-order-id">Order ID</th>
+                  <th class="th-name">Name</th>
+                  <th class="th-datetime">Date & Time</th>
+                  <th class="th-delivery">Delivery Method</th>
+                  <th class="th-amount">Amount</th>
+                  <th class="th-payment">Payment Method</th>
+                  <th class="th-details">Order Details</th>
+                  <th class="th-status">Status</th>
                 </tr>
               </thead>
               <tbody id="ordersTodayBody">
@@ -101,6 +110,7 @@
               </tbody>
             </table>
           </div>
+
           <div class="row mt-4">
             <div class="col-12">
               <div id="customCakeOrders">

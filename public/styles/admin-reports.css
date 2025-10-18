@@ -2,7 +2,6 @@
     --primary-color: #2c9045;
     --secondary-color: #e6f3ea;
     --background-color: #ffffff;
-    --secondary-background-color: #f5f1e9;
     --hover-color: #0f5e23;
     --text-color: #2d2d2d;
     --secondary-text-color: #5e5d5d;
@@ -11,16 +10,14 @@
     --font-baloo: "Baloo 2", sans-serif;
 }
 
-/* Base body styles */
+/* Base Styles */
 body {
     background-color: var(--background-color);
     font-family: var(--font-poppins);
-    margin: 0;
-    padding: 0;
     overflow-x: hidden;
 }
 
-/* Main content area styling, offset for sidebar */
+/* Main Content */
 .content {
     margin-left: 250px;
     padding: 30px;
@@ -28,13 +25,13 @@ body {
     transition: margin-left 0.3s ease-in-out, width 0.3s ease-in-out;
 }
 
-/* Reports header with title, date filter, and export button */
+/* Reports Header */
 .reports-header {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    flex-direction: column;
+    gap: 15px;
     margin-bottom: 30px;
-    padding: 15px 25px;
+    padding: 20px;
     background-color: var(--background-color);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     border-radius: 8px;
@@ -49,100 +46,68 @@ body {
 
 .header-actions {
     display: flex;
-    align-items: center;
-    gap: 15px;
-    flex-wrap: wrap;
-}
-
-/* Date filter styling */
-.date-filter {
-    display: flex;
-    align-items: center;
+    flex-direction: column;
     gap: 10px;
-    flex-wrap: wrap;
 }
 
-.date-filter label {
-    color: var(--text-color);
-    font-weight: 600;
-    font-size: 0.95rem;
+/* Date Filter */
+.date-picker {
+    min-width: 140px;
 }
 
-.date-filter input {
-    padding: 8px 12px;
-    border: 1px solid var(--secondary-color);
-    border-radius: 6px;
-    font-family: var(--font-poppins);
-    transition: border-color 0.2s ease;
-}
-
-.date-filter input:focus {
-    border-color: var(--primary-color);
-    outline: none;
-    box-shadow: 0 0 5px rgba(44, 144, 69, 0.3);
-}
-
-.date-filter span {
-    color: var(--secondary-text-color);
-    font-weight: 500;
-}
-
-/* Button styling */
+/* Buttons */
 .btn-primary,
 .btn-success,
-.filter-btn {
+.btn-secondary {
     background-color: var(--primary-color);
     border: none;
-    color: var(--white-text-color);
-    padding: 10px 20px;
-    border-radius: 5px;
-    cursor: pointer;
     font-weight: 500;
-    transition: background-color 0.2s ease;
+    white-space: nowrap;
 }
 
 .btn-primary:hover,
 .btn-success:hover,
-.filter-btn:hover {
+.btn-secondary:hover {
     background-color: var(--hover-color);
-    border-color: var(--hover-color);
 }
 
-.btn-success:focus {
-    box-shadow: 0 0 0 0.2rem rgba(44, 144, 69, 0.25);
+.btn-secondary {
+    background-color: var(--primary-color);
 }
 
-/* Search bar styling */
+/* Search Bar */
 .search-bar {
-    width: 250px;
-    padding: 8px 12px;
     border: 1px solid var(--secondary-color);
-    border-radius: 6px;
-    font-family: var(--font-poppins);
     transition: border-color 0.2s ease;
 }
 
 .search-bar:focus {
     border-color: var(--primary-color);
-    outline: none;
     box-shadow: 0 0 5px rgba(44, 144, 69, 0.3);
 }
 
-/* Charts section */
-.charts-section {
-    margin-bottom: 30px;
+/* Filter Button */
+.filter-btn {
+    background-color: var(--primary-color);
+    border: none;
+    color: var(--white-text-color);
+    font-weight: 500;
+    white-space: nowrap;
 }
 
+.filter-btn:hover {
+    background-color: var(--hover-color);
+}
+
+/* Chart Cards */
 .chart-card {
     background-color: var(--background-color);
-    padding: 25px;
+    padding: 20px;
     border-radius: 12px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    margin-bottom: 20px;
-    height: 400px;
+    height: 100%;
     display: flex;
     flex-direction: column;
-    text-align: center;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -154,44 +119,47 @@ body {
 .chart-card h3 {
     color: var(--text-color);
     font-weight: 700;
-    margin-bottom: 20px;
-    font-size: 1.5rem;
+    margin-bottom: 15px;
+    font-size: 1.3rem;
     font-family: var(--font-baloo);
+    text-align: center;
 }
 
-.chart-card canvas {
+.chart-wrapper {
     flex: 1;
+    position: relative;
+    min-height: 250px;
+}
+
+.chart-wrapper canvas {
     max-height: 300px;
 }
 
-/* Reports table heading */
+/* Reports Table */
 .reports-table h3 {
     color: var(--text-color);
     font-weight: 700;
-    margin-bottom: 15px;
     font-size: 1.5rem;
 }
 
-/* Table styling */
+/* Table Styles */
 .table {
     background-color: var(--background-color);
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
     margin-bottom: 0;
 }
 
 .table th {
-    font-family: var(--font-poppins);
     font-weight: 600;
     color: var(--text-color);
     background-color: var(--secondary-color);
     padding: 15px;
     border-bottom: 2px solid var(--primary-color);
+    white-space: nowrap;
 }
 
 .table td {
-    font-family: var(--font-poppins);
     color: var(--text-color);
     padding: 15px;
     vertical-align: middle;
@@ -207,14 +175,14 @@ body {
     font-size: 0.85rem;
 }
 
-/* Status badge styling */
+/* Status Badges */
 .status {
-    text-align: center;
     padding: 6px 12px;
     border-radius: 20px;
     font-size: 0.85rem;
     font-weight: 500;
     display: inline-block;
+    white-space: nowrap;
 }
 
 .status.pending {
@@ -263,72 +231,7 @@ body {
     color: #721c24;
 }
 
-/* Summary cards */
-.summary-cards {
-    margin-bottom: 30px;
-}
-
-.summary-card {
-    background-color: var(--background-color);
-    border: none;
-    border-radius: 12px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    padding: 20px;
-    text-align: center;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    height: 100%;
-}
-
-.summary-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-}
-
-.summary-card .card-title {
-    color: var(--secondary-text-color);
-    font-size: 0.95rem;
-    font-weight: 600;
-    margin-bottom: 10px;
-    font-family: var(--font-poppins);
-}
-
-.summary-card .card-text {
-    color: var(--primary-color);
-    font-weight: 700;
-    font-size: 1.8rem;
-    margin-bottom: 0;
-    font-family: var(--font-baloo);
-}
-
-/* Loading overlay */
-#loadingOverlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(255, 255, 255, 0.9);
-    display: none;
-    justify-content: center;
-    align-items: center;
-    z-index: 9999;
-    backdrop-filter: blur(2px);
-}
-
-/* Error alert */
-.alert-danger {
-    background-color: #f8d7da;
-    border-color: #f5c6cb;
-    color: #721c24;
-    border-radius: 8px;
-    margin-bottom: 20px;
-}
-
-.alert-danger .btn-close {
-    color: #721c24;
-}
-
-/* Modal styling */
+/* Modal Styling */
 .modal-content {
     border-radius: 12px;
     border: none;
@@ -346,12 +249,8 @@ body {
     font-family: var(--font-baloo);
 }
 
-/* Form select styling */
 .form-select {
     border: 1px solid var(--secondary-color);
-    border-radius: 6px;
-    padding: 8px 12px;
-    font-family: var(--font-poppins);
 }
 
 .form-select:focus {
@@ -359,141 +258,197 @@ body {
     box-shadow: 0 0 5px rgba(44, 144, 69, 0.3);
 }
 
-/* Animation for smooth transitions */
-.fade-in {
-    animation: fadeIn 0.3s ease-in;
-}
+/* ===== RESPONSIVE STYLES ===== */
 
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
+/* Desktop */
+@media (min-width: 992px) {
+    .reports-header {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
     }
 
-    to {
-        opacity: 1;
-        transform: translateY(0);
+    .header-actions {
+        flex-direction: row;
+        align-items: center;
     }
 }
 
-/* Empty state styling */
-.text-center.text-muted {
-    color: var(--secondary-text-color) !important;
-    font-style: italic;
-}
-
-/* Responsive adjustments */
-@media (max-width: 992px) {
+/* Tablet and below */
+@media (max-width: 991px) {
     .content {
         margin-left: 0;
         width: 100%;
         padding: 20px;
     }
-
-    body.sidebar-visible .content {
-        margin-left: 250px;
-        width: calc(100% - 250px);
-    }
-
-    .header-actions {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .date-filter {
-        justify-content: center;
-    }
-
-    .search-bar {
-        width: 100%;
-    }
-
-    .chart-card {
-        height: 350px;
-    }
 }
 
+/* Mobile - Medium */
 @media (max-width: 768px) {
-    .reports-header {
-        flex-direction: column;
-        gap: 20px;
-        text-align: center;
-    }
-
-    .summary-card .card-text {
-        font-size: 1.5rem;
-    }
-
-    .chart-card {
-        height: 300px;
-        padding: 20px;
-    }
-
-    .table-responsive {
-        font-size: 0.9rem;
-    }
-
-    .table th,
-    .table td {
-        padding: 10px;
-    }
-}
-
-@media (max-width: 576px) {
     .content {
+        margin-left: 70px;
+        width: calc(100% - 70px);
         padding: 15px;
-    }
-
-    body.sidebar-visible .content {
-        margin-left: 200px;
-        width: calc(100% - 200px);
     }
 
     .reports-header {
-        gap: 15px;
         padding: 15px;
+        margin-bottom: 20px;
     }
 
-    .header-actions {
-        gap: 10px;
+    .reports-header h2 {
+        font-size: 1.4rem;
     }
 
-    .date-filter {
-        flex-direction: column;
-        align-items: stretch;
+    .chart-wrapper {
+        min-height: 200px;
     }
 
-    .date-filter span {
-        display: none;
-    }
-
-    .chart-card {
-        height: 250px;
-        padding: 15px;
+    .chart-wrapper canvas {
+        max-height: 250px;
     }
 
     .chart-card h3 {
+        font-size: 1.2rem;
+    }
+
+    .reports-table h3 {
         font-size: 1.3rem;
     }
 
-    .chart-card canvas {
-        max-height: 200px;
-    }
-
-    .summary-card {
-        padding: 15px;
-    }
-
-    .summary-card .card-text {
-        font-size: 1.3rem;
-    }
-
-    .table-responsive {
+    .table {
         font-size: 0.85rem;
     }
 
     .table th,
     .table td {
+        padding: 10px 8px;
+    }
+
+    /* Hide less critical columns */
+    .th-details,
+    .th-date,
+    .table td:nth-child(4),
+    .table td:nth-child(6) {
+        display: none;
+    }
+
+    .status {
+        padding: 4px 8px;
+        font-size: 0.75rem;
+    }
+}
+
+/* Mobile - Small */
+@media (max-width: 576px) {
+    .content {
+        margin-left: 60px;
+        width: calc(100% - 60px);
+        padding: 12px;
+    }
+
+    .reports-header {
+        padding: 12px;
+        gap: 12px;
+    }
+
+    .reports-header h2 {
+        font-size: 1.2rem;
+    }
+
+    .date-picker {
+        min-width: 100%;
+    }
+
+    .chart-card {
+        padding: 15px;
+    }
+
+    .chart-card h3 {
+        font-size: 1.1rem;
+        margin-bottom: 10px;
+    }
+
+    .chart-wrapper {
+        min-height: 180px;
+    }
+
+    .chart-wrapper canvas {
+        max-height: 200px;
+    }
+
+    .reports-table h3 {
+        font-size: 1.2rem;
+    }
+
+    .table {
+        font-size: 0.75rem;
+    }
+
+    .table th,
+    .table td {
+        padding: 8px 6px;
+    }
+
+    /* Hide customer details column on very small screens */
+    .th-customer,
+    .table td:nth-child(2) {
+        max-width: 120px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .status {
+        padding: 3px 6px;
+        font-size: 0.7rem;
+    }
+}
+
+/* Extra small devices */
+@media (max-width: 400px) {
+    .content {
+        margin-left: 55px;
+        width: calc(100% - 55px);
         padding: 10px;
+    }
+
+    .reports-header h2 {
+        font-size: 1.1rem;
+    }
+
+    .chart-card {
+        padding: 12px;
+    }
+
+    .chart-wrapper {
+        min-height: 160px;
+    }
+}
+
+/* Landscape mode for mobile */
+@media (max-width: 768px) and (orientation: landscape) {
+    .chart-card {
+        padding: 15px;
+    }
+
+    .chart-wrapper {
+        min-height: 150px;
+    }
+
+    .chart-wrapper canvas {
+        max-height: 180px;
+    }
+}
+
+/* Ensure proper table scrolling */
+@media (max-width: 768px) {
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .table {
+        min-width: 500px;
     }
 }

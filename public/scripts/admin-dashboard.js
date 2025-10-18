@@ -6,11 +6,11 @@ class AdminDashboard {
       total: 0,
       new_orders: 0,
       pending_custom_cakes: 0,
-      new_custom_cakes: 0 // Added this for new custom cake orders
+      new_custom_cakes: 0 //new custom cake orders
     };
     this.newOrders = [];
     this.pendingCustomCakes = [];
-    this.newCustomCakes = []; // Added to track new custom cake orders
+    this.newCustomCakes = []; //track new custom cake orders
     this.lastUpdate = null;
     this.init();
   }
@@ -629,7 +629,7 @@ class AdminDashboard {
 
     // Refresh button
     const refreshBtn = document.createElement("button");
-    refreshBtn.className = "btn btn-sm btn-outline-primary ms-3 custom-outline-green";
+    refreshBtn.className = "btn btn-sm btn-outline-primary mt-2 custom-outline-green";
     refreshBtn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Refresh';
     refreshBtn.addEventListener("click", () => this.loadDashboardData());
     
@@ -640,7 +640,6 @@ class AdminDashboard {
   }
 
   startAutoRefresh() {
-    // Refresh data every 2 minutes
     setInterval(() => {
       this.loadDashboardData();
     }, 2 * 60 * 1000);

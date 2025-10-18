@@ -28,97 +28,106 @@
     <script src="https://cdn.jsdelivr.net/npm/table2excel@1.0.0/dist/table2excel.min.js"></script>
   </head>
   <body>
-    <button class="sidebar-toggle" aria-label="Toggle sidebar">
-      <i class="bi bi-list"></i>
-    </button>
     <div class="d-flex">
       <div data-include-admin-sidebar="/includes/sidebar-admin.html"></div>
       <main class="content">
+        <!-- Reports Header -->
         <div class="reports-header">
-          <h2>Reports</h2>
-          <div class="header-actions">
-            <div class="date-filter">
-              <div class="d-flex align-items-center gap-2 flex-wrap">
-                <div class="d-flex align-items-center gap-2">
-                  <input
-                    type="date"
-                    class="form-control date-picker"
-                    id="startDate"
-                    name="startDate"
-                    style="min-width: 150px"
-                  />
-                  <span class="mx-1">to</span>
-                  <input
-                    type="date"
-                    class="form-control date-picker"
-                    id="endDate"
-                    name="endDate"
-                    style="min-width: 150px"
-                  />
-                </div>
+          <h2 class="mb-3 mb-lg-0">Reports</h2>
+          <div class="header-actions w-100 w-lg-auto">
+            <!-- Date Filter -->
+            <div class="date-filter mb-2 mb-lg-0">
+              <div
+                class="d-flex flex-column flex-sm-row align-items-stretch align-items-sm-center gap-2"
+              >
+                <input
+                  type="date"
+                  class="form-control date-picker"
+                  id="startDate"
+                  name="startDate"
+                />
+                <span class="text-center d-none d-sm-inline">to</span>
+                <input
+                  type="date"
+                  class="form-control date-picker"
+                  id="endDate"
+                  name="endDate"
+                />
                 <button id="applyDateFilter" class="btn btn-primary">
-                  Apply Filter
+                  Apply
                 </button>
               </div>
             </div>
-            <button id="exportExcel" class="btn btn-success">
-              <i class="bi bi-file-earmark-excel"></i> Export to Excel
+            <!-- Export Button -->
+            <button id="exportExcel" class="btn btn-success w-100 w-sm-auto">
+              <i class="bi bi-file-earmark-excel"></i>
+              <span class="d-none d-sm-inline">Export to</span> Excel
             </button>
           </div>
         </div>
-        <!-- Rest of your content remains the same -->
-        <div class="charts-section row">
-          <div class="col-lg-6 col-md-12">
+
+        <!-- Charts Section -->
+        <div class="row g-3 mb-4">
+          <div class="col-lg-6">
             <div class="chart-card">
               <h3>Total Orders</h3>
-              <canvas id="totalOrdersChart"></canvas>
-            </div>
-          </div>
-          <div class="col-lg-6 col-md-12">
-            <div class="chart-card">
-              <h3>Popular Items</h3>
-              <canvas id="popularItemsChart"></canvas>
-            </div>
-          </div>
-        </div>
-        <div class="reports-table">
-          <div class="row align-items-center mb-3">
-            <div class="col-auto">
-              <h3 class="m-0">Sales Report</h3>
-            </div>
-            <div class="col-auto ms-auto">
-              <div class="header-actions">
-                <input
-                  type="text"
-                  class="form-control search-bar"
-                  placeholder="Search by order ID or customer name..."
-                />
-                <button
-                  class="filter-btn"
-                  data-bs-toggle="modal"
-                  data-bs-target="#filterModal"
-                >
-                  Filter Orders
-                </button>
+              <div class="chart-wrapper">
+                <canvas id="totalOrdersChart"></canvas>
               </div>
             </div>
           </div>
+          <div class="col-lg-6">
+            <div class="chart-card">
+              <h3>Popular Items</h3>
+              <div class="chart-wrapper">
+                <canvas id="popularItemsChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sales Report Table -->
+        <div class="reports-table">
+          <div
+            class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between mb-3 gap-2"
+          >
+            <h3 class="m-0">Sales Report</h3>
+            <div class="d-flex flex-column flex-sm-row gap-2 w-100 w-sm-auto">
+              <input
+                type="text"
+                class="form-control search-bar"
+                placeholder="Search by order ID or name..."
+              />
+              <button
+                class="btn btn-secondary filter-btn"
+                type="button"
+                data-bs-toggle="modal"
+                data-bs-target="#filterModal"
+              >
+                <i class="bi bi-funnel d-sm-none"></i>
+                <span class="d-none d-sm-inline">Filter</span>
+              </button>
+            </div>
+          </div>
+
           <div class="table-responsive">
             <table class="table table-hover" id="salesTable">
               <thead>
                 <tr>
-                  <th>Order ID</th>
-                  <th>Customer & Details</th>
-                  <th>Amount</th>
-                  <th>Order Details</th>
-                  <th>Status</th>
-                  <th>Date</th>
+                  <th class="th-order-id">Order ID</th>
+                  <th class="th-customer">Customer & Details</th>
+                  <th class="th-amount">Amount</th>
+                  <th class="th-details">Order Details</th>
+                  <th class="th-status">Status</th>
+                  <th class="th-date">Date</th>
                 </tr>
               </thead>
               <tbody id="salesTableBody"></tbody>
             </table>
           </div>
         </div>
+
+        <!-- Filter Modal -->
         <div
           class="modal fade"
           id="filterModal"
@@ -126,7 +135,7 @@
           aria-labelledby="filterModalLabel"
           aria-hidden="true"
         >
-          <div class="modal-dialog">
+          <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
               <div class="modal-header">
                 <h5 class="modal-title" id="filterModalLabel">
@@ -151,7 +160,16 @@
                     <option value="cancelled">Cancelled</option>
                   </select>
                 </div>
-                <button class="btn btn-primary" id="applyFilter">
+              </div>
+              <div class="modal-footer">
+                <button
+                  type="button"
+                  class="btn btn-secondary"
+                  data-bs-dismiss="modal"
+                >
+                  Close
+                </button>
+                <button type="button" class="btn btn-primary" id="applyFilter">
                   Apply Filter
                 </button>
               </div>

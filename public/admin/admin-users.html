@@ -20,72 +20,107 @@
       href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;700&family=Poppins:wght@300;400;600&display=swap"
       rel="stylesheet"
     />
-    <!-- Bootstrap Icons for icons -->
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css"
       rel="stylesheet"
     />
   </head>
   <body>
-    <!-- Sidebar toggle button for mobile view -->
-    <button class="sidebar-toggle" aria-label="Toggle sidebar">
-      <i class="bi bi-list"></i>
-    </button>
-    <!-- Main layout container with flexbox for sidebar and content -->
     <div class="d-flex">
-      <!-- Sidebar for navigation -->
+      <!-- Sidebar -->
       <div data-include-admin-sidebar="/includes/sidebar-admin.html"></div>
-      <!-- Main content area -->
+
+      <!-- Main Content -->
       <main class="content">
-        <!-- User Management header -->
+        <!-- User Management Header -->
         <div class="user-management-header">
-          <h2>User Management</h2>
-          <div class="header-actions">
-            <a href="#" class="view-link active" data-view="active"
+          <h2 class="mb-3 mb-lg-0">User Management</h2>
+          <div class="header-actions w-100 w-lg-auto">
+            <!-- Search and Add Button -->
+            <div class="d-flex flex-column flex-sm-row gap-2 w-100 w-sm-auto">
+              <input
+                type="text"
+                class="form-control search-bar"
+                placeholder="Search by name or email..."
+              />
+              <button
+                class="btn btn-primary add-user-btn"
+                data-bs-toggle="modal"
+                data-bs-target="#addUserModal"
+              >
+                <span class="d-sm-inline">Add New User</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Nav Tabs -->
+        <ul class="nav nav-tabs">
+          <li class="nav-item">
+            <a
+              class="nav-link active"
+              href="#active-accounts"
+              data-bs-toggle="tab"
+              data-view="active"
               >Active Accounts</a
             >
-            |
-            <a href="#" class="view-link" data-view="archived"
+          </li>
+          <li class="nav-item">
+            <a
+              class="nav-link"
+              href="#archived-accounts"
+              data-bs-toggle="tab"
+              data-view="archived"
               >Archived Accounts</a
             >
-            <input
-              type="text"
-              class="form-control search-bar"
-              placeholder="Search by name or email..."
-            />
-            <button
-              class="add-user-btn"
-              data-bs-toggle="modal"
-              data-bs-target="#addUserModal"
-            >
-              Add New User
-            </button>
+          </li>
+        </ul>
+
+        <!-- Tab Content -->
+        <div class="tab-content">
+          <!-- Active Accounts Tab -->
+          <div class="tab-pane fade show active" id="active-accounts">
+            <div class="table-responsive">
+              <table class="table table-hover">
+                <thead>
+                  <tr>
+                    <th class="th-employee-id">Employee ID</th>
+                    <th class="th-name">Name</th>
+                    <th class="th-email">Email</th>
+                    <th class="th-role">Role</th>
+                    <th class="th-status">Status</th>
+                    <th class="th-action">Action</th>
+                  </tr>
+                </thead>
+                <tbody class="active-users">
+                  <!-- Populated dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Archived Accounts Tab -->
+          <div class="tab-pane fade" id="archived-accounts">
+            <div class="table-responsive">
+              <table class="table table-hover">
+                <thead>
+                  <tr>
+                    <th class="th-employee-id">Employee ID</th>
+                    <th class="th-name">Name</th>
+                    <th class="th-email">Email</th>
+                    <th class="th-role">Role</th>
+                    <th class="th-status">Status</th>
+                    <th class="th-action">Action</th>
+                  </tr>
+                </thead>
+                <tbody class="archived-users">
+                  <!-- Populated dynamically -->
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
-        <!-- User table -->
-        <div class="user-table">
-          <h3>Staff Accounts</h3>
-          <div class="table-responsive">
-            <table class="table table-hover">
-              <thead>
-                <tr>
-                  <th>Employee ID</th>
-                  <th>Name</th>
-                  <th>Email</th>
-                  <th>Role</th>
-                  <th>Status</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody class="active-users">
-                <!-- Populated dynamically -->
-              </tbody>
-              <tbody class="archived-users" style="display: none">
-                <!-- Populated dynamically -->
-              </tbody>
-            </table>
-          </div>
-        </div>
+
         <!-- Add User Modal -->
         <div
           class="modal fade"
@@ -94,7 +129,7 @@
           aria-labelledby="addUserModalLabel"
           aria-hidden="true"
         >
-          <div class="modal-dialog">
+          <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
               <div class="modal-header">
                 <h5 class="modal-title" id="addUserModalLabel">
@@ -145,17 +180,30 @@
                       <option value="Admin">Admin</option>
                     </select>
                   </div>
-                  <button type="submit" class="btn btn-primary">
-                    Add User
-                  </button>
                 </form>
+              </div>
+              <div class="modal-footer">
+                <button
+                  type="button"
+                  class="btn btn-secondary"
+                  data-bs-dismiss="modal"
+                >
+                  Close
+                </button>
+                <button
+                  type="submit"
+                  form="addUserForm"
+                  class="btn btn-primary"
+                >
+                  Add User
+                </button>
               </div>
             </div>
           </div>
         </div>
       </main>
     </div>
-    <!-- Bootstrap JS and custom scripts -->
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/scripts/include-admin-sidebar.js"></script>
     <script src="/scripts/environment-config.js"></script>

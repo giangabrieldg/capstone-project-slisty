@@ -2,25 +2,22 @@
     --primary-color: #2c9045;
     --secondary-color: #e6f3ea;
     --background-color: #ffffff;
-    --secondary-background-color: #f5f1e9;
-    --text-color: #2d2d2d;
     --hover-color: #0f5e23;
+    --text-color: #2d2d2d;
     --secondary-text-color: #5e5d5d;
     --white-text-color: #f9f6ee;
     --font-poppins: "Poppins", sans-serif;
     --font-baloo: "Baloo 2", sans-serif;
 }
 
-/* Base body styles */
+/* Base Styles */
 body {
     background-color: var(--background-color);
     font-family: var(--font-poppins);
-    margin: 0;
-    padding: 0;
     overflow-x: hidden;
 }
 
-/* Main content area styling, offset for sidebar */
+/* Main Content */
 .content {
     margin-left: 250px;
     padding: 30px;
@@ -28,13 +25,13 @@ body {
     transition: margin-left 0.3s ease-in-out, width 0.3s ease-in-out;
 }
 
-/* Orders and Payments header */
+/* Orders Header */
 .orders-payments-header {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    flex-direction: column;
+    gap: 15px;
     margin-bottom: 30px;
-    padding: 15px 25px;
+    padding: 20px;
     background-color: var(--background-color);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     border-radius: 8px;
@@ -48,72 +45,57 @@ body {
 }
 
 .header-actions {
-    gap: 5px;
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    gap: 10px;
 }
 
+/* Form Controls */
 .search-bar,
 .date-picker {
-    width: 200px;
-    padding: 5px 10px;
     border: 1px solid var(--secondary-color);
-    border-radius: 4px;
+    transition: border-color 0.2s ease;
 }
 
 .search-bar:focus,
 .date-picker:focus {
     border-color: var(--primary-color);
-    outline: none;
     box-shadow: 0 0 5px rgba(44, 144, 69, 0.3);
 }
 
+/* Buttons */
 .filter-btn,
-#applyFilter,
-#exportExcel {
+#applyFilter {
     background-color: var(--primary-color);
     border: none;
     color: var(--white-text-color);
-    padding: 10px 20px;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
+    font-weight: 500;
+    white-space: nowrap;
 }
 
-.filter-btn:hover {
+.filter-btn:hover,
+#applyFilter:hover {
     background-color: var(--hover-color);
 }
 
-#exportExcel:hover {
-    background-color: var(--hover-color);
-}
-
-/* Orders and Payments table heading */
-.orders-payments-table h3 {
-    color: var(--text-color);
-    font-weight: 700;
-    margin-bottom: 15px;
-    font-size: 1.5rem;
-}
-
-/* Table styling */
+/* Table Styles */
 .table {
     background-color: var(--background-color);
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     overflow: hidden;
+    margin-bottom: 0;
 }
 
 .table th {
-    font-family: var(--font-poppins);
     font-weight: 600;
     color: var(--text-color);
     background-color: var(--secondary-color);
     padding: 15px;
+    white-space: nowrap;
 }
 
 .table td {
-    font-family: var(--font-poppins);
     color: var(--text-color);
     padding: 15px;
     vertical-align: middle;
@@ -124,7 +106,7 @@ body {
     font-size: 0.85rem;
 }
 
-/* Updated By Info Styling */
+/* Updated By Info */
 .updated-by-info {
     padding: 0.5rem 0;
 }
@@ -137,21 +119,22 @@ body {
 .updater-role {
     font-size: 0.8rem;
     text-transform: capitalize;
+    color: var(--secondary-text-color);
 }
 
 .update-time {
     font-size: 0.75rem;
-    color: #6c757d !important;
+    color: #6c757d;
 }
 
-/*Status badge styling */
+/* Status Badges */
 .status {
-    text-align: center;
     padding: 6px 12px;
     border-radius: 20px;
     font-size: 0.85rem;
     font-weight: 500;
     display: inline-block;
+    white-space: nowrap;
 }
 
 .status.pending {
@@ -194,24 +177,24 @@ body {
     color: #721c24;
 }
 
+/* Action Buttons */
 .status-select {
     padding: 5px 10px;
     border: 1px solid var(--secondary-color);
     border-radius: 4px;
-    font-family: var(--font-poppins);
-    margin-right: 10px;
+    margin-bottom: 8px;
+    width: 100%;
 }
 
 .update-status-btn,
 .cancel-order-btn {
-    width: 75%;
-    font-family: var(--font-poppins);
+    width: 100%;
     font-size: 0.9rem;
     padding: 8px 12px;
     border-radius: 4px;
     cursor: pointer;
     transition: all 0.2s ease;
-    margin: 10px;
+    margin-bottom: 8px;
 }
 
 .update-status-btn {
@@ -235,79 +218,200 @@ body {
     color: var(--white-text-color);
 }
 
-/* Responsive adjustments for small screens */
-@media (max-width: 576px) {
+/* Modal Styling */
+.modal-content {
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+.modal-header {
+    background-color: var(--secondary-color);
+    border-bottom: 1px solid var(--primary-color);
+}
+
+.modal-title {
+    color: var(--text-color);
+    font-weight: 600;
+    font-family: var(--font-baloo);
+}
+
+.form-select {
+    border: 1px solid var(--secondary-color);
+}
+
+.form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 5px rgba(44, 144, 69, 0.3);
+}
+
+/* ===== RESPONSIVE STYLES ===== */
+
+/* Desktop */
+@media (min-width: 992px) {
     .orders-payments-header {
-        flex-direction: column;
-        gap: 15px;
-        padding: 15px;
-    }
-
-    .header-actions {
-        flex-direction: column;
-        gap: 10px;
-        width: 100%;
-    }
-
-    .search-bar,
-    .date-picker,
-    .filter-btn,
-    #exportExcel {
-        width: 100%;
-    }
-
-    .table-responsive {
-        font-size: 0.85rem;
-    }
-
-    .table th,
-    .table td {
-        padding: 10px;
-    }
-
-    .status-select,
-    .update-status-btn,
-    .confirm-payment {
-        width: 100%;
-        margin-bottom: 5px;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
     }
 }
 
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    .updated-by-info {
-        min-width: 120px;
-    }
-
-    .updater-name,
-    .updater-role,
-    .update-time {
-        font-size: 0.8rem;
-    }
-}
-
-/* Responsive adjustments for medium and smaller screens */
-@media (max-width: 992px) {
+/* Tablet and below */
+@media (max-width: 991px) {
     .content {
         margin-left: 0;
         width: 100%;
         padding: 20px;
     }
-
-    body.sidebar-visible .content {
-        margin-left: 250px;
-        width: calc(100% - 250px);
-    }
 }
 
-/* Responsive adjustments for small screens */
-@media (max-width: 576px) {
+/* Mobile - Medium */
+@media (max-width: 768px) {
     .content {
+        margin-left: 70px;
+        width: calc(100% - 70px);
         padding: 15px;
     }
 
-    body.sidebar-visible .content {
-        margin-left: 200px;
-        width: calc(100% - 200px);
+    .orders-payments-header {
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+
+    .orders-payments-header h2 {
+        font-size: 1.4rem;
+    }
+
+    .table {
+        font-size: 0.85rem;
+    }
+
+    .table th,
+    .table td {
+        padding: 10px 8px;
+    }
+
+    /* Hide less critical columns */
+    .th-order-date,
+    .th-details,
+    .th-delivery-method,
+    .th-updated-by,
+    .table td:nth-child(3),
+    .table td:nth-child(6),
+    .table td:nth-child(7),
+    .table td:nth-child(9) {
+        display: none;
+    }
+
+    .status {
+        padding: 4px 8px;
+        font-size: 0.75rem;
+    }
+
+    .updated-by-info {
+        min-width: auto;
+    }
+
+    .updater-name,
+    .updater-role,
+    .update-time {
+        font-size: 0.75rem;
+    }
+
+    .update-status-btn,
+    .cancel-order-btn {
+        font-size: 0.8rem;
+        padding: 6px 10px;
+    }
+}
+
+/* Mobile - Small */
+@media (max-width: 576px) {
+    .content {
+        margin-left: 60px;
+        width: calc(100% - 60px);
+        padding: 12px;
+    }
+
+    .orders-payments-header {
+        padding: 12px;
+        gap: 12px;
+    }
+
+    .orders-payments-header h2 {
+        font-size: 1.2rem;
+    }
+
+    .table {
+        font-size: 0.75rem;
+    }
+
+    .table th,
+    .table td {
+        padding: 8px 6px;
+    }
+
+    /* Additional column hiding for very small screens */
+    .th-delivery-date,
+    .table td:nth-child(4) {
+        display: none;
+    }
+
+    .status {
+        padding: 3px 6px;
+        font-size: 0.7rem;
+    }
+
+    .status-select {
+        font-size: 0.8rem;
+        padding: 4px 8px;
+    }
+
+    .update-status-btn,
+    .cancel-order-btn {
+        font-size: 0.75rem;
+        padding: 5px 8px;
+    }
+}
+
+/* Extra small devices */
+@media (max-width: 400px) {
+    .content {
+        margin-left: 55px;
+        width: calc(100% - 55px);
+        padding: 10px;
+    }
+
+    .orders-payments-header h2 {
+        font-size: 1.1rem;
+    }
+
+    .table th,
+    .table td {
+        padding: 6px 4px;
+        font-size: 0.7rem;
+    }
+}
+
+/* Ensure proper table scrolling */
+@media (max-width: 768px) {
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .table {
+        min-width: 600px;
+    }
+}
+
+/* Landscape mode for mobile */
+@media (max-width: 768px) and (orientation: landscape) {
+    .content {
+        padding: 10px;
+    }
+
+    .orders-payments-header {
+        padding: 10px;
     }
 }

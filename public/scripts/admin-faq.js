@@ -23,13 +23,17 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
       
-      faqsTableBody.innerHTML = faqs.map(faq => `
+     faqsTableBody.innerHTML = faqs.map(faq => `
         <tr>
           <td>${escapeHtml(faq.question)}</td>
           <td>${escapeHtml(faq.answer)}</td>
           <td>
-            <button class="btn btn-warning btn-sm edit-faq" data-question="${escapeHtml(faq.question)}" data-answer="${escapeHtml(faq.answer)}">Edit</button>
-            <button class="btn btn-danger btn-sm remove-faq" data-question="${escapeHtml(faq.question)}">Remove</button>
+            <button class="edit-faq" data-question="${escapeHtml(faq.question)}" data-answer="${escapeHtml(faq.answer)}" title="Edit">
+              <i class="bi bi-pencil"></i>
+            </button>
+            <button class="remove-faq" data-question="${escapeHtml(faq.question)}" title="Remove">
+              <i class="bi bi-trash"></i>
+            </button>
           </td>
         </tr>
       `).join('');

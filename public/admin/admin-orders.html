@@ -26,59 +26,66 @@
     />
   </head>
   <body>
-    <button class="sidebar-toggle" aria-label="Toggle sidebar">
-      <i class="bi bi-list"></i>
-    </button>
     <div class="d-flex">
       <!-- Sidebar -->
       <div data-include-admin-sidebar="/includes/sidebar-admin.html"></div>
 
       <!-- Main Content -->
       <main class="content">
+        <!-- Orders Header -->
         <div class="orders-payments-header">
-          <h2>Orders and Payments</h2>
-          <div class="header-actions">
-            <input
-              type="text"
-              class="form-control search-bar"
-              placeholder="Search by Order ID, Name, or Amount..."
-            />
-            <input
-              type="date"
-              class="form-control date-picker"
-              id="datePicker"
-            />
-            <button
-              class="btn btn-secondary filter-btn"
-              type="button"
-              data-bs-toggle="modal"
-              data-bs-target="#filterModal"
-            >
-              Filter
-            </button>
+          <h2 class="mb-3 mb-lg-0">Orders and Payments</h2>
+          <div class="header-actions w-100 w-lg-auto">
+            <div class="d-flex flex-column flex-sm-row gap-2">
+              <input
+                type="text"
+                class="form-control search-bar"
+                placeholder="Search by Order ID or Name..."
+              />
+              <div class="d-flex gap-2">
+                <input
+                  type="date"
+                  class="form-control date-picker"
+                  id="datePicker"
+                />
+                <button
+                  class="btn btn-secondary filter-btn"
+                  type="button"
+                  data-bs-toggle="modal"
+                  data-bs-target="#filterModal"
+                >
+                  <i class="bi bi-funnel d-sm-none"></i>
+                  <span class="d-none d-sm-inline">Filter</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
+
+        <!-- Orders Table -->
         <div class="orders-payments-table">
           <div class="table-responsive">
             <table class="table table-hover" id="ordersPaymentsTable">
               <thead>
                 <tr>
-                  <th>Order ID</th>
-                  <th>Customer Name</th>
-                  <th>Order Date</th>
-                  <th>Deliver/Pickup Date</th>
-                  <th>Amount</th>
-                  <th>Order Details</th>
-                  <th>Delivery Method</th>
-                  <th>Status</th>
-                  <th>Updated By</th>
-                  <th>Action</th>
+                  <th class="th-order-id">Order ID</th>
+                  <th class="th-customer">Customer Name</th>
+                  <th class="th-order-date">Order Date</th>
+                  <th class="th-delivery-date">Deliver/Pickup Date</th>
+                  <th class="th-amount">Amount</th>
+                  <th class="th-details">Order Details</th>
+                  <th class="th-delivery-method">Delivery Method</th>
+                  <th class="th-status">Status</th>
+                  <th class="th-updated-by">Updated By</th>
+                  <th class="th-action">Action</th>
                 </tr>
               </thead>
               <tbody id="ordersTableBody"></tbody>
             </table>
           </div>
         </div>
+
+        <!-- Filter Modal -->
         <div
           class="modal fade"
           id="filterModal"
@@ -86,7 +93,7 @@
           aria-labelledby="filterModalLabel"
           aria-hidden="true"
         >
-          <div class="modal-dialog">
+          <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
               <div class="modal-header">
                 <h5 class="modal-title" id="filterModalLabel">
@@ -132,7 +139,16 @@
                     id="filterPickupDate"
                   />
                 </div>
-                <button class="btn btn-primary" id="applyFilter">
+              </div>
+              <div class="modal-footer">
+                <button
+                  type="button"
+                  class="btn btn-secondary"
+                  data-bs-dismiss="modal"
+                >
+                  Close
+                </button>
+                <button type="button" class="btn btn-primary" id="applyFilter">
                   Apply Filter
                 </button>
               </div>

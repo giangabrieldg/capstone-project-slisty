@@ -1,26 +1,17 @@
 /* Define CSS variables for consistent theming */
 :root {
     --primary-color: #2c9045;
-    /* Primary brand color */
     --secondary-color: #e6f3ea;
-    /* Light background for cards */
     --background-color: #ffffff;
-    /* Main background */
     --secondary-background-color: #f5f1e9;
-    /* Secondary background */
     --sidebar-hover-color: #a8d9b0;
-    /* Sidebar hover state */
     --text-color: #2d2d2d;
-    /* Primary text color */
     --secondary-text-color: #5e5d5d;
-    /* Secondary text color */
     --white-text-color: #f9f6ee;
-    /* Text color for sidebar */
     --font-poppins: "Poppins", sans-serif;
-    /* Main font */
 }
 
-/* Sidebar styling, visible by default */
+/* Sidebar styling */
 .sidebar {
     width: 250px;
     background-color: var(--primary-color);
@@ -29,35 +20,28 @@
     top: 0;
     left: 0;
     overflow-y: auto;
-    transition: transform 0.3s ease-in-out;
-    /* Smooth slide animation */
+    transition: width 0.3s ease-in-out;
     z-index: 1000;
     color: var(--white-text-color);
     box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
-    /* Subtle shadow for depth */
 }
 
-/* Sidebar header with logo and user info */
+/* Sidebar header */
 .sidebar-header {
     padding: 30px 20px;
     text-align: center;
     border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-    /* Subtle divider */
-}
-
-.logo {
-    max-width: 120px;
-    margin-bottom: 20px;
-    /* Space below logo */
+    transition: padding 0.3s ease-in-out;
 }
 
 .user-info {
     display: flex;
     flex-direction: column;
     align-items: center;
+    transition: all 0.3s ease-in-out;
 }
 
-/* Notification Toggle (replaces user icon) */
+/* Notification Toggle */
 .notification-toggle {
     position: relative;
     width: 60px;
@@ -90,10 +74,6 @@
     transition: color 0.3s ease;
 }
 
-.notification-toggle:hover i {
-    color: var(--primary-color);
-}
-
 .notification-count {
     position: absolute;
     top: -5px;
@@ -110,12 +90,14 @@
     font-family: var(--font-poppins);
     font-size: 1.1rem;
     font-weight: 600;
+    transition: opacity 0.3s ease-in-out;
 }
 
 .user-info .user-role {
     font-family: var(--font-poppins);
     font-size: 0.85rem;
     color: #d3d3d3;
+    transition: opacity 0.3s ease-in-out;
 }
 
 /* Notifications Section */
@@ -123,27 +105,11 @@
     padding: 20px 15px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.2);
     background: rgba(255, 255, 255, 0.05);
-    animation: slideDown 0.3s ease-out;
+    transition: all 0.3s ease-in-out;
 }
 
 .notifications-sidebar-section.hidden {
     display: none !important;
-}
-
-.notifications-sidebar-section.visible {
-    display: block;
-}
-
-@keyframes slideDown {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
 }
 
 .sidebar-section-header {
@@ -151,6 +117,7 @@
     align-items: center;
     justify-content: space-between;
     margin-bottom: 12px;
+    transition: all 0.3s ease-in-out;
 }
 
 .sidebar-section-header h6 {
@@ -162,6 +129,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    transition: opacity 0.3s ease-in-out;
 }
 
 .notification-count-badge {
@@ -193,7 +161,6 @@
 .notification-item:hover {
     background: rgba(255, 255, 255, 0.15);
     border-color: rgba(255, 255, 255, 0.3);
-    transform: translateX(2px);
 }
 
 .notification-item:last-child {
@@ -215,6 +182,7 @@
 .notification-content {
     flex: 1;
     min-width: 0;
+    transition: opacity 0.3s ease-in-out;
 }
 
 .notification-title {
@@ -235,13 +203,6 @@
     line-height: 1.2;
 }
 
-.notification-meta {
-    font-size: 0.7rem;
-    color: rgba(255, 255, 255, 0.6);
-    margin-bottom: 2px;
-    line-height: 1.2;
-}
-
 .notification-time {
     font-size: 0.7rem;
     color: rgba(255, 255, 255, 0.5);
@@ -253,6 +214,7 @@
     padding: 20px 10px;
     color: rgba(255, 255, 255, 0.6);
     font-family: var(--font-poppins);
+    transition: opacity 0.3s ease-in-out;
 }
 
 .notification-empty-state i {
@@ -264,83 +226,6 @@
 
 .notification-empty-state small {
     font-size: 0.8rem;
-}
-
-.notification-view-all {
-    margin-top: 12px;
-    padding-top: 12px;
-    border-top: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.notification-view-all .btn {
-    font-size: 0.8rem;
-    padding: 6px 12px;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    color: var(--white-text-color);
-    transition: all 0.3s ease;
-}
-
-.notification-view-all .btn:hover {
-    background: rgba(255, 255, 255, 0.2);
-    border-color: rgba(255, 255, 255, 0.5);
-}
-
-/* Different notification types */
-.notification-item.new-order {
-    border-left: 3px solid #4dabf7;
-    /* Blue accent for regular orders */
-}
-
-.notification-item.new-custom-cake {
-    border-left: 3px solid #69db7c;
-    /* Green accent for custom cakes */
-}
-
-.notification-item.pending-cake {
-    border-left: 3px solid #ffd43b;
-    /* Yellow accent for pending cakes */
-}
-
-/* Scrollbar styling for notifications */
-.notifications-list::-webkit-scrollbar {
-    width: 4px;
-}
-
-.notifications-list::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 2px;
-}
-
-.notifications-list::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.3);
-    border-radius: 2px;
-}
-
-.notifications-list::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.5);
-}
-
-/* Notification Section Visibility */
-.notifications-sidebar-section.hidden {
-    display: none !important;
-}
-
-.notifications-sidebar-section.visible {
-    display: block;
-    animation: slideDown 0.3s ease-out;
-}
-
-@keyframes slideDown {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
 }
 
 /* Navigation menu */
@@ -359,20 +244,24 @@
     font-family: var(--font-poppins);
     font-weight: 500;
     font-size: 0.95rem;
-    transition: background-color 0.3s ease, color 0.3s ease;
-    /* Smooth hover effect */
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    overflow: hidden;
 }
 
 .nav-item .icon {
     margin-right: 15px;
     font-size: 1.2rem;
     color: var(--white-text-color);
-    transition: color 0.3s ease;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+    width: 20px;
+    text-align: center;
 }
 
 .nav-item span {
     flex: 1;
-    /* Ensure text takes available space */
+    transition: opacity 0.3s ease-in-out;
 }
 
 .nav-item.active,
@@ -386,61 +275,55 @@
     color: var(--primary-color)
 }
 
-/* Sidebar toggle button for mobile */
-.sidebar-toggle {
-    display: none;
-    /* Hidden by default on desktop */
-    position: fixed;
-    top: 20px;
-    left: 20px;
-    background-color: var(--primary-color);
-    border: none;
-    color: var(--white-text-color);
-    padding: 12px;
-    border-radius: 8px;
-    z-index: 1100;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-}
+/* ===== MOBILE STYLES - ICONS ONLY ===== */
 
-.sidebar-toggle:hover {
-    background-color: var(--sidebar-hover-color);
-}
-
-/* Responsive adjustments for medium and smaller screens */
-@media (max-width: 992px) {
-    .sidebar-toggle {
-        display: block;
-        /* Show toggle button on mobile */
-    }
-
-    .summary-card {
-        margin-bottom: 15px;
-    }
-}
-
-/* Responsive adjustments for medium and smaller screens */
-@media (max-width: 992px) {
+@media (max-width: 768px) {
     .sidebar {
-        transform: translateX(-100%);
-        /* Hide sidebar by default on mobile */
+        width: 70px;
+        /* Collapsed width for icons only */
     }
 
-    .sidebar.show {
-        transform: translateX(0);
-        /* Show when toggled */
-    }
-}
-
-/* Responsive adjustments for small screens */
-@media (max-width: 576px) {
-    .sidebar {
-        width: 200px;
-        /* Narrower sidebar for mobile */
+    .sidebar-header {
+        padding: 20px 10px;
     }
 
+    .user-info .user-name,
+    .user-info .user-role {
+        opacity: 0;
+        height: 0;
+        margin: 0;
+        font-size: 0;
+    }
+
+    .notification-toggle {
+        width: 40px;
+        height: 40px;
+        margin-bottom: 0;
+    }
+
+    .notification-toggle i {
+        font-size: 1.2rem;
+    }
+
+    .notification-count {
+        top: -2px;
+        right: -2px;
+        font-size: 0.6rem;
+        padding: 2px 6px;
+        min-width: 16px;
+    }
+
+    /* Hide notification section text on mobile */
     .notifications-sidebar-section {
-        padding: 15px 12px;
+        padding: 15px 10px;
+    }
+
+    .sidebar-section-header h6 span:not(.icon),
+    .notification-count-badge {
+        opacity: 0;
+        width: 0;
+        height: 0;
+        overflow: hidden;
     }
 
     .notification-item {
@@ -449,37 +332,119 @@
     }
 
     .notification-content {
-        min-width: 140px;
+        opacity: 0;
+        width: 0;
+        height: 0;
+        overflow: hidden;
     }
 
+    .notification-empty-state small {
+        opacity: 0;
+        height: 0;
+        overflow: hidden;
+    }
+
+    /* Navigation items - icons only */
     .nav-item {
-        padding: 12px 20px;
-        font-size: 0.9rem;
+        padding: 15px;
+        justify-content: center;
     }
 
     .nav-item .icon {
-        margin-right: 10px;
+        margin-right: 0;
+        font-size: 1.3rem;
+    }
+
+    .nav-item span {
+        opacity: 0;
+        width: 0;
+        height: 0;
+        overflow: hidden;
+    }
+}
+
+/* Small mobile devices */
+@media (max-width: 576px) {
+    .sidebar {
+        width: 60px;
+    }
+
+    .sidebar-header {
+        padding: 15px 8px;
+    }
+
+    .notification-toggle {
+        width: 35px;
+        height: 35px;
+    }
+
+    .notification-toggle i {
+        font-size: 1.1rem;
+    }
+
+    .nav-item {
+        padding: 12px;
+    }
+
+    .nav-item .icon {
+        font-size: 1.2rem;
+    }
+
+    .notifications-sidebar-section {
+        padding: 12px 8px;
+    }
+}
+
+/* Extra small devices */
+@media (max-width: 400px) {
+    .sidebar {
+        width: 55px;
+    }
+
+    .sidebar-header {
+        padding: 12px 6px;
+    }
+
+    .notification-toggle {
+        width: 32px;
+        height: 32px;
+    }
+
+    .nav-item {
+        padding: 10px;
+    }
+
+    .nav-item .icon {
         font-size: 1.1rem;
     }
 }
 
-/* Extra small screens */
-@media (max-width: 400px) {
+/* Desktop hover effect - expand on hover */
+@media (min-width: 769px) {
     .sidebar {
-        width: 180px;
+        width: 250px;
     }
 
-    .notifications-sidebar-section {
-        padding: 12px 10px;
+    /* Ensure everything is visible on desktop */
+    .user-info .user-name,
+    .user-info .user-role,
+    .nav-item span,
+    .sidebar-section-header h6 span:not(.icon),
+    .notification-count-badge,
+    .notification-content,
+    .notification-empty-state small {
+        opacity: 1 !important;
+        width: auto !important;
+        height: auto !important;
+        overflow: visible !important;
     }
 
-    .notification-item {
-        flex-direction: column;
-        gap: 6px;
-        text-align: center;
+    .nav-item {
+        justify-content: flex-start;
+        padding: 15px 25px;
     }
 
-    .notification-icon {
-        align-self: center;
+    .nav-item .icon {
+        margin-right: 15px;
     }
 }

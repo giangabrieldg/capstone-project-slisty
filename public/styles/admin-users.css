@@ -1,83 +1,38 @@
-/* Define CSS variables for consistent theming */
 :root {
     --primary-color: #2c9045;
-    /* Primary brand color */
     --secondary-color: #e6f3ea;
-    /* Light background for cards */
     --background-color: #ffffff;
-    /* Main background */
-    --secondary-background-color: #f5f1e9;
-    /* Secondary background */
+    --hover-color: #0f5e23;
     --sidebar-hover-color: #a8d9b0;
-    /* Sidebar hover state */
     --text-color: #2d2d2d;
-    /* Primary text color */
     --secondary-text-color: #5e5d5d;
-    /* Secondary text color */
     --white-text-color: #f9f6ee;
-    /* Text color for sidebar */
     --font-poppins: "Poppins", sans-serif;
-    /* Main font */
     --font-baloo: "Baloo 2", sans-serif;
-    /* Heading font */
 }
 
-/* Base body styles */
+/* Base Styles */
 body {
     background-color: var(--background-color);
     font-family: var(--font-poppins);
-    margin: 0;
-    padding: 0;
     overflow-x: hidden;
 }
 
-/* Main content area styling, offset for sidebar */
+/* Main Content */
 .content {
     margin-left: 250px;
-    /* Space for visible sidebar on desktop */
     padding: 30px;
     width: calc(100% - 250px);
     transition: margin-left 0.3s ease-in-out, width 0.3s ease-in-out;
-    /* Smooth transition for sidebar toggle */
 }
 
-/* Responsive adjustments for medium and smaller screens */
-@media (max-width: 992px) {
-    .content {
-        margin-left: 0;
-        /* No sidebar space when hidden */
-        width: 100%;
-        padding: 20px;
-    }
-
-    body.sidebar-visible .content {
-        margin-left: 250px;
-        /* Adjust when sidebar is toggled */
-        width: calc(100% - 250px);
-    }
-}
-
-/* Responsive adjustments for small screens */
-@media (max-width: 576px) {
-    .content {
-        padding: 15px;
-        /* Reduced padding for mobile */
-    }
-
-    body.sidebar-visible .content {
-        margin-left: 200px;
-        /* Narrower sidebar on mobile */
-        width: calc(100% - 200px);
-    }
-}
-
-/* User Management header */
+/* User Management Header */
 .user-management-header {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    flex-direction: column;
+    gap: 15px;
     margin-bottom: 30px;
-    padding: 15px 25px;
+    padding: 20px;
     background-color: var(--background-color);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     border-radius: 8px;
@@ -92,72 +47,77 @@ body {
 
 .header-actions {
     display: flex;
-    gap: 15px;
-    align-items: center;
+    flex-direction: column;
+    gap: 10px;
 }
 
-.view-link {
+/* Nav Tabs */
+.nav-tabs {
+    margin-bottom: 20px;
+    border-bottom: 2px solid var(--secondary-color);
+}
+
+.nav-tabs .nav-link {
     color: var(--text-color);
-    text-decoration: none;
     font-weight: 500;
+    padding: 10px 20px;
+    border: none;
+    transition: all 0.2s ease;
 }
 
-.view-link.active {
+.nav-tabs .nav-link:hover {
+    color: var(--primary-color);
+}
+
+.nav-tabs .nav-link.active {
     color: var(--primary-color);
     font-weight: 600;
+    border-bottom: 3px solid var(--primary-color);
+    background-color: transparent;
 }
 
-.view-link:hover {
-    color: var(--sidebar-hover-color);
-}
-
+/* Search Bar */
 .search-bar {
-    width: 200px;
-    padding: 5px 10px;
     border: 1px solid var(--secondary-color);
-    border-radius: 4px;
+    transition: border-color 0.2s ease;
 }
 
+.search-bar:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 5px rgba(44, 144, 69, 0.3);
+}
+
+/* Add User Button */
 .add-user-btn {
     background-color: var(--primary-color);
     border: none;
     color: var(--white-text-color);
-    padding: 10px 20px;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
+    font-weight: 500;
+    white-space: nowrap;
 }
 
 .add-user-btn:hover {
-    background-color: var(--sidebar-hover-color);
+    background-color: var(--hover-color);
 }
 
-/* User table heading */
-.user-table h3 {
-    color: var(--text-color);
-    font-weight: 700;
-    margin-bottom: 15px;
-    font-size: 1.5rem;
-}
-
-/* Table styling */
+/* Table Styles */
 .table {
     background-color: var(--background-color);
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     overflow: hidden;
+    margin-bottom: 0;
 }
 
 .table th {
-    font-family: var(--font-poppins);
     font-weight: 600;
     color: var(--text-color);
     background-color: var(--secondary-color);
     padding: 15px;
+    white-space: nowrap;
 }
 
 .table td {
-    font-family: var(--font-poppins);
     color: var(--text-color);
     padding: 15px;
     vertical-align: middle;
@@ -168,12 +128,14 @@ body {
     font-size: 0.85rem;
 }
 
-/* Status badge styling */
+/* Status Badges */
 .status {
     padding: 6px 12px;
     border-radius: 20px;
     font-size: 0.85rem;
     font-weight: 500;
+    display: inline-block;
+    white-space: nowrap;
 }
 
 .status.active {
@@ -186,7 +148,7 @@ body {
     color: #721c24;
 }
 
-/* Archive toggle switch */
+/* Archive Toggle Switch */
 .archive-toggle {
     position: relative;
     display: inline-block;
@@ -225,41 +187,210 @@ body {
 }
 
 .archive-checkbox:checked+.toggle-slider {
-    background-color: #2c9045;
+    background-color: var(--primary-color);
 }
 
 .archive-checkbox:checked+.toggle-slider:before {
     transform: translateX(20px);
 }
 
-/* Responsive adjustments for small screens */
-@media (max-width: 576px) {
+/* Modal Styling */
+.modal-content {
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+.modal-header {
+    background-color: var(--secondary-color);
+    border-bottom: 1px solid var(--primary-color);
+}
+
+.modal-title {
+    color: var(--text-color);
+    font-weight: 600;
+    font-family: var(--font-baloo);
+}
+
+.form-select,
+.form-control {
+    border: 1px solid var(--secondary-color);
+}
+
+.form-select:focus,
+.form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 5px rgba(44, 144, 69, 0.3);
+}
+
+/* ===== RESPONSIVE STYLES ===== */
+
+/* Desktop */
+@media (min-width: 992px) {
     .user-management-header {
-        flex-direction: column;
-        gap: 15px;
-        padding: 15px;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
     }
 
     .header-actions {
-        flex-direction: column;
-        gap: 10px;
+        flex-direction: row;
+        align-items: center;
+    }
+}
+
+/* Tablet and below */
+@media (max-width: 991px) {
+    .content {
+        margin-left: 0;
         width: 100%;
+        padding: 20px;
+    }
+}
+
+/* Mobile - Medium */
+@media (max-width: 768px) {
+    .content {
+        margin-left: 70px;
+        width: calc(100% - 70px);
+        padding: 15px;
     }
 
-    .search-bar {
-        width: 100%;
+    .user-management-header {
+        padding: 15px;
+        margin-bottom: 20px;
     }
 
-    .add-user-btn {
-        width: 100%;
+    .user-management-header h2 {
+        font-size: 1.4rem;
     }
 
-    .table-responsive {
+    .nav-tabs {
+        margin-bottom: 15px;
+    }
+
+    .nav-tabs .nav-link {
+        padding: 8px 15px;
+        font-size: 0.9rem;
+    }
+
+    .table {
         font-size: 0.85rem;
     }
 
     .table th,
     .table td {
+        padding: 10px 8px;
+    }
+
+    /* Hide less critical columns */
+    .th-employee-id,
+    .th-email,
+    .table td:nth-child(1),
+    .table td:nth-child(3) {
+        display: none;
+    }
+
+    .status {
+        padding: 4px 8px;
+        font-size: 0.75rem;
+    }
+}
+
+/* Mobile - Small */
+@media (max-width: 576px) {
+    .content {
+        margin-left: 60px;
+        width: calc(100% - 60px);
+        padding: 12px;
+    }
+
+    .user-management-header {
+        padding: 12px;
+        gap: 12px;
+    }
+
+    .user-management-header h2 {
+        font-size: 1.2rem;
+    }
+
+    .nav-tabs .nav-link {
+        padding: 6px 12px;
+        font-size: 0.85rem;
+    }
+
+    .table {
+        font-size: 0.75rem;
+    }
+
+    .table th,
+    .table td {
+        padding: 8px 6px;
+    }
+
+    .status {
+        padding: 3px 6px;
+        font-size: 0.7rem;
+    }
+
+    .archive-toggle {
+        width: 35px;
+        height: 18px;
+    }
+
+    .toggle-slider:before {
+        height: 14px;
+        width: 14px;
+    }
+
+    .archive-checkbox:checked+.toggle-slider:before {
+        transform: translateX(17px);
+    }
+}
+
+/* Extra small devices */
+@media (max-width: 400px) {
+    .content {
+        margin-left: 55px;
+        width: calc(100% - 55px);
+        padding: 10px;
+    }
+
+    .user-management-header h2 {
+        font-size: 1.1rem;
+    }
+
+    .nav-tabs .nav-link {
+        padding: 5px 10px;
+        font-size: 0.8rem;
+    }
+
+    .table th,
+    .table td {
+        padding: 6px 4px;
+        font-size: 0.7rem;
+    }
+}
+
+/* Ensure proper table scrolling */
+@media (max-width: 768px) {
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .table {
+        min-width: 500px;
+    }
+}
+
+/* Landscape mode for mobile */
+@media (max-width: 768px) and (orientation: landscape) {
+    .content {
+        padding: 10px;
+    }
+
+    .user-management-header {
         padding: 10px;
     }
 }

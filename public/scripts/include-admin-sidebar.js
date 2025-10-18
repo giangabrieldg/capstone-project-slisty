@@ -27,7 +27,6 @@ function includeAdminSidebar() {
 }
 
 async function initializeAdminSidebar(container) {
-  const toggleButton = document.querySelector(".sidebar-toggle");
   const sidebar = container.querySelector(".sidebar");
   const navLinks = container.querySelectorAll(".sidebar-nav .nav-item");
   const token = sessionStorage.getItem("token");
@@ -53,16 +52,7 @@ async function initializeAdminSidebar(container) {
   // Load notifications data on all pages
   await loadSidebarNotificationsData(container);
 
-  // Sidebar toggle (for mobile)
-  if (toggleButton && sidebar) {
-    toggleButton.addEventListener("click", () => {
-      sidebar.classList.toggle("show");
-      document.body.classList.toggle("sidebar-visible");
-      console.log("Sidebar toggled, show class:", sidebar.classList.contains("show"));
-    });
-  } else {
-    console.error("Toggle button or sidebar not found:", { toggleButton, sidebar });
-  }
+  // REMOVED: Toggle button functionality since sidebar is always visible
 
   // Set active nav link based on current path
   if (navLinks.length > 0) {
