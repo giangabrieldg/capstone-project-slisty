@@ -67,7 +67,7 @@ sequelize.authenticate()
 // Create default admin user
 async function createDefaultAdmin() {
   try {
-    const adminEmail = 'admin@example.com';
+    const adminEmail = 'admin2@test.com';
     const adminPassword = 'Admin123!';
     const existingAdmin = await User.findOne({ where: { email: adminEmail } });
     if (!existingAdmin) {
@@ -75,11 +75,11 @@ async function createDefaultAdmin() {
       await User.create({
         email: adminEmail,
         password: hashedPassword,
-        name: 'Admin User',
-        username: 'admin',
+        name: 'Admin User2',
+        username: 'admin2',
         userLevel: 'Admin',
         isVerified: true,
-        employeeID: 'E000',
+        employeeID: 'E001',
       });
       console.log('Default admin user created:', adminEmail);
     } else {
