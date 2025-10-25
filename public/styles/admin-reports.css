@@ -121,7 +121,7 @@ body {
     font-weight: 700;
     margin-bottom: 15px;
     font-size: 1.3rem;
-    font-family: var(--font-baloo);
+    font-family: var(--font-poppins);
     text-align: center;
 }
 
@@ -246,7 +246,7 @@ body {
 .modal-title {
     color: var(--text-color);
     font-weight: 600;
-    font-family: var(--font-baloo);
+    font-family: var(--font-poppins);
 }
 
 .form-select {

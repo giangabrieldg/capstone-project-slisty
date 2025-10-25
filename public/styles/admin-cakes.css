@@ -137,6 +137,71 @@ body {
     font-size: 0.85rem;
 }
 
+/* Add these styles to your admin-cakes.css file */
+
+/* Wrapper for double scrollbar effect */
+.table-scroll-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+/* Top scrollbar container */
+.table-scroll-top {
+    overflow-x: auto;
+    overflow-y: hidden;
+    margin-bottom: 10px;
+}
+
+/* Inner div to match the width of the actual table */
+.table-scroll-top-inner {
+    height: 1px;
+}
+
+/* Bottom scrollbar container (your existing table-responsive) */
+.table-scroll-bottom {
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+/* Ensure both scrollbars sync */
+.table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Make scrollbar more visible on desktop */
+@media (min-width: 769px) {
+
+    .table-scroll-top::-webkit-scrollbar,
+    .table-scroll-bottom::-webkit-scrollbar {
+        height: 12px;
+    }
+
+    .table-scroll-top::-webkit-scrollbar-track,
+    .table-scroll-bottom::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 6px;
+    }
+
+    .table-scroll-top::-webkit-scrollbar-thumb,
+    .table-scroll-bottom::-webkit-scrollbar-thumb {
+        background: var(--primary-color);
+        border-radius: 6px;
+    }
+
+    .table-scroll-top::-webkit-scrollbar-thumb:hover,
+    .table-scroll-bottom::-webkit-scrollbar-thumb:hover {
+        background: var(--hover-color);
+    }
+}
+
+/* Mobile - only show top scrollbar on wider tables */
+@media (max-width: 768px) {
+    .table-scroll-top {
+        margin-bottom: 8px;
+    }
+}
+
 /* Customer Info Styling */
 .customer-info {
     display: flex;
@@ -346,59 +411,6 @@ body {
 
 .btn-w100 {
     width: 100%;
-}
-
-/* Utility Classes */
-.w-100 {
-    width: 100%;
-}
-
-.mt-1 {
-    margin-top: 0.25rem;
-}
-
-.mt-2 {
-    margin-top: 0.5rem;
-}
-
-.mb-1 {
-    margin-bottom: 0.25rem;
-}
-
-.mb-2 {
-    margin-bottom: 0.5rem;
-}
-
-.text-muted {
-    color: var(--secondary-text-color);
-}
-
-.text-warning {
-    color: #ffc107;
-}
-
-.text-center {
-    text-align: center;
-}
-
-.d-block {
-    display: block;
-}
-
-.d-flex {
-    display: flex;
-}
-
-.flex-column {
-    flex-direction: column;
-}
-
-.fw-bold {
-    font-weight: 700;
-}
-
-.small {
-    font-size: 0.85rem;
 }
 
 /* Price Input Styling */

@@ -293,41 +293,71 @@ class Cake3DRenderer {
 
   // Add mouse controls for rotating the cake
   addMouseControls() {
-    const mc = this.mouseControls;
-    
-    this.container.addEventListener("mousedown", (e) => {
-      mc.down = true;
-      mc.x0 = e.clientX;
-      mc.y0 = e.clientY;
-    });
-    
-    this.container.addEventListener("mouseup", () => (mc.down = false));
-    
-    this.container.addEventListener("mousemove", (e) => {
-      if (!mc.down) return;
-      const dx = e.clientX - mc.x0;
-      const dy = e.clientY - mc.y0;
-      mc.tx += dx * 0.01;
-      mc.ty += dy * 0.01;
-      mc.x0 = e.clientX;
-      mc.y0 = e.clientY;
-    });
-    
-    this.container.addEventListener("contextmenu", (e) => e.preventDefault());
-    this.container.addEventListener("wheel", (e) => e.preventDefault());
+  const mc = this.mouseControls;
+  
+  // ========== MOUSE EVENTS ==========
+  this.container.addEventListener("mousedown", (e) => {
+    mc.down = true;
+    mc.x0 = e.clientX;
+    mc.y0 = e.clientY;
+  });
+  
+  this.container.addEventListener("mouseup", () => {
+    mc.down = false;
+  });
+  
+  this.container.addEventListener("mousemove", (e) => {
+    if (!mc.down) return;
+    const dx = e.clientX - mc.x0;
+    const dy = e.clientY - mc.y0;
+    mc.tx += dx * 0.01;
+    mc.ty += dy * 0.01;
+    mc.x0 = e.clientX;
+    mc.y0 = e.clientY;
+  });
+  
+  // ========== TOUCH EVENTS (NEW) ==========
+  this.container.addEventListener("touchstart", (e) => {
+    e.preventDefault(); // Prevent scrolling
+    mc.down = true;
+    const touch = e.touches[0];
+    mc.x0 = touch.clientX;
+    mc.y0 = touch.clientY;
+  }, { passive: false });
+  
+  this.container.addEventListener("touchend", (e) => {
+    e.preventDefault();
+    mc.down = false;
+  }, { passive: false });
+  
+  this.container.addEventListener("touchmove", (e) => {
+    e.preventDefault(); // Prevent scrolling
+    if (!mc.down) return;
+    const touch = e.touches[0];
+    const dx = touch.clientX - mc.x0;
+    const dy = touch.clientY - mc.y0;
+    mc.tx += dx * 0.01;
+    mc.ty += dy * 0.01;
+    mc.x0 = touch.clientX;
+    mc.y0 = touch.clientY;
+  }, { passive: false });
+  
+  // ========== PREVENT CONTEXT MENU & WHEEL ==========
+  this.container.addEventListener("contextmenu", (e) => e.preventDefault());
+  this.container.addEventListener("wheel", (e) => e.preventDefault());
 
-    // Smooth rotation loop
-    const rotationLoop = () => {
-      mc.cx += (mc.tx - mc.cx) * 0.1;
-      mc.cy += (mc.ty - mc.cy) * 0.1;
-      if (this.cake) {
-        this.cake.rotation.y = mc.cx;
-        this.cake.rotation.x = mc.cy;
-      }
-      requestAnimationFrame(rotationLoop);
-    };
-    rotationLoop();
-  }
+  // ========== SMOOTH ROTATION LOOP ==========
+  const rotationLoop = () => {
+    mc.cx += (mc.tx - mc.cx) * 0.1;
+    mc.cy += (mc.ty - mc.cy) * 0.1;
+    if (this.cake) {
+      this.cake.rotation.y = mc.cx;
+      this.cake.rotation.x = mc.cy;
+    }
+    requestAnimationFrame(rotationLoop);
+  };
+  rotationLoop();
+}
 
   // Animate the 3D scene
   animate() {

@@ -65,21 +65,47 @@ body {
 
 /* Hero Section */
 .hero-btn {
-    background-color: var(--primary-color);
-    color: white;
-    padding: 10px 20px;
-    width: 60%;
+    color: var(--white-text-color);
+    background: linear-gradient(135deg, var(--primary-color) 0%, #25793a 100%);
+    border: none;
+    width: 100%;
+    padding: 0.95rem;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 1rem;
+    font-family: var(--font-poppins);
+    letter-spacing: 0.3px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(44, 144, 69, 0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
     height: 100%;
-    border-radius: 20px;
-    font-weight: 500;
-    transition: all 0.3s ease-in-out;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s ease;
+}
+
+.hero-btn:hover::before {
+    left: 100%;
 }
 
 .hero-btn:hover {
-    background-color: #25793a;
-    color: white;
     transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 6px 25px rgba(44, 144, 69, 0.3);
+    background: linear-gradient(135deg, #25793a 0%, var(--primary-color) 100%);
+    color: white;
+}
+
+.hero-btn {
+    transition: all 0.2s ease-in-out;
+    transform: translateY(0);
 }
 
 .hero-btn:active {
@@ -97,7 +123,7 @@ body {
     padding-top: 5rem;
     font-size: 3rem;
     line-height: 1.2;
-    font-family: var(--font-baloo);
+    font-family: var(--font-poppins);
     color: var(--primary-color);
     font-weight: 600;
 }
@@ -143,7 +169,7 @@ body {
 .about-title {
     font-size: 2.5rem;
     line-height: 1.2;
-    font-family: var(--font-baloo);
+    font-family: var(--font-poppins);
     color: #2D2D2D;
     font-weight: 600;
     text-align: center;
@@ -181,7 +207,7 @@ img.img-fluid.rounded {
 .section-title {
     font-size: 2.5rem;
     line-height: 1.2;
-    font-family: var(--font-baloo);
+    font-family: var(--font-poppins);
     color: #2D2D2D;
     font-weight: 600;
 }
@@ -256,7 +282,7 @@ img.img-fluid.rounded {
 
 .inquiry-title {
     font-size: 2.5rem;
-    font-family: var(--font-baloo);
+    font-family: var(--font-poppins);
     color: #2D2D2D;
     font-weight: 600;
 }
@@ -301,7 +327,7 @@ img.img-fluid.rounded {
 
 .faq-title {
     font-size: 2.5rem;
-    font-family: var(--font-baloo);
+    font-family: var(--font-poppins);
     color: var(--primary-color);
     font-weight: 600;
     text-align: center;
