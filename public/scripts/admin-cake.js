@@ -331,12 +331,16 @@ function renderStatusActions(orderId, isImageOrder, currentStatus, order) {
 function renderImageOrderActions(orderId, currentStatus, order) {
   let html = '';
   const showPriceInput = ['Pending Review', 'Feasible', 'Ready for Downpayment'].includes(currentStatus);
+  const priceIsSet = order.price && order.price > 0;
   
-  // Price input for relevant statuses
+  // Price input for relevant statuses - DISABLED once price is set
   if (showPriceInput && currentStatus !== 'Not Feasible') {
+    const isDisabled = priceIsSet ? 'disabled' : '';
+    const disabledText = priceIsSet ? ' (Price locked)' : '';
+    
     html += `
       <div class="price-input mb-2">
-        <label class="form-label small">Total Price:</label>
+        <label class="form-label small">Total Price:${disabledText}</label>
         <input 
           type="number" 
           class="form-control form-control-sm price-input-field" 
@@ -344,16 +348,22 @@ function renderImageOrderActions(orderId, currentStatus, order) {
           value="${order.price || ''}" 
           step="0.01" 
           min="0"
+          ${isDisabled}
         >
         ${order.price ? `
           <small class="text-muted d-block mt-1">
             <i class="fas fa-info-circle"></i> 50% = ₱${(order.price * 0.5).toFixed(2)}
           </small>
         ` : ''}
+        ${priceIsSet ? `
+          <small class="text-info d-block mt-1">
+            <i class="fas fa-lock"></i> Price cannot be changed once set
+          </small>
+        ` : ''}
       </div>`;
   }
   
-  // Action buttons based on current status - FIXED: Added data-is-image-order="true"
+  // Action buttons based on current status - REMOVED downpayment-paid button
   switch(currentStatus) {
     case 'Pending Review':
       html += `
@@ -383,12 +393,13 @@ function renderImageOrderActions(orderId, currentStatus, order) {
       break;
       
     case 'Ready for Downpayment':
+      // REMOVED: Downpayment Paid button - this should only be updated via customer payment
       html += `
-        <button class="btn btn-primary btn-sm downpayment-paid w-100" 
-                data-order-id="${orderId}" 
-                data-is-image-order="true">
-          Downpayment Paid
-        </button>`;
+        <div class="text-center">
+          <small class="text-muted d-block">
+            <i class="fas fa-info-circle"></i> Waiting for customer to pay downpayment
+          </small>
+        </div>`;
       break;
       
     case 'Downpayment Paid':
@@ -427,8 +438,6 @@ function renderImageOrderActions(orderId, currentStatus, order) {
   
   return html;
 }
-
-// 3D Custom Cake actions
 
 // 3D Custom Cake actions
 function renderCustomCakeActions(orderId, currentStatus, order) {

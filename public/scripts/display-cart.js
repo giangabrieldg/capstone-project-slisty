@@ -1,6 +1,3 @@
-/**
- * Loads and displays cart items for the logged-in user.
- */
 async function loadCartItems() {
   const cartItemsContainer = document.getElementById('cartItemsContainer');
   const checkoutBtn = document.getElementById('checkoutBtn');
@@ -59,24 +56,26 @@ async function loadCartItems() {
       window.location.href = '/customer/checkout.html';
     });
 
-    // Build table for cart items
+    // Build table for cart items with cart-content wrapper
     let html = `
-      <table class="table table-hover">
-        <thead>
-          <tr>
-            <th scope="col">Image</th>
-            <th scope="col">Item</th>
-            <th scope="col">Size</th>
-            <th scope="col">Price</th>
-            <th scope="col">Quantity</th>
-            <th scope="col">Total</th>
-            <th scope="col"></th>
-          </tr>
-        </thead>
-        <tbody>
+      <div class="cart-content">
+        <div class="table-responsive">
+          <table class="table table-hover cart-table">
+            <thead>
+              <tr>
+                <th scope="col">Image</th>
+                <th scope="col">Item</th>
+                <th scope="col">Size</th>
+                <th scope="col">Price</th>
+                <th scope="col">Quantity</th>
+                <th scope="col">Total</th>
+                <th scope="col"></th>
+              </tr>
+            </thead>
+            <tbody>
     `;
 
-    // Render each cart item
+    // Render each cart item with data-label attributes for mobile
     cartItems.forEach(item => {
       const price = parseFloat(item.price) || 0;
       const total = (price * item.quantity).toFixed(2);
@@ -84,12 +83,14 @@ async function loadCartItems() {
 
       html += `
         <tr>
-          <td><img src="${item.image}" alt="${item.name}" style="width: 50px; height: 50px; object-fit: cover;"></td>
-          <td>${item.name}</td>
-          <td>${item.size}</td>
-          <td>₱${price.toFixed(2)}</td>
-          <td>${item.quantity}</td>
-          <td>₱${total}</td>
+          <td data-label="Image">
+            <img src="${item.image}" alt="${item.name}" class="cart-item-image">
+          </td>
+          <td data-label="Item">${item.name}</td>
+          <td data-label="Size">${item.size}</td>
+          <td data-label="Price" class="cart-price">₱${price.toFixed(2)}</td>
+          <td data-label="Quantity">${item.quantity}</td>
+          <td data-label="Total" class="cart-price">₱${total}</td>
           <td>
             <button class="btn btn-sm btn-danger remove-item" data-cart-item-id="${item.cartItemId}">Remove</button>
           </td>
@@ -97,7 +98,12 @@ async function loadCartItems() {
       `;
     });
 
-    html += '</tbody></table>';
+    html += `
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
     cartItemsContainer.innerHTML = html;
 
     // Add event listeners for remove buttons

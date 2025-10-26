@@ -115,30 +115,65 @@ initializeDownpaymentDisplay() {
 
 //Updated checkout function for downpayment
 async checkoutCustomCake() {
-  if (!this.apiService.isAuthenticated()) {
-     await Swal.fire({
+  // Get the button and store original state
+  const checkoutButton = document.querySelector('.summary-btn.primary-btn');
+  const originalText = checkoutButton.textContent;
+  const originalHTML = checkoutButton.innerHTML;
+  
+  // Disable button and show loading state
+  checkoutButton.disabled = true;
+  checkoutButton.innerHTML = `
+    <span class="loading-spinner" style="
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #ffffff;
+      border-radius: 50%;
+      border-top-color: transparent;
+      animation: spin 1s linear infinite;
+      margin-right: 8px;
+    "></span>
+    Processing...
+  `;
+  checkoutButton.style.opacity = '0.7';
+  
+  // Add spinner animation CSS if not already present
+  if (!document.querySelector('#spinner-styles')) {
+    const style = document.createElement('style');
+    style.id = 'spinner-styles';
+    style.textContent = `
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  try {
+    if (!this.apiService.isAuthenticated()) {
+      await Swal.fire({
         icon: "error",
         title: "Oops...",
         text: "Please log in to checkout your custom cake",
         confirmButtonColor: "#2c9045"
       });
-    window.location.href = '/customer/login.html';
-    return;
-  }
+      window.location.href = '/customer/login.html';
+      return;
+    }
 
-  const totalPrice = this.pricing.base[this.config.size] + this.pricing.fillings[this.config.filling];
-  
-  if (!totalPrice || totalPrice <= 0) {
-    Swal.fire({
+    const totalPrice = this.pricing.base[this.config.size] + this.pricing.fillings[this.config.filling];
+    
+    if (!totalPrice || totalPrice <= 0) {
+      Swal.fire({
         icon: "error",
         title: "Oops...",
         text: "Invalid price calculation. Please try again.",
         confirmButtonColor: "#2c9045"
       });
-    return;
-  }
+      return;
+    }
 
-  try {
     // Use the global CakeAPIService class directly instead of this.apiService
     const apiService = new CakeAPIService();
     const submitResponse = await apiService.submitCustomOrder(
@@ -157,6 +192,12 @@ async checkoutCustomCake() {
   } catch (error) {
     console.error('Checkout process error:', error);
     ToastNotifications.showToast('Checkout failed: ' + error.message, 'error');
+  } finally {
+    // Re-enable button regardless of success or failure
+    checkoutButton.disabled = false;
+    checkoutButton.innerHTML = originalHTML;
+    checkoutButton.textContent = originalText;
+    checkoutButton.style.opacity = '1';
   }
 }
 
