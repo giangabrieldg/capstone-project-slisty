@@ -37,7 +37,12 @@ class AdminOrdersManager {
   async fetchOrders() {
     const token = sessionStorage.getItem('token');
     if (!token) {
-      alert('Please login as admin or staff');
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "Please login as admin or staff",
+        confirmButtonColor: "#2c9045"
+      });
       window.location.href = '/index.html';
       return;
     }
@@ -52,7 +57,12 @@ class AdminOrdersManager {
       this.applyFilters();
     } catch (error) {
       console.error('Error fetching orders:', error);
-      alert('Failed to load orders: ' + error.message);
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: `Failed to load orders: ${error.message}`,
+        confirmButtonColor: "#2c9045"
+      });
     }
   }
   
@@ -294,11 +304,21 @@ renderOrders(orders) {
       delivered: 'Completed'
     };
     
-    alert(`Order #ORD${orderId.toString().padStart(3, '0')} marked as ${statusMap[newStatus] || newStatus}.`);
+    Swal.fire({
+      title: "Success!",
+      text: `Order #ORD${orderId.toString().padStart(3, '0')} marked as ${statusMap[newStatus] || newStatus}.`,
+      icon: "success",
+      confirmButtonColor: "#2c9045"
+    });
     this.fetchOrders(); // Refresh the orders
   } catch (error) {
     console.error('Error updating status:', error);
-    alert('Failed to update status: ' + error.message);
+     Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: `Failed to update status: ${error.message}`,
+        confirmButtonColor: "#2c9045"
+      });
   }
 }
 
@@ -320,12 +340,22 @@ async cancelOrder(orderId) {
     });
     const data = await response.json();
     if (!data.success) throw new Error(data.message);
-    
-    alert(`Order #ORD${orderId.toString().padStart(3, '0')} has been cancelled.`);
+  
+    Swal.fire({
+          title: "Cancelled",
+          text: `Order #ORD${orderId.toString().padStart(3, '0')} has been cancelled.`,
+          confirmButtonColor: "#2c9045"
+        });
+
     this.fetchOrders(); // Refresh the orders
   } catch (error) {
     console.error('Error cancelling order:', error);
-    alert('Failed to cancel order: ' + error.message);
+     Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "Error submitting inquiry. Please try again.",
+        confirmButtonColor: "#2c9045"
+      });
   }
 }
 }

@@ -136,7 +136,12 @@ class ProfileManager {
             this.renderProfile(data);
         } catch (error) {
             console.error('Error loading profile:', error);
-            alert('Error loading profile. Please log in again.');
+             Swal.fire({
+                icon: "error",
+                title: "Oops...",
+                text: "Error loading profile. Please log in again.",
+                confirmButtonColor: "#2c9045"
+            });
             window.location.href = '/customer/login.html';
         }
     }
@@ -339,27 +344,64 @@ class ProfileManager {
             const data = await response.json();
             this.renderProfile(data);
             this.toggleEditForm(false);
-            alert('Profile updated successfully!');
+            Swal.fire({
+                title: "Success!",
+                text: "Profile updated successfully!",
+                icon: "success",
+                confirmButtonColor: "#2c9045"
+            });
+
         } catch (error) {
             console.error('Error updating profile:', error);
-            alert(`Error updating profile: ${error.message}`);
+             Swal.fire({
+                icon: "error",
+                title: "Oops...",
+                text: `Error updating profile: ${error.message}`,
+                confirmButtonColor: "#2c9045"
+            });
         }
     }
 
    //logout function
     handleLogout() {
-        sessionStorage.removeItem('token');
-        // Clear all localStorage to prevent any residual data
-        sessionStorage.clear();
-        localStorage.clear();
-        // Prevent back button from showing cached page
-        window.history.pushState(null, null, '/customer/login.html');
-        window.location.href = '/customer/login.html';
-        // Add event listener to prevent back navigation
-        window.addEventListener('popstate', () => {
-            window.location.href = '/customer/login.html';
-        });
-    }
+    Swal.fire({
+        title: 'Are you sure?',
+        text: "You will be logged out of your account",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#2c9045', // Your brand green color
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Yes, logout',
+        cancelButtonText: 'Cancel',
+        reverseButtons: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Clear all session and local storage
+            sessionStorage.removeItem('token');
+            sessionStorage.clear();
+            localStorage.clear();
+            
+            // Show success message
+            Swal.fire({
+                title: 'Logged Out!',
+                text: 'You have been successfully logged out',
+                icon: 'success',
+                timer: 1500,
+                showConfirmButton: false,
+                confirmButtonColor: '#2c9045'
+            }).then(() => {
+                // Prevent back button from showing cached page
+                window.history.pushState(null, null, '/customer/login.html');
+                window.location.href = '/customer/login.html';
+                
+                // Add event listener to prevent back navigation
+                window.addEventListener('popstate', () => {
+                    window.location.href = '/customer/login.html';
+                });
+            });
+        }
+    });
+}
 }
 
 // Instantiate the manager

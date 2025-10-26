@@ -113,11 +113,15 @@ initializeDownpaymentDisplay() {
     });
 }
 
-// NEW: Updated checkout function for downpayment
+//Updated checkout function for downpayment
 async checkoutCustomCake() {
-  // Use the same authentication check as your original working code
   if (!this.apiService.isAuthenticated()) {
-    alert('Please log in to checkout your custom cake');
+     await Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "Please log in to checkout your custom cake",
+        confirmButtonColor: "#2c9045"
+      });
     window.location.href = '/customer/login.html';
     return;
   }
@@ -125,7 +129,12 @@ async checkoutCustomCake() {
   const totalPrice = this.pricing.base[this.config.size] + this.pricing.fillings[this.config.filling];
   
   if (!totalPrice || totalPrice <= 0) {
-    alert('Invalid price calculation. Please try again.');
+    Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "Invalid price calculation. Please try again.",
+        confirmButtonColor: "#2c9045"
+      });
     return;
   }
 
@@ -595,7 +604,11 @@ async checkoutCustomCake() {
 
   async submitOrder() {
     if (document.getElementById("imageUpload").files.length > 0) {
-      alert("Please use the 'Submit Image Order' button for image-based orders.");
+      Swal.fire({
+        title: "Image based order detected",
+        text: "Please use the 'Submit Image Order' button for image-based orders.",
+        confirmButtonColor: "#2c9045"
+      });
       return;
     }
 
@@ -637,7 +650,11 @@ async checkoutCustomCake() {
   }
 
   addToCart() {
-    alert("Please submit your custom cake order for admin review. Once approved, you can add it to your cart from the 'My Custom Orders' page.");
+     Swal.fire({
+        title: "Image based order detected",
+        text: "Please submit your custom cake order for admin review. Once approved, you can add it to your cart from the 'My Custom Orders' page.",
+        confirmButtonColor: "#2c9045"
+      });
   }
 
   checkout() {

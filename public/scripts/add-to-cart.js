@@ -1,10 +1,16 @@
-// Add event listener for the "Add to Cart" button once the DOM is fully loaded
+// Fixed version - Wait for SweetAlert to close before redirecting
 document.getElementById('addToCart').addEventListener('click', async () => {
-  // Retrieve the authentication token from localStorage
+  // Retrieve the authentication token from sessionStorage
   const token = sessionStorage.getItem('token');
   if (!token) {
-    // Redirect to login page if user is not authenticated
-    alert('Please log in to add items to your cart.');
+    // Show alert FIRST, then redirect AFTER user clicks OK
+    await Swal.fire({
+      icon: "error",
+      title: "Oops...",
+      text: "Please log in to add items to your cart.",
+      confirmButtonColor: "#2c9045"
+    });
+    // This runs AFTER the user clicks the OK button
     window.location.href = '/customer/login.html';
     return;
   }
@@ -16,7 +22,12 @@ document.getElementById('addToCart').addEventListener('click', async () => {
 
   // Validate quantity
   if (!quantity || quantity < 1) {
-    alert('Please enter a valid quantity.');
+    Swal.fire({
+      icon: "error",
+      title: "Oops...",
+      text: "Please enter a valid quantity.",
+      confirmButtonColor: "#2c9045"
+    });
     return;
   }
 
@@ -39,7 +50,12 @@ document.getElementById('addToCart').addEventListener('click', async () => {
       // For items with sizes, ensure a size is selected
       const activeSizeButton = document.querySelector('.size-btn.active');
       if (!activeSizeButton) {
-        alert('Please select a size.');
+        Swal.fire({
+          icon: "error",
+          title: "Oops...",
+          text: "Please select a size.",
+          confirmButtonColor: "#2c9045"
+        });
         return;
       }
       selectedSize = activeSizeButton.dataset.size;
@@ -48,20 +64,35 @@ document.getElementById('addToCart').addEventListener('click', async () => {
         s => s.sizeName.trim().toLowerCase() === selectedSize.trim().toLowerCase()
       );
       if (!validSize) {
-        alert('Invalid size selected.');
+        Swal.fire({
+          icon: "error",
+          title: "Oops...",
+          text: "Invalid size selected.",
+          confirmButtonColor: "#2c9045"
+        });
         return;
       }
       // Get stock for the selected size
       selectedStock = validSize.stock;
       if (selectedStock < quantity) {
-        alert(`Sorry, only ${selectedStock} items available for ${selectedSize}.`);
+        Swal.fire({
+          icon: "error",
+          title: "Oops...",
+          text: `Sorry, only ${selectedStock} items available for ${selectedSize}.`,
+          confirmButtonColor: "#2c9045"
+        });
         return;
       }
     } else {
       // For non-sized items, use the main stock field
       selectedStock = product.stock || 0;
       if (selectedStock < quantity) {
-        alert(`Sorry, only ${selectedStock} items available in stock.`);
+        Swal.fire({
+          icon: "error",
+          title: "Oops...",
+          text: `Sorry, only ${selectedStock} items available in stock.`,
+          confirmButtonColor: "#2c9045"
+        });
         return;
       }
     }
@@ -89,7 +120,12 @@ document.getElementById('addToCart').addEventListener('click', async () => {
     }
 
     // Show success message with product name and size (if applicable)
-    alert(`${productName}${selectedSize ? ` (${selectedSize})` : ''} added to cart!`);
+    Swal.fire({
+      title: "Success!",
+      text: `${productName}${selectedSize ? ` (${selectedSize})` : ''} added to cart!`,
+      icon: "success",
+      confirmButtonColor: "#2c9045"
+    });
 
     // Update cart count badge if updateCartCount function exists
     if (typeof updateCartCount === 'function') {
@@ -99,10 +135,21 @@ document.getElementById('addToCart').addEventListener('click', async () => {
     // Handle errors, including session expiration
     console.error('Error adding to cart:', error);
     if (error.message.includes('Invalid or expired token')) {
-      alert('Your session has expired. Please log in again.');
+      // Wait for SweetAlert before redirecting
+      await Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "Your session has expired. Please log in again.",
+        confirmButtonColor: "#2c9045"
+      });
       window.location.href = '/customer/login.html';
     } else {
-      alert(`Error: ${error.message}`);
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "Error adding item to cart. Please try again.",
+        confirmButtonColor: "#2c9045"
+      });
     }
   }
 });

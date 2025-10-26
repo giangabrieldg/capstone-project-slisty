@@ -62,7 +62,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const inquiryId = parseInt(button.dataset.id);
         const replyText = button.closest('tr').querySelector('.reply-text').value;
         if (!replyText) {
-          alert('Please enter a reply.');
+          Swal.fire({
+            icon: "error",
+            title: "Oops...",
+            text: "Please enter a reply.",
+            confirmButtonColor: "#2c9045"
+      });
           return;
         }
 
@@ -78,14 +83,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
           if (response.ok) {
             loadInquiries();
-            alert('Reply sent successfully!');
+            Swal.fire({
+              title: "Success!",
+              text: "Reply sent successfully.",
+              icon: "success",
+              confirmButtonColor: "#2c9045"
+            });
           } else {
             const error = await response.json();
-            alert(`Error: ${error.error}`);
+            Swal.fire({
+              icon: "error",
+              title: "Oops...",
+              text: `Error: ${error.error}`,
+              confirmButtonColor: "#2c9045"
+            });
+            
           }
         } catch (error) {
           console.error('Error sending reply:', error);
-          alert('Error sending reply.');
+          Swal.fire({
+              icon: "error",
+              title: "Oops...",
+              text: "Error sending reply.",
+              confirmButtonColor: "#2c9045"
+            });
         }
       });
     });

@@ -114,19 +114,38 @@ async function loadCartItems() {
             body: JSON.stringify({ cartItemId }),
           });
           if (response.ok) {
-            alert('Item removed from cart');
+             Swal.fire({
+              title: "Cart Update",
+              text: "Item removed from cart",
+              confirmButtonColor: "#2c9045"
+            });
             loadCartItems(); // Refresh cart
           } else {
             const result = await response.json();
-            alert(`Failed to remove item: ${result.message}`);
+             Swal.fire({
+              icon: "error",
+              title: "Oops...",
+              text: `Failed to remove item: ${result.message}`,
+              confirmButtonColor: "#2c9045"
+            });
           }
         } catch (error) {
           console.error('Remove item error:', error);
           if (error.message.includes('Invalid or expired token')) {
-            alert('Your session has expired. Please log in again.');
+            Swal.fire({
+              icon: "error",
+              title: "Oops...",
+              text: "Your session has expired. Please log in again.",
+              confirmButtonColor: "#2c9045"
+            });
             window.location.href = '/customer/login.html';
           } else {
-            alert(`Error removing item: ${error.message}`);
+            Swal.fire({
+              icon: "error",
+              title: "Oops...",
+              text: `Error removing item: ${error.message}`,
+              confirmButtonColor: "#2c9045"
+            });
           }
         }
       });

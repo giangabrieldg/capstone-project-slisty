@@ -14,7 +14,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const recaptchaToken = grecaptcha.getResponse();
 
     if (!recaptchaToken) {
-      alert('Please complete the reCAPTCHA.');
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "Please complete the reCAPTCHA!",
+        confirmButtonColor: "#2c9045"
+      });
       return;
     }
 
@@ -34,15 +39,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const result = await response.json();
       if (response.ok) {
-        alert('Inquiry submitted successfully! You will receive a confirmation email.');
+        Swal.fire({
+          title: "Success!",
+          text: "Inquiry Submiitted! You will received a confirmation email shortly.",
+          icon: "success",
+          confirmButtonColor: "#2c9045"
+        });
         inquiryForm.reset();
         grecaptcha.reset();
       } else {
-        alert(`Error: ${result.error}`);
+        Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: `Error: ${result.error}`,
+        confirmButtonColor: "#2c9045"
+      });
       }
     } catch (error) {
       console.error('Error submitting inquiry:', error);
-      alert('Error submitting inquiry. Please try again.');
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "Error submitting inquiry. Please try again.",
+        confirmButtonColor: "#2c9045"
+      });
     }
   });
 });

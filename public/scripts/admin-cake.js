@@ -204,7 +204,12 @@ async function fetchCustomCakeOrders() {
     
   } catch (error) {
     console.error('Error fetching orders:', error);
-    alert(`Failed to load orders: ${error.message}`);
+    Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: `Failed to load orders: ${error.message}`,
+        confirmButtonColor: "#2c9045"
+      });
   }
 }
 
@@ -576,7 +581,12 @@ async function handleStatusActions(e) {
     // Handle different button types
     if (target.classList.contains('mark-feasible')) {
       if (!price || isNaN(price) || price <= 0) {
-        alert('Please enter a valid price before marking as feasible.');
+        Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "Please enter a valid price before marking as feasible.",
+        confirmButtonColor: "#2c9045"
+      });
         return;
       }
       endpoint = `${window.API_BASE_URL}/api/custom-cake/admin/image-orders/${orderId}/price`;

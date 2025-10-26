@@ -50,17 +50,33 @@ async function fetchOrders() {
             });
             if (!response.ok) throw new Error('Failed to update order status');
             await fetchOrders();
-            alert('Order status updated successfully!');
+            Swal.fire({
+              title: "Success!",
+              text: "Order status updated successfully!",
+              icon: "success",
+              confirmButtonColor: "#2c9045"
+            });
           } catch (error) {
             console.error('Error updating order status:', error);
-            alert(`Error: ${error.message}`);
+             Swal.fire({
+              icon: "error",
+              title: "Oops...",
+              text: `Error: ${error.message}`,
+              confirmButtonColor: "#2c9045"
+            });
           }
         }
       });
     });
   } catch (error) {
     console.error('Error fetching orders:', error);
-    alert('Failed to load orders');
+    Swal.fire({
+      icon: "error",
+      title: "Oops...",
+      text: "Failed to load orders",
+      confirmButtonColor: "#2c9045"
+    });
+    
   }
 }
 

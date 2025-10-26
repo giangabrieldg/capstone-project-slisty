@@ -21,8 +21,6 @@ class CheckoutManager {
   //Initializes the checkout process, sets up event listeners, and checks for payment return.
    
   init() {
-    console.log('Initializing checkout manager...');
-
     this.isCustomCakeCheckout = this.checkForCustomCake();
 
     if (this.isCustomCakeCheckout) {
@@ -47,13 +45,6 @@ class CheckoutManager {
       const timeout = 30 * 60 * 1000; // 30 minutes
       const timeSincePendingPayment = now - timestamp;
 
-      console.log('Pending payment found:', {
-        isPageRefresh,
-        timeSincePendingPayment: `${(timeSincePendingPayment / 1000).toFixed(0)}s`,
-        paymentMethod,
-        timeout: `${(timeout / 1000).toFixed(0)}s`
-      });
-
       // If user refreshed the page, clear stale payment data
       if (isPageRefresh) {
         console.warn('Page refresh detected - clearing stale pending payment');
@@ -68,11 +59,9 @@ class CheckoutManager {
         sessionStorage.removeItem('pendingPayment');
         sessionStorage.removeItem('pendingOrder');
         sessionStorage.removeItem('pendingCustomCakeOrder');
-        console.log('Cleared stale pending payment/order');
       } 
       // If not a refresh and payment is still valid, check status
       else if (window.location.pathname.includes('checkout.html')) {
-        console.log('Pending payment is fresh, checking status...');
         this.handleReturnFromPaymongo(); // Check immediately
         this.startPaymentPolling();
       }
@@ -80,7 +69,6 @@ class CheckoutManager {
 
     // Trigger payment verification if on success.html
     if (window.location.pathname.includes('success.html')) {
-      console.log('Detected success.html, running handleReturnFromPaymongo');
       this.handleReturnFromPaymongo();
     }
 
@@ -129,21 +117,18 @@ class CheckoutManager {
     
     const data = await response.json();
     
-    // ⭐ FIX: Check if data.order exists, otherwise use data directly
+    //Check if data.order exists, otherwise use data directly
     this.customCakeOrder = data.order || data;
     
-    console.log('Loaded custom cake order details:', {
-      data: data, // Log the entire response
-      order: this.customCakeOrder,
-      price: this.customCakeOrder?.price,
-      hasOrderProperty: !!data.order,
-      hasDirectProperties: !!data.price
-    });
-
-    // ⭐ FIX: Add proper null checking
+    //Add proper null checking
     if (!this.customCakeOrder) {
       console.error('Custom cake order is null or undefined');
-      alert('Failed to load custom cake order. Please try again.');
+      await Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "Failed to load custom cake order. Please try again.",
+        confirmButtonColor: "#2c9045"
+      });
       window.location.href = '/customer/custom-orders.html';
       return;
     }
@@ -151,7 +136,12 @@ class CheckoutManager {
     // Check if price is properly set
     if (!this.customCakeOrder.price || this.customCakeOrder.price <= 0) {
       console.error('Order price not set or invalid:', this.customCakeOrder.price);
-      alert('This order does not have a valid price set. Please contact the bakery.');
+      await wal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "This order does not have a valid price set.",
+        confirmButtonColor: "#2c9045"
+      });
       window.location.href = '/customer/custom-orders.html';
       return;
     }
@@ -177,7 +167,12 @@ class CheckoutManager {
     } else {
       // Invalid status for checkout
       console.error('Invalid order status for checkout:', this.customCakeOrder.status);
-      alert(`This order is not ready for payment. Current status: ${this.customCakeOrder.status}`);
+      await Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: `This order is not ready for payment. Current status: ${this.customCakeOrder.status}`,
+        confirmButtonColor: "#2c9045"
+      });
       window.location.href = '/customer/custom-orders.html';
       return;
     }
@@ -212,8 +207,6 @@ class CheckoutManager {
       downpaymentAmount: downpaymentAmount,
       remainingBalance: remainingBalance
     }];
-
-    console.log('Cart items created:', this.cartItems);
     
     // Update payment methods for custom cake downpayment
     this.updatePaymentMethodsForCustomCake(isDownpayment);
@@ -225,7 +218,13 @@ class CheckoutManager {
       isImageOrder: this.customCakeData.isImageOrder,
       stack: error.stack
     });
-    alert('Error loading custom cake order. Please try again.');
+    
+    Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "Error loading custom cake order. Please try again.",
+        confirmButtonColor: "#2c9045"
+      });
     return;
   }
 }
@@ -286,7 +285,6 @@ updatePaymentMethodsForCustomCake(isDownpayment) {
         return;
       }
 
-      console.log('Polling payment status...');
       const statusMessage = document.getElementById('paymentStatusMessage');
       if (statusMessage) {
         document.getElementById('paymentStatusText').textContent = 'Checking payment status...';
@@ -339,11 +337,15 @@ updatePaymentMethodsForCustomCake(isDownpayment) {
       if (!response.ok) throw new Error('Failed to load profile');
       const data = await response.json();
       this.customerProfile = data || {};
-      console.log('Customer profile loaded:', this.customerProfile);
       this.renderCustomerInfo();
     } catch (error) {
       console.error('Error loading customer profile:', error);
-      alert('Error loading profile. Please update your profile and try again.');
+      await Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "Please update your profile and try again.",
+        confirmButtonColor: "#2c9045"
+      });
       window.location.href = '/customer/profile.html';
     }
   }
@@ -408,12 +410,10 @@ updatePaymentMethodsForCustomCake(isDownpayment) {
       if (!response.ok) throw new Error(`Failed to load cart: ${response.statusText}`);
       
       const data = await response.json();
-      console.log('Raw cart data:', JSON.stringify(data, null, 2));
       
       // Map cart items using API-provided fields
       this.cartItems = (data.cartItems || []).map(item => {
         const price = parseFloat(item.price) || 0;
-        console.log('Processing cart item:', { menuId: item.menuId, name: item.name, price, quantity: item.quantity });
         return {
           menuId: item.menuId,
           name: item.name || 'Unknown Item',
@@ -431,11 +431,15 @@ updatePaymentMethodsForCustomCake(isDownpayment) {
         return isValid;
       });
 
-      console.log('Validated cart items:', JSON.stringify(this.cartItems, null, 2));
       this.renderCartSummary();
     } catch (error) {
       console.error('Error loading cart:', error);
-      alert('Error loading cart items. Please try again.');
+      await Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "Error loading cart items. Please try again.",
+        confirmButtonColor: "#2c9045"
+      });
       this.renderCartSummary();
     }
   }
@@ -444,7 +448,6 @@ updatePaymentMethodsForCustomCake(isDownpayment) {
   //Sets up event listeners for payment and delivery method changes.
    
   setupEventListeners() {
-    console.log('Setting up event listeners...');
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', () => {
         this.bindEvents();
@@ -504,7 +507,6 @@ updatePaymentMethodsForCustomCake(isDownpayment) {
         dateFormat: "Y-m-d",
         onChange: (selectedDates, dateStr) => {
           this.checkoutData.pickupDate = dateStr;
-          console.log('Selected date:', dateStr);
         }
       });
     }
@@ -623,25 +625,45 @@ updatePaymentMethodsForCustomCake(isDownpayment) {
       const missingFields = requiredFields.filter(field => !profile[field]);
       
       if (missingFields.length > 0) {
-        alert(`Please complete your profile (${missingFields.join(', ')}) before placing an order.`);
+        await Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: `Please complete your profile (${missingFields.join(', ')}) before placing an order.`,
+        confirmButtonColor: "#2c9045"
+      });
         window.location.href = '/customer/profile.html';
         return;
       }
 
       if (this.checkoutData.deliveryMethod === 'delivery' && !profile.address) {
-        alert('Please provide a delivery address in your profile for home delivery.');
+        await Swal.fire({
+          icon: "error",
+          title: "Oops...",
+          text: "Please provide a delivery address in your profile for home delivery.",
+          confirmButtonColor: "#2c9045"
+      });
         window.location.href = '/customer/profile.html';
         return;
       }
 
       if (!this.checkoutData.pickupDate) {
-        alert('Please select a pickup or delivery date.');
+        Swal.fire({
+          icon: "error",
+          title: "Oops...",
+          text: "Please select a pickup or delivery date.",
+          confirmButtonColor: "#2c9045"
+      });
         return;
       }
 
       const token = sessionStorage.getItem('token');
       if (!token) {
-        alert('Session expired. Please login again.');
+        await Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "Session expired. Please login again.",
+        confirmButtonColor: "#2c9045"
+      });
         window.location.href = '/customer/login.html';
         return;
       }
@@ -667,7 +689,12 @@ updatePaymentMethodsForCustomCake(isDownpayment) {
       }
     } catch (error) {
       console.error('Order placement failed:', error);
-      alert(`Order failed: ${error.message}. Please try again.`);
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: `Order failed: ${error.message}. Please try again.`,
+        confirmButtonColor: "#2c9045"
+      });
       this.resetCheckoutButton(checkoutBtn);
       this.hideStatusMessage(statusMessage);
     }
@@ -682,7 +709,12 @@ updatePaymentMethodsForCustomCake(isDownpayment) {
 
   // GCash minimum validation
   if (amount * 100 < 2000) {
-    alert('GCash payments require a minimum amount of ₱20.00.');
+    Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "Gcash payments require a minimum amount of ₱20.00.",
+        confirmButtonColor: "#2c9045"
+      });
     this.resetCheckoutButton(checkoutBtn);
     this.hideStatusMessage(statusMessage);
     return;
@@ -715,8 +747,6 @@ updatePaymentMethodsForCustomCake(isDownpayment) {
     totalAmount: amount,
     paymentMethod: this.checkoutData.paymentMethod
   }));
-
-  console.log('Custom cake payment payload:', paymentPayload);
 
   const paymentResponse = await fetch(`${window.API_BASE_URL}/api/payment/create-gcash-source`, {
     method: 'POST',
@@ -797,7 +827,12 @@ updatePaymentMethodsForCustomCake(isDownpayment) {
     if (this.checkoutData.paymentMethod === 'gcash') {
       // Validate minimum
       if (totalAmount * 100 < 2000) {
-        alert('GCash payments require a minimum amount of ₱20.00.');
+        Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "GCash payments require a minimum amount of ₱20.00.",
+        confirmButtonColor: "#2c9045"
+      });
         this.resetCheckoutButton(checkoutBtn);
         this.hideStatusMessage(statusMessage);
         return;
@@ -921,8 +956,6 @@ updatePaymentMethodsForCustomCake(isDownpayment) {
       const { paymentId, isCustomCake, isDownpayment } = paymentData;
       const token = sessionStorage.getItem('token');
 
-      console.log('Verifying payment:', { paymentId, isCustomCake, isDownpayment });
-
       // Verify payment status with retry logic
       let retries = 3;
       let response;
@@ -951,20 +984,11 @@ updatePaymentMethodsForCustomCake(isDownpayment) {
       }
 
       const result = await response.json();
-      console.log('Payment verification result:', result);
-      
       // Handle successful payment
       if (result.success && result.isPaid) {
         // Handle custom cake orders
         if (isCustomCake && pendingCustomCakeOrder) {
           const customCakeData = JSON.parse(pendingCustomCakeOrder);
-          
-          console.log('Custom cake payment verified:', { 
-            isDownpayment, 
-            deliveryDate: customCakeData.deliveryDate,
-            delivery_method: customCakeData.delivery_method,  
-            delivery_address: customCakeData.delivery_address  
-          });
           
           // Use different endpoint for downpayment vs full payment
           const verifyEndpoint = isDownpayment ?
@@ -984,8 +1008,6 @@ updatePaymentMethodsForCustomCake(isDownpayment) {
               downpaymentAmount: isDownpayment ? (customCakeData.totalAmount || customCakeData.amount / 100) : null
             }
           };
-
-          console.log('Sending verification request:', verificationPayload);
           
           const updateResponse = await fetch(verifyEndpoint, {
             method: 'POST',
@@ -1003,10 +1025,6 @@ updatePaymentMethodsForCustomCake(isDownpayment) {
           }
 
           const updateResult = await updateResponse.json();
-          console.log('Custom cake updated successfully:', updateResult);
-          
-          // ⭐ UPDATED: Better success message
-          console.log('Order status updated from:', customCakeData.status, 'to:', isDownpayment ? 'Downpayment Paid' : 'In Progress');
           
           // Clear session storage
           sessionStorage.removeItem('pendingPayment');
@@ -1021,8 +1039,6 @@ updatePaymentMethodsForCustomCake(isDownpayment) {
         // Handle regular orders
         if (pendingOrder) {
           const orderData = JSON.parse(pendingOrder);
-          
-          console.log('Regular order payment verified, creating/updating order...');
           
           // Create or update order
           const updateResponse = await fetch(`${window.API_BASE_URL}/api/orders/verify-gcash-payment`, {
@@ -1043,8 +1059,6 @@ updatePaymentMethodsForCustomCake(isDownpayment) {
           }
 
           const { order } = await updateResponse.json();
-          
-          console.log('Order created/updated:', order.orderId);
           
           // Clear session storage
           sessionStorage.removeItem('pendingPayment');
@@ -1099,12 +1113,21 @@ updatePaymentMethodsForCustomCake(isDownpayment) {
 
       if (!response.ok) throw new Error('Failed to cancel order');
       const result = await response.json();
-      console.log('Order canceled:', result.message);
-      alert('Order has been canceled.');
+      await Swal.fire({
+        icon: "error",
+        title: "Canceled",
+        text: "Order has been canceled.",
+        confirmButtonColor: "#2c9045"
+      });
       window.location.href = '/customer/cart.html';
     } catch (error) {
       console.error('Error canceling order:', error);
-      alert('Error canceling order. Please try again.');
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "Error canceling order. Please try again.",
+        confirmButtonColor: "#2c9045"
+      });
     }
   }
 }

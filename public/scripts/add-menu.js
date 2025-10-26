@@ -4,7 +4,12 @@
 async function fetchMenuItems() {
   const token = sessionStorage.getItem('token');
   if (!token) {
-    alert('Please log in to access the menu');
+    Swal.fire({
+      icon: "error",
+      title: "Oops...",
+      text: "Please log in to access the menu",
+      confirmButtonColor: "#2c9045",
+      });
     window.location.href = '/login.html';
     return;
   }
@@ -108,7 +113,12 @@ function addTableEventListeners() {
 async function addMenuItem(formData, form) {
   const token = sessionStorage.getItem('token');
   if (!token) {
-    alert('Please log in to add a menu item');
+    Swal.fire({
+      icon: "error",
+      title: "Oops...",
+      text: "Please log in to add a menu item",
+      confirmButtonColor: "#2c9045",
+      });
     window.location.href = '/login.html';
     return;
   }
@@ -142,7 +152,12 @@ async function updateMenuItem(formData, form) {
   const token = sessionStorage.getItem('token');
 
   if (!token) {
-    alert('Please log in to update a menu item');
+    Swal.fire({
+      icon: "error",
+      title: "Oops...",
+      text: "Please log in to update a menu item",
+      confirmButtonColor: "#2c9045",
+      });
     window.location.href = '/login.html';
     return;
   }
@@ -179,7 +194,12 @@ async function deleteMenuItem(menuId) {
 
   const token = sessionStorage.getItem('token');
   if (!token) {
-    alert('Please log in to delete a menu item');
+    Swal.fire({
+      icon: "error",
+      title: "Oops...",
+      text: "Please log in to delete a menu item",
+      confirmButtonColor: "#2c9045",
+      });
     window.location.href = '/login.html';
     return;
   }
@@ -209,7 +229,12 @@ async function deleteMenuItem(menuId) {
 async function openEditModal(menuId) {
   const token = sessionStorage.getItem('token');
   if (!token) {
-    alert('Please log in to edit a menu item');
+    Swal.fire({
+      icon: "error",
+      title: "Oops...",
+      text: "Please log in to edit a menu item",
+      confirmButtonColor: "#2c9045",
+      });
     window.location.href = '/login.html';
     return;
   }
@@ -518,7 +543,12 @@ function handleFormSubmit(e) {
 function initializePage() {
   const token = sessionStorage.getItem('token');
   if (!token) {
-    alert('Please log in to access the admin panel');
+    Swal.fire({
+      icon: "error",
+      title: "Oops...",
+      text: "Please log in to access the menu",
+      confirmButtonColor: "#2c9045",
+      });
     window.location.href = '/login.html';
     return;
   }

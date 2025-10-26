@@ -369,7 +369,12 @@ class Cake3DRenderer {
   // Save the 3D cake design as an image
   saveDesignImage() {
     if (!this.renderer || !this.scene || !this.camera) {
-      alert("3D model not ready. Please wait a moment and try again.");
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "3D model not ready. Please wait a moment and try again.",
+        confirmButtonColor: "#2c9045"
+      });
       return;
     }
     
@@ -383,10 +388,21 @@ class Cake3DRenderer {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      alert("Design image saved successfully!");
+      Swal.fire({
+          title: "Success!",
+          text: "Design image saved successfully!",
+          icon: "success",
+          confirmButtonColor: "#2c9045"
+        });
+
     } catch (error) {
       console.error("Error saving design:", error);
-      alert("Sorry, there was an error saving your design. Please try again.");
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "Sorry, there was an error saving your design. Please try again.",
+        confirmButtonColor: "#2c9045"
+      });
     }
   }
 

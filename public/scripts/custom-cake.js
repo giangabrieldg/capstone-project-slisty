@@ -15,9 +15,14 @@ class CakeAPIService {
   }
 
   // Redirect to login if not authenticated
-  requireAuth() {
+  async requireAuth() {
     if (!this.isAuthenticated()) {
-      alert('Please log in to submit a custom cake order');
+       await Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "Please log in to submit a custom cake order",
+        confirmButtonColor: "#2c9045"
+      });
       window.location.href = '/customer/login.html';
       return false;
     }
@@ -370,18 +375,20 @@ class CakeAPIService {
       }
 
       const result = await response.json();
-      return {
-        success: true,
-        data: result,
-        message: "Image-based order submitted successfully! Awaiting admin review."
-      };
+      Swal.fire({
+        icon: "success",
+        title: "Success!",
+        text: "Image-based order submitted successfully! Awaiting admin review.",
+        confirmButtonColor: "#2c9045"
+      });
     } catch (error) {
       console.error("Error submitting image order:", error);
-      return {
-        success: false,
-        error: error.message,
-        message: "Error submitting order. Please try again."
-      };
+       Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "Error submitting order. Please try again.",
+        confirmButtonColor: "#2c9045"
+      });
     }
   }
 

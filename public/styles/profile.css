@@ -78,7 +78,6 @@ body {
 /* Main Content Styles */
 .main-content {
     background-color: var(--secondary-bg-color);
-    min-height: calc(100vh - 80px);
     padding: 40px;
 }
 

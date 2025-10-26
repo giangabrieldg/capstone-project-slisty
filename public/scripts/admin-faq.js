@@ -81,7 +81,12 @@ document.addEventListener('DOMContentLoaded', () => {
       loadFaqs();
     } catch (error) {
       console.error('Error deleting FAQ:', error);
-      alert('Failed to delete FAQ.');
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "Failed to delete FAQ.",
+        confirmButtonColor: "#2c9045"
+      });
     }
   }
 
@@ -119,7 +124,12 @@ document.addEventListener('DOMContentLoaded', () => {
       loadFaqs();
     } catch (error) {
       console.error('Error saving FAQ:', error);
-      alert('Failed to save FAQ.');
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "Failed to save FAQ.",
+        confirmButtonColor: "#2c9045"
+      });
     }
   });
 

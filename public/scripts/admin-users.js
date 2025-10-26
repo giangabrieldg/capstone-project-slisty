@@ -46,7 +46,12 @@ async function fetchUsers() {
     document.querySelectorAll('.archive-checkbox').forEach(addArchiveToggleListener);
   } catch (error) {
     console.error('Error fetching users:', error);
-    alert(`Failed to load users: ${error.message}`);
+     Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: `Failed to load users: ${error.message}`,
+        confirmButtonColor: "#2c9045"
+      });
   }
 }
 
@@ -70,22 +75,42 @@ document.getElementById('addUserForm').addEventListener('submit', async (e) => {
   // Check for missing elements with specific messages
   if (!nameInput) {
     console.error('Element with ID "userName" not found');
-    alert('Name field is missing');
+    Swal.fire({
+      icon: "error",
+      title: "Oops...",
+      text: "Name field is missing",
+      confirmButtonColor: "#2c9045"
+    });
     return;
   }
   if (!emailInput) {
     console.error('Element with ID "userEmail" not found');
-    alert('Email field is missing');
+    Swal.fire({
+      icon: "error",
+      title: "Oops...",
+      text: "Email field is missing",
+      confirmButtonColor: "#2c9045"
+    });
     return;
   }
   if (!passwordInput) {
     console.error('Element with ID "userPassword" not found');
-    alert('Password field is missing');
+     Swal.fire({
+      icon: "error",
+      title: "Oops...",
+      text: "Password field is missing",
+      confirmButtonColor: "#2c9045"
+    });
     return;
   }
   if (!roleSelect) {
     console.error('Element with ID "userRole" not found');
-    alert('Role field is missing');
+     Swal.fire({
+      icon: "error",
+      title: "Oops...",
+      text: "Role field is missing",
+      confirmButtonColor: "#2c9045"
+    });
     return;
   }
 
@@ -99,26 +124,46 @@ document.getElementById('addUserForm').addEventListener('submit', async (e) => {
 
   // Validate form inputs
   if (!name || !email || !password || !role) {
-    alert('Please fill out all fields');
+     Swal.fire({
+      icon: "error",
+      title: "Oops...",
+      text: "Please fill out all fields",
+      confirmButtonColor: "#2c9045"
+    });
     return;
   }
 
   // Client-side email validation
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
-    alert('Please enter a valid email address');
+     Swal.fire({
+      icon: "error",
+      title: "Oops...",
+      text: "Please enter a valid email address",
+      confirmButtonColor: "#2c9045"
+    });
     return;
   }
 
   // Client-side password validation
   if (password.length < 8) {
-    alert('Password must be at least 8 characters long');
+     Swal.fire({
+      icon: "error",
+      title: "Oops...",
+      text: "Password must be at least 8 characters long",
+      confirmButtonColor: "#2c9045"
+    });
     return;
   }
 
   const token = sessionStorage.getItem('token');
   if (!token) {
-    alert('Please log in again');
+     await Swal.fire({
+      icon: "error",
+      title: "Oops...",
+      text: "Please log in again",
+      confirmButtonColor: "#2c9045"
+    });
     window.location.href = '/customer/login.html';
     return;
   }
@@ -157,10 +202,21 @@ document.getElementById('addUserForm').addEventListener('submit', async (e) => {
       }
     }
     document.getElementById('addUserForm').reset();
-    alert(`User ${name} added successfully!`);
+    Swal.fire({
+      title: "Success!",
+      text: `User ${name} added successfully!`,
+      icon: "success",
+      confirmButtonColor: "#2c9045"
+    });
+
   } catch (error) {
     console.error('Error adding user:', error);
-    alert(`Error: ${error.message}`);
+    Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: `Error: ${error.message}`,
+        confirmButtonColor: "#2c9045"
+      });
   }
 });
 
@@ -187,10 +243,20 @@ function addArchiveToggleListener(checkbox) {
         throw new Error('Failed to update user status');
       }
       await fetchUsers();
-      alert(`User ${isArchived ? 'archived' : 'unarchived'} successfully!`);
+      Swal.fire({
+        title: "Success!",
+        text: `User ${isArchived ? 'archived' : 'unarchived'} successfully!`,
+        icon: "success",
+        confirmButtonColor: "#2c9045"
+      });
     } catch (error) {
       console.error('Error updating archive status:', error);
-      alert(`Error: ${error.message}`);
+       Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: `Error: ${error.message}`,
+        confirmButtonColor: "#2c9045"
+      });
     }
   });
 }

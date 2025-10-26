@@ -19,7 +19,12 @@ async function fetchCustomOrders() {
     }
   } catch (error) {
     console.error("Error fetching orders:", error);
-    alert("Failed to load orders. Please try again.");
+     Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "Failed to load orders. Please try again.",
+        confirmButtonColor: "#2c9045"
+      });
   }
 }
 
@@ -226,12 +231,6 @@ function renderPaymentDisplay(order) {
       ? "Cash"
       : "Not set";
 
-  html += `<span class="badge ${
-    order.payment_status === "paid" ? "bg-success" : "bg-warning text-dark"
-  }">
-    ${paymentMethod}
-  </span>`;
-
   if (order.is_downpayment_paid === true) {
     const finalPaid = order.final_payment_status === "paid";
     const downpaymentAmount = parseFloat(order.downpayment_amount) || 0;
@@ -350,17 +349,24 @@ async function checkoutOrder(orderId, isImageOrder) {
       : ["Ready for Downpayment"];
 
     if (order.is_downpayment_paid === true) {
-      alert(
-        "Downpayment already paid. The remaining balance will be collected upon pickup/delivery."
-      );
+      Swal.fire({
+        title: "Success!",
+        text: "Downpayment already paid. The remaining balance will be collected upon pickup/delivery.",
+        icon: "success",
+        confirmButtonColor: "#2c9045"
+      });
       return;
     } else if (validDownpaymentStatuses.includes(order.status)) {
       paymentAmount = order.downpayment_amount || order.price * 0.5;
       isDownpayment = true;
     } else {
-      alert(
-        `This order is not ready for payment. Current status: ${order.status}`
-      );
+       Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: `This order is not ready for payment. Current status: ${order.status}`,
+        confirmButtonColor: "#2c9045"
+      });
+      
       return;
     }
 
@@ -368,7 +374,12 @@ async function checkoutOrder(orderId, isImageOrder) {
     window.location.href = checkoutUrl;
   } catch (error) {
     console.error("Error during checkout:", error);
-    alert("Failed to proceed to checkout. Please try again.");
+     Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "Failed to proceed to checkout. Please try again.`",
+        confirmButtonColor: "#2c9045"
+      });
   }
 }
 
