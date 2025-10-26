@@ -269,6 +269,16 @@ class CakeAPIService {
 
   // UPDATED: Submit image-based order with beautiful profile validation
   async submitImageBasedOrder(formElement) {
+  // Prevent multiple submissions
+  const submitButton = formElement.querySelector('button[type="submit"]');
+  const originalText = submitButton.textContent;
+  
+  // Disable button and show loading state
+  submitButton.disabled = true;
+  submitButton.textContent = 'Submitting...';
+  submitButton.style.opacity = '0.7';
+  
+  try {
     if (!this.requireAuth()) return;
 
     // NEW: Validate profile before submitting with beautiful UI
@@ -357,40 +367,62 @@ class CakeAPIService {
       };
     }
 
-    try {
-      const response = await fetch(`${this.baseURL}/image-order?token=${encodeURIComponent(token)}`, {
-        method: "POST",
-        body: formData,
-      });
+    const response = await fetch(`${this.baseURL}/image-order?token=${encodeURIComponent(token)}`, {
+      method: "POST",
+      body: formData,
+    });
 
-      if (!response.ok) {
-        let errorMessage = `HTTP error! Status: ${response.status}`;
-        try {
-          const errorData = await response.json();
-          errorMessage = errorData.message || errorMessage;
-        } catch (e) {
-          // If we can't parse JSON error response, use default message
-        }
-        throw new Error(errorMessage);
+    if (!response.ok) {
+      let errorMessage = `HTTP error! Status: ${response.status}`;
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.message || errorMessage;
+      } catch (e) {
+        // If we can't parse JSON error response, use default message
       }
-
-      const result = await response.json();
-      Swal.fire({
-        icon: "success",
-        title: "Success!",
-        text: "Image-based order submitted successfully! Awaiting admin review.",
-        confirmButtonColor: "#2c9045"
-      });
-    } catch (error) {
-      console.error("Error submitting image order:", error);
-       Swal.fire({
-        icon: "error",
-        title: "Oops...",
-        text: "Error submitting order. Please try again.",
-        confirmButtonColor: "#2c9045"
-      });
+      throw new Error(errorMessage);
     }
+
+    const result = await response.json();
+    
+    // Show success message
+    await Swal.fire({
+      icon: "success",
+      title: "Success!",
+      text: "Image-based order submitted successfully! Awaiting admin review.",
+      confirmButtonColor: "#2c9045"
+    });
+    
+    // Reset form after successful submission
+    formElement.reset();
+    document.getElementById('uploadedImage').style.display = 'none';
+    document.getElementById('imageOrderForm').style.display = 'none';
+    document.getElementById('uploadArea').style.display = 'block';
+    
+    return {
+      success: true,
+      data: result
+    };
+    
+  } catch (error) {
+    console.error("Error submitting image order:", error);
+    await Swal.fire({
+      icon: "error",
+      title: "Oops...",
+      text: "Error submitting order. Please try again.",
+      confirmButtonColor: "#2c9045"
+    });
+    return {
+      success: false,
+      error: error.message
+    };
+  } finally {
+    // Re-enable button regardless of success or failure
+    submitButton.disabled = false;
+    submitButton.textContent = originalText;
+    submitButton.style.opacity = '1';
   }
+}
 
   // Process custom cake payment
   async processCustomCakePayment(customCakeId, isImageOrder, paymentMethod, amount, deliveryDate, deliveryMethod, customerInfo) {

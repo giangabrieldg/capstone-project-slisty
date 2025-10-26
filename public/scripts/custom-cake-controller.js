@@ -388,51 +388,124 @@ async checkoutCustomCake() {
   }
 
   handleImageUpload(file) {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      document.getElementById("previewImage").src = e.target.result;
-      document.getElementById("uploadedImage").style.display = "block";
-      document.getElementById("uploadArea").style.display = "none";
-      document.getElementById("imageOrderForm").style.display = "block";
-      document.getElementById("uploadedFileName").textContent = file.name;
-    };
-    reader.readAsDataURL(file);
-  }
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    document.getElementById("previewImage").src = e.target.result;
+    document.getElementById("uploadedImage").style.display = "block";
+    document.getElementById("uploadArea").style.display = "none";
+    document.getElementById("imageOrderForm").style.display = "block";
+    document.getElementById("uploadedFileName").textContent = file.name;
+    
+    // Re-setup the form when it becomes visible to ensure fresh event listeners
+    setTimeout(() => this.setupImageOrderForm(), 100);
+  };
+  reader.readAsDataURL(file);
+}
 
-  setupImageOrderForm() {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    document.getElementById("eventDate").min = tomorrow.toISOString().split("T")[0];
+ setupImageOrderForm() {
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  document.getElementById("eventDate").min = tomorrow.toISOString().split("T")[0];
 
-    document.getElementById("imageNotes").addEventListener("input", (e) => {
-      document.getElementById("notesCharCount").textContent = e.target.value.length;
-    });
+  document.getElementById("imageNotes").addEventListener("input", (e) => {
+    document.getElementById("notesCharCount").textContent = e.target.value.length;
+  });
 
-    document.getElementById("imageMessage").addEventListener("input", (e) => {
-      document.getElementById("messageCharCount").textContent = e.target.value.length;
-    });
+  document.getElementById("imageMessage").addEventListener("input", (e) => {
+    document.getElementById("messageCharCount").textContent = e.target.value.length;
+  });
 
-    document.getElementById("imageOrderFormContent").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const result = await this.apiService.submitImageBasedOrder(e.target);
-      this.apiService.handleResponse(result, () => this.resetImageOrderForm());
-    });
-  }
+  // Get the form and submit button
+  const form = document.getElementById("imageOrderFormContent");
+  const submitButton = form.querySelector('button[type="submit"]');
+  
+  // Remove any existing event listeners by cloning the form
+  const newForm = form.cloneNode(true);
+  form.parentNode.replaceChild(newForm, form);
+  
+  // Add single event listener to the new form
+  newForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Prevent multiple submissions
+    const currentSubmitButton = newForm.querySelector('button[type="submit"]');
+    const originalText = currentSubmitButton.textContent;
+    
+    // Disable button and show loading state
+    currentSubmitButton.disabled = true;
+    currentSubmitButton.textContent = 'Submitting...';
+    currentSubmitButton.style.opacity = '0.7';
+    
+    try {
+      const result = await this.apiService.submitImageBasedOrder(newForm);
+      
+      if (result.success) {
+        this.apiService.handleResponse(result, () => {
+          this.resetImageOrderForm();
+          // Reset button state after successful submission
+          currentSubmitButton.disabled = false;
+          currentSubmitButton.textContent = originalText;
+          currentSubmitButton.style.opacity = '1';
+        });
+      } else {
+        throw new Error(result.message || 'Submission failed');
+      }
+    } catch (error) {
+      console.error('Form submission error:', error);
+      // Re-enable button on error
+      currentSubmitButton.disabled = false;
+      currentSubmitButton.textContent = originalText;
+      currentSubmitButton.style.opacity = '1';
+      
+      ToastNotifications.showToast(error.message || 'Error submitting order. Please try again.', 'error');
+    }
+  });
+}
 
   resetImageOrderForm() {
-    document.getElementById("imageOrderFormContent").reset();
-    document.getElementById("imageOrderForm").style.display = "none";
-    document.getElementById("uploadedImage").style.display = "none";
-    document.getElementById("uploadArea").style.display = "block";
-    document.getElementById("imageUpload").value = "";
+  const form = document.getElementById("imageOrderFormContent");
+  if (form) {
+    form.reset();
   }
+  
+  // Reset character counters
+  const messageCharCount = document.getElementById("messageCharCount");
+  const notesCharCount = document.getElementById("notesCharCount");
+  if (messageCharCount) messageCharCount.textContent = '0';
+  if (notesCharCount) notesCharCount.textContent = '0';
+  
+  // Reset UI elements
+  document.getElementById("imageOrderForm").style.display = "none";
+  document.getElementById("uploadedImage").style.display = "none";
+  document.getElementById("uploadArea").style.display = "block";
+  document.getElementById("imageUpload").value = "";
+  
+  // Reset the submit button state if it exists
+  const submitButton = document.querySelector('#imageOrderFormContent button[type="submit"]');
+  if (submitButton) {
+    submitButton.disabled = false;
+    submitButton.textContent = 'Submit Image Order';
+    submitButton.style.opacity = '1';
+  }
+}
 
   removeUploadedImage() {
-    document.getElementById('imageUpload').value = '';
-    document.getElementById("uploadedImage").style.display = "none";
-    document.getElementById("imageOrderForm").style.display = "none";
-    document.getElementById("uploadArea").style.display = "block";
+  document.getElementById('imageUpload').value = '';
+  document.getElementById("uploadedImage").style.display = "none";
+  document.getElementById("imageOrderForm").style.display = "none";
+  document.getElementById("uploadArea").style.display = "block";
+  
+  // Reset the form and character counters
+  const form = document.getElementById("imageOrderFormContent");
+  if (form) {
+    form.reset();
   }
+  const messageCharCount = document.getElementById("messageCharCount");
+  const notesCharCount = document.getElementById("notesCharCount");
+  if (messageCharCount) messageCharCount.textContent = '0';
+  if (notesCharCount) notesCharCount.textContent = '0';
+}
 
   setupInitialView() {
     document.getElementById("orderSummaryView").style.display = "none";
