@@ -115,7 +115,7 @@ const formatOrders = (orders) => {
         name: order.customer.name,
         email: order.customer.email,
       } : null,
-      updater: order.updater ? { // ADD UPDATER INFO
+      updater: order.updater ? {
         userID: order.updater.userID,
         name: order.updater.name,
         email: order.updater.email,
@@ -133,7 +133,7 @@ const formatOrders = (orders) => {
           image: item.MenuItem?.image || null,
         })),
     }))
-    .filter(order => order.items.length > 0); // Only include orders with regular items
+    .filter(order => order.items.length > 0);
 };
 
  // Helper function to create order notifications
@@ -328,7 +328,10 @@ router.get('/user/me', verifyToken, async (req, res) => {
         model: OrderItem,
         as: 'orderItems',
         include: [
-          { model: MenuItem, attributes: ['name'] },
+          { 
+            model: MenuItem, 
+            attributes: ['name', 'image'] // ← MAKE SURE image IS INCLUDED
+          },
           { model: ItemSize, attributes: ['sizeName'] },
           { model: CustomCakeOrder, attributes: ['size', 'cakeColor', 'icingStyle', 'icingColor', 'filling', 'bottomBorder', 'topBorder', 'bottomBorderColor', 'topBorderColor', 'decorations', 'flowerType', 'customText', 'messageChoice', 'toppingsColor', 'imageUrl', 'status'] },
         ],

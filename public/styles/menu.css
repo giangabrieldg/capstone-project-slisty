@@ -14,6 +14,32 @@
     --yellow-color: #facc15;
 }
 
+/* Footer stick solution */
+html,
+body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    opacity: 0;
+    animation: fadeIn 0.3s ease-in forwards;
+}
+
+.main-content {
+    flex: 1;
+}
+
+/* Ensure footer stays at bottom */
+footer {
+    flex-shrink: 0;
+    margin-top: auto;
+}
+
 /* Main section */
 .menu-section {
     background-color: var(--bg-color);
@@ -167,35 +193,13 @@
     padding-top: 0.75rem;
 }
 
-.price-stock-info {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-    margin-bottom: 1rem;
-    padding: 0.75rem;
-    background-color: rgba(44, 144, 69, 0.05);
-    border-radius: 8px;
-    border-left: 3px solid var(--primary-color);
-}
-
-.card-text.price,
-.card-text.stock {
-    font-size: 0.9rem;
-    color: var(--text-color);
-    margin: 0;
-}
-
 .card-text.price {
+    font-size: 1.1rem;
     font-weight: 600;
     color: var(--primary-color);
-}
-
-.card-text.price strong,
-.card-text.stock strong {
-    color: var(--primary-color);
-    font-weight: 600;
-    display: inline-block;
-    min-width: 50px;
+    margin-top: 0.5rem;
+    margin-bottom: 0;
+    font-family: var(--font-poppins);
 }
 
 /* Buttons */

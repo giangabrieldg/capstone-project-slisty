@@ -26,38 +26,142 @@
     <div data-include-html="/includes/navbar.html"></div>
 
     <!-- Main Content -->
-    <div class="container py-5">
-      <div class="custom-cake-header">
-        <h2>Custom Cake Orders</h2>
-        <div class="header-actions">
-          <input
-            type="text"
-            class="search-bar"
-            placeholder="Search by Order ID or Name..."
-            id="searchBar"
-          />
-          <button
-            class="filter-btn"
-            data-bs-toggle="modal"
-            data-bs-target="#filterModal"
-          >
-            <i class="fas fa-filter"></i> Filter
-          </button>
+    <main class="main-content">
+      <div class="container py-5">
+        <div class="custom-cake-header">
+          <h2>Custom Cake Orders</h2>
+          <div class="header-actions">
+            <input
+              type="text"
+              class="search-bar"
+              placeholder="Search by Order ID or Name..."
+              id="searchBar"
+            />
+            <button
+              class="filter-btn"
+              data-bs-toggle="modal"
+              data-bs-target="#filterModal"
+            >
+              <i class="fas fa-filter"></i> Filter
+            </button>
+          </div>
+        </div>
+
+        <!-- Filter Modal -->
+        <div
+          class="modal fade"
+          id="filterModal"
+          tabindex="-1"
+          aria-labelledby="filterModalLabel"
+          aria-hidden="true"
+        >
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="filterModalLabel">Filter Orders</h5>
+                <button
+                  type="button"
+                  class="btn-close"
+                  data-bs-dismiss="modal"
+                  aria-label="Close"
+                ></button>
+              </div>
+              <div class="modal-body">
+                <div class="mb-3">
+                  <label for="filterStatus" class="form-label">Status:</label>
+                  <select class="form-select" id="filterStatus">
+                    <option value="">All Statuses</option>
+                    <option value="Pending Review">Pending Review</option>
+                    <option value="Ready for Downpayment">
+                      Ready for Downpayment
+                    </option>
+                    <option value="Downpayment Paid">Downpayment Paid</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Ready for Pickup/Delivery">
+                      Ready for Pickup/Delivery
+                    </option>
+                    <option value="Completed">Completed</option>
+                    <option value="Cancelled">Cancelled</option>
+                    <option value="Feasible">Feasible</option>
+                    <option value="Not Feasible">Not Feasible</option>
+                  </select>
+                </div>
+                <div class="mb-3">
+                  <label for="filterPaymentStatus" class="form-label"
+                    >Payment Status:</label
+                  >
+                  <select class="form-select" id="filterPaymentStatus">
+                    <option value="">All Payment Statuses</option>
+                    <option value="Paid">Paid</option>
+                    <option value="Awaiting Payment">Awaiting Payment</option>
+                    <option value="Balance Due">Balance Due</option>
+                  </select>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button
+                  type="button"
+                  class="btn btn-secondary"
+                  data-bs-dismiss="modal"
+                >
+                  Close
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-primary"
+                  id="applyFilterBtn"
+                  data-bs-dismiss="modal"
+                >
+                  Apply Filters
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="table-container">
+          <div class="table-responsive">
+            <div class="d-flex justify-content-between mb-3">
+              <h5>Total Orders: <span id="orderCount">0</span></h5>
+            </div>
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>Order ID</th>
+                  <th>Type</th>
+                  <th>Customer</th>
+                  <th>Order Date</th>
+                  <th>Delivery Date</th>
+                  <th>Details</th>
+                  <th>Status</th>
+                  <th>Image</th>
+                  <th>Price</th>
+                  <th>Payment</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="ordersTableBody">
+                <!-- Orders will be populated dynamically -->
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
-      <!-- Filter Modal -->
+      <!-- Image Modal -->
       <div
         class="modal fade"
-        id="filterModal"
+        id="imageModal"
         tabindex="-1"
-        aria-labelledby="filterModalLabel"
+        aria-labelledby="imageModalLabel"
         aria-hidden="true"
       >
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-lg">
           <div class="modal-content">
             <div class="modal-header">
-              <h5 class="modal-title" id="filterModalLabel">Filter Orders</h5>
+              <h5 class="modal-title" id="imageModalLabel">
+                Custom Cake Image
+              </h5>
               <button
                 type="button"
                 class="btn-close"
@@ -66,118 +170,18 @@
               ></button>
             </div>
             <div class="modal-body">
-              <div class="mb-3">
-                <label for="filterStatus" class="form-label">Status:</label>
-                <select class="form-select" id="filterStatus">
-                  <option value="">All Statuses</option>
-                  <option value="Pending Review">Pending Review</option>
-                  <option value="Ready for Downpayment">
-                    Ready for Downpayment
-                  </option>
-                  <option value="Downpayment Paid">Downpayment Paid</option>
-                  <option value="In Progress">In Progress</option>
-                  <option value="Ready for Pickup/Delivery">
-                    Ready for Pickup/Delivery
-                  </option>
-                  <option value="Completed">Completed</option>
-                  <option value="Cancelled">Cancelled</option>
-                  <option value="Feasible">Feasible</option>
-                  <option value="Not Feasible">Not Feasible</option>
-                </select>
-              </div>
-              <div class="mb-3">
-                <label for="filterPaymentStatus" class="form-label"
-                  >Payment Status:</label
-                >
-                <select class="form-select" id="filterPaymentStatus">
-                  <option value="">All Payment Statuses</option>
-                  <option value="Paid">Paid</option>
-                  <option value="Awaiting Payment">Awaiting Payment</option>
-                  <option value="Balance Due">Balance Due</option>
-                </select>
-              </div>
-            </div>
-            <div class="modal-footer">
-              <button
-                type="button"
-                class="btn btn-secondary"
-                data-bs-dismiss="modal"
-              >
-                Close
-              </button>
-              <button
-                type="button"
-                class="btn btn-primary"
-                id="applyFilterBtn"
-                data-bs-dismiss="modal"
-              >
-                Apply Filters
-              </button>
+              <img
+                src=""
+                class="modal-img"
+                id="modalImage"
+                alt="Custom Cake Image"
+                style="max-width: 100%; height: auto"
+              />
             </div>
           </div>
         </div>
       </div>
-
-      <div class="table-container">
-        <div class="table-responsive">
-          <div class="d-flex justify-content-between mb-3">
-            <h5>Total Orders: <span id="orderCount">0</span></h5>
-          </div>
-          <table class="table table-hover">
-            <thead>
-              <tr>
-                <th>Order ID</th>
-                <th>Type</th>
-                <th>Customer</th>
-                <th>Order Date</th>
-                <th>Delivery Date</th>
-                <th>Details</th>
-                <th>Status</th>
-                <th>Image</th>
-                <th>Price</th>
-                <th>Payment</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody id="ordersTableBody">
-              <!-- Orders will be populated dynamically -->
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- Image Modal -->
-    <div
-      class="modal fade"
-      id="imageModal"
-      tabindex="-1"
-      aria-labelledby="imageModalLabel"
-      aria-hidden="true"
-    >
-      <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="imageModalLabel">Custom Cake Image</h5>
-            <button
-              type="button"
-              class="btn-close"
-              data-bs-dismiss="modal"
-              aria-label="Close"
-            ></button>
-          </div>
-          <div class="modal-body">
-            <img
-              src=""
-              class="modal-img"
-              id="modalImage"
-              alt="Custom Cake Image"
-              style="max-width: 100%; height: auto"
-            />
-          </div>
-        </div>
-      </div>
-    </div>
+    </main>
 
     <!-- Footer -->
     <div data-include-html="/includes/footer.html"></div>

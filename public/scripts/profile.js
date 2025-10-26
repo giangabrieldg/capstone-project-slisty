@@ -230,6 +230,7 @@ class ProfileManager {
             <table class="orders-table">
                 <thead>
                     <tr>
+                        <th>Image</th>
                         <th>Order ID</th>
                         <th>Date</th>
                         <th>Total</th>
@@ -246,8 +247,16 @@ class ProfileManager {
                         const orderDate = new Date(order.createdAt);
                         const statusText = statusMap[order.status] || order.status;
                         
+                        // Get the first item's image for this order
+                        const firstItem = items[0];
+                        const orderImage = firstItem?.image || 'https://via.placeholder.com/300';
+                        
                         return `
                             <tr>
+                                <td data-label="Image">
+                                    <img src="${orderImage}" alt="${firstItem?.name || 'Order item'}" class="cart-item-image" 
+                                         onerror="this.src='https://via.placeholder.com/300'">
+                                </td>
                                 <td data-label="Order ID">${formattedOrderId}</td>
                                 <td data-label="Date" class="order-date">${orderDate.toLocaleDateString('en-US', { 
                                     year: 'numeric', 

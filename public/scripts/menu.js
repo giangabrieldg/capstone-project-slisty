@@ -30,7 +30,30 @@ function renderMenuItems(menuItems, container, showPriceStock = false) {
       ? item.image
       : 'https://via.placeholder.com/600x400?text=No+Image';
 
-    // load menu item card
+    // Calculate price display
+    let priceDisplay = '';
+    if (item.hasSizes && item.sizes && item.sizes.length > 0) {
+      // For items with multiple sizes, show price range
+      const prices = item.sizes.map(size => Number(size.price)).filter(price => !isNaN(price));
+      if (prices.length > 0) {
+        const minPrice = Math.min(...prices);
+        const maxPrice = Math.max(...prices);
+        if (minPrice === maxPrice) {
+          priceDisplay = `₱${minPrice.toFixed(2)}`;
+        } else {
+          priceDisplay = `₱${minPrice.toFixed(2)} - ₱${maxPrice.toFixed(2)}`;
+        }
+      } else {
+        priceDisplay = 'Price varies';
+      }
+    } else if (item.basePrice) {
+      // For items with single price
+      priceDisplay = `₱${Number(item.basePrice).toFixed(2)}`;
+    } else {
+      priceDisplay = 'Price not set';
+    }
+
+    // load menu item card with price
     const cardMinimal = `
       <div class="card h-100 minimal">
         <div class="menu-image-wrapper">
@@ -40,6 +63,7 @@ function renderMenuItems(menuItems, container, showPriceStock = false) {
           <div class="card-content">
             <h5 class="card-title">${item.name || 'Unknown Item'}</h5>
             <p class="card-text description">${item.description || 'No description available'}</p>
+            <p class="card-text price">${priceDisplay}</p>
           </div>
           <div class="card-details">
             <a href="/customer/products.html?id=${item.menuId || ''}" class="${viewDetailsClass}">
