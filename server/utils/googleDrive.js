@@ -1,7 +1,4 @@
-/**
- * utils/googleDrive.js
- * Google Drive service with auto-refresh token
- */
+//Google Drive service with auto-refresh token
 const { google } = require('googleapis');
 
 class GoogleDriveService {
@@ -20,9 +17,9 @@ class GoogleDriveService {
     this.drive = google.drive({ version: 'v3', auth: this.oauth2Client });
   }
 
-  /**
-   * Ensure we have a valid access token
-   */
+  
+  //Ensure we have a valid access token
+   
   async ensureValidAccessToken() {
     try {
       const { token } = await this.oauth2Client.getAccessToken();
@@ -37,9 +34,9 @@ class GoogleDriveService {
     }
   }
 
-  /**
-   * Upload image to Google Drive
-   */
+  
+  //Upload image to Google Drive
+   
   async uploadImage(file, folderId = process.env.GOOGLE_DRIVE_FOLDER_ID) {
     try {
       await this.ensureValidAccessToken();
@@ -79,9 +76,9 @@ class GoogleDriveService {
     }
   }
 
-  /**
-   * Delete file from Google Drive
-   */
+  
+  //Delete file from Google Drive
+   
   async deleteFile(fileUrl) {
     try {
       await this.ensureValidAccessToken();
@@ -99,9 +96,8 @@ class GoogleDriveService {
     }
   }
 
-  /**
-   * Extract file ID from Google Drive URL
-   */
+  
+  //Extract file ID from Google Drive URL
   extractFileId(url) {
     if (!url) return null;
     
@@ -110,9 +106,9 @@ class GoogleDriveService {
     return match ? match[1] : null;
   }
 
-  /**
-   * Check if authentication is working
-   */
+  
+  //Check if authentication is working
+   
   async testConnection() {
     try {
       await this.ensureValidAccessToken();

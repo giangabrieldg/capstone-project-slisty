@@ -715,44 +715,28 @@ document.querySelector(".search-bar").addEventListener("input", (e) => {
 
 
 document.getElementById("applyFilter").addEventListener("click", () => {
-  const status = document.getElementById("filterStatus").value.toLowerCase();
+  const selectedStatus = document.getElementById("filterStatus").value.toLowerCase();
   
   document.querySelectorAll("#salesTable tbody tr").forEach((row) => {
-    // Skip summary rows that have colspan
-    if (row.querySelector('td[colspan]')) {
-      return;
-    }
-    
-    const rowStatusElement = row.cells[4].querySelector(".status");
-    const rowStatus = rowStatusElement ? 
-      rowStatusElement.textContent.trim().toLowerCase() : "";
-    
-    // Map status text to filter values for proper filtering
-    let filterStatus = '';
-    if (rowStatus.includes('pending review') || rowStatus.includes('ready for downpayment')) {
-      filterStatus = 'pending';
-    } else if (rowStatus.includes('downpayment paid')) {
-      filterStatus = 'processing';
-    } else if (rowStatus.includes('in progress')) {
-      filterStatus = 'processing';
-    } else if (rowStatus.includes('ready for pickup/delivery')) {
-      filterStatus = 'shipped';
-    } else if (rowStatus.includes('completed')) {
-      filterStatus = 'delivered';
-    } else if (rowStatus.includes('cancelled') || rowStatus.includes('not feasible')) {
-      filterStatus = 'cancelled';
-    } else {
-      filterStatus = rowStatus; // fallback
-    }
+    // Skip summary rows
+    if (row.querySelector('td[colspan]')) return;
 
-    row.style.display =
-      status === "" || filterStatus === status ? "" : "none";
+    const statusElement = row.cells[4]?.querySelector(".status");
+    const rowStatus = statusElement ? statusElement.textContent.trim().toLowerCase() : "";
+
+    // Check if row matches selected filter
+    if (selectedStatus === "" || rowStatus.includes(selectedStatus)) {
+      row.style.display = "";
+    } else {
+      row.style.display = "none";
+    }
   });
 
-  bootstrap.Modal.getInstance(
-    document.getElementById("filterModal")
-  ).hide();
+  // Close modal after applying filter
+  const filterModal = bootstrap.Modal.getInstance(document.getElementById("filterModal"));
+  if (filterModal) filterModal.hide();
 });
+
 
 // Initialize with default date range (last 30 days)
 const endDate = new Date().toISOString().split("T")[0];

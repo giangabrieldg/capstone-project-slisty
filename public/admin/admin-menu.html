@@ -58,7 +58,7 @@
                   <th>Category</th>
                   <th>Image</th>
                   <th>Price (₱)</th>
-                  <th>Stock</th>
+                  <th>Size & Stock</th>
                   <th>Description</th>
                   <th>Action</th>
                 </tr>
@@ -322,5 +322,37 @@
     <script src="/scripts/add-menu.js"></script>
     <script src="/scripts/environment-config.js"></script>
     <script src="/scripts/include-admin-sidebar.js"></script>
+
+    <script>
+      const MAX_STOCK = 100;
+
+      // Apply limit to single stock input
+      document.getElementById("stock").addEventListener("input", function (e) {
+        if (e.target.value > MAX_STOCK) {
+          e.target.value = MAX_STOCK;
+          Swal.fire({
+            icon: "warning",
+            title: "Stock Limit Reached",
+            text: `Maximum stock allowed is ${MAX_STOCK}.`,
+            confirmButtonColor: "#2c9045",
+          });
+        }
+      });
+
+      // Apply limit to size-based stock inputs
+      document.addEventListener("input", function (e) {
+        if (e.target && e.target.name.startsWith("stock_")) {
+          if (e.target.value > MAX_STOCK) {
+            e.target.value = MAX_STOCK;
+            Swal.fire({
+              icon: "warning",
+              title: "Stock Limit Reached",
+              text: `Maximum stock allowed is ${MAX_STOCK}.`,
+              confirmButtonColor: "#2c9045",
+            });
+          }
+        }
+      });
+    </script>
   </body>
 </html>

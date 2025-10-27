@@ -728,7 +728,7 @@ document.querySelector('.search-bar')?.addEventListener('input', (e) => {
 // Filter functionality
 document.getElementById('filterForm')?.addEventListener('submit', (e) => {
   e.preventDefault();
-  const status = document.getElementById('filterStatus').value;
+  const selectedStatus = document.getElementById('filterStatus').value.trim().toLowerCase();
   
   const activeTab = document.querySelector('.tab-pane.active');
   if (activeTab) {
@@ -736,16 +736,17 @@ document.getElementById('filterForm')?.addEventListener('submit', (e) => {
     if (tbody) {
       tbody.querySelectorAll('tr').forEach(row => {
         const statusBadge = row.querySelector('.status');
-        if (statusBadge) {
-          const rowStatus = statusBadge.textContent.trim();
-          row.style.display = status === '' || rowStatus.includes(status) ? '' : 'none';
-        }
+        const rowStatus = statusBadge ? statusBadge.textContent.trim().toLowerCase() : '';
+        row.style.display = selectedStatus === '' || rowStatus.includes(selectedStatus)
+          ? ''
+          : 'none';
       });
     }
   }
-  
+
+  // Close modal after applying filter
   const modal = bootstrap.Modal.getInstance(document.getElementById('filterModal'));
-  modal?.hide();
+  if (modal) modal.hide();
 });
 
 // Initialize
