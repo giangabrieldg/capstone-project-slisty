@@ -267,11 +267,21 @@
               console.log("Login successful - session data stored");
               window.location.href = data.redirectUrl;
             } else {
-              showMessage(data.message || "Login failed");
+              // Handle different error statuses
+              if (response.status === 423) {
+                // Account locked
+                showMessage(data.message, "warning");
+              } else if (response.status === 401) {
+                // Invalid credentials with attempt count
+                showMessage(data.message, "danger");
+              } else {
+                // Other errors
+                showMessage(data.message || "Login failed", "danger");
+              }
             }
           } catch (error) {
             console.error("Error during login:", error);
-            showMessage("An error occurred. Please try again later.");
+            showMessage("An error occurred. Please try again later.", "danger");
           }
         });
 

@@ -11,12 +11,12 @@ const User = sequelize.define('User', {
   employeeID: {
     type: DataTypes.STRING,
     allowNull: true,
-    unique: true, // Ensure unique employee IDs for staff/admin
+    unique: true,
   },
   googleID: {
     type: DataTypes.STRING,
     allowNull: true,
-    unique: true, // Store Google user ID
+    unique: true,
   },
   email: {
     type: DataTypes.STRING,
@@ -53,7 +53,19 @@ const User = sequelize.define('User', {
   },
   isArchived: {
     type: DataTypes.BOOLEAN,
-    defaultValue: false, // Default to active (not archived)
+    defaultValue: false,
+  },
+  loginAttempts: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0,
+  },
+  lastLoginAttempt: {
+    type: DataTypes.DATE, 
+    allowNull: true,
+  },
+  lockedUntil: {
+    type: DataTypes.DATE, 
+    allowNull: true,
   },
 }, {
   tableName: 'Users',

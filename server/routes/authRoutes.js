@@ -7,6 +7,7 @@ const User = require('../models/user-model');
 const ResetToken = require('../models/reset-token-model');
 const { sendVerificationEmail } = require('../utils/sendEmail');
 const verifyToken = require('../middleware/verifyToken');
+const securityConfig = require('../config/login-security');
 const Sequelize = require('sequelize');
 require('dotenv').config();
 
@@ -179,12 +180,29 @@ router.post('/login', async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    if (!user.isVerified) {
-      return res.status(400).json({ message: 'Email not verified' });
+    // Check if account is archived
+    if (user.isArchived) {
+      return res.status(403).json({ message: 'Account is archived. Please contact administrator.' });
     }
 
-    if (user.isArchived) {
-      return res.status(403).json({ message: 'Account is archived' });
+    // Check if account is temporarily locked
+    if (user.lockedUntil && user.lockedUntil > new Date()) {
+      const remainingTime = Math.ceil((user.lockedUntil - new Date()) / 60000); // minutes
+      return res.status(423).json({ 
+        message: `Account temporarily locked. Try again in ${remainingTime} minutes.` 
+      });
+    }
+
+    // Reset lock if lock time has expired
+    if (user.lockedUntil && user.lockedUntil <= new Date()) {
+      await user.update({
+        lockedUntil: null,
+        loginAttempts: 0
+      });
+    }
+
+    if (!user.isVerified) {
+      return res.status(400).json({ message: 'Email not verified' });
     }
 
     if (!user.password) {
@@ -194,8 +212,52 @@ router.post('/login', async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
-      return res.status(401).json({ message: 'Incorrect username or password' });
+      // Increment login attempts
+      const updatedAttempts = user.loginAttempts + 1;
+      
+      // Check if should lock account
+      if (updatedAttempts >= securityConfig.MAX_LOGIN_ATTEMPTS) {
+        const lockedUntil = new Date(Date.now() + securityConfig.LOCKOUT_DURATION * 60000);
+        
+        // Auto-archive staff/admin accounts after lockout
+        let shouldArchive = false;
+        if (securityConfig.AUTO_ARCHIVE_AFTER_LOCKOUT && 
+            (user.userLevel === 'Staff' || user.userLevel === 'Admin')) {
+          shouldArchive = true;
+        }
+
+        await user.update({
+          loginAttempts: updatedAttempts,
+          lastLoginAttempt: new Date(),
+          lockedUntil: lockedUntil,
+          isArchived: shouldArchive ? true : user.isArchived
+        });
+
+        const message = shouldArchive 
+          ? `Account locked due to too many failed attempts and has been archived. Please contact administrator.`
+          : `Account locked due to too many failed attempts. Try again in ${securityConfig.LOCKOUT_DURATION} minutes.`;
+
+        return res.status(423).json({ message });
+      }
+
+      // Regular failed attempt (not yet at max)
+      await user.update({
+        loginAttempts: updatedAttempts,
+        lastLoginAttempt: new Date()
+      });
+
+      const remainingAttempts = securityConfig.MAX_LOGIN_ATTEMPTS - updatedAttempts;
+      return res.status(401).json({ 
+        message: `Incorrect username or password. ${remainingAttempts} attempt(s) remaining.` 
+      });
     }
+
+    // SUCCESSFUL LOGIN - Reset attempt counters
+    await user.update({
+      loginAttempts: 0,
+      lockedUntil: null,
+      lastLoginAttempt: null
+    });
 
     const token = jwt.sign(
       { userID: user.userID, userLevel: user.userLevel },
@@ -452,13 +514,24 @@ router.put('/users/:id/archive', verifyToken, setNoCacheHeaders, async (req, res
       return res.status(404).json({ message: 'User not found' });
     }
 
-    await user.update({ isArchived });
-    res.status(200).json({ message: `User ${isArchived ? 'archived' : 'unarchived'} successfully` });
+    // If unarchiving, reset login attempts and remove lock so user can login again
+    const updateData = { isArchived };
+    if (!isArchived) {
+      updateData.loginAttempts = 0;
+      updateData.lastLoginAttempt = null;
+      updateData.lockedUntil = null;
+    }
+
+    await user.update(updateData);
+    res.status(200).json({ 
+      message: `User ${isArchived ? 'archived' : 'unarchived'} successfully${!isArchived ? ' and login security reset' : ''}` 
+    });
   } catch (error) {
     console.error('Error updating archive status:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
+
 
 router.get('/profile', verifyToken, setNoCacheHeaders, async (req, res) => {
   try {
@@ -513,35 +586,39 @@ router.put('/profile/update', verifyToken, setNoCacheHeaders, async (req, res) =
   }
 });
 
-router.post('/create-test-user', async (req, res) => {
-  try {
-    const hashedPassword = await bcrypt.hash('test123', 10);
-    const user = await User.create({
-      email: 'test@example.com',
-      password: hashedPassword,
-      name: 'Test User',
-      isVerified: true,
-      userLevel: 'Customer'
-    });
-    res.json({ message: 'Test user created', email: 'test@example.com', password: 'test123' });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+// Admin route to reset login attempts and unlock account
+router.put('/users/:id/reset-login-attempts', verifyToken, setNoCacheHeaders, async (req, res) => {
+  if (req.user.userLevel !== 'Admin') {
+    return res.status(403).json({ message: 'Access denied: Admins only' });
   }
-});
 
-router.get('/test', (req, res) => {
-  res.json({ message: 'Auth routes are working!' });
-});
+  const { id } = req.params;
 
-router.get('/test-email', async (req, res) => {
   try {
-    const { sendVerificationEmail } = require('../utils/sendEmail');
-    res.json({ message: 'Email route accessible' });
-  } catch (error) {
-    res.status(500).json({ 
-      message: 'Email module error', 
-      error: error.message 
+    const user = await User.findByPk(id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    await user.update({
+      loginAttempts: 0,
+      lockedUntil: null,
+      lastLoginAttempt: null
     });
+
+    res.status(200).json({ 
+      message: 'Login attempts reset successfully',
+      user: {
+        userID: user.userID,
+        email: user.email,
+        name: user.name,
+        loginAttempts: 0,
+        lockedUntil: null
+      }
+    });
+  } catch (error) {
+    console.error('Error resetting login attempts:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 });
 

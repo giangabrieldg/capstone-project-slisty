@@ -1,4 +1,3 @@
-
 async function fetchUsers() {
   try {
     const response = await fetch(`${window.API_BASE_URL}/api/auth/users`, {

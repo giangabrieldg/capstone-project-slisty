@@ -38,27 +38,31 @@ function applyFilters() {
   const statusFilter = document.getElementById('filterStatus').value;
   const paymentFilter = document.getElementById('filterPaymentStatus').value;
 
-  const customFiltered = allOrders.custom.filter(order => {
-    const orderId = `CC${String(order.customCakeId).padStart(3, '0')}`.toLowerCase();
-    const customerName = (order.customer_name || order.customer?.name || 'Unknown').toLowerCase();
-    
-    const statusMatch = !statusFilter || order.status === statusFilter;
-    const paymentMatch = !paymentFilter || getPaymentStatus(order) === paymentFilter;
-    const searchMatch = orderId.includes(searchTerm) || customerName.includes(searchTerm);
+  const matchPayment = (order) => {
+    const paymentStatus = getPaymentStatus(order);
 
-    return statusMatch && paymentMatch && searchMatch;
-  });
+    // Handle "Downpayment Paid" filter explicitly
+    if (paymentFilter === "Downpayment Paid") {
+      return order.is_downpayment_paid === true && order.final_payment_status !== "paid";
+    }
 
-  const imageFiltered = allOrders.image.filter(order => {
-    const orderId = `RCC${String(order.imageBasedOrderId).padStart(3, '0')}`.toLowerCase();
-    const customerName = (order.customer_name || order.customer?.name || 'Unknown').toLowerCase();
-    
-    const statusMatch = !statusFilter || order.status === statusFilter;
-    const paymentMatch = !paymentFilter || getPaymentStatus(order) === paymentFilter;
-    const searchMatch = orderId.includes(searchTerm) || customerName.includes(searchTerm);
+    return !paymentFilter || paymentStatus === paymentFilter;
+  };
 
-    return statusMatch && paymentMatch && searchMatch;
-  });
+  const filterOrders = (orders, isImageOrder = false) =>
+    orders.filter(order => {
+      const orderId = `${isImageOrder ? "RCC" : "CC"}${String(isImageOrder ? order.imageBasedOrderId : order.customCakeId).padStart(3, '0')}`.toLowerCase();
+      const customerName = (order.customer_name || order.customer?.name || 'Unknown').toLowerCase();
+      
+      const statusMatch = !statusFilter || order.status === statusFilter;
+      const paymentMatch = matchPayment(order);
+      const searchMatch = orderId.includes(searchTerm) || customerName.includes(searchTerm);
+
+      return statusMatch && paymentMatch && searchMatch;
+    });
+
+  const customFiltered = filterOrders(allOrders.custom);
+  const imageFiltered = filterOrders(allOrders.image, true);
 
   populateOrdersTable(customFiltered, imageFiltered);
 }
