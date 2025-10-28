@@ -64,35 +64,49 @@ async function fetchCustomCakeOrders() {
 
         // Format customer details with delivery address
         const customerDetails = `
-      <div class="customer-info">
-        <div class="customer-name fw-bold">${
-          order.customer_name ||
-          (order.customer ? order.customer.name : "Unknown")
-        }</div>
-        <div class="customer-contact small text-muted">
-          ${
-            order.customer_email ||
-            (order.customer ? order.customer.email : "N/A")
-          }<br>${order.customer_phone || "N/A"}
-        </div>
-        <div class="delivery-method small text-muted mt-1">
-          <strong>Method:</strong> ${
-            order.delivery_method.charAt(0).toUpperCase() +
-            order.delivery_method.slice(1)
-          }
-        </div>
+  <div class="customer-info">
+    <div class="customer-name fw-bold">${
+      order.customer_name || (order.customer ? order.customer.name : "Unknown")
+    }</div>
+    <div class="customer-contact small text-muted">
+      ${
+        order.customer_email || (order.customer ? order.customer.email : "N/A")
+      }<br>${order.customer_phone || "N/A"}
+    </div>
+    ${
+      order.status === "Cancelled" && order.cancellation_remarks
+        ? `
+      <div class="cancellation-info small text-danger mt-1">
+        <strong>Cancellation Reason:</strong> ${order.cancellation_remarks}
         ${
-          order.delivery_method === "delivery" && order.delivery_address
-            ? `
-          <div class="delivery-address small text-muted mt-1">
-            <strong>Delivery Address:</strong><br>
-            ${order.delivery_address}
-          </div>
-        `
+          order.cancelled_at
+            ? `<br><small>Cancelled on: ${new Date(
+                order.cancelled_at
+              ).toLocaleDateString()}</small>`
             : ""
         }
       </div>
-    `;
+    `
+        : ""
+    }
+    <div class="delivery-method small text-muted mt-1">
+      <strong>Method:</strong> ${
+        order.delivery_method.charAt(0).toUpperCase() +
+        order.delivery_method.slice(1)
+      }
+    </div>
+    ${
+      order.delivery_method === "delivery" && order.delivery_address
+        ? `
+      <div class="delivery-address small text-muted mt-1">
+        <strong>Delivery Address:</strong><br>
+        ${order.delivery_address}
+      </div>
+    `
+        : ""
+    }
+  </div>
+`;
 
         // Format updated by information
         const updatedByInfo = order.updater
@@ -172,37 +186,49 @@ async function fetchCustomCakeOrders() {
 
         // Format customer details with delivery address
         const customerDetails = `
-          <div class="customer-info">
-            <div class="customer-name fw-bold">${
-              order.customer_name ||
-              (order.customer ? order.customer.name : "Unknown")
-            }</div>
-            <div class="customer-contact small text-muted">
-              ${
-                order.customer_email ||
-                (order.customer ? order.customer.email : "N/A")
-              }<br>${order.customer_phone || "N/A"}
-            </div>
-            <div class="delivery-method small text-muted mt-1">
-              <strong>Method:</strong> ${
-                order.delivery_method
-                  ? order.delivery_method.charAt(0).toUpperCase() +
-                    order.delivery_method.slice(1)
-                  : "Pickup"
-              }
-            </div>
-            ${
-              order.delivery_method === "delivery" && order.delivery_address
-                ? `
-              <div class="delivery-address small text-muted mt-1">
-                <strong>Delivery Address:</strong><br>
-                ${order.delivery_address}
-              </div>
-            `
-                : ""
-            }
-          </div>
-        `;
+  <div class="customer-info">
+    <div class="customer-name fw-bold">${
+      order.customer_name || (order.customer ? order.customer.name : "Unknown")
+    }</div>
+    <div class="customer-contact small text-muted">
+      ${
+        order.customer_email || (order.customer ? order.customer.email : "N/A")
+      }<br>${order.customer_phone || "N/A"}
+    </div>
+    ${
+      order.status === "Cancelled" && order.cancellation_remarks
+        ? `
+      <div class="cancellation-info small text-danger mt-1">
+        <strong>Cancellation Reason:</strong> ${order.cancellation_remarks}
+        ${
+          order.cancelled_at
+            ? `<br><small>Cancelled on: ${new Date(
+                order.cancelled_at
+              ).toLocaleDateString()}</small>`
+            : ""
+        }
+      </div>
+    `
+        : ""
+    }
+    <div class="delivery-method small text-muted mt-1">
+      <strong>Method:</strong> ${
+        order.delivery_method.charAt(0).toUpperCase() +
+        order.delivery_method.slice(1)
+      }
+    </div>
+    ${
+      order.delivery_method === "delivery" && order.delivery_address
+        ? `
+      <div class="delivery-address small text-muted mt-1">
+        <strong>Delivery Address:</strong><br>
+        ${order.delivery_address}
+      </div>
+    `
+        : ""
+    }
+  </div>
+`;
 
         // Format updated by information for image orders
         const updatedByInfo = order.updater
@@ -385,6 +411,47 @@ function renderStatusBadge(status) {
   return `<span class="status ${config.class}">${config.text}</span>`;
 }
 
+async function cancelOrderWithRemarks(orderId, isImageOrder, remarks) {
+  const token = sessionStorage.getItem("token");
+  const endpoint = isImageOrder
+    ? `${window.API_BASE_URL}/api/custom-cake/admin/image-orders/${orderId}/cancel`
+    : `${window.API_BASE_URL}/api/custom-cake/admin/orders/${orderId}/cancel`;
+
+  try {
+    const response = await fetch(endpoint, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        cancellation_remarks: remarks,
+      }),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        result.message || `HTTP error! Status: ${response.status}`
+      );
+    }
+
+    return {
+      success: true,
+      data: result,
+      message: result.message || "Order cancelled successfully",
+    };
+  } catch (error) {
+    console.error("Error cancelling order:", error);
+    return {
+      success: false,
+      error: error.message,
+      message: "Error cancelling order. Please try again.",
+    };
+  }
+}
+
 // Helper function to render status actions
 function renderStatusActions(orderId, isImageOrder, currentStatus, order) {
   let html = '<div class="admin-actions">';
@@ -452,9 +519,6 @@ function renderImageOrderActions(orderId, currentStatus, order) {
         ${
           priceIsSet
             ? `
-          <small class="text-info d-block mt-1">
-            <i class="fas fa-lock"></i> Price cannot be changed once set
-          </small>
         `
             : ""
         }
@@ -758,14 +822,16 @@ async function handleStatusActions(e) {
       newStatus = "Completed";
       body = { status: newStatus };
     } else if (target.classList.contains("cancel-order-btn")) {
-      if (!confirm("Are you sure you want to cancel this order?")) return;
-      if (isImageOrder) {
-        endpoint = `${window.API_BASE_URL}/api/custom-cake/admin/image-orders/${orderId}`;
-      } else {
-        endpoint = `${window.API_BASE_URL}/api/custom-cake/admin/orders/${orderId}`;
-      }
-      newStatus = "Cancelled";
-      body = { status: newStatus };
+      // NEW: Handle cancellation with remarks modal
+      const row = target.closest("tr");
+      const orderDetails = {
+        customer_name:
+          row.cells[1].querySelector(".customer-name")?.textContent ||
+          "Unknown Customer",
+        order_type: isImageOrder ? "Image-based" : "3D Custom Cake",
+      };
+      openCancellationModal(orderId, isImageOrder, orderDetails);
+      return; // Don't proceed with regular fetch
     }
 
     const response = await fetch(endpoint, {
@@ -791,6 +857,140 @@ async function handleStatusActions(e) {
   } catch (error) {
     console.error("Error updating order:", error);
     showNotification("error", `Failed to update order: ${error.message}`);
+  }
+}
+
+// Cancellation Modal Functions - Add to admin-cake.js
+
+let cancellationModal = null;
+
+// Initialize cancellation modal
+function initializeCancellationModal() {
+  cancellationModal = new bootstrap.Modal(
+    document.getElementById("cancellationModal")
+  );
+
+  // Confirm cancellation button
+  document
+    .getElementById("confirmCancelBtn")
+    .addEventListener("click", confirmCancellation);
+
+  // Reset form when modal is hidden
+  document
+    .getElementById("cancellationModal")
+    .addEventListener("hidden.bs.modal", resetCancellationForm);
+
+  // Real-time validation
+  document
+    .getElementById("cancellationRemarks")
+    .addEventListener("input", validateCancellationRemarks);
+}
+
+// Open cancellation modal
+function openCancellationModal(orderId, isImageOrder, orderDetails = {}) {
+  document.getElementById("cancelOrderId").value = orderId;
+  document.getElementById("cancelOrderType").value = isImageOrder
+    ? "image"
+    : "custom";
+
+  // Update modal title with order details
+  const modalTitle = document.getElementById("cancellationModalLabel");
+  const displayOrderId = isImageOrder
+    ? `RCC${String(orderId).padStart(3, "0")}`
+    : `CC${String(orderId).padStart(3, "0")}`;
+
+  modalTitle.textContent = `Cancel ${orderDetails.order_type} Order #${displayOrderId}`;
+
+  // Add customer info to modal body if available
+  const customerInfo = document.createElement("div");
+  customerInfo.className = "alert alert-info";
+  customerInfo.innerHTML = `
+    <strong>Customer:</strong> ${orderDetails.customer_name}<br>
+    <strong>Order Type:</strong> ${orderDetails.order_type}
+  `;
+
+  const form = document.getElementById("cancellationForm");
+  const existingAlert = form.querySelector(".alert");
+  if (existingAlert) {
+    existingAlert.remove();
+  }
+  form.insertBefore(customerInfo, form.firstChild);
+
+  cancellationModal.show();
+}
+
+// Confirm and process cancellation
+async function confirmCancellation() {
+  const orderId = document.getElementById("cancelOrderId").value;
+  const isImageOrder =
+    document.getElementById("cancelOrderType").value === "image";
+  const remarks = document.getElementById("cancellationRemarks").value.trim();
+
+  // Validate remarks
+  if (!validateCancellationRemarks()) {
+    return;
+  }
+
+  // Disable button and show loading
+  const confirmBtn = document.getElementById("confirmCancelBtn");
+  const originalText = confirmBtn.innerHTML;
+  confirmBtn.disabled = true;
+  confirmBtn.innerHTML =
+    '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Cancelling...';
+
+  try {
+    const result = await cancelOrderWithRemarks(orderId, isImageOrder, remarks);
+
+    if (result.success) {
+      cancellationModal.hide();
+      showNotification(
+        "success",
+        result.message || "Order cancelled successfully"
+      );
+
+      // Refresh the orders table
+      fetchCustomCakeOrders();
+    } else {
+      showNotification("error", result.message || "Failed to cancel order");
+      confirmBtn.disabled = false;
+      confirmBtn.innerHTML = originalText;
+    }
+  } catch (error) {
+    console.error("Cancellation error:", error);
+    showNotification("error", "Error cancelling order. Please try again.");
+    confirmBtn.disabled = false;
+    confirmBtn.innerHTML = originalText;
+  }
+}
+
+// Validate cancellation remarks
+function validateCancellationRemarks() {
+  const textarea = document.getElementById("cancellationRemarks");
+  const remarks = textarea.value.trim();
+
+  if (!remarks) {
+    textarea.classList.add("is-invalid");
+    return false;
+  } else {
+    textarea.classList.remove("is-invalid");
+    return true;
+  }
+}
+
+// Reset cancellation form
+function resetCancellationForm() {
+  document.getElementById("cancellationForm").reset();
+  document.getElementById("cancellationRemarks").classList.remove("is-invalid");
+
+  const confirmBtn = document.getElementById("confirmCancelBtn");
+  confirmBtn.disabled = false;
+  confirmBtn.innerHTML = "Confirm Cancellation";
+
+  // Remove customer info alert
+  const form = document.getElementById("cancellationForm");
+  const alert = form.querySelector(".alert");
+  if (alert) {
+    alert.remove();
   }
 }
 
@@ -869,6 +1069,7 @@ document.getElementById("filterForm")?.addEventListener("submit", (e) => {
 // Initialize
 document.addEventListener("DOMContentLoaded", () => {
   fetchCustomCakeOrders();
+  initializeCancellationModal();
 
   // Refresh data when tab is shown
   const tabEls = document.querySelectorAll('a[data-bs-toggle="tab"]');

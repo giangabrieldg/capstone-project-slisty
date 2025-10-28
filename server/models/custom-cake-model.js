@@ -187,6 +187,26 @@ const CustomCakeOrder = sequelize.define(
       onUpdate: "CASCADE",
       onDelete: "SET NULL",
     },
+    cancellation_remarks: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      comment: "Reason for cancellation",
+    },
+    cancelled_by: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: "Users",
+        key: "userID",
+      },
+      onUpdate: "CASCADE",
+      onDelete: "SET NULL",
+    },
+    cancelled_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      comment: "When the order was cancelled",
+    },
   },
   {
     tableName: "CustomCakeOrders",

@@ -402,6 +402,9 @@ router.get("/admin/orders", verifyToken, async (req, res) => {
             userLevel: order.updater.userLevel,
           }
         : null,
+      cancelled_by: order.cancelled_by, // Add this
+      cancellation_remarks: order.cancellation_remarks, // Add this
+      cancelled_at: order.cancelled_at, // Add thi
       deliveryDate: order.deliveryDate,
       downpayment_amount: order.downpayment_amount,
       remaining_balance: order.remaining_balance,
@@ -462,7 +465,6 @@ router.get("/admin/image-orders", verifyToken, async (req, res) => {
         : null,
       updater: order.updater
         ? {
-            // ADD UPDATER INFO
             userID: order.updater.userID,
             name: order.updater.name,
             email: order.updater.email,
@@ -470,6 +472,9 @@ router.get("/admin/image-orders", verifyToken, async (req, res) => {
           }
         : null,
       deliveryDate: order.deliveryDate,
+      cancelled_by: order.cancelled_by, // Add this
+      cancellation_remarks: order.cancellation_remarks, // Add this
+      cancelled_at: order.cancelled_at, // Add thi
     }));
 
     res.json({ success: true, orders: formattedOrders });
@@ -1010,5 +1015,144 @@ router.post("/process-cash-payment", verifyToken, async (req, res) => {
       .json({ success: false, message: "Server error", error: error.message });
   }
 });
+
+// PUT /api/custom-cake/admin/orders/:customCakeId/cancel - Cancel custom cake order with remarks
+router.put(
+  "/admin/orders/:customCakeId/cancel",
+  verifyToken,
+  async (req, res) => {
+    try {
+      if (!["admin", "staff"].includes(req.user.userLevel.toLowerCase())) {
+        return res.status(403).json({
+          success: false,
+          message: "Unauthorized: Admin or staff access required",
+        });
+      }
+
+      const { cancellation_remarks } = req.body;
+
+      // Validate cancellation remarks
+      if (!cancellation_remarks || cancellation_remarks.trim() === "") {
+        return res.status(400).json({
+          success: false,
+          message: "Cancellation remarks are required",
+        });
+      }
+
+      const order = await CustomCakeOrder.findByPk(req.params.customCakeId);
+      if (!order) {
+        return res.status(404).json({
+          success: false,
+          message: "Custom cake order not found",
+        });
+      }
+
+      // Update order with cancellation details
+      await order.update({
+        status: "Cancelled",
+        cancellation_remarks: cancellation_remarks.trim(),
+        cancelled_by: req.user.userID,
+        cancelled_at: new Date(),
+        updatedBy: req.user.userID,
+      });
+
+      // Create notification for the customer
+      await createCustomCakeNotification(
+        order.userID,
+        "Order Cancelled",
+        `Your custom cake order has been cancelled. Reason: ${cancellation_remarks}`,
+        order.customCakeId
+      );
+
+      res.json({
+        success: true,
+        message: "Custom cake order cancelled successfully",
+        order: {
+          customCakeId: order.customCakeId,
+          status: order.status,
+          cancellation_remarks: order.cancellation_remarks,
+          cancelled_at: order.cancelled_at,
+        },
+      });
+    } catch (error) {
+      console.error("Error cancelling custom cake order:", error);
+      res.status(500).json({
+        success: false,
+        message: "Server error",
+        error: error.message,
+      });
+    }
+  }
+);
+
+// PUT /api/custom-cake/admin/image-orders/:orderId/cancel - Cancel image-based order with remarks
+router.put(
+  "/admin/image-orders/:orderId/cancel",
+  verifyToken,
+  async (req, res) => {
+    try {
+      if (!["admin", "staff"].includes(req.user.userLevel.toLowerCase())) {
+        return res.status(403).json({
+          success: false,
+          message: "Unauthorized: Admin or staff access required",
+        });
+      }
+
+      const { cancellation_remarks } = req.body;
+
+      // Validate cancellation remarks
+      if (!cancellation_remarks || cancellation_remarks.trim() === "") {
+        return res.status(400).json({
+          success: false,
+          message: "Cancellation remarks are required",
+        });
+      }
+
+      const order = await ImageBasedOrder.findByPk(req.params.orderId);
+      if (!order) {
+        return res.status(404).json({
+          success: false,
+          message: "Image-based order not found",
+        });
+      }
+
+      // Update order with cancellation details
+      await order.update({
+        status: "Cancelled",
+        cancellation_remarks: cancellation_remarks.trim(),
+        cancelled_by: req.user.userID,
+        cancelled_at: new Date(),
+        updatedBy: req.user.userID,
+      });
+
+      // Create notification for the customer
+      await createCustomCakeNotification(
+        order.userID,
+        "Order Cancelled",
+        `Your image-based order has been cancelled. Reason: ${cancellation_remarks}`,
+        order.imageBasedOrderId,
+        "image_order"
+      );
+
+      res.json({
+        success: true,
+        message: "Image-based order cancelled successfully",
+        order: {
+          imageBasedOrderId: order.imageBasedOrderId,
+          status: order.status,
+          cancellation_remarks: order.cancellation_remarks,
+          cancelled_at: order.cancelled_at,
+        },
+      });
+    } catch (error) {
+      console.error("Error cancelling image-based order:", error);
+      res.status(500).json({
+        success: false,
+        message: "Server error",
+        error: error.message,
+      });
+    }
+  }
+);
 
 module.exports = router;

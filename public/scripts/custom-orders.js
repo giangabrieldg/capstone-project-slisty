@@ -102,6 +102,14 @@ function populateOrdersTable(customOrders, imageOrders) {
       ? new Date(order.createdAt).toLocaleDateString()
       : "Unknown";
 
+    // Add cancellation remarks to details if order is cancelled
+    const cancellationInfo =
+      order.status === "Cancelled" && order.cancellation_remarks
+        ? `<div class="cancellation-remarks mt-2">
+         <strong class="text-danger">Cancellation Reason:</strong> ${order.cancellation_remarks}
+       </div>`
+        : "";
+
     const row = document.createElement("tr");
     row.innerHTML = `
       <td><span class="order-id">${displayOrderId}</span></td>
@@ -111,7 +119,10 @@ function populateOrdersTable(customOrders, imageOrders) {
       }</strong></td>
       <td>${orderDate}</td>
       <td><span class="delivery-date">${deliveryDate}</span></td>
-      <td><div class="order-details">${details}</div></td>
+      <td>
+        <div class="order-details">${details}</div>
+        ${cancellationInfo}
+      </td>
       <td>${renderStatusBadge(order.status)}</td>
       <td>
         ${
@@ -145,6 +156,14 @@ function populateOrdersTable(customOrders, imageOrders) {
       ? new Date(order.createdAt).toLocaleDateString()
       : "Unknown";
 
+    // Add cancellation remarks to details if order is cancelled
+    const cancellationInfo =
+      order.status === "Cancelled" && order.cancellation_remarks
+        ? `<div class="cancellation-remarks mt-2">
+         <strong class="text-danger">Cancellation Reason:</strong> ${order.cancellation_remarks}
+       </div>`
+        : "";
+
     const row = document.createElement("tr");
     row.innerHTML = `
       <td><span class="order-id">${displayOrderId}</span></td>
@@ -154,7 +173,10 @@ function populateOrdersTable(customOrders, imageOrders) {
       }</strong></td>
       <td>${orderDate}</td>
       <td><span class="delivery-date">${deliveryDate}</span></td>
-      <td><div class="order-details">${details}</div></td>
+      <td>
+        <div class="order-details">${details}</div>
+        ${cancellationInfo}
+      </td>
       <td>${renderStatusBadge(order.status)}</td>
       <td>
         ${

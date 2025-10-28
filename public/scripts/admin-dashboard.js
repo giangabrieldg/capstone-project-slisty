@@ -424,11 +424,6 @@ class AdminDashboard {
           padding: 2px 6px;
           border-radius: 3px;
         }
-
-        .order-id.regular-id, .order-id.custom-cake-id, .order-id.image-cake-id{
-          color: #2c9045;
-        }
-
         .new-order {
           background-color: #f0f8f5 !important;
           border-left: 4px solid #2c9045;

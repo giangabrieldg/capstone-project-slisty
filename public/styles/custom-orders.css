@@ -144,6 +144,22 @@ footer {
     border-bottom: none;
 }
 
+.cancellation-remarks {
+    color: #dc3545;
+    font-size: 0.875rem;
+    margin-top: 4px;
+}
+
+.cancellation-remarks strong {
+    font-weight: 600;
+}
+
+/* Make cancelled status more prominent */
+.status.cancelled {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
 /* Status badge styling - matching admin-cake */
 .status {
     text-align: center;
