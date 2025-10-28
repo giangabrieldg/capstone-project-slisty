@@ -190,6 +190,52 @@ img.img-fluid.rounded {
 }
 
 /* Signature Cakes Section */
+.cake-card {
+    background-color: rgba(255, 255, 255, 0.2);
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+    padding: 1.5rem;
+    min-height: 420px;
+}
+
+.cake-card:hover {
+    transform: translateY(-5px);
+}
+
+.uniform-cake-img {
+    width: 100%;
+    height: 250px;
+    object-fit: contain;
+    border-radius: 10px;
+    padding: 10px;
+    transition: transform 0.3s ease;
+}
+
+.uniform-cake-img:hover {
+    transform: scale(1.03);
+}
+
+.cake-info {
+    flex-grow: 1;
+}
+
+.carousel-control-prev-icon,
+.carousel-control-next-icon {
+    filter: invert(40%) sepia(80%) saturate(500%) hue-rotate(90deg);
+}
+
+@media (max-width: 768px) {
+    .uniform-cake-img {
+        height: 220px;
+    }
+
+    .cake-card {
+        min-height: 380px;
+    }
+}
+
 .signature-cakes-section {
     background-color: var(--secodary-background-color);
     padding: 4rem 0;

@@ -322,92 +322,167 @@
     </section>
 
     <!-- Signature Cakes -->
-    <section
-      class="signature-cakes-section py-5"
-      id="signature-cakes"
-      data-aos="fade-up"
-      data-aos-duration="1000"
-    >
-      <div class="container text-center">
-        <div class="d-flex justify-content-between align-items-center mb-3">
+    <section class="signature-cakes-section text-center" id="signatureCakes">
+      <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
           <div>
-            <h3
-              class="section-subtitle text-primary-highlight mb-2"
-              data-aos="fade-up"
-              data-aos-delay="100"
-            >
-              CUSTOMER FAVORITES
-            </h3>
-            <h2
-              class="section-title mb-0"
-              data-aos="fade-up"
-              data-aos-delay="200"
-            >
-              Signature Cakes
-            </h2>
+            <h6 class="section-subtitle">Our Creations</h6>
+            <h2 class="section-title">Signature Cakes</h2>
           </div>
-          <a
-            href="customer/menu.html"
-            class="view-more text-primary-highlight"
-            data-aos="fade-up"
-            data-aos-delay="300"
-          >
-            view more cakes →
-          </a>
+          <a href="#" class="view-more">View More →</a>
         </div>
 
-        <div class="row g-4">
-          <div class="col-md-4" data-aos="fade-up" data-aos-delay="100">
-            <div class="card cake-card text-center p-4 h-100">
-              <img
-                src="/assets/cakes/cake2.png"
-                alt="Salted Caramel Flan Cake"
-                class="cake-img img-fluid mb-3"
-              />
-              <h5 class="cake-name fw-semibold">Salted Caramel Flan Cake</h5>
-              <p class="cake-price text-primary-highlight fw-bold">₱839.00</p>
-              <a
-                href="customer/menu.html"
-                class="btn btn-outline-custom-green mt-3"
-              >
-                Order Now
-              </a>
+        <div
+          id="signatureCakesCarousel"
+          class="carousel slide"
+          data-bs-ride="carousel"
+          data-bs-interval="4000"
+        >
+          <div class="carousel-inner">
+            <!-- Slide 1 -->
+            <div class="carousel-item active">
+              <div class="row justify-content-center">
+                <div class="col-md-4 mb-4">
+                  <div
+                    class="cake-card d-flex flex-column align-items-center justify-content-between"
+                  >
+                    <img
+                      src="assets/cakes/cake1.png"
+                      class="uniform-cake-img"
+                      alt="Chocolate Delight"
+                    />
+                    <div class="cake-info text-center mt-3">
+                      <h5 class="cake-name">Choco De Leche</h5>
+                      <p class="cake-price">₱850</p>
+                      <button class="btn btn-outline-custom-green mt-2">
+                        Order Now
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="col-md-4 mb-4 d-none d-md-block">
+                  <div
+                    class="cake-card d-flex flex-column align-items-center justify-content-between"
+                  >
+                    <img
+                      src="assets/cakes/cake2.png"
+                      class="uniform-cake-img"
+                      alt="Red Velvet"
+                    />
+                    <div class="cake-info text-center mt-3">
+                      <h5 class="cake-name">Salted Caramel Flan</h5>
+                      <p class="cake-price">₱900</p>
+                      <button class="btn btn-outline-custom-green mt-2">
+                        Order Now
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="col-md-4 mb-4 d-none d-md-block">
+                  <div
+                    class="cake-card d-flex flex-column align-items-center justify-content-between"
+                  >
+                    <img
+                      src="assets/cakes/cake3.png"
+                      class="uniform-cake-img"
+                      alt="Caramel Bliss"
+                    />
+                    <div class="cake-info text-center mt-3">
+                      <h5 class="cake-name">Ube Moist</h5>
+                      <p class="cake-price">₱950</p>
+                      <button class="btn btn-outline-custom-green mt-2">
+                        Order Now
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Slide 2 -->
+            <div class="carousel-item">
+              <div class="row justify-content-center">
+                <div class="col-md-4 mb-4">
+                  <div
+                    class="cake-card d-flex flex-column align-items-center justify-content-between"
+                  >
+                    <img
+                      src="assets/cakes/cake4.png"
+                      class="uniform-cake-img"
+                      alt="Strawberry Dream"
+                    />
+                    <div class="cake-info text-center mt-3">
+                      <h5 class="cake-name">Carrot Cake</h5>
+                      <p class="cake-price">₱870</p>
+                      <button class="btn btn-outline-custom-green mt-2">
+                        Order Now
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="col-md-4 mb-4 d-none d-md-block">
+                  <div
+                    class="cake-card d-flex flex-column align-items-center justify-content-between"
+                  >
+                    <img
+                      src="assets/cakes/cake5.png"
+                      class="uniform-cake-img"
+                      alt="Classic Mocha"
+                    />
+                    <div class="cake-info text-center mt-3">
+                      <h5 class="cake-name">Dark Chocolate</h5>
+                      <p class="cake-price">₱820</p>
+                      <button class="btn btn-outline-custom-green mt-2">
+                        Order Now
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="col-md-4 mb-4 d-none d-md-block">
+                  <div
+                    class="cake-card d-flex flex-column align-items-center justify-content-between"
+                  >
+                    <img
+                      src="assets/cakes/cake6.png"
+                      class="uniform-cake-img"
+                      alt="Ube Cheesecake"
+                    />
+                    <div class="cake-info text-center mt-3">
+                      <h5 class="cake-name">Mango Bravo Delight</h5>
+                      <p class="cake-price">₱890</p>
+                      <button class="btn btn-outline-custom-green mt-2">
+                        Order Now
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-          <div class="col-md-4" data-aos="fade-up" data-aos-delay="200">
-            <div class="card cake-card text-center p-4 h-100">
-              <img
-                src="/assets/cakes/cake1.png"
-                alt="Choco de Leche"
-                class="cake-img img-fluid mb-3"
-              />
-              <h5 class="cake-name fw-semibold">Choco de Leche</h5>
-              <p class="cake-price text-primary-highlight fw-bold">₱709.00</p>
-              <a
-                href="customer/menu.html"
-                class="btn btn-outline-custom-green mt-3"
-              >
-                Order Now
-              </a>
-            </div>
-          </div>
-          <div class="col-md-4" data-aos="fade-up" data-aos-delay="300">
-            <div class="card cake-card text-center p-4 h-100">
-              <img
-                src="/assets/cakes/cake3.png"
-                alt="Ube Moist Cake"
-                class="cake-img img-fluid mb-3"
-              />
-              <h5 class="cake-name fw-semibold">Ube Moist Cake</h5>
-              <p class="cake-price text-primary-highlight fw-bold">₱759.00</p>
-              <a
-                href="customer/menu.html"
-                class="btn btn-outline-custom-green mt-3"
-              >
-                Order Now
-              </a>
-            </div>
-          </div>
+
+          <!-- Controls -->
+          <button
+            class="carousel-control-prev"
+            type="button"
+            data-bs-target="#signatureCakesCarousel"
+            data-bs-slide="prev"
+          >
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Previous</span>
+          </button>
+          <button
+            class="carousel-control-next"
+            type="button"
+            data-bs-target="#signatureCakesCarousel"
+            data-bs-slide="next"
+          >
+            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Next</span>
+          </button>
         </div>
       </div>
     </section>
