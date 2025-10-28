@@ -8,6 +8,7 @@ const ResetToken = require("../models/reset-token-model");
 const { sendVerificationEmail } = require("../utils/sendEmail");
 const verifyToken = require("../middleware/verifyToken");
 const securityConfig = require("../config/login-security");
+const { sendStaffAccountEmail } = require("../utils/sendEmail");
 const Sequelize = require("sequelize");
 require("dotenv").config();
 
@@ -516,6 +517,15 @@ router.post(
         isVerified: true,
         isArchived: false,
       });
+
+      // Send email with credentials to the new user
+      try {
+        await sendStaffAccountEmail(email, name, password, role);
+        console.log(`Account creation email sent to ${email}`);
+      } catch (emailError) {
+        console.error("Failed to send account creation email:", emailError);
+        // Don't fail the request if email fails, just log it
+      }
 
       res.status(201).json({
         message: "Staff account created successfully",

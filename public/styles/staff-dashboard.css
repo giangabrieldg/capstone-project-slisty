@@ -21,7 +21,7 @@
 }
 
 .staff-header h2 {
-    font-family: var(--font-baloo);
+    font-family: var(--font-poppins);
     font-size: 28px;
     color: var(--text-color);
     margin: 0;
@@ -58,7 +58,7 @@
 }
 
 .orders-table h3 {
-    font-family: var(--font-baloo);
+    font-family: var(--font-poppins);
     font-size: 22px;
     color: var(--text-color);
     margin-bottom: 15px;

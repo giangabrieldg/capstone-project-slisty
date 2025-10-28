@@ -209,7 +209,7 @@ body {
 .modal-title {
     color: var(--text-color);
     font-weight: 600;
-    font-family: var(--font-baloo);
+    font-family: var(--font-poppins);
 }
 
 .form-select,
@@ -230,13 +230,13 @@ body {
 }
 
 .input-group .btn-outline-secondary:hover {
-    background-color: #6c757d;
+    background-color: var(--primary-color);
     color: white;
 }
 
 .input-group .btn-success {
-    background-color: #28a745;
-    border-color: #28a745;
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
     color: white;
 }
 
@@ -263,6 +263,19 @@ body {
     background-color: var(--hover-color);
     outline: var(--hover-color);
     transition: 0.3s ease;
+}
+
+#showPasswordBtn {
+    border-left: none;
+}
+
+#showPasswordBtn:hover {
+    background-color: transparent;
+    color: var(--primary-color);
+}
+
+.input-group .btn:not(:last-child) {
+    border-right: none;
 }
 
 

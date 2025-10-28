@@ -233,7 +233,7 @@ body {
 .modal-title {
     color: var(--text-color);
     font-weight: 600;
-    font-family: var(--font-baloo);
+    font-family: var(--font-poppins);
 }
 
 .form-select {

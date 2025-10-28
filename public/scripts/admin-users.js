@@ -23,15 +23,53 @@ function generatePassword() {
     .join("");
 }
 
-// Initialize password generation when modal opens
+// Password visibility variables
+let isPasswordVisible = false;
+let currentPassword = "";
+
+// Initialize password generation and visibility toggle
 document.addEventListener("DOMContentLoaded", function () {
+  const showPasswordBtn = document.getElementById("showPasswordBtn");
+  const passwordInput = document.getElementById("userPassword");
+
+  // Password visibility toggle
+  if (showPasswordBtn && passwordInput) {
+    showPasswordBtn.addEventListener("click", function () {
+      if (!currentPassword) return; // Don't toggle if no password generated
+
+      if (isPasswordVisible) {
+        // Hide password
+        passwordInput.type = "password";
+        passwordInput.value = "••••••••••••";
+        showPasswordBtn.innerHTML = '<i class="bi bi-eye"></i>';
+        showPasswordBtn.title = "Show password";
+      } else {
+        // Show password
+        passwordInput.type = "text";
+        passwordInput.value = currentPassword;
+        showPasswordBtn.innerHTML = '<i class="bi bi-eye-slash"></i>';
+        showPasswordBtn.title = "Hide password";
+      }
+      isPasswordVisible = !isPasswordVisible;
+    });
+  }
+
   const addUserModal = document.getElementById("addUserModal");
   if (addUserModal) {
     addUserModal.addEventListener("show.bs.modal", function () {
       // Auto-generate password when modal opens
       const passwordInput = document.getElementById("userPassword");
       if (passwordInput) {
-        passwordInput.value = generatePassword();
+        currentPassword = generatePassword();
+        passwordInput.value = "••••••••••••";
+        passwordInput.type = "password";
+        isPasswordVisible = false;
+        // Reset eye icon
+        const showPasswordBtn = document.getElementById("showPasswordBtn");
+        if (showPasswordBtn) {
+          showPasswordBtn.innerHTML = '<i class="bi bi-eye"></i>';
+          showPasswordBtn.title = "Show password";
+        }
       }
     });
   }
@@ -42,7 +80,17 @@ document.addEventListener("DOMContentLoaded", function () {
     generatePasswordBtn.addEventListener("click", function () {
       const passwordInput = document.getElementById("userPassword");
       if (passwordInput) {
-        passwordInput.value = generatePassword();
+        currentPassword = generatePassword();
+        passwordInput.value = "••••••••••••";
+        passwordInput.type = "password";
+        isPasswordVisible = false;
+
+        // Reset eye icon
+        const showPasswordBtn = document.getElementById("showPasswordBtn");
+        if (showPasswordBtn) {
+          showPasswordBtn.innerHTML = '<i class="bi bi-eye"></i>';
+          showPasswordBtn.title = "Show password";
+        }
 
         // Show brief feedback
         const originalText = generatePasswordBtn.textContent;
@@ -130,16 +178,16 @@ document.getElementById("addUserForm").addEventListener("submit", async (e) => {
   const modal = document.getElementById("addUserModal");
   const nameInput = modal.querySelector("#userName");
   const emailInput = modal.querySelector("#userEmail");
-  const passwordInput = modal.querySelector("#userPassword");
+  const passwordInput = document.getElementById("userPassword");
   const roleSelect = modal.querySelector("#userRole");
 
   // Get form values with safe access
   const name = nameInput.value ? nameInput.value.trim() : "";
   const email = emailInput.value ? emailInput.value.trim() : "";
-  const password = passwordInput.value ? passwordInput.value.trim() : "";
+  const password = currentPassword; // Use the stored password
   const role = roleSelect.value || "";
 
-  console.log("Trimmed values:", { name, email, password, role });
+  console.log("Creating user:", { name, email, role });
 
   // Validate form inputs
   if (!name || !email || !password || !role) {
@@ -172,17 +220,30 @@ document.getElementById("addUserForm").addEventListener("submit", async (e) => {
         <p><strong>Name:</strong> ${name}</p>
         <p><strong>Email:</strong> ${email}</p>
         <p><strong>Role:</strong> ${role}</p>
-        <p><strong>Generated Password:</strong> <code>${password}</code></p>
-        <div class="alert alert-warning mt-2">
-          <small>Please save this password securely. It will not be shown again.</small>
+        <p><strong>Password:</strong> 
+          <button type="button" id="tempShowPass" class="btn btn-sm btn-outline-secondary ms-2">
+            <i class="bi bi-eye"></i> Show Password
+          </button>
+          <span id="passwordDisplay" style="display:none;"><code>${password}</code></span>
+        </p>
+        <div class="alert alert-info mt-2">
+          <small>This password will be automatically sent to the user's email.</small>
         </div>
       </div>
     `,
-    icon: "warning",
+    icon: "info",
     showCancelButton: true,
-    confirmButtonText: "Create User",
+    confirmButtonText: "Create User & Send Email",
     cancelButtonText: "Cancel",
     confirmButtonColor: "#2c9045",
+    didOpen: () => {
+      document
+        .getElementById("tempShowPass")
+        .addEventListener("click", function () {
+          this.style.display = "none";
+          document.getElementById("passwordDisplay").style.display = "inline";
+        });
+    },
   });
 
   if (!result.isConfirmed) {
@@ -239,16 +300,20 @@ document.getElementById("addUserForm").addEventListener("submit", async (e) => {
     }
     document.getElementById("addUserForm").reset();
 
-    // Show success message without email sending mention
+    // Reset password variables
+    currentPassword = "";
+    isPasswordVisible = false;
+
+    // Show success message with email confirmation
     Swal.fire({
       title: "Success!",
       html: `
         <div class="text-center">
           <p>User <strong>${name}</strong> added successfully!</p>
-          <div class="alert alert-warning mt-2">
+          <div class="alert alert-success mt-2">
             <small>
-              <strong>Important:</strong> Please provide the generated password to the user securely.<br>
-              The password will not be shown again.
+              <strong>✓ Credentials sent:</strong> The login credentials have been sent to <strong>${email}</strong><br>
+              The user will receive their password via email.
             </small>
           </div>
         </div>

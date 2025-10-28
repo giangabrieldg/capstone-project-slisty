@@ -46,7 +46,7 @@ body {
 }
 
 .card-title {
-    font-family: var(--font-baloo);
+    font-family: var(--font-poppins);
     font-size: 1.25rem;
     color: var(--primary-color);
     margin-bottom: 0.5rem;

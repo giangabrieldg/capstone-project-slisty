@@ -356,7 +356,7 @@ footer {
 .empty-state h4 {
     color: var(--text-color);
     margin-bottom: 1rem;
-    font-family: var(--font-baloo);
+    font-family: var(--font-poppins);
 }
 
 /* Badge styles */

@@ -168,12 +168,12 @@
                     >
                     <div class="input-group">
                       <input
-                        type="text"
+                        type="password"
                         class="form-control"
                         id="userPassword"
                         required
                         readonly
-                        placeholder="Click generate button"
+                        placeholder="Auto-generated password"
                       />
                       <button
                         type="button"
@@ -182,11 +182,18 @@
                       >
                         Generate
                       </button>
+                      <button
+                        type="button"
+                        class="btn btn-outline-secondary"
+                        id="showPasswordBtn"
+                      >
+                        <i class="bi bi-eye"></i>
+                      </button>
                     </div>
                     <div class="form-text">
                       <small
-                        >Password will be auto-generated. Click the generate
-                        button.</small
+                        >Password will be auto-generated and sent to the user's
+                        email.</small
                       >
                     </div>
                   </div>

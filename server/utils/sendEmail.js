@@ -194,6 +194,56 @@ const sendInquiryReplyEmail = async (email, name, subject, reply) => {
   }
 };
 
+// Send staff account creation email with password
+const sendStaffAccountEmail = async (email, name, password, role) => {
+  const html = `
+    <div style="font-family: 'Poppins', sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #2c9045; border-radius: 8px;">
+      <h2 style="color: #2c9045;">Welcome to Slice N Grind, ${name}!</h2>
+      <p>Your ${role} account has been created successfully.</p>
+      
+      <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; border-left: 4px solid #2c9045; margin: 20px 0;">
+        <h4 style="color: #2c9045; margin-top: 0;">Your Login Credentials:</h4>
+        <p><strong>Email:</strong> ${email}</p>
+        <p><strong>Password:</strong> <code style="background-color: #e9ecef; padding: 4px 8px; border-radius: 3px; font-family: monospace;">${password}</code></p>
+        <p><strong>Role:</strong> ${role}</p>
+      </div>
+
+      <div style="background-color: #fff3cd; padding: 15px; border-radius: 5px; border-left: 4px solid #ffc107; margin: 20px 0;">
+        <h4 style="color: #856404; margin-top: 0;">Important Security Notes:</h4>
+        <ul style="color: #856404;">
+          <li>Please change your password after first login</li>
+          <li>Keep your credentials secure and do not share them</li>
+          <li>If you suspect any unauthorized access, contact administrator immediately</li>
+        </ul>
+      </div>
+
+      <p>You can login to your account here:</p>
+      <a href="${FRONTEND_URL}/customer/login.html" 
+         style="display: inline-block; padding: 12px 24px; background-color: #2c9045; color: white; text-decoration: none; border-radius: 4px; font-weight: bold;">
+        Login to Your Account
+      </a>
+      
+      <p style="color: #5e5d5d; margin-top: 30px;">Best regards,<br>Slice N Grind Team</p>
+    </div>
+  `;
+
+  try {
+    await sendEmailViaGmailAPI(
+      email,
+      `Your ${role} Account Credentials - Slice N Grind`,
+      html
+    );
+    console.log(`Staff account credentials sent to ${email}`);
+    return true;
+  } catch (error) {
+    console.error(
+      `Failed to send staff account email to ${email}:`,
+      error.message
+    );
+    return false;
+  }
+};
+
 //Test email functionality on startup
 const testEmailFunctionality = async () => {
   console.log("\n=== Email Service Initialization ===");
@@ -229,6 +279,7 @@ module.exports = {
   sendVerificationEmail,
   sendInquiryConfirmationEmail,
   sendInquiryReplyEmail,
+  sendStaffAccountEmail,
   verifyConnection,
   testEmailFunctionality,
 };
