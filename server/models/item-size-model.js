@@ -1,5 +1,5 @@
 module.exports = (sequelize, DataTypes) => {
-  const ItemSize = sequelize.define('ItemSize', {
+  const ItemSize = sequelize.define("ItemSize", {
     sizeId: {
       type: DataTypes.INTEGER,
       primaryKey: true,
@@ -17,18 +17,18 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
     },
-    stock: {  // ADD THIS NEW FIELD
+    stock: {
       type: DataTypes.INTEGER,
       allowNull: false,
       defaultValue: 0,
       validate: {
-        min: 0
-      }
+        min: 0,
+      },
     },
     isActive: {
       type: DataTypes.BOOLEAN,
       defaultValue: true,
-    }
+    },
   });
 
   return ItemSize;

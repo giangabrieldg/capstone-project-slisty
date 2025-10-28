@@ -6,7 +6,7 @@ class AdminDashboard {
       total: 0,
       new_orders: 0,
       pending_custom_cakes: 0,
-      new_custom_cakes: 0 //new custom cake orders
+      new_custom_cakes: 0, //new custom cake orders
     };
     this.newOrders = [];
     this.pendingCustomCakes = [];
@@ -31,101 +31,139 @@ class AdminDashboard {
       }
 
       // Fetch all data in parallel
-      const [dashboardResponse, customCakeData, imageBasedData] = await Promise.all([
-        fetch(`${window.API_BASE_URL}/api/orders/admin/dashboard`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }),
-        fetch(`${window.API_BASE_URL}/api/custom-cake/admin/orders`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }),
-        fetch(`${window.API_BASE_URL}/api/custom-cake/admin/image-orders`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        })
-      ]);
+      const [dashboardResponse, customCakeData, imageBasedData] =
+        await Promise.all([
+          fetch(`${window.API_BASE_URL}/api/orders/admin/dashboard`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }),
+          fetch(`${window.API_BASE_URL}/api/custom-cake/admin/orders`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }),
+          fetch(`${window.API_BASE_URL}/api/custom-cake/admin/image-orders`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }),
+        ]);
 
       if (!dashboardResponse.ok) {
         throw new Error("Failed to fetch dashboard data");
       }
 
       const data = await dashboardResponse.json();
-      const customCakeOrders = customCakeData.ok ? (await customCakeData.json()).orders || [] : [];
-      const imageBasedOrders = imageBasedData.ok ? (await imageBasedData.json()).orders || [] : [];
+      const customCakeOrders = customCakeData.ok
+        ? (await customCakeData.json()).orders || []
+        : [];
+      const imageBasedOrders = imageBasedData.ok
+        ? (await imageBasedData.json()).orders || []
+        : [];
 
       if (data.success) {
         // Get today's date for filtering
         const today = new Date();
-        const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-        const todayEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
-        
+        const todayStart = new Date(
+          today.getFullYear(),
+          today.getMonth(),
+          today.getDate()
+        );
+        const todayEnd = new Date(
+          today.getFullYear(),
+          today.getMonth(),
+          today.getDate() + 1
+        );
+
         // Get time 30 minutes ago for new orders
         const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
 
-        
-        const todaysCustomCakeOrders = customCakeOrders.filter(order => {
+        const todaysCustomCakeOrders = customCakeOrders.filter((order) => {
           const orderDate = this.getOrderDate(order);
           const isToday = orderDate >= todayStart && orderDate < todayEnd;
-          const statuses = ['Downpayment Paid', 'In Progress', 'Ready for Pickup/Delivery', 'Completed'];
+          const statuses = [
+            "Downpayment Paid",
+            "In Progress",
+            "Ready for Pickup/Delivery",
+            "Completed",
+          ];
           return isToday && statuses.includes(order.status);
         });
 
-        const todaysImageBasedOrders = imageBasedOrders.filter(order => {
+        const todaysImageBasedOrders = imageBasedOrders.filter((order) => {
           const orderDate = this.getOrderDate(order);
           const isToday = orderDate >= todayStart && orderDate < todayEnd;
-          const statuses = ['Downpayment Paid', 'In Progress', 'Ready for Pickup/Delivery', 'Completed'];
+          const statuses = [
+            "Downpayment Paid",
+            "In Progress",
+            "Ready for Pickup/Delivery",
+            "Completed",
+          ];
           return isToday && statuses.includes(order.status);
         });
 
         this.newCustomCakes = [
-          ...customCakeOrders.filter(order => {
+          ...customCakeOrders.filter((order) => {
             const orderDate = this.getOrderDate(order);
-            return orderDate >= thirtyMinutesAgo && order.status === 'Downpayment Paid';
+            return (
+              orderDate >= thirtyMinutesAgo &&
+              order.status === "Downpayment Paid"
+            );
           }),
-          ...imageBasedOrders.filter(order => {
+          ...imageBasedOrders.filter((order) => {
             const orderDate = this.getOrderDate(order);
-            return orderDate >= thirtyMinutesAgo && order.status === 'Downpayment Paid';
-          })
+            return (
+              orderDate >= thirtyMinutesAgo &&
+              order.status === "Downpayment Paid"
+            );
+          }),
         ];
 
         // Combine all orders: regular orders + today's paid custom cake orders
         const allOrders = [
-          ...data.orders.map(order => ({ ...order, order_type: 'regular' })), // Add type marker
-          ...this.formatCustomCakeOrdersForDashboard(todaysCustomCakeOrders, 'CC'),
-          ...this.formatCustomCakeOrdersForDashboard(todaysImageBasedOrders, 'RCC')
+          ...data.orders.map((order) => ({ ...order, order_type: "regular" })), // Add type marker
+          ...this.formatCustomCakeOrdersForDashboard(
+            todaysCustomCakeOrders,
+            "CC"
+          ),
+          ...this.formatCustomCakeOrdersForDashboard(
+            todaysImageBasedOrders,
+            "RCC"
+          ),
         ];
 
         // Sort all orders by date (newest first)
-        allOrders.sort((a, b) => new Date(b.order_date) - new Date(a.order_date));
+        allOrders.sort(
+          (a, b) => new Date(b.order_date) - new Date(a.order_date)
+        );
 
         this.orders = allOrders;
         this.summary = data.summary;
-        
+
         // Update notifications to include custom cakes
         this.notifications = {
           ...data.notifications,
           new_custom_cakes: this.newCustomCakes.length,
-          total: (data.notifications.new_orders || 0) + 
-                 (data.notifications.pending_custom_cakes || 0) + 
-                 this.newCustomCakes.length
+          total:
+            (data.notifications.new_orders || 0) +
+            (data.notifications.pending_custom_cakes || 0) +
+            this.newCustomCakes.length,
         };
-        
+
         this.newOrders = data.new_orders || [];
         this.pendingCustomCakes = data.pending_custom_cakes || [];
         this.lastUpdate = new Date();
-        
+
         // Update summary with today's custom cake counts (only paid ones)
-        this.summary.total_custom_cakes = todaysCustomCakeOrders.length + todaysImageBasedOrders.length;
+        this.summary.total_custom_cakes =
+          todaysCustomCakeOrders.length + todaysImageBasedOrders.length;
         this.summary.custom_cake_3d_orders = todaysCustomCakeOrders.length;
         this.summary.custom_cake_image_orders = todaysImageBasedOrders.length;
-        
+
         this.renderDashboard();
 
         // Show notification alert if there are new orders (regular or custom)
@@ -141,7 +179,7 @@ class AdminDashboard {
 
   // Helper method to filter today's orders
   filterTodaysOrders(orders, todayStart, todayEnd) {
-    return orders.filter(order => {
+    return orders.filter((order) => {
       const orderDate = this.getOrderDate(order);
       return orderDate >= todayStart && orderDate < todayEnd;
     });
@@ -158,36 +196,41 @@ class AdminDashboard {
 
   // Format custom cake orders for dashboard display
   formatCustomCakeOrdersForDashboard(orders, prefix) {
-    return orders.map(order => {
-      const isImageBased = prefix === 'RCC';
-      const orderId = isImageBased ? order.imageBasedOrderId : order.customCakeId;
+    return orders.map((order) => {
+      const isImageBased = prefix === "RCC";
+      const orderId = isImageBased
+        ? order.imageBasedOrderId
+        : order.customCakeId;
       const orderDate = this.getOrderDate(order);
-      
+
       // Ensure price is a number
       const totalAmount = order.price ? parseFloat(order.price) : 0;
-      
+
       return {
-        orderId: `${prefix}${String(orderId).padStart(3, '0')}`,
-        customer_name: order.customer_name || (order.customer?.name || 'Unknown'),
-        customer_email: order.customer_email || (order.customer?.email || 'No email'),
+        orderId: `${prefix}${String(orderId).padStart(3, "0")}`,
+        customer_name: order.customer_name || order.customer?.name || "Unknown",
+        customer_email:
+          order.customer_email || order.customer?.email || "No email",
         total_amount: totalAmount,
         status: order.status,
         status_key: this.mapCustomCakeStatus(order.status),
         order_date: orderDate,
-        delivery_method: order.delivery_method || 'pickup',
-        payment_method: 'gcash', // Custom cakes use GCash for downpayment
-        items: [{
-          name: isImageBased ? 'Image-Based Cake' : '3D Custom Cake',
-          size: order.size || 'Not specified',
-          quantity: 1,
-          price: totalAmount,
-          customCakeId: orderId,
-          is_custom_cake: true,
-          is_image_based: isImageBased
-        }],
-        order_type: isImageBased ? 'image_cake' : 'custom_cake',
+        delivery_method: order.delivery_method || "pickup",
+        payment_method: "gcash", // Custom cakes use GCash for downpayment
+        items: [
+          {
+            name: isImageBased ? "Image-Based Cake" : "3D Custom Cake",
+            size: order.size || "Not specified",
+            quantity: 1,
+            price: totalAmount,
+            customCakeId: orderId,
+            is_custom_cake: true,
+            is_image_based: isImageBased,
+          },
+        ],
+        order_type: isImageBased ? "image_cake" : "custom_cake",
         is_custom_cake: true,
-        is_image_based: isImageBased
+        is_image_based: isImageBased,
       };
     });
   }
@@ -207,39 +250,41 @@ class AdminDashboard {
 
   updateSummaryCards() {
     // Revenue - from regular orders only
-    document.querySelector(
-      '[data-summary="revenue"]'
-    ).textContent = `PHP ${
-      (this.summary.total_revenue || 0).toFixed(2)
-    }`;
-    
+    document.querySelector('[data-summary="revenue"]').textContent = `PHP ${(
+      this.summary.total_revenue || 0
+    ).toFixed(2)}`;
+
     // Total Orders - from regular orders only
-    document.querySelector('[data-summary="orders"]').textContent = 
+    document.querySelector('[data-summary="orders"]').textContent =
       this.summary.total_orders || 0;
-    
+
     // Custom Cakes - Today's total (separate from regular orders)
-    const customCakesElement = document.querySelector('[data-summary="custom-cakes"]');
+    const customCakesElement = document.querySelector(
+      '[data-summary="custom-cakes"]'
+    );
     const totalCustomCakes = this.summary.total_custom_cakes || 0;
     const customCake3DCount = this.summary.custom_cake_3d_orders || 0;
     const imageBasedCount = this.summary.custom_cake_image_orders || 0;
-    
+
     customCakesElement.textContent = totalCustomCakes;
     customCakesElement.title = `Today's Custom Cakes:\n3D Custom: ${customCake3DCount}\nImage-based: ${imageBasedCount}`;
-    customCakesElement.setAttribute('data-bs-toggle', 'tooltip');
-    customCakesElement.setAttribute('data-bs-placement', 'top');
-    
+    customCakesElement.setAttribute("data-bs-toggle", "tooltip");
+    customCakesElement.setAttribute("data-bs-placement", "top");
+
     // Customers
     document.querySelector('[data-summary="customers"]').textContent =
       this.summary.new_customers || "0";
-    
+
     // Initialize tooltips
-    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    const tooltipTriggerList = [].slice.call(
+      document.querySelectorAll('[data-bs-toggle="tooltip"]')
+    );
     tooltipTriggerList.forEach(function (tooltipTriggerEl) {
       new bootstrap.Tooltip(tooltipTriggerEl);
     });
   }
 
- renderOrdersTable() {
+  renderOrdersTable() {
     const tbody = document.getElementById("ordersTodayBody");
     if (!tbody) return;
 
@@ -254,15 +299,21 @@ class AdminDashboard {
 
     // Use the comprehensive status map
     const statusMap = {
-      'Pending Review': { class: 'pending', text: 'Pending Review' },
-      'Ready for Downpayment': { class: 'ready-for-dp', text: 'Ready for Downpayment' },
-      'Downpayment Paid': { class: 'dp-paid', text: 'Downpayment Paid' },
-      'Order Received': { class: 'order-received', text: 'Order Received' },
-      'In Progress': { class: 'in-progress', text: 'In Progress' },
-      'Ready for Pickup/Delivery': { class: 'ready', text: 'Ready for Pickup/Delivery' },
-      'Completed': { class: 'delivered', text: 'Completed' },
-      'Cancelled': { class: 'cancelled', text: 'Cancelled' },
-      'Not Feasible': { class: 'cancelled', text: 'Not Feasible' }
+      "Pending Review": { class: "pending", text: "Pending Review" },
+      "Ready for Downpayment": {
+        class: "ready-for-dp",
+        text: "Ready for Downpayment",
+      },
+      "Downpayment Paid": { class: "dp-paid", text: "Downpayment Paid" },
+      "Order Received": { class: "order-received", text: "Order Received" },
+      "In Progress": { class: "in-progress", text: "In Progress" },
+      "Ready for Pickup/Delivery": {
+        class: "ready",
+        text: "Ready for Pickup/Delivery",
+      },
+      Completed: { class: "delivered", text: "Completed" },
+      Cancelled: { class: "cancelled", text: "Cancelled" },
+      "Not Feasible": { class: "cancelled", text: "Not Feasible" },
     };
 
     tbody.innerHTML = this.orders
@@ -282,37 +333,44 @@ class AdminDashboard {
         const items = order.items
           .map(
             (item) =>
-              `${item.name}${
-                item.size ? ` (${item.size})` : ""
-              }<br>Qty: ${item.quantity}`
+              `${item.name}${item.size ? ` (${item.size})` : ""}<br>Qty: ${
+                item.quantity
+              }`
           )
           .join("<br>");
 
         // Check if this is a new order
-        const isNewOrder = this.newOrders.some(
-          (newOrder) => newOrder.orderId === order.orderId
-        ) || this.newCustomCakes.some(
-          (newCake) => {
-            const cakeId = newCake.customCakeId ? `CC${String(newCake.customCakeId).padStart(3, '0')}` : 
-                          newCake.imageBasedOrderId ? `RCC${String(newCake.imageBasedOrderId).padStart(3, '0')}` : '';
+        const isNewOrder =
+          this.newOrders.some(
+            (newOrder) => newOrder.orderId === order.orderId
+          ) ||
+          this.newCustomCakes.some((newCake) => {
+            const cakeId = newCake.customCakeId
+              ? `CC${String(newCake.customCakeId).padStart(3, "0")}`
+              : newCake.imageBasedOrderId
+              ? `RCC${String(newCake.imageBasedOrderId).padStart(3, "0")}`
+              : "";
             return cakeId === order.orderId;
-          }
-        );
-        
+          });
+
         const rowClass = isNewOrder ? "new-order" : "";
 
         // Format order ID with appropriate prefix and styling
         const orderIdCell = this.getOrderIdCell(order);
 
         // Ensure total_amount is a number
-        const totalAmount = typeof order.total_amount === 'number' 
-          ? order.total_amount 
-          : parseFloat(order.total_amount) || 0;
+        const totalAmount =
+          typeof order.total_amount === "number"
+            ? order.total_amount
+            : parseFloat(order.total_amount) || 0;
 
         // Payment method display
-        const paymentMethodDisplay = order.payment_method === 'gcash' 
-          ? 'GCash' 
-          : (order.payment_method === 'cash' ? 'Cash' : 'Custom Cake');
+        const paymentMethodDisplay =
+          order.payment_method === "gcash"
+            ? "GCash"
+            : order.payment_method === "cash"
+            ? "Cash"
+            : "Custom Cake";
 
         return `
         <tr class="${rowClass}">
@@ -334,8 +392,8 @@ class AdminDashboard {
           <td>${paymentMethodDisplay}</td>
           <td>${items}</td>
           <td><span class="status ${statusInfo.class}">${
-                statusInfo.text
-              }</span></td>
+          statusInfo.text
+        }</span></td>
         </tr>
       `;
       })
@@ -346,9 +404,9 @@ class AdminDashboard {
 
   // Generate order ID cell with appropriate styling
   getOrderIdCell(order) {
-    if (order.order_type === 'custom_cake') {
+    if (order.order_type === "custom_cake") {
       return `<span class="order-id custom-cake-id" title="3D Custom Cake">${order.orderId}</span>`;
-    } else if (order.order_type === 'image_cake') {
+    } else if (order.order_type === "image_cake") {
       return `<span class="order-id image-cake-id" title="Image-Based Custom Cake">${order.orderId}</span>`;
     } else {
       return `<span class="order-id regular-id">${order.orderId}</span>`;
@@ -357,9 +415,9 @@ class AdminDashboard {
 
   // Add CSS for different order type styling
   addOrderTypeStyles() {
-    if (!document.getElementById('order-type-styles')) {
-      const style = document.createElement('style');
-      style.id = 'order-type-styles';
+    if (!document.getElementById("order-type-styles")) {
+      const style = document.createElement("style");
+      style.id = "order-type-styles";
       style.textContent = `
         .order-id {
           font-weight: 600;
@@ -392,52 +450,52 @@ class AdminDashboard {
   updateNotificationBadge() {
     // Dashboard notification badge
     const dashboardNotificationCount = document.querySelector(
-        ".content .notification-count"  // More specific selector for dashboard
+      ".content .notification-count" // More specific selector for dashboard
     );
-    
+
     // Sidebar notification badge (the one in the bell icon)
     const sidebarNotificationCount = document.querySelector(
-        ".sidebar-header .notification-count"  // Specific selector for sidebar
+      ".sidebar-header .notification-count" // Specific selector for sidebar
     );
-    
+
     // Sidebar notification badge (in the section header)
     const sidebarNotificationBadge = document.querySelector(
-        ".notification-count-badge"
+      ".notification-count-badge"
     );
 
     // Update dashboard badge
     if (dashboardNotificationCount) {
-        dashboardNotificationCount.textContent = this.notifications.total;
-        dashboardNotificationCount.style.display =
-            this.notifications.total > 0 ? "flex" : "none";
+      dashboardNotificationCount.textContent = this.notifications.total;
+      dashboardNotificationCount.style.display =
+        this.notifications.total > 0 ? "flex" : "none";
     }
 
     // Update sidebar notification count (bell icon)
     if (sidebarNotificationCount) {
-        sidebarNotificationCount.textContent = this.notifications.total;
-        sidebarNotificationCount.style.display =
-            this.notifications.total > 0 ? "inline-block" : "none";
+      sidebarNotificationCount.textContent = this.notifications.total;
+      sidebarNotificationCount.style.display =
+        this.notifications.total > 0 ? "inline-block" : "none";
     }
 
     // Update sidebar notification badge (section header)
     if (sidebarNotificationBadge) {
-        sidebarNotificationBadge.textContent = this.notifications.total;
-        sidebarNotificationBadge.style.display =
-            this.notifications.total > 0 ? "inline-block" : "none";
+      sidebarNotificationBadge.textContent = this.notifications.total;
+      sidebarNotificationBadge.style.display =
+        this.notifications.total > 0 ? "inline-block" : "none";
     }
 
     // Change icon color if there are notifications
     const notificationIcon = document.querySelector(".notification i");
     if (notificationIcon) {
-        if (this.notifications.total > 0) {
-            notificationIcon.classList.add("text-warning");
-            notificationIcon.classList.remove("text-muted");
-        } else {
-            notificationIcon.classList.remove("text-warning");
-            notificationIcon.classList.add("text-muted");
-        }
+      if (this.notifications.total > 0) {
+        notificationIcon.classList.add("text-warning");
+        notificationIcon.classList.remove("text-muted");
+      } else {
+        notificationIcon.classList.remove("text-warning");
+        notificationIcon.classList.add("text-muted");
+      }
     }
-}
+  }
 
   updateLastUpdateTime() {
     const updateElement = document.querySelector("[data-last-update]");
@@ -451,8 +509,8 @@ class AdminDashboard {
     if (totalNewOrders > 0) {
       const notification = document.createElement("div");
       notification.className = "alert alert-info alert-dismissible fade show";
-      
-      let message = '';
+
+      let message = "";
       if (this.newOrders.length > 0 && this.newCustomCakes.length > 0) {
         message = `<strong>${this.newOrders.length} new regular order(s)</strong> and <strong>${this.newCustomCakes.length} new custom cake order(s)</strong> in the last 30 minutes`;
       } else if (this.newOrders.length > 0) {
@@ -460,7 +518,7 @@ class AdminDashboard {
       } else {
         message = `<strong>${this.newCustomCakes.length} new custom cake order(s)</strong> in the last 30 minutes`;
       }
-      
+
       notification.innerHTML = `
         <i class="bi bi-bell-fill me-2"></i>
         ${message}
@@ -556,11 +614,19 @@ class AdminDashboard {
               <div class="list-group-item">
                 <div class="d-flex justify-content-between align-items-center">
                   <div>
-                    <strong>${this.formatCustomCakeId(cake)}</strong> - ${cake.customer_name || 'Unknown Customer'}
-                    <br><small class="text-muted">Size: ${cake.size || 'Not specified'}, Type: ${cake.imageBasedOrderId ? 'Image-Based' : '3D Custom'}</small>
+                    <strong>${this.formatCustomCakeId(cake)}</strong> - ${
+                  cake.customer_name || "Unknown Customer"
+                }
+                    <br><small class="text-muted">Size: ${
+                      cake.size || "Not specified"
+                    }, Type: ${
+                  cake.imageBasedOrderId ? "Image-Based" : "3D Custom"
+                }</small>
                   </div>
                   <div class="text-end">
-                    <small class="text-muted">${this.getOrderDate(cake).toLocaleTimeString()}</small>
+                    <small class="text-muted">${this.getOrderDate(
+                      cake
+                    ).toLocaleTimeString()}</small>
                     <br><span class="badge bg-success">Downpayment Paid</span>
                   </div>
                 </div>
@@ -587,7 +653,9 @@ class AdminDashboard {
                 <div class="d-flex justify-content-between align-items-center">
                   <div>
                     <strong>${this.formatCustomCakeId(cake)}</strong>
-                    <br><small class="text-muted">Size: ${cake.size}, Status: ${cake.status}</small>
+                    <br><small class="text-muted">Size: ${cake.size}, Status: ${
+                  cake.status
+                }</small>
                   </div>
                   <span class="badge bg-warning">Pending</span>
                 </div>
@@ -610,10 +678,14 @@ class AdminDashboard {
   // Helper method to format custom cake IDs
   formatCustomCakeId(cake) {
     if (cake.customCakeId) {
-      return `<span style="color: #e91e63; font-weight: bold;">CC${String(cake.customCakeId).padStart(3, '0')}</span>`;
+      return `<span style="color: #e91e63; font-weight: bold;">CC${String(
+        cake.customCakeId
+      ).padStart(3, "0")}</span>`;
     }
     if (cake.imageBasedOrderId) {
-      return `<span style="color: #ff9800; font-weight: bold;">RCC${String(cake.imageBasedOrderId).padStart(3, '0')}</span>`;
+      return `<span style="color: #ff9800; font-weight: bold;">RCC${String(
+        cake.imageBasedOrderId
+      ).padStart(3, "0")}</span>`;
     }
     return `Custom Cake Order`;
   }
@@ -629,10 +701,11 @@ class AdminDashboard {
 
     // Refresh button
     const refreshBtn = document.createElement("button");
-    refreshBtn.className = "btn btn-sm btn-outline-primary mt-2 custom-outline-green";
+    refreshBtn.className =
+      "btn btn-sm btn-outline-primary mt-2 custom-outline-green";
     refreshBtn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Refresh';
     refreshBtn.addEventListener("click", () => this.loadDashboardData());
-    
+
     const dashboardHeader = document.querySelector(".dashboard-header");
     if (dashboardHeader) {
       dashboardHeader.appendChild(refreshBtn);
@@ -652,7 +725,7 @@ class AdminDashboard {
       ${message}
       <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     `;
-    
+
     const contentElement = document.querySelector(".content");
     if (contentElement) {
       contentElement.prepend(alert);

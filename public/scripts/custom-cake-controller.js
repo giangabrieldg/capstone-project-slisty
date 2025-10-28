@@ -66,63 +66,71 @@ class CustomCakeController {
     const basePrice = this.pricing.base[this.config.size] || 0;
     const fillingPrice = this.pricing.fillings[this.config.filling] || 0;
     return basePrice + fillingPrice;
-}
+  }
 
-// Update your existing updateTotalPrice method to include downpayment
-updateTotalPrice() {
+  // Update your existing updateTotalPrice method to include downpayment
+  updateTotalPrice() {
     // Your existing price calculation logic
     const totalPrice = this.calculateTotalPrice();
-    const summaryTotal = document.getElementById('summaryTotal');
-    
+    const summaryTotal = document.getElementById("summaryTotal");
+
     if (summaryTotal) {
-        summaryTotal.innerHTML = `<strong>₱${totalPrice.toFixed(2)}</strong>`;
+      summaryTotal.innerHTML = `<strong>₱${totalPrice.toFixed(2)}</strong>`;
     }
-    
+
     // NEW: Update downpayment breakdown
     this.updateDownpaymentBreakdown();
-}
+  }
 
-// NEW: Downpayment breakdown calculation
-updateDownpaymentBreakdown() {
+  // NEW: Downpayment breakdown calculation
+  updateDownpaymentBreakdown() {
     const totalPrice = this.calculateTotalPrice();
     const downpayment = totalPrice * 0.5;
-    
-    // Update breakdown display
-    const breakdownTotal = document.getElementById('breakdownTotalPrice');
-    const breakdownDownpayment = document.getElementById('breakdownDownpayment');
-    const breakdownPayNow = document.getElementById('breakdownPayNow');
-    const summaryDownpayment = document.getElementById('summaryDownpayment');
-    
-    if (breakdownTotal) breakdownTotal.textContent = `₱${totalPrice.toFixed(2)}`;
-    if (breakdownDownpayment) breakdownDownpayment.textContent = `₱${downpayment.toFixed(2)}`;
-    if (breakdownPayNow) breakdownPayNow.textContent = `₱${downpayment.toFixed(2)}`;
-    if (summaryDownpayment) summaryDownpayment.textContent = `₱${downpayment.toFixed(2)}`;
-}
 
-// NEW: Initialize downpayment display
-initializeDownpaymentDisplay() {
+    // Update breakdown display
+    const breakdownTotal = document.getElementById("breakdownTotalPrice");
+    const breakdownDownpayment = document.getElementById(
+      "breakdownDownpayment"
+    );
+    const breakdownPayNow = document.getElementById("breakdownPayNow");
+    const summaryDownpayment = document.getElementById("summaryDownpayment");
+
+    if (breakdownTotal)
+      breakdownTotal.textContent = `₱${totalPrice.toFixed(2)}`;
+    if (breakdownDownpayment)
+      breakdownDownpayment.textContent = `₱${downpayment.toFixed(2)}`;
+    if (breakdownPayNow)
+      breakdownPayNow.textContent = `₱${downpayment.toFixed(2)}`;
+    if (summaryDownpayment)
+      summaryDownpayment.textContent = `₱${downpayment.toFixed(2)}`;
+  }
+
+  // NEW: Initialize downpayment display
+  initializeDownpaymentDisplay() {
     // Initial update
     this.updateDownpaymentBreakdown();
-    
-    // Update when any customization changes
-    const allOptions = document.querySelectorAll('.size-option-walmart, .filling-option-walmart, [data-price]');
-    allOptions.forEach(option => {
-        option.addEventListener('click', () => {
-            setTimeout(() => this.updateDownpaymentBreakdown(), 100);
-        });
-    });
-}
 
-//Updated checkout function for downpayment
-async checkoutCustomCake() {
-  // Get the button and store original state
-  const checkoutButton = document.querySelector('.summary-btn.primary-btn');
-  const originalText = checkoutButton.textContent;
-  const originalHTML = checkoutButton.innerHTML;
-  
-  // Disable button and show loading state
-  checkoutButton.disabled = true;
-  checkoutButton.innerHTML = `
+    // Update when any customization changes
+    const allOptions = document.querySelectorAll(
+      ".size-option-walmart, .filling-option-walmart, [data-price]"
+    );
+    allOptions.forEach((option) => {
+      option.addEventListener("click", () => {
+        setTimeout(() => this.updateDownpaymentBreakdown(), 100);
+      });
+    });
+  }
+
+  //Updated checkout function for downpayment
+  async checkoutCustomCake() {
+    // Get the button and store original state
+    const checkoutButton = document.querySelector(".summary-btn.primary-btn");
+    const originalText = checkoutButton.textContent;
+    const originalHTML = checkoutButton.innerHTML;
+
+    // Disable button and show loading state
+    checkoutButton.disabled = true;
+    checkoutButton.innerHTML = `
     <span class="loading-spinner" style="
       display: inline-block;
       width: 16px;
@@ -135,71 +143,76 @@ async checkoutCustomCake() {
     "></span>
     Processing...
   `;
-  checkoutButton.style.opacity = '0.7';
-  
-  // Add spinner animation CSS if not already present
-  if (!document.querySelector('#spinner-styles')) {
-    const style = document.createElement('style');
-    style.id = 'spinner-styles';
-    style.textContent = `
+    checkoutButton.style.opacity = "0.7";
+
+    // Add spinner animation CSS if not already present
+    if (!document.querySelector("#spinner-styles")) {
+      const style = document.createElement("style");
+      style.id = "spinner-styles";
+      style.textContent = `
       @keyframes spin {
         0% { transform: rotate(0deg); }
         100% { transform: rotate(360deg); }
       }
     `;
-    document.head.appendChild(style);
+      document.head.appendChild(style);
+    }
+
+    try {
+      if (!this.apiService.isAuthenticated()) {
+        await Swal.fire({
+          icon: "error",
+          title: "Oops...",
+          text: "Please log in to checkout your custom cake",
+          confirmButtonColor: "#2c9045",
+        });
+        window.location.href = "/customer/login.html";
+        return;
+      }
+
+      const totalPrice =
+        this.pricing.base[this.config.size] +
+        this.pricing.fillings[this.config.filling];
+
+      if (!totalPrice || totalPrice <= 0) {
+        Swal.fire({
+          icon: "error",
+          title: "Oops...",
+          text: "Invalid price calculation. Please try again.",
+          confirmButtonColor: "#2c9045",
+        });
+        return;
+      }
+
+      // Use the global CakeAPIService class directly instead of this.apiService
+      const apiService = new CakeAPIService();
+      const submitResponse = await apiService.submitCustomOrder(
+        this.config,
+        this.pricing,
+        this.renderer
+      );
+
+      if (submitResponse.success) {
+        const downpaymentAmount = totalPrice * 0.5;
+        const customCakeId = submitResponse.data.customCakeId;
+        window.location.href = `/customer/checkout.html?customCakeId=${customCakeId}&isImageOrder=false&amount=${downpaymentAmount}&isDownpayment=true`;
+      } else {
+        throw new Error(submitResponse.message);
+      }
+    } catch (error) {
+      console.error("Checkout process error:", error);
+      ToastNotifications.showToast(
+        "Checkout failed: " + error.message,
+        "error"
+      );
+    } finally {
+      // Re-enable button regardless of success or failure
+      checkoutButton.disabled = false;
+      checkoutButton.innerHTML = originalHTML;
+      checkoutButton.textContent = originalText;
+      checkoutButton.style.opacity = "1";
+    }
   }
-
-  try {
-    if (!this.apiService.isAuthenticated()) {
-      await Swal.fire({
-        icon: "error",
-        title: "Oops...",
-        text: "Please log in to checkout your custom cake",
-        confirmButtonColor: "#2c9045"
-      });
-      window.location.href = '/customer/login.html';
-      return;
-    }
-
-    const totalPrice = this.pricing.base[this.config.size] + this.pricing.fillings[this.config.filling];
-    
-    if (!totalPrice || totalPrice <= 0) {
-      Swal.fire({
-        icon: "error",
-        title: "Oops...",
-        text: "Invalid price calculation. Please try again.",
-        confirmButtonColor: "#2c9045"
-      });
-      return;
-    }
-
-    // Use the global CakeAPIService class directly instead of this.apiService
-    const apiService = new CakeAPIService();
-    const submitResponse = await apiService.submitCustomOrder(
-      this.config, 
-      this.pricing, 
-      this.renderer
-    );
-
-    if (submitResponse.success) {
-      const downpaymentAmount = totalPrice * 0.5;
-      const customCakeId = submitResponse.data.customCakeId;
-      window.location.href = `/customer/checkout.html?customCakeId=${customCakeId}&isImageOrder=false&amount=${downpaymentAmount}&isDownpayment=true`;
-    } else {
-      throw new Error(submitResponse.message);
-    }
-  } catch (error) {
-    console.error('Checkout process error:', error);
-    ToastNotifications.showToast('Checkout failed: ' + error.message, 'error');
-  } finally {
-    // Re-enable button regardless of success or failure
-    checkoutButton.disabled = false;
-    checkoutButton.innerHTML = originalHTML;
-    checkoutButton.textContent = originalText;
-    checkoutButton.style.opacity = '1';
-  }
-}
 
   setupEventListeners() {
     this.setupSizeOptions();
@@ -218,7 +231,9 @@ async checkoutCustomCake() {
   setupSizeOptions() {
     document.querySelectorAll(".size-option-walmart").forEach((el) =>
       el.addEventListener("click", () => {
-        document.querySelectorAll(".size-option-walmart").forEach((o) => o.classList.remove("active"));
+        document
+          .querySelectorAll(".size-option-walmart")
+          .forEach((o) => o.classList.remove("active"));
         el.classList.add("active");
         this.config.size = el.dataset.size;
         this.updateCake();
@@ -230,7 +245,9 @@ async checkoutCustomCake() {
   setupFlavorOptions() {
     document.querySelectorAll(".flavor-option-walmart").forEach((el) =>
       el.addEventListener("click", () => {
-        document.querySelectorAll(".flavor-option-walmart").forEach((o) => o.classList.remove("active"));
+        document
+          .querySelectorAll(".flavor-option-walmart")
+          .forEach((o) => o.classList.remove("active"));
         el.classList.add("active");
         this.config.cakeColor = el.dataset.color;
         this.updateCake();
@@ -242,48 +259,67 @@ async checkoutCustomCake() {
   setupIcingOptions() {
     document.querySelectorAll(".icing-style-option").forEach((el) =>
       el.addEventListener("click", () => {
-        document.querySelectorAll(".icing-style-option").forEach((o) => o.classList.remove("active"));
+        document
+          .querySelectorAll(".icing-style-option")
+          .forEach((o) => o.classList.remove("active"));
         el.classList.add("active");
-        this.config.icingStyle = el.dataset.icing.toLowerCase().replace(" ", "");
+        this.config.icingStyle = el.dataset.icing
+          .toLowerCase()
+          .replace(" ", "");
         this.updateOrderSummary();
       })
     );
   }
 
   setupColorOptions() {
-    document.querySelectorAll(".color-options-walmart .color-option-walmart").forEach((c) =>
-      c.addEventListener("click", () => {
-        const parent = c.closest(".color-options-walmart");
-        const borderType = parent.dataset.borderType;
-        if (borderType === "bottom") {
-          parent.querySelectorAll(".color-option-walmart").forEach((o) => o.classList.remove("active"));
-          c.classList.add("active");
-          this.config.bottomBorderColor = c.dataset.color;
-          document.getElementById("selectedBottomBorderColorName").textContent = c.dataset.name;
-          this.updateCake();
-        } else if (borderType === "top") {
-          parent.querySelectorAll(".color-option-walmart").forEach((o) => o.classList.remove("active"));
-          c.classList.add("active");
-          this.config.topBorderColor = c.dataset.color;
-          document.getElementById("selectedTopBorderColorName").textContent = c.dataset.name;
-          this.updateCake();
-        } else {
-          parent.querySelectorAll(".color-option-walmart").forEach((o) => o.classList.remove("active"));
-          c.classList.add("active");
-          this.config.icingColor = c.dataset.color;
-          document.getElementById("selectedColorName").textContent = c.dataset.name;
-          this.updateCake();
-        }
-        this.updateOrderSummary();
-      })
-    );
+    document
+      .querySelectorAll(".color-options-walmart .color-option-walmart")
+      .forEach((c) =>
+        c.addEventListener("click", () => {
+          const parent = c.closest(".color-options-walmart");
+          const borderType = parent.dataset.borderType;
+          if (borderType === "bottom") {
+            parent
+              .querySelectorAll(".color-option-walmart")
+              .forEach((o) => o.classList.remove("active"));
+            c.classList.add("active");
+            this.config.bottomBorderColor = c.dataset.color;
+            document.getElementById(
+              "selectedBottomBorderColorName"
+            ).textContent = c.dataset.name;
+            this.updateCake();
+          } else if (borderType === "top") {
+            parent
+              .querySelectorAll(".color-option-walmart")
+              .forEach((o) => o.classList.remove("active"));
+            c.classList.add("active");
+            this.config.topBorderColor = c.dataset.color;
+            document.getElementById("selectedTopBorderColorName").textContent =
+              c.dataset.name;
+            this.updateCake();
+          } else {
+            parent
+              .querySelectorAll(".color-option-walmart")
+              .forEach((o) => o.classList.remove("active"));
+            c.classList.add("active");
+            this.config.icingColor = c.dataset.color;
+            document.getElementById("selectedColorName").textContent =
+              c.dataset.name;
+            this.updateCake();
+          }
+          this.updateOrderSummary();
+        })
+      );
 
     document.querySelectorAll(".toppings-color-option").forEach((c) =>
       c.addEventListener("click", () => {
-        document.querySelectorAll(".toppings-color-option").forEach((o) => o.classList.remove("active"));
+        document
+          .querySelectorAll(".toppings-color-option")
+          .forEach((o) => o.classList.remove("active"));
         c.classList.add("active");
         this.config.toppingsColor = c.dataset.color;
-        document.getElementById("selectedToppingsColorName").textContent = c.dataset.name;
+        document.getElementById("selectedToppingsColorName").textContent =
+          c.dataset.name;
         this.updateCake();
         this.updateOrderSummary();
       })
@@ -293,7 +329,9 @@ async checkoutCustomCake() {
   setupFillingOptions() {
     document.querySelectorAll(".filling-option-walmart").forEach((el) =>
       el.addEventListener("click", () => {
-        document.querySelectorAll(".filling-option-walmart").forEach((o) => o.classList.remove("active"));
+        document
+          .querySelectorAll(".filling-option-walmart")
+          .forEach((o) => o.classList.remove("active"));
         el.classList.add("active");
         this.config.filling = el.dataset.filling;
         this.updateCake();
@@ -305,11 +343,16 @@ async checkoutCustomCake() {
   setupBorderOptions() {
     document.querySelectorAll("#step-5 .border-option-walmart").forEach((el) =>
       el.addEventListener("click", () => {
-        document.querySelectorAll("#step-5 .border-option-walmart").forEach((o) => o.classList.remove("active"));
+        document
+          .querySelectorAll("#step-5 .border-option-walmart")
+          .forEach((o) => o.classList.remove("active"));
         el.classList.add("active");
         this.config.bottomBorder = el.dataset.border;
-        const colorSection = document.getElementById("bottomBorderColorSection");
-        colorSection.style.display = this.config.bottomBorder !== "none" ? "block" : "none";
+        const colorSection = document.getElementById(
+          "bottomBorderColorSection"
+        );
+        colorSection.style.display =
+          this.config.bottomBorder !== "none" ? "block" : "none";
         this.updateCake();
         this.updateOrderSummary();
       })
@@ -317,11 +360,14 @@ async checkoutCustomCake() {
 
     document.querySelectorAll("#step-6 .border-option-walmart").forEach((el) =>
       el.addEventListener("click", () => {
-        document.querySelectorAll("#step-6 .border-option-walmart").forEach((o) => o.classList.remove("active"));
+        document
+          .querySelectorAll("#step-6 .border-option-walmart")
+          .forEach((o) => o.classList.remove("active"));
         el.classList.add("active");
         this.config.topBorder = el.dataset.border;
         const colorSection = document.getElementById("topBorderColorSection");
-        colorSection.style.display = this.config.topBorder !== "none" ? "block" : "none";
+        colorSection.style.display =
+          this.config.topBorder !== "none" ? "block" : "none";
         this.updateCake();
         this.updateOrderSummary();
       })
@@ -331,7 +377,9 @@ async checkoutCustomCake() {
   setupMessageOptions() {
     document.querySelectorAll(".message-option-walmart").forEach((option) =>
       option.addEventListener("click", () => {
-        document.querySelectorAll(".message-option-walmart").forEach((o) => o.classList.remove("active"));
+        document
+          .querySelectorAll(".message-option-walmart")
+          .forEach((o) => o.classList.remove("active"));
         option.classList.add("active");
         this.config.messageChoice = option.dataset.message;
         if (option.dataset.message === "none") {
@@ -347,16 +395,24 @@ async checkoutCustomCake() {
   setupDecorationOptions() {
     document.querySelectorAll(".decoration-option-walmart").forEach((el) =>
       el.addEventListener("click", () => {
-        document.querySelectorAll(".decoration-option-walmart").forEach((o) => o.classList.remove("active"));
+        document
+          .querySelectorAll(".decoration-option-walmart")
+          .forEach((o) => o.classList.remove("active"));
         el.classList.add("active");
         this.config.decorations = el.dataset.decoration;
         const flowerSubOptions = document.getElementById("flowerSubOptions");
-        const toppingsColorSection = document.getElementById("toppingsColorSection");
+        const toppingsColorSection = document.getElementById(
+          "toppingsColorSection"
+        );
         if (this.config.decorations === "flowers") {
           flowerSubOptions.style.display = "flex";
           toppingsColorSection.style.display = "none";
           if (!document.querySelector(".flower-option-walmart.active")) {
-            document.querySelector('.flower-option-walmart[data-flower-type="daisies"]').classList.add("active");
+            document
+              .querySelector(
+                '.flower-option-walmart[data-flower-type="daisies"]'
+              )
+              .classList.add("active");
             this.config.flowerType = "daisies";
           }
         } else if (this.config.decorations === "toppings") {
@@ -365,7 +421,9 @@ async checkoutCustomCake() {
         } else {
           flowerSubOptions.style.display = "none";
           toppingsColorSection.style.display = "none";
-          document.querySelectorAll(".flower-option-walmart").forEach((o) => o.classList.remove("active"));
+          document
+            .querySelectorAll(".flower-option-walmart")
+            .forEach((o) => o.classList.remove("active"));
           this.config.flowerType = "none";
         }
         this.updateCake();
@@ -375,7 +433,9 @@ async checkoutCustomCake() {
 
     document.querySelectorAll(".flower-option-walmart").forEach((el) =>
       el.addEventListener("click", () => {
-        document.querySelectorAll(".flower-option-walmart").forEach((o) => o.classList.remove("active"));
+        document
+          .querySelectorAll(".flower-option-walmart")
+          .forEach((o) => o.classList.remove("active"));
         el.classList.add("active");
         this.config.flowerType = el.dataset.flowerType;
         this.updateCake();
@@ -385,11 +445,14 @@ async checkoutCustomCake() {
   }
 
   setupCustomTextInput() {
-    document.getElementById("customTextWalmart").addEventListener("input", (e) => {
-      document.getElementById("charCountWalmart").textContent = e.target.value.length;
-      this.config.customText = e.target.value;
-      this.updateOrderSummary();
-    });
+    document
+      .getElementById("customTextWalmart")
+      .addEventListener("input", (e) => {
+        document.getElementById("charCountWalmart").textContent =
+          e.target.value.length;
+        this.config.customText = e.target.value;
+        this.updateOrderSummary();
+      });
   }
 
   setupImageUpload() {
@@ -429,124 +492,135 @@ async checkoutCustomCake() {
   }
 
   handleImageUpload(file) {
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    document.getElementById("previewImage").src = e.target.result;
-    document.getElementById("uploadedImage").style.display = "block";
-    document.getElementById("uploadArea").style.display = "none";
-    document.getElementById("imageOrderForm").style.display = "block";
-    document.getElementById("uploadedFileName").textContent = file.name;
-    
-    // Re-setup the form when it becomes visible to ensure fresh event listeners
-    setTimeout(() => this.setupImageOrderForm(), 100);
-  };
-  reader.readAsDataURL(file);
-}
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      document.getElementById("previewImage").src = e.target.result;
+      document.getElementById("uploadedImage").style.display = "block";
+      document.getElementById("uploadArea").style.display = "none";
+      document.getElementById("imageOrderForm").style.display = "block";
+      document.getElementById("uploadedFileName").textContent = file.name;
 
- setupImageOrderForm() {
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  document.getElementById("eventDate").min = tomorrow.toISOString().split("T")[0];
+      // Re-setup the form when it becomes visible to ensure fresh event listeners
+      setTimeout(() => this.setupImageOrderForm(), 100);
+    };
+    reader.readAsDataURL(file);
+  }
 
-  document.getElementById("imageNotes").addEventListener("input", (e) => {
-    document.getElementById("notesCharCount").textContent = e.target.value.length;
-  });
+  setupImageOrderForm() {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    document.getElementById("eventDate").min = tomorrow
+      .toISOString()
+      .split("T")[0];
 
-  document.getElementById("imageMessage").addEventListener("input", (e) => {
-    document.getElementById("messageCharCount").textContent = e.target.value.length;
-  });
+    document.getElementById("imageNotes").addEventListener("input", (e) => {
+      document.getElementById("notesCharCount").textContent =
+        e.target.value.length;
+    });
 
-  // Get the form and submit button
-  const form = document.getElementById("imageOrderFormContent");
-  const submitButton = form.querySelector('button[type="submit"]');
-  
-  // Remove any existing event listeners by cloning the form
-  const newForm = form.cloneNode(true);
-  form.parentNode.replaceChild(newForm, form);
-  
-  // Add single event listener to the new form
-  newForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    // Prevent multiple submissions
-    const currentSubmitButton = newForm.querySelector('button[type="submit"]');
-    const originalText = currentSubmitButton.textContent;
-    
-    // Disable button and show loading state
-    currentSubmitButton.disabled = true;
-    currentSubmitButton.textContent = 'Submitting...';
-    currentSubmitButton.style.opacity = '0.7';
-    
-    try {
-      const result = await this.apiService.submitImageBasedOrder(newForm);
-      
-      if (result.success) {
-        this.apiService.handleResponse(result, () => {
-          this.resetImageOrderForm();
-          // Reset button state after successful submission
-          currentSubmitButton.disabled = false;
-          currentSubmitButton.textContent = originalText;
-          currentSubmitButton.style.opacity = '1';
-        });
-      } else {
-        throw new Error(result.message || 'Submission failed');
+    document.getElementById("imageMessage").addEventListener("input", (e) => {
+      document.getElementById("messageCharCount").textContent =
+        e.target.value.length;
+    });
+
+    // Get the form and submit button
+    const form = document.getElementById("imageOrderFormContent");
+    const submitButton = form.querySelector('button[type="submit"]');
+
+    // Remove any existing event listeners by cloning the form
+    const newForm = form.cloneNode(true);
+    form.parentNode.replaceChild(newForm, form);
+
+    // Add single event listener to the new form
+    newForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      // Prevent multiple submissions
+      const currentSubmitButton = newForm.querySelector(
+        'button[type="submit"]'
+      );
+      const originalText = currentSubmitButton.textContent;
+
+      // Disable button and show loading state
+      currentSubmitButton.disabled = true;
+      currentSubmitButton.textContent = "Submitting...";
+      currentSubmitButton.style.opacity = "0.7";
+
+      try {
+        const result = await this.apiService.submitImageBasedOrder(newForm);
+
+        if (result.success) {
+          this.apiService.handleResponse(result, () => {
+            this.resetImageOrderForm();
+            // Reset button state after successful submission
+            currentSubmitButton.disabled = false;
+            currentSubmitButton.textContent = originalText;
+            currentSubmitButton.style.opacity = "1";
+          });
+        } else {
+          throw new Error(result.message || "Submission failed");
+        }
+      } catch (error) {
+        console.error("Form submission error:", error);
+        // Re-enable button on error
+        currentSubmitButton.disabled = false;
+        currentSubmitButton.textContent = originalText;
+        currentSubmitButton.style.opacity = "1";
+
+        ToastNotifications.showToast(
+          error.message || "Error submitting order. Please try again.",
+          "error"
+        );
       }
-    } catch (error) {
-      console.error('Form submission error:', error);
-      // Re-enable button on error
-      currentSubmitButton.disabled = false;
-      currentSubmitButton.textContent = originalText;
-      currentSubmitButton.style.opacity = '1';
-      
-      ToastNotifications.showToast(error.message || 'Error submitting order. Please try again.', 'error');
-    }
-  });
-}
+    });
+  }
 
   resetImageOrderForm() {
-  const form = document.getElementById("imageOrderFormContent");
-  if (form) {
-    form.reset();
+    const form = document.getElementById("imageOrderFormContent");
+    if (form) {
+      form.reset();
+    }
+
+    // Reset character counters
+    const messageCharCount = document.getElementById("messageCharCount");
+    const notesCharCount = document.getElementById("notesCharCount");
+    if (messageCharCount) messageCharCount.textContent = "0";
+    if (notesCharCount) notesCharCount.textContent = "0";
+
+    // Reset UI elements
+    document.getElementById("imageOrderForm").style.display = "none";
+    document.getElementById("uploadedImage").style.display = "none";
+    document.getElementById("uploadArea").style.display = "block";
+    document.getElementById("imageUpload").value = "";
+
+    // Reset the submit button state if it exists
+    const submitButton = document.querySelector(
+      '#imageOrderFormContent button[type="submit"]'
+    );
+    if (submitButton) {
+      submitButton.disabled = false;
+      submitButton.textContent = "Submit Image Order";
+      submitButton.style.opacity = "1";
+    }
   }
-  
-  // Reset character counters
-  const messageCharCount = document.getElementById("messageCharCount");
-  const notesCharCount = document.getElementById("notesCharCount");
-  if (messageCharCount) messageCharCount.textContent = '0';
-  if (notesCharCount) notesCharCount.textContent = '0';
-  
-  // Reset UI elements
-  document.getElementById("imageOrderForm").style.display = "none";
-  document.getElementById("uploadedImage").style.display = "none";
-  document.getElementById("uploadArea").style.display = "block";
-  document.getElementById("imageUpload").value = "";
-  
-  // Reset the submit button state if it exists
-  const submitButton = document.querySelector('#imageOrderFormContent button[type="submit"]');
-  if (submitButton) {
-    submitButton.disabled = false;
-    submitButton.textContent = 'Submit Image Order';
-    submitButton.style.opacity = '1';
-  }
-}
 
   removeUploadedImage() {
-  document.getElementById('imageUpload').value = '';
-  document.getElementById("uploadedImage").style.display = "none";
-  document.getElementById("imageOrderForm").style.display = "none";
-  document.getElementById("uploadArea").style.display = "block";
-  
-  // Reset the form and character counters
-  const form = document.getElementById("imageOrderFormContent");
-  if (form) {
-    form.reset();
+    document.getElementById("imageUpload").value = "";
+    document.getElementById("uploadedImage").style.display = "none";
+    document.getElementById("imageOrderForm").style.display = "none";
+    document.getElementById("uploadArea").style.display = "block";
+
+    // Reset the form and character counters
+    const form = document.getElementById("imageOrderFormContent");
+    if (form) {
+      form.reset();
+    }
+    const messageCharCount = document.getElementById("messageCharCount");
+    const notesCharCount = document.getElementById("notesCharCount");
+    if (messageCharCount) messageCharCount.textContent = "0";
+    if (notesCharCount) notesCharCount.textContent = "0";
   }
-  const messageCharCount = document.getElementById("messageCharCount");
-  const notesCharCount = document.getElementById("notesCharCount");
-  if (messageCharCount) messageCharCount.textContent = '0';
-  if (notesCharCount) notesCharCount.textContent = '0';
-}
 
   setupInitialView() {
     document.getElementById("orderSummaryView").style.display = "none";
@@ -568,64 +642,102 @@ async checkoutCustomCake() {
       large: '10" Round',
     };
 
-    document.getElementById("summarySize").textContent = sizeLabels[this.config.size];
-    document.getElementById("summarySizePrice").innerHTML = `<strong>₱${this.pricing.base[this.config.size].toFixed(2)}</strong>`;
-    document.getElementById("summaryFlavor").textContent = this.config.cakeColor === "#8B4513" ? "Chocolate" : "White";
+    document.getElementById("summarySize").textContent =
+      sizeLabels[this.config.size];
+    document.getElementById(
+      "summarySizePrice"
+    ).innerHTML = `<strong>₱${this.pricing.base[this.config.size].toFixed(
+      2
+    )}</strong>`;
+    document.getElementById("summaryFlavor").textContent =
+      this.config.cakeColor === "#8B4513" ? "Chocolate" : "White";
 
-    const icingStyle = this.config.icingStyle === "buttercream" ? "Buttercream" : "Whipped";
-    const icingColorName = document.getElementById("selectedColorName").textContent;
-    document.getElementById("summaryIcing").textContent = `${icingStyle} - ${icingColorName}`;
+    const icingStyle =
+      this.config.icingStyle === "buttercream" ? "Buttercream" : "Whipped";
+    const icingColorName =
+      document.getElementById("selectedColorName").textContent;
+    document.getElementById(
+      "summaryIcing"
+    ).textContent = `${icingStyle} - ${icingColorName}`;
 
     const fillingNames = {
       none: "None",
       strawberry: "Strawberry",
       bavarian: "Cream",
     };
-    document.getElementById("summaryFilling").textContent = fillingNames[this.config.filling];
+    document.getElementById("summaryFilling").textContent =
+      fillingNames[this.config.filling];
 
     const fillingPriceElement = document.getElementById("summaryFillingPrice");
-    fillingPriceElement.style.display = this.config.filling !== "none" ? "block" : "none";
+    fillingPriceElement.style.display =
+      this.config.filling !== "none" ? "block" : "none";
     if (this.config.filling !== "none") {
-      fillingPriceElement.innerHTML = `<strong>+₱${this.pricing.fillings[this.config.filling].toFixed(2)}</strong>`;
+      fillingPriceElement.innerHTML = `<strong>+₱${this.pricing.fillings[
+        this.config.filling
+      ].toFixed(2)}</strong>`;
     }
 
     this.updateBorderSummary();
     this.updateMessageSummary();
     this.updateDecorationsSummary();
 
-    const total = this.pricing.base[this.config.size] + this.pricing.fillings[this.config.filling];
-    document.getElementById("summaryTotal").innerHTML = `<strong>₱${total.toFixed(2)}</strong>`;
+    const total =
+      this.pricing.base[this.config.size] +
+      this.pricing.fillings[this.config.filling];
+    document.getElementById(
+      "summaryTotal"
+    ).innerHTML = `<strong>₱${total.toFixed(2)}</strong>`;
   }
 
   updateBorderSummary() {
     const bottomBorderItem = document.getElementById("summaryBottomBorderItem");
-    bottomBorderItem.style.display = this.config.bottomBorder !== "none" ? "flex" : "none";
+    bottomBorderItem.style.display =
+      this.config.bottomBorder !== "none" ? "flex" : "none";
     if (this.config.bottomBorder !== "none") {
-      const borderName = this.config.bottomBorder.charAt(0).toUpperCase() + this.config.bottomBorder.slice(1);
-      const borderColorName = document.getElementById("selectedBottomBorderColorName").textContent;
-      document.getElementById("summaryBottomBorder").textContent = `${borderName} - ${borderColorName}`;
+      const borderName =
+        this.config.bottomBorder.charAt(0).toUpperCase() +
+        this.config.bottomBorder.slice(1);
+      const borderColorName = document.getElementById(
+        "selectedBottomBorderColorName"
+      ).textContent;
+      document.getElementById(
+        "summaryBottomBorder"
+      ).textContent = `${borderName} - ${borderColorName}`;
     }
 
     const topBorderItem = document.getElementById("summaryTopBorderItem");
-    topBorderItem.style.display = this.config.topBorder !== "none" ? "flex" : "none";
+    topBorderItem.style.display =
+      this.config.topBorder !== "none" ? "flex" : "none";
     if (this.config.topBorder !== "none") {
-      const borderName = this.config.topBorder.charAt(0).toUpperCase() + this.config.topBorder.slice(1);
-      const borderColorName = document.getElementById("selectedTopBorderColorName").textContent;
-      document.getElementById("summaryTopBorder").textContent = `${borderName} - ${borderColorName}`;
+      const borderName =
+        this.config.topBorder.charAt(0).toUpperCase() +
+        this.config.topBorder.slice(1);
+      const borderColorName = document.getElementById(
+        "selectedTopBorderColorName"
+      ).textContent;
+      document.getElementById(
+        "summaryTopBorder"
+      ).textContent = `${borderName} - ${borderColorName}`;
     }
   }
 
   updateMessageSummary() {
     const messageItem = document.getElementById("summaryMessageItem");
-    messageItem.style.display = this.config.customText && this.config.messageChoice === "custom" ? "flex" : "none";
+    messageItem.style.display =
+      this.config.customText && this.config.messageChoice === "custom"
+        ? "flex"
+        : "none";
     if (this.config.customText && this.config.messageChoice === "custom") {
-      document.getElementById("summaryMessage").textContent = `"${this.config.customText}"`;
+      document.getElementById(
+        "summaryMessage"
+      ).textContent = `"${this.config.customText}"`;
     }
   }
 
   updateDecorationsSummary() {
     const decorationsItem = document.getElementById("summaryDecorationsItem");
-    decorationsItem.style.display = this.config.decorations !== "none" ? "flex" : "none";
+    decorationsItem.style.display =
+      this.config.decorations !== "none" ? "flex" : "none";
     if (this.config.decorations !== "none") {
       let decorationText = "";
       if (this.config.decorations === "flowers") {
@@ -633,15 +745,20 @@ async checkoutCustomCake() {
           daisies: "Daisies",
           buttonRoses: "Button Roses",
         };
-        decorationText = `Flowers (${flowerNames[this.config.flowerType] || "None"})`;
+        decorationText = `Flowers (${
+          flowerNames[this.config.flowerType] || "None"
+        })`;
       } else if (this.config.decorations === "toppings") {
-        const toppingsColorName = document.getElementById("selectedToppingsColorName").textContent;
+        const toppingsColorName = document.getElementById(
+          "selectedToppingsColorName"
+        ).textContent;
         decorationText = `Toppings (${toppingsColorName})`;
       } else {
         const decorationNames = { balloons: "Balloons" };
         decorationText = decorationNames[this.config.decorations];
       }
-      document.getElementById("summaryDecorations").textContent = decorationText;
+      document.getElementById("summaryDecorations").textContent =
+        decorationText;
     }
   }
 
@@ -654,14 +771,24 @@ async checkoutCustomCake() {
   }
 
   showStep(stepNumber) {
-    document.querySelectorAll(".step-section").forEach((section) => section.classList.remove("active"));
+    document
+      .querySelectorAll(".step-section")
+      .forEach((section) => section.classList.remove("active"));
     document.getElementById(`step-${stepNumber}`).classList.add("active");
 
     const flowerSubOptions = document.getElementById("flowerSubOptions");
-    flowerSubOptions.style.display = stepNumber === 8 && this.config.decorations === "flowers" ? "flex" : "none";
+    flowerSubOptions.style.display =
+      stepNumber === 8 && this.config.decorations === "flowers"
+        ? "flex"
+        : "none";
 
-    const toppingsColorSection = document.getElementById("toppingsColorSection");
-    toppingsColorSection.style.display = stepNumber === 8 && this.config.decorations === "toppings" ? "block" : "none";
+    const toppingsColorSection = document.getElementById(
+      "toppingsColorSection"
+    );
+    toppingsColorSection.style.display =
+      stepNumber === 8 && this.config.decorations === "toppings"
+        ? "block"
+        : "none";
 
     this.updateNavigationButtons(stepNumber);
   }
@@ -721,12 +848,16 @@ async checkoutCustomCake() {
       Swal.fire({
         title: "Image based order detected",
         text: "Please use the 'Submit Image Order' button for image-based orders.",
-        confirmButtonColor: "#2c9045"
+        confirmButtonColor: "#2c9045",
       });
       return;
     }
 
-    const result = await this.apiService.submitCustomOrder(this.config, this.pricing, this.renderer);
+    const result = await this.apiService.submitCustomOrder(
+      this.config,
+      this.pricing,
+      this.renderer
+    );
     this.apiService.handleResponse(result, () => this.resetForm());
   }
 
@@ -751,7 +882,7 @@ async checkoutCustomCake() {
     document.getElementById("imageUpload").value = "";
     document.getElementById("uploadedImage").style.display = "none";
     document.getElementById("uploadArea").style.display = "block";
-    
+
     this.updateCake();
     this.updateOrderSummary();
     this.showFirstStep();
@@ -764,11 +895,11 @@ async checkoutCustomCake() {
   }
 
   addToCart() {
-     Swal.fire({
-        title: "Image based order detected",
-        text: "Please submit your custom cake order for admin review. Once approved, you can add it to your cart from the 'My Custom Orders' page.",
-        confirmButtonColor: "#2c9045"
-      });
+    Swal.fire({
+      title: "Image based order detected",
+      text: "Please submit your custom cake order for admin review. Once approved, you can add it to your cart from the 'My Custom Orders' page.",
+      confirmButtonColor: "#2c9045",
+    });
   }
 
   checkout() {
@@ -785,37 +916,43 @@ class GuidedTour {
       {
         target: "#cakeViewer",
         title: "Welcome to Cake Customizer!",
-        content: "This is your 3D cake preview. You can rotate and view your cake design in real-time as you make customizations.",
+        content:
+          "This is your 3D cake preview. You can rotate and view your cake design in real-time as you make customizations.",
         position: "right",
       },
       {
         target: "#sizeOptions",
         title: "Choose Your Cake Size",
-        content: "Start by selecting the perfect size for your occasion. Each size shows servings and pricing to help you decide.",
+        content:
+          "Start by selecting the perfect size for your occasion. Each size shows servings and pricing to help you decide.",
         position: "left",
       },
       {
         target: "#flavorOptions",
         title: "Select Cake Flavor",
-        content: "Pick your favorite cake flavor. Choose between rich chocolate or classic white cake base.",
+        content:
+          "Pick your favorite cake flavor. Choose between rich chocolate or classic white cake base.",
         position: "left",
       },
       {
         target: "#icingStyles",
         title: "Choose Icing Style",
-        content: "First, select your preferred icing style - Buttercream or Whipped cream.",
+        content:
+          "First, select your preferred icing style - Buttercream or Whipped cream.",
         position: "left",
       },
       {
         target: "#icingColors",
         title: "Pick Icing Color",
-        content: "Now choose from our wide range of colors to match your theme perfectly.",
+        content:
+          "Now choose from our wide range of colors to match your theme perfectly.",
         position: "left",
       },
       {
         target: "#fillingOptions",
         title: "Add Delicious Filling",
-        content: "Enhance your cake with premium fillings. Some fillings have additional costs but add amazing flavor.",
+        content:
+          "Enhance your cake with premium fillings. Some fillings have additional costs but add amazing flavor.",
         position: "left",
       },
       {
@@ -845,14 +982,16 @@ class GuidedTour {
       {
         target: "#messageOptions",
         title: "Personal Message",
-        content: "Make it personal! Add a custom message to your cake. If you choose 'Add custom message', please type your message before the tour continues.",
+        content:
+          "Make it personal! Add a custom message to your cake. If you choose 'Add custom message', please type your message before the tour continues.",
         position: "left",
         waitForInput: true,
       },
       {
         target: "#decorationOptions",
         title: "Choose Decorations",
-        content: "Add beautiful decorations to make your cake extra special - flowers, balloons, or toppings.",
+        content:
+          "Add beautiful decorations to make your cake extra special - flowers, balloons, or toppings.",
         position: "left",
       },
     ];
@@ -874,7 +1013,11 @@ class GuidedTour {
       }
     });
     document.addEventListener("click", (e) => {
-      if (this.isActive && !this.tooltip.contains(e.target) && e.target !== this.startBtn) {
+      if (
+        this.isActive &&
+        !this.tooltip.contains(e.target) &&
+        e.target !== this.startBtn
+      ) {
         const currentStep = this.steps[this.currentStep];
         if (
           currentStep &&
@@ -903,7 +1046,8 @@ class GuidedTour {
   positionHighlight(target) {
     const rect = target.getBoundingClientRect();
     const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-    const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+    const scrollLeft =
+      window.pageXOffset || document.documentElement.scrollLeft;
     this.highlight.style.top = rect.top + scrollTop - 8 + "px";
     this.highlight.style.left = rect.left + scrollLeft - 8 + "px";
     this.highlight.style.width = rect.width + 16 + "px";
@@ -914,7 +1058,8 @@ class GuidedTour {
   positionTooltip(target, step) {
     const rect = target.getBoundingClientRect();
     const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-    const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+    const scrollLeft =
+      window.pageXOffset || document.documentElement.scrollLeft;
     this.tooltip.style.display = "block";
     this.tooltip.style.visibility = "hidden";
     const tooltipRect = this.tooltip.getBoundingClientRect();
@@ -955,7 +1100,8 @@ class GuidedTour {
         break;
     }
     if (left < 10) left = 10;
-    if (left + tooltipRect.width > viewportWidth - 10) left = viewportWidth - tooltipRect.width - 10;
+    if (left + tooltipRect.width > viewportWidth - 10)
+      left = viewportWidth - tooltipRect.width - 10;
     if (top < 10) top = 10;
     if (top + tooltipRect.height > viewportHeight + scrollTop - 10) {
       top = viewportHeight + scrollTop - tooltipRect.height - 10;
@@ -968,22 +1114,46 @@ class GuidedTour {
   showStep() {
     const step = this.steps[this.currentStep];
     let target = document.querySelector(step.target);
-    if (step.target.includes("bottomBorderColorSection") && this.controller.config.bottomBorder === "none") {
+    if (
+      step.target.includes("bottomBorderColorSection") &&
+      this.controller.config.bottomBorder === "none"
+    ) {
       this.nextStep();
       return;
     }
-    if (step.target.includes("topBorderColorSection") && this.controller.config.topBorder === "none") {
+    if (
+      step.target.includes("topBorderColorSection") &&
+      this.controller.config.topBorder === "none"
+    ) {
       this.nextStep();
       return;
     }
     if (!target || (target.style && target.style.display === "none")) {
       if (step.target.includes("BorderColorSection")) {
-        if (step.target.includes("bottom") && this.controller.config.bottomBorder !== "none") {
-          document.querySelector('#bottomBorderOptions .border-option-walmart[data-border="beads"]').click();
-          target = document.querySelector(step.target + " .color-options-walmart");
-        } else if (step.target.includes("top") && this.controller.config.topBorder !== "none") {
-          document.querySelector('#topBorderOptions .border-option-walmart[data-border="beads"]').click();
-          target = document.querySelector(step.target + " .color-options-walmart");
+        if (
+          step.target.includes("bottom") &&
+          this.controller.config.bottomBorder !== "none"
+        ) {
+          document
+            .querySelector(
+              '#bottomBorderOptions .border-option-walmart[data-border="beads"]'
+            )
+            .click();
+          target = document.querySelector(
+            step.target + " .color-options-walmart"
+          );
+        } else if (
+          step.target.includes("top") &&
+          this.controller.config.topBorder !== "none"
+        ) {
+          document
+            .querySelector(
+              '#topBorderOptions .border-option-walmart[data-border="beads"]'
+            )
+            .click();
+          target = document.querySelector(
+            step.target + " .color-options-walmart"
+          );
         }
       }
     }
@@ -991,7 +1161,10 @@ class GuidedTour {
       this.nextStep();
       return;
     }
-    if (step.target === "#messageOptions" && this.controller.config.messageChoice === "custom") {
+    if (
+      step.target === "#messageOptions" &&
+      this.controller.config.messageChoice === "custom"
+    ) {
       const customInput = document.getElementById("customTextWalmart");
       if (customInput && customInput.value.trim() === "") {
         const inputHandler = () => {
@@ -1025,7 +1198,9 @@ class GuidedTour {
     this.positionTooltip(target, step);
     this.tooltipHeader.textContent = step.title;
     this.tooltipContent.textContent = step.content;
-    this.stepCounter.textContent = `${this.currentStep + 1} of ${this.steps.length}`;
+    this.stepCounter.textContent = `${this.currentStep + 1} of ${
+      this.steps.length
+    }`;
     this.tooltip.style.display = "block";
   }
 

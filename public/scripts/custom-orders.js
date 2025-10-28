@@ -8,23 +8,21 @@ async function fetchCustomOrders() {
     if (response.success) {
       allOrders = {
         custom: response.data.customOrders || [],
-        image: response.data.imageOrders || []
+        image: response.data.imageOrders || [],
       };
       populateOrdersTable(allOrders.custom, allOrders.image);
       updateOrderCount();
     } else {
-      alert(
-        response.message || "Failed to load orders. Please try again."
-      );
+      alert(response.message || "Failed to load orders. Please try again.");
     }
   } catch (error) {
     console.error("Error fetching orders:", error);
-     Swal.fire({
-        icon: "error",
-        title: "Oops...",
-        text: "Failed to load orders. Please try again.",
-        confirmButtonColor: "#2c9045"
-      });
+    Swal.fire({
+      icon: "error",
+      title: "Oops...",
+      text: "Failed to load orders. Please try again.",
+      confirmButtonColor: "#2c9045",
+    });
   }
 }
 
@@ -34,29 +32,39 @@ function updateOrderCount() {
 }
 
 function applyFilters() {
-  const searchTerm = document.getElementById('searchBar').value.toLowerCase();
-  const statusFilter = document.getElementById('filterStatus').value;
-  const paymentFilter = document.getElementById('filterPaymentStatus').value;
+  const searchTerm = document.getElementById("searchBar").value.toLowerCase();
+  const statusFilter = document.getElementById("filterStatus").value;
+  const paymentFilter = document.getElementById("filterPaymentStatus").value;
 
   const matchPayment = (order) => {
     const paymentStatus = getPaymentStatus(order);
 
     // Handle "Downpayment Paid" filter explicitly
     if (paymentFilter === "Downpayment Paid") {
-      return order.is_downpayment_paid === true && order.final_payment_status !== "paid";
+      return (
+        order.is_downpayment_paid === true &&
+        order.final_payment_status !== "paid"
+      );
     }
 
     return !paymentFilter || paymentStatus === paymentFilter;
   };
 
   const filterOrders = (orders, isImageOrder = false) =>
-    orders.filter(order => {
-      const orderId = `${isImageOrder ? "RCC" : "CC"}${String(isImageOrder ? order.imageBasedOrderId : order.customCakeId).padStart(3, '0')}`.toLowerCase();
-      const customerName = (order.customer_name || order.customer?.name || 'Unknown').toLowerCase();
-      
+    orders.filter((order) => {
+      const orderId = `${isImageOrder ? "RCC" : "CC"}${String(
+        isImageOrder ? order.imageBasedOrderId : order.customCakeId
+      ).padStart(3, "0")}`.toLowerCase();
+      const customerName = (
+        order.customer_name ||
+        order.customer?.name ||
+        "Unknown"
+      ).toLowerCase();
+
       const statusMatch = !statusFilter || order.status === statusFilter;
       const paymentMatch = matchPayment(order);
-      const searchMatch = orderId.includes(searchTerm) || customerName.includes(searchTerm);
+      const searchMatch =
+        orderId.includes(searchTerm) || customerName.includes(searchTerm);
 
       return statusMatch && paymentMatch && searchMatch;
     });
@@ -68,11 +76,11 @@ function applyFilters() {
 }
 
 function getPaymentStatus(order) {
-  if (order.status === 'Completed') return 'Paid';
+  if (order.status === "Completed") return "Paid";
   if (order.is_downpayment_paid === true) {
-    return order.final_payment_status === 'paid' ? 'Paid' : 'Balance Due';
+    return order.final_payment_status === "paid" ? "Paid" : "Balance Due";
   }
-  return order.payment_status === 'paid' ? 'Paid' : 'Awaiting Payment';
+  return order.payment_status === "paid" ? "Paid" : "Awaiting Payment";
 }
 
 function populateOrdersTable(customOrders, imageOrders) {
@@ -98,7 +106,9 @@ function populateOrdersTable(customOrders, imageOrders) {
     row.innerHTML = `
       <td><span class="order-id">${displayOrderId}</span></td>
       <td><span class="order-type-badge order-type-3d">3D Custom</span></td>
-      <td><strong>${order.customer_name || (order.customer?.name || 'Unknown')}</strong></td>
+      <td><strong>${
+        order.customer_name || order.customer?.name || "Unknown"
+      }</strong></td>
       <td>${orderDate}</td>
       <td><span class="delivery-date">${deliveryDate}</span></td>
       <td><div class="order-details">${details}</div></td>
@@ -119,7 +129,10 @@ function populateOrdersTable(customOrders, imageOrders) {
 
   // Image-Based Orders
   imageOrders.forEach((order) => {
-    const displayOrderId = `RCC${String(order.imageBasedOrderId).padStart(3, "0")}`;
+    const displayOrderId = `RCC${String(order.imageBasedOrderId).padStart(
+      3,
+      "0"
+    )}`;
     const details = `Flavor: ${order.flavor}, Size: ${
       order.size || "Not specified"
     }, Event: ${new Date(order.eventDate).toLocaleDateString()}`;
@@ -136,7 +149,9 @@ function populateOrdersTable(customOrders, imageOrders) {
     row.innerHTML = `
       <td><span class="order-id">${displayOrderId}</span></td>
       <td><span class="order-type-badge order-type-image">Image-Based</span></td>
-      <td><strong>${order.customer_name || (order.customer?.name || 'Unknown')}</strong></td>
+      <td><strong>${
+        order.customer_name || order.customer?.name || "Unknown"
+      }</strong></td>
       <td>${orderDate}</td>
       <td><span class="delivery-date">${deliveryDate}</span></td>
       <td><div class="order-details">${details}</div></td>
@@ -174,18 +189,21 @@ function populateOrdersTable(customOrders, imageOrders) {
 // Enhanced status badge rendering - matching admin-cake colors
 function renderStatusBadge(status) {
   const statusMap = {
-    'Pending Review': { class: 'pending', text: 'Pending Review' },
-    'Ready for Downpayment': { class: 'ready-for-dp', text: 'Ready for Downpayment' },
-    'Downpayment Paid': { class: 'dp-paid', text: 'Downpayment Paid' },
-    'In Progress': { class: 'in-progress', text: 'In Progress' },
-    'Ready for Pickup/Delivery': { class: 'ready', text: 'Ready' },
-    'Completed': { class: 'delivered', text: 'Completed' },
-    'Cancelled': { class: 'cancelled', text: 'Cancelled' },
-    'Feasible': { class: 'in-progress', text: 'Feasible' },
-    'Not Feasible': { class: 'cancelled', text: 'Not Feasible' }
+    "Pending Review": { class: "pending", text: "Pending Review" },
+    "Ready for Downpayment": {
+      class: "ready-for-dp",
+      text: "Ready for Downpayment",
+    },
+    "Downpayment Paid": { class: "dp-paid", text: "Downpayment Paid" },
+    "In Progress": { class: "in-progress", text: "In Progress" },
+    "Ready for Pickup/Delivery": { class: "ready", text: "Ready" },
+    Completed: { class: "delivered", text: "Completed" },
+    Cancelled: { class: "cancelled", text: "Cancelled" },
+    Feasible: { class: "in-progress", text: "Feasible" },
+    "Not Feasible": { class: "cancelled", text: "Not Feasible" },
   };
-  
-  const config = statusMap[status] || { class: 'pending', text: status };
+
+  const config = statusMap[status] || { class: "pending", text: status };
   return `<span class="status ${config.class}">${config.text}</span>`;
 }
 
@@ -195,7 +213,9 @@ function renderPriceDisplay(order) {
   }
 
   let html = `<div class="price-container">`;
-  html += `<div class="total-price">₱${parseFloat(order.price).toFixed(2)}</div>`;
+  html += `<div class="total-price">₱${parseFloat(order.price).toFixed(
+    2
+  )}</div>`;
 
   const hasDownpaymentData =
     order.downpayment_amount !== null &&
@@ -222,7 +242,7 @@ function renderPriceDisplay(order) {
 
 function renderPaymentDisplay(order) {
   // If completed, show as paid
-  if (order.status === 'Completed') {
+  if (order.status === "Completed") {
     return '<span class="status paid"> Paid</span>';
   }
 
@@ -241,10 +261,16 @@ function renderPaymentDisplay(order) {
     const remainingBalance = parseFloat(order.remaining_balance) || 0;
 
     html += `<div class="mt-2">
-      <small class="text-muted d-block">Downpayment: ₱${downpaymentAmount.toFixed(2)}</small>
-      <small class="text-muted d-block">Balance: ₱${remainingBalance.toFixed(2)}</small>
-      <span class="badge ${finalPaid ? 'bg-success' : 'bg-warning text-dark'} mt-1">
-        ${finalPaid ? 'Fully Paid' : 'Balance Due'}
+      <small class="text-muted d-block">Downpayment: ₱${downpaymentAmount.toFixed(
+        2
+      )}</small>
+      <small class="text-muted d-block">Balance: ₱${remainingBalance.toFixed(
+        2
+      )}</small>
+      <span class="badge ${
+        finalPaid ? "bg-success" : "bg-warning text-dark"
+      } mt-1">
+        ${finalPaid ? "Fully Paid" : "Balance Due"}
       </span>
     </div>`;
   } else {
@@ -259,9 +285,7 @@ function renderPaymentDisplay(order) {
 }
 
 function renderActionButtons(order, isImageOrder) {
-  const orderId = isImageOrder
-    ? order.imageBasedOrderId
-    : order.customCakeId;
+  const orderId = isImageOrder ? order.imageBasedOrderId : order.customCakeId;
 
   if (isImageOrder) {
     if (order.status === "Not Feasible" || order.status === "Cancelled") {
@@ -357,20 +381,20 @@ async function checkoutOrder(orderId, isImageOrder) {
         title: "Success!",
         text: "Downpayment already paid. The remaining balance will be collected upon pickup/delivery.",
         icon: "success",
-        confirmButtonColor: "#2c9045"
+        confirmButtonColor: "#2c9045",
       });
       return;
     } else if (validDownpaymentStatuses.includes(order.status)) {
       paymentAmount = order.downpayment_amount || order.price * 0.5;
       isDownpayment = true;
     } else {
-       Swal.fire({
+      Swal.fire({
         icon: "error",
         title: "Oops...",
         text: `This order is not ready for payment. Current status: ${order.status}`,
-        confirmButtonColor: "#2c9045"
+        confirmButtonColor: "#2c9045",
       });
-      
+
       return;
     }
 
@@ -378,31 +402,35 @@ async function checkoutOrder(orderId, isImageOrder) {
     window.location.href = checkoutUrl;
   } catch (error) {
     console.error("Error during checkout:", error);
-     Swal.fire({
-        icon: "error",
-        title: "Oops...",
-        text: "Failed to proceed to checkout. Please try again.`",
-        confirmButtonColor: "#2c9045"
-      });
+    Swal.fire({
+      icon: "error",
+      title: "Oops...",
+      text: "Failed to proceed to checkout. Please try again.`",
+      confirmButtonColor: "#2c9045",
+    });
   }
 }
 
 function viewImage(imageUrl) {
   const modalImage = document.getElementById("modalImage");
   modalImage.src = imageUrl;
-  const modal = new bootstrap.Modal(
-    document.getElementById("imageModal")
-  );
+  const modal = new bootstrap.Modal(document.getElementById("imageModal"));
   modal.show();
 }
 
 // Event listeners
-document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('searchBar').addEventListener('input', applyFilters);
-  document.getElementById('filterStatus').addEventListener('change', applyFilters);
-  document.getElementById('filterPaymentStatus').addEventListener('change', applyFilters);
-  document.getElementById('applyFilterBtn').addEventListener('click', applyFilters);
-  
+document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("searchBar").addEventListener("input", applyFilters);
+  document
+    .getElementById("filterStatus")
+    .addEventListener("change", applyFilters);
+  document
+    .getElementById("filterPaymentStatus")
+    .addEventListener("change", applyFilters);
+  document
+    .getElementById("applyFilterBtn")
+    .addEventListener("click", applyFilters);
+
   // Load ALL orders on page load
   fetchCustomOrders();
 });

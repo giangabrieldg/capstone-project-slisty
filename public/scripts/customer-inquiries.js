@@ -1,16 +1,16 @@
 // scripts/customer-inquiries.js
-document.addEventListener('DOMContentLoaded', () => {
-  const inquiryForm = document.getElementById('inquiryForm');
+document.addEventListener("DOMContentLoaded", () => {
+  const inquiryForm = document.getElementById("inquiryForm");
   if (!inquiryForm) return;
 
-  inquiryForm.addEventListener('submit', async (e) => {
+  inquiryForm.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    const name = document.getElementById('inquiryName').value;
-    const email = document.getElementById('inquiryEmail').value;
-    const phone = document.getElementById('inquiryPhone').value;
-    const subject = document.getElementById('inquirySubject').value;
-    const message = document.getElementById('inquiryMessage').value;
+    const name = document.getElementById("inquiryName").value;
+    const email = document.getElementById("inquiryEmail").value;
+    const phone = document.getElementById("inquiryPhone").value;
+    const subject = document.getElementById("inquirySubject").value;
+    const message = document.getElementById("inquiryMessage").value;
     const recaptchaToken = grecaptcha.getResponse();
 
     if (!recaptchaToken) {
@@ -18,23 +18,30 @@ document.addEventListener('DOMContentLoaded', () => {
         icon: "error",
         title: "Oops...",
         text: "Please complete the reCAPTCHA!",
-        confirmButtonColor: "#2c9045"
+        confirmButtonColor: "#2c9045",
       });
       return;
     }
 
     try {
-      const token = sessionStorage.getItem('token');
+      const token = sessionStorage.getItem("token");
       const headers = {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       };
-      if (token) headers['Authorization'] = `Bearer ${token}`;
+      if (token) headers["Authorization"] = `Bearer ${token}`;
 
       // Use the dynamic API_BASE_URL
       const response = await fetch(`${window.API_BASE_URL}/api/inquiries`, {
-        method: 'POST',
+        method: "POST",
         headers,
-        body: JSON.stringify({ name, email, phone, subject, message, recaptchaToken }),
+        body: JSON.stringify({
+          name,
+          email,
+          phone,
+          subject,
+          message,
+          recaptchaToken,
+        }),
       });
 
       const result = await response.json();
@@ -43,25 +50,25 @@ document.addEventListener('DOMContentLoaded', () => {
           title: "Success!",
           text: "Inquiry Submiitted! You will received a confirmation email shortly.",
           icon: "success",
-          confirmButtonColor: "#2c9045"
+          confirmButtonColor: "#2c9045",
         });
         inquiryForm.reset();
         grecaptcha.reset();
       } else {
         Swal.fire({
-        icon: "error",
-        title: "Oops...",
-        text: `Error: ${result.error}`,
-        confirmButtonColor: "#2c9045"
-      });
+          icon: "error",
+          title: "Oops...",
+          text: `Error: ${result.error}`,
+          confirmButtonColor: "#2c9045",
+        });
       }
     } catch (error) {
-      console.error('Error submitting inquiry:', error);
+      console.error("Error submitting inquiry:", error);
       Swal.fire({
         icon: "error",
         title: "Oops...",
         text: "Error submitting inquiry. Please try again.",
-        confirmButtonColor: "#2c9045"
+        confirmButtonColor: "#2c9045",
       });
     }
   });

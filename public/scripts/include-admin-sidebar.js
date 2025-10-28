@@ -1,19 +1,21 @@
 function includeAdminSidebar() {
-  const includeElements = document.querySelectorAll('[data-include-admin-sidebar]');
+  const includeElements = document.querySelectorAll(
+    "[data-include-admin-sidebar]"
+  );
 
-  includeElements.forEach(el => {
-    const file = el.getAttribute('data-include-admin-sidebar');
+  includeElements.forEach((el) => {
+    const file = el.getAttribute("data-include-admin-sidebar");
     if (file) {
       fetch(file)
-        .then(response => {
+        .then((response) => {
           if (!response.ok) {
             throw new Error(`Failed to fetch ${file}: ${response.statusText}`);
           }
           return response.text();
         })
-        .then(data => {
+        .then((data) => {
           el.innerHTML = data;
-          el.removeAttribute('data-include-admin-sidebar');
+          el.removeAttribute("data-include-admin-sidebar");
           console.log("Sidebar loaded successfully");
 
           // DOM is ready — initialize sidebar
@@ -21,7 +23,9 @@ function includeAdminSidebar() {
             initializeAdminSidebar(el);
           });
         })
-        .catch(error => console.error("Error including admin sidebar:", error));
+        .catch((error) =>
+          console.error("Error including admin sidebar:", error)
+        );
     }
   });
 }
@@ -37,7 +41,7 @@ async function initializeAdminSidebar(container) {
   console.log("Token exists:", !!sessionStorage.getItem("token"));
 
   // Validate token on page load
-  if (!token || !userData)  {
+  if (!token || !userData) {
     localStorage.clear();
     sessionStorage.clear();
     window.location.href = "/customer/login.html";
@@ -58,7 +62,7 @@ async function initializeAdminSidebar(container) {
   if (navLinks.length > 0) {
     const currentPath = window.location.pathname;
 
-    navLinks.forEach(link => {
+    navLinks.forEach((link) => {
       const linkPath = new URL(link.href, window.location.origin).pathname;
 
       if (link.id === "logoutLink") {
@@ -73,9 +77,9 @@ async function initializeAdminSidebar(container) {
       }
     });
 
-    navLinks.forEach(link => {
+    navLinks.forEach((link) => {
       link.addEventListener("click", function () {
-        navLinks.forEach(nav => nav.classList.remove("active"));
+        navLinks.forEach((nav) => nav.classList.remove("active"));
         this.classList.add("active");
       });
     });
@@ -88,10 +92,10 @@ async function initializeAdminSidebar(container) {
       e.preventDefault();
       localStorage.clear();
       sessionStorage.clear();
-      window.history.pushState(null, null, '/customer/login.html');
+      window.history.pushState(null, null, "/customer/login.html");
       window.location.href = "/customer/login.html";
-      window.addEventListener('popstate', () => {
-        window.location.href = '/customer/login.html';
+      window.addEventListener("popstate", () => {
+        window.location.href = "/customer/login.html";
       });
     });
   } else {
@@ -106,53 +110,65 @@ async function loadSidebarNotificationsData(container) {
     if (!token) return;
 
     // Fetch notifications data
-    const [dashboardResponse, customCakeData, imageBasedData] = await Promise.all([
-      fetch(`${window.API_BASE_URL}/api/orders/admin/dashboard`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      }),
-      fetch(`${window.API_BASE_URL}/api/custom-cake/admin/orders`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      }),
-      fetch(`${window.API_BASE_URL}/api/custom-cake/admin/image-orders`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      })
-    ]);
+    const [dashboardResponse, customCakeData, imageBasedData] =
+      await Promise.all([
+        fetch(`${window.API_BASE_URL}/api/orders/admin/dashboard`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }),
+        fetch(`${window.API_BASE_URL}/api/custom-cake/admin/orders`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }),
+        fetch(`${window.API_BASE_URL}/api/custom-cake/admin/image-orders`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }),
+      ]);
 
-    const data = dashboardResponse.ok ? await dashboardResponse.json() : { success: false };
-    const customCakeOrders = customCakeData.ok ? (await customCakeData.json()).orders || [] : [];
-    const imageBasedOrders = imageBasedData.ok ? (await imageBasedData.json()).orders || [] : [];
+    const data = dashboardResponse.ok
+      ? await dashboardResponse.json()
+      : { success: false };
+    const customCakeOrders = customCakeData.ok
+      ? (await customCakeData.json()).orders || []
+      : [];
+    const imageBasedOrders = imageBasedData.ok
+      ? (await imageBasedData.json()).orders || []
+      : [];
 
     if (data.success) {
       // Calculate notifications count
       const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
-      
+
       const newCustomCakes = [
-        ...customCakeOrders.filter(order => {
+        ...customCakeOrders.filter((order) => {
           const orderDate = getOrderDate(order);
-          return orderDate >= thirtyMinutesAgo && order.status === 'Downpayment Paid';
+          return (
+            orderDate >= thirtyMinutesAgo && order.status === "Downpayment Paid"
+          );
         }),
-        ...imageBasedOrders.filter(order => {
+        ...imageBasedOrders.filter((order) => {
           const orderDate = getOrderDate(order);
-          return orderDate >= thirtyMinutesAgo && order.status === 'Downpayment Paid';
-        })
+          return (
+            orderDate >= thirtyMinutesAgo && order.status === "Downpayment Paid"
+          );
+        }),
       ];
 
       const notificationsData = {
-        total: (data.notifications?.new_orders || 0) + 
-               (data.notifications?.pending_custom_cakes || 0) + 
-               newCustomCakes.length,
+        total:
+          (data.notifications?.new_orders || 0) +
+          (data.notifications?.pending_custom_cakes || 0) +
+          newCustomCakes.length,
         new_orders: data.new_orders || [],
         new_custom_cakes: newCustomCakes,
-        pending_custom_cakes: data.pending_custom_cakes || []
+        pending_custom_cakes: data.pending_custom_cakes || [],
       };
 
       // Update sidebar with the data
@@ -176,18 +192,23 @@ function getOrderDate(order) {
 function updateSidebarNotificationsDisplay(container, notificationsData) {
   const notificationsList = container.querySelector("#notificationsList");
   const notificationCount = container.querySelector(".notification-count");
-  const notificationCountBadge = container.querySelector(".notification-count-badge");
+  const notificationCountBadge = container.querySelector(
+    ".notification-count-badge"
+  );
 
-  if (!notificationsList || !notificationCount || !notificationCountBadge) return;
+  if (!notificationsList || !notificationCount || !notificationCountBadge)
+    return;
 
   const totalNotifications = notificationsData.total;
-  
+
   // Update both count badges
   notificationCount.textContent = totalNotifications;
   notificationCountBadge.textContent = totalNotifications;
-  
-  notificationCount.style.display = totalNotifications > 0 ? 'inline-block' : 'none';
-  notificationCountBadge.style.display = totalNotifications > 0 ? 'inline-block' : 'none';
+
+  notificationCount.style.display =
+    totalNotifications > 0 ? "inline-block" : "none";
+  notificationCountBadge.style.display =
+    totalNotifications > 0 ? "inline-block" : "none";
 
   // Update notifications list
   if (totalNotifications === 0) {
@@ -198,11 +219,11 @@ function updateSidebarNotificationsDisplay(container, notificationsData) {
       </div>
     `;
   } else {
-    let notificationsHTML = '';
+    let notificationsHTML = "";
 
     // New regular orders
     if (notificationsData.new_orders.length > 0) {
-      notificationsData.new_orders.slice(0, 3).forEach(order => {
+      notificationsData.new_orders.slice(0, 3).forEach((order) => {
         notificationsHTML += `
           <div class="notification-item new-order">
             <div class="notification-icon">
@@ -210,8 +231,12 @@ function updateSidebarNotificationsDisplay(container, notificationsData) {
             </div>
             <div class="notification-content">
               <div class="notification-title">New Regular Order</div>
-              <div class="notification-details">${order.orderId} - ${order.customer_name}</div>
-              <div class="notification-time">${new Date(order.time).toLocaleTimeString()}</div>
+              <div class="notification-details">${order.orderId} - ${
+          order.customer_name
+        }</div>
+              <div class="notification-time">${new Date(
+                order.time
+              ).toLocaleTimeString()}</div>
             </div>
           </div>
         `;
@@ -220,11 +245,14 @@ function updateSidebarNotificationsDisplay(container, notificationsData) {
 
     // New custom cake orders
     if (notificationsData.new_custom_cakes.length > 0) {
-      notificationsData.new_custom_cakes.slice(0, 3).forEach(cake => {
-        const cakeId = cake.customCakeId ? `CC${String(cake.customCakeId).padStart(3, '0')}` : 
-                       cake.imageBasedOrderId ? `RCC${String(cake.imageBasedOrderId).padStart(3, '0')}` : 'Custom Cake';
-        const cakeType = cake.imageBasedOrderId ? 'Image-Based' : '3D Custom';
-        
+      notificationsData.new_custom_cakes.slice(0, 3).forEach((cake) => {
+        const cakeId = cake.customCakeId
+          ? `CC${String(cake.customCakeId).padStart(3, "0")}`
+          : cake.imageBasedOrderId
+          ? `RCC${String(cake.imageBasedOrderId).padStart(3, "0")}`
+          : "Custom Cake";
+        const cakeType = cake.imageBasedOrderId ? "Image-Based" : "3D Custom";
+
         notificationsHTML += `
           <div class="notification-item new-custom-cake">
             <div class="notification-icon">
@@ -232,9 +260,15 @@ function updateSidebarNotificationsDisplay(container, notificationsData) {
             </div>
             <div class="notification-content">
               <div class="notification-title">New Custom Cake</div>
-              <div class="notification-details">${cakeId} - ${cake.customer_name || 'Unknown'}</div>
-              <div class="notification-meta">${cakeType} • ${cake.size || 'Not specified'}</div>
-              <div class="notification-time">${new Date(cake.orderDate || cake.createdAt).toLocaleTimeString()}</div>
+              <div class="notification-details">${cakeId} - ${
+          cake.customer_name || "Unknown"
+        }</div>
+              <div class="notification-meta">${cakeType} • ${
+          cake.size || "Not specified"
+        }</div>
+              <div class="notification-time">${new Date(
+                cake.orderDate || cake.createdAt
+              ).toLocaleTimeString()}</div>
             </div>
           </div>
         `;
@@ -243,7 +277,7 @@ function updateSidebarNotificationsDisplay(container, notificationsData) {
 
     // Pending custom cakes
     if (notificationsData.pending_custom_cakes.length > 0) {
-      notificationsData.pending_custom_cakes.slice(0, 2).forEach(cake => {
+      notificationsData.pending_custom_cakes.slice(0, 2).forEach((cake) => {
         notificationsHTML += `
           <div class="notification-item pending-cake">
             <div class="notification-icon">
@@ -251,7 +285,11 @@ function updateSidebarNotificationsDisplay(container, notificationsData) {
             </div>
             <div class="notification-content">
               <div class="notification-title">Pending Custom Cake</div>
-              <div class="notification-details">${cake.customCakeId ? `CC${String(cake.customCakeId).padStart(3, '0')}` : 'Custom Cake'}</div>
+              <div class="notification-details">${
+                cake.customCakeId
+                  ? `CC${String(cake.customCakeId).padStart(3, "0")}`
+                  : "Custom Cake"
+              }</div>
               <div class="notification-meta">Status: ${cake.status}</div>
             </div>
           </div>
@@ -260,7 +298,10 @@ function updateSidebarNotificationsDisplay(container, notificationsData) {
     }
 
     // Show "view all" if there are more notifications
-    const totalItems = notificationsData.new_orders.length + notificationsData.new_custom_cakes.length + notificationsData.pending_custom_cakes.length;
+    const totalItems =
+      notificationsData.new_orders.length +
+      notificationsData.new_custom_cakes.length +
+      notificationsData.pending_custom_cakes.length;
     if (totalItems > 5) {
       notificationsHTML += `
         <div class="notification-view-all">
@@ -284,11 +325,11 @@ function initializeSidebarNotifications(container) {
   if (notificationToggle && notificationsSection) {
     // Initialize with hidden state
     notificationsSection.classList.add("hidden");
-    
+
     notificationToggle.addEventListener("click", (e) => {
       e.stopPropagation();
       const isVisible = notificationsSection.classList.contains("visible");
-      
+
       if (isVisible) {
         notificationsSection.classList.remove("visible");
         notificationsSection.classList.add("hidden");
@@ -302,7 +343,10 @@ function initializeSidebarNotifications(container) {
 
     // Close notifications when clicking outside
     document.addEventListener("click", (e) => {
-      if (!notificationsSection.contains(e.target) && !notificationToggle.contains(e.target)) {
+      if (
+        !notificationsSection.contains(e.target) &&
+        !notificationToggle.contains(e.target)
+      ) {
         notificationsSection.classList.remove("visible");
         notificationsSection.classList.add("hidden");
         notificationToggle.classList.remove("active");
@@ -311,11 +355,11 @@ function initializeSidebarNotifications(container) {
 
     // Add click handlers for notification items
     if (notificationsList) {
-      notificationsList.addEventListener('click', (e) => {
-        const notificationItem = e.target.closest('.notification-item');
+      notificationsList.addEventListener("click", (e) => {
+        const notificationItem = e.target.closest(".notification-item");
         if (notificationItem) {
           // Navigate to dashboard when clicking any notification
-          window.location.href = 'admin-dashboard.html';
+          window.location.href = "admin-dashboard.html";
         }
       });
     }
@@ -327,7 +371,7 @@ async function validateToken() {
   const token = sessionStorage.getItem("token");
   try {
     const response = await fetch(`${window.API_BASE_URL}/api/auth/profile`, {
-      headers: { 'Authorization': `Bearer ${token}` }
+      headers: { Authorization: `Bearer ${token}` },
     });
     const userData = await response.json();
     if (!response.ok) {
@@ -337,7 +381,7 @@ async function validateToken() {
     console.log("Token validation succeeded with status:", response.status);
     return userData;
   } catch (error) {
-    console.error('Token validation failed:', error);
+    console.error("Token validation failed:", error);
     return null;
   }
 }

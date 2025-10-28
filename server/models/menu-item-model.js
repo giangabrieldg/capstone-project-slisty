@@ -1,6 +1,6 @@
 // menu-item-model.js (updated)
 module.exports = (sequelize, DataTypes) => {
-  const MenuItem = sequelize.define('MenuItem', {
+  const MenuItem = sequelize.define("MenuItem", {
     menuId: {
       type: DataTypes.INTEGER,
       primaryKey: true,
@@ -30,16 +30,16 @@ module.exports = (sequelize, DataTypes) => {
     },
     basePrice: {
       type: DataTypes.DECIMAL(10, 2),
-      defaultValue: 0.00,
+      defaultValue: 0.0,
     },
     stock: {
       type: DataTypes.INTEGER,
       allowNull: false,
       defaultValue: 0,
       validate: {
-        min: 0
-      }
-    }
+        min: 0,
+      },
+    },
   });
 
   return MenuItem;

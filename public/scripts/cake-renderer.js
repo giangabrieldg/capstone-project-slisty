@@ -9,7 +9,7 @@ class Cake3DRenderer {
     this.cake = null;
     this.dracoLoader = null;
     this.loader = null;
-    
+
     // Mouse control variables
     this.mouseControls = {
       down: false,
@@ -18,36 +18,39 @@ class Cake3DRenderer {
       tx: 0,
       ty: 0,
       cx: 0,
-      cy: 0
+      cy: 0,
     };
   }
 
   // Initialize Three.js scene and load models
   async init() {
     const THREE = window.THREE;
-    
+
     // Scene setup
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color("#f5f1e9");
     THREE.RectAreaLightUniformsLib.init();
-    
+
     // Camera setup
     this.camera = new THREE.PerspectiveCamera(
-      60, 
-      this.container.clientWidth / this.container.clientHeight, 
-      0.1, 
+      60,
+      this.container.clientWidth / this.container.clientHeight,
+      0.1,
       1000
     );
     this.camera.position.set(0, 0.2, 1.0);
     this.camera.lookAt(0, 0, 0);
-    
+
     // Renderer setup
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
+    this.renderer.setSize(
+      this.container.clientWidth,
+      this.container.clientHeight
+    );
     this.container.appendChild(this.renderer.domElement);
-    
+
     // Window resize handler
     window.addEventListener("resize", () => {
       const width = this.container.clientWidth;
@@ -56,19 +59,19 @@ class Cake3DRenderer {
       this.camera.updateProjectionMatrix();
       this.renderer.setSize(width, height);
     });
-    
+
     // Lighting setup
     this.setupLighting();
-    
+
     // Load models
     await this.createCake();
-    
+
     // Add mouse controls
     this.addMouseControls();
-    
+
     // Start animation loop
     this.animate();
-    
+
     // Hide loading screen
     setTimeout(() => {
       document.getElementById("loadingScreen")?.classList.add("hidden");
@@ -78,13 +81,13 @@ class Cake3DRenderer {
   // Setup scene lighting
   setupLighting() {
     const THREE = window.THREE;
-    
+
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.1);
     this.scene.add(ambientLight);
-    
+
     const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.7);
     this.scene.add(hemisphereLight);
-    
+
     const dirLight = new THREE.DirectionalLight(0xffffff, 1);
     dirLight.position.set(1.5, 2, 1);
     dirLight.castShadow = true;
@@ -102,11 +105,13 @@ class Cake3DRenderer {
   // Load and configure the 3D cake model
   async createCake() {
     const THREE = window.THREE;
-    
+
     // Setup loaders
     this.dracoLoader = new THREE.DRACOLoader();
-    this.dracoLoader.setDecoderPath("https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/libs/draco/");
-    
+    this.dracoLoader.setDecoderPath(
+      "https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/libs/draco/"
+    );
+
     this.loader = new THREE.GLTFLoader();
     this.loader.setDRACOLoader(this.dracoLoader);
 
@@ -126,10 +131,14 @@ class Cake3DRenderer {
               if (obj.name === "Filling") this.cake.fillingMesh = obj;
               if (obj.name === "mainCake") this.cake.mainCakeMesh = obj;
 
-              if (obj.name === "bottomBeadsBorder") this.cake.bottomBeadsBorderMesh = obj;
-              if (obj.name === "topBeadsBorder") this.cake.topBeadsBorderMesh = obj;
-              if (obj.name === "bottomShellsBorder") this.cake.bottomShellsBorderMesh = obj;
-              if (obj.name === "topShellsBorder") this.cake.topShellsBorderMesh = obj;
+              if (obj.name === "bottomBeadsBorder")
+                this.cake.bottomBeadsBorderMesh = obj;
+              if (obj.name === "topBeadsBorder")
+                this.cake.topBeadsBorderMesh = obj;
+              if (obj.name === "bottomShellsBorder")
+                this.cake.bottomShellsBorderMesh = obj;
+              if (obj.name === "topShellsBorder")
+                this.cake.topShellsBorderMesh = obj;
 
               obj.material.envMapIntensity = 1.5;
               obj.material.roughness = 0.6;
@@ -166,7 +175,7 @@ class Cake3DRenderer {
       { file: "Balloons", prop: "balloonsMesh" },
       { file: "Toppings", prop: "toppingsMesh" },
       { file: "Daisies", prop: "daisiesMesh" },
-      { file: "buttonRoses", prop: "buttonRosesMesh" }
+      { file: "buttonRoses", prop: "buttonRosesMesh" },
     ];
 
     const loadPromises = meshes.map(({ file, prop }) => {
@@ -207,7 +216,9 @@ class Cake3DRenderer {
       this.cake.bottomBeadsMesh.visible = true;
       this.cake.bottomBeadsMesh.traverse((child) => {
         if (child.isMesh && child.material) {
-          const hexColor = Number.parseInt(config.bottomBorderColor.replace("#", "0x"));
+          const hexColor = Number.parseInt(
+            config.bottomBorderColor.replace("#", "0x")
+          );
           child.material.color.setHex(hexColor);
         }
       });
@@ -219,7 +230,9 @@ class Cake3DRenderer {
       this.cake.bottomShellsMesh.visible = true;
       this.cake.bottomShellsMesh.traverse((child) => {
         if (child.isMesh && child.material) {
-          const hexColor = Number.parseInt(config.bottomBorderColor.replace("#", "0x"));
+          const hexColor = Number.parseInt(
+            config.bottomBorderColor.replace("#", "0x")
+          );
           child.material.color.setHex(hexColor);
         }
       });
@@ -232,7 +245,9 @@ class Cake3DRenderer {
       this.cake.topBeadsMesh.visible = true;
       this.cake.topBeadsMesh.traverse((child) => {
         if (child.isMesh && child.material) {
-          const hexColor = Number.parseInt(config.topBorderColor.replace("#", "0x"));
+          const hexColor = Number.parseInt(
+            config.topBorderColor.replace("#", "0x")
+          );
           child.material.color.setHex(hexColor);
         }
       });
@@ -244,7 +259,9 @@ class Cake3DRenderer {
       this.cake.topShellsMesh.visible = true;
       this.cake.topShellsMesh.traverse((child) => {
         if (child.isMesh && child.material) {
-          const hexColor = Number.parseInt(config.topBorderColor.replace("#", "0x"));
+          const hexColor = Number.parseInt(
+            config.topBorderColor.replace("#", "0x")
+          );
           child.material.color.setHex(hexColor);
         }
       });
@@ -254,16 +271,20 @@ class Cake3DRenderer {
 
     // Update cake colors
     const hexCake = Number.parseInt(config.cakeColor.replace("#", "0x"));
-    if (this.cake.bottomSpongeMesh) this.cake.bottomSpongeMesh.material.color.setHex(hexCake);
-    if (this.cake.topSpongeMesh) this.cake.topSpongeMesh.material.color.setHex(hexCake);
+    if (this.cake.bottomSpongeMesh)
+      this.cake.bottomSpongeMesh.material.color.setHex(hexCake);
+    if (this.cake.topSpongeMesh)
+      this.cake.topSpongeMesh.material.color.setHex(hexCake);
 
     const hexIce = Number.parseInt(config.icingColor.replace("#", "0x"));
-    if (this.cake.mainCakeMesh) this.cake.mainCakeMesh.material.color.setHex(hexIce);
+    if (this.cake.mainCakeMesh)
+      this.cake.mainCakeMesh.material.color.setHex(hexIce);
 
     // Update filling color
     const fillColor = fillingColors[config.filling] || "#FFFFFF";
     const hexFills = Number.parseInt(fillColor.replace("#", "0x"));
-    if (this.cake.fillingMesh) this.cake.fillingMesh.material.color.setHex(hexFills);
+    if (this.cake.fillingMesh)
+      this.cake.fillingMesh.material.color.setHex(hexFills);
 
     // Hide all decorations first
     if (this.cake.balloonsMesh) this.cake.balloonsMesh.visible = false;
@@ -278,14 +299,19 @@ class Cake3DRenderer {
       this.cake.toppingsMesh.visible = true;
       this.cake.toppingsMesh.traverse((child) => {
         if (child.isMesh && child.material) {
-          const hexColor = Number.parseInt(config.toppingsColor.replace("#", "0x"));
+          const hexColor = Number.parseInt(
+            config.toppingsColor.replace("#", "0x")
+          );
           child.material.color.setHex(hexColor);
         }
       });
     } else if (config.decorations === "flowers") {
       if (config.flowerType === "daisies" && this.cake.daisiesMesh) {
         this.cake.daisiesMesh.visible = true;
-      } else if (config.flowerType === "buttonRoses" && this.cake.buttonRosesMesh) {
+      } else if (
+        config.flowerType === "buttonRoses" &&
+        this.cake.buttonRosesMesh
+      ) {
         this.cake.buttonRosesMesh.visible = true;
       }
     }
@@ -293,71 +319,83 @@ class Cake3DRenderer {
 
   // Add mouse controls for rotating the cake
   addMouseControls() {
-  const mc = this.mouseControls;
-  
-  // ========== MOUSE EVENTS ==========
-  this.container.addEventListener("mousedown", (e) => {
-    mc.down = true;
-    mc.x0 = e.clientX;
-    mc.y0 = e.clientY;
-  });
-  
-  this.container.addEventListener("mouseup", () => {
-    mc.down = false;
-  });
-  
-  this.container.addEventListener("mousemove", (e) => {
-    if (!mc.down) return;
-    const dx = e.clientX - mc.x0;
-    const dy = e.clientY - mc.y0;
-    mc.tx += dx * 0.01;
-    mc.ty += dy * 0.01;
-    mc.x0 = e.clientX;
-    mc.y0 = e.clientY;
-  });
-  
-  // ========== TOUCH EVENTS (NEW) ==========
-  this.container.addEventListener("touchstart", (e) => {
-    e.preventDefault(); // Prevent scrolling
-    mc.down = true;
-    const touch = e.touches[0];
-    mc.x0 = touch.clientX;
-    mc.y0 = touch.clientY;
-  }, { passive: false });
-  
-  this.container.addEventListener("touchend", (e) => {
-    e.preventDefault();
-    mc.down = false;
-  }, { passive: false });
-  
-  this.container.addEventListener("touchmove", (e) => {
-    e.preventDefault(); // Prevent scrolling
-    if (!mc.down) return;
-    const touch = e.touches[0];
-    const dx = touch.clientX - mc.x0;
-    const dy = touch.clientY - mc.y0;
-    mc.tx += dx * 0.01;
-    mc.ty += dy * 0.01;
-    mc.x0 = touch.clientX;
-    mc.y0 = touch.clientY;
-  }, { passive: false });
-  
-  // ========== PREVENT CONTEXT MENU & WHEEL ==========
-  this.container.addEventListener("contextmenu", (e) => e.preventDefault());
-  this.container.addEventListener("wheel", (e) => e.preventDefault());
+    const mc = this.mouseControls;
 
-  // ========== SMOOTH ROTATION LOOP ==========
-  const rotationLoop = () => {
-    mc.cx += (mc.tx - mc.cx) * 0.1;
-    mc.cy += (mc.ty - mc.cy) * 0.1;
-    if (this.cake) {
-      this.cake.rotation.y = mc.cx;
-      this.cake.rotation.x = mc.cy;
-    }
-    requestAnimationFrame(rotationLoop);
-  };
-  rotationLoop();
-}
+    // ========== MOUSE EVENTS ==========
+    this.container.addEventListener("mousedown", (e) => {
+      mc.down = true;
+      mc.x0 = e.clientX;
+      mc.y0 = e.clientY;
+    });
+
+    this.container.addEventListener("mouseup", () => {
+      mc.down = false;
+    });
+
+    this.container.addEventListener("mousemove", (e) => {
+      if (!mc.down) return;
+      const dx = e.clientX - mc.x0;
+      const dy = e.clientY - mc.y0;
+      mc.tx += dx * 0.01;
+      mc.ty += dy * 0.01;
+      mc.x0 = e.clientX;
+      mc.y0 = e.clientY;
+    });
+
+    // ========== TOUCH EVENTS (NEW) ==========
+    this.container.addEventListener(
+      "touchstart",
+      (e) => {
+        e.preventDefault(); // Prevent scrolling
+        mc.down = true;
+        const touch = e.touches[0];
+        mc.x0 = touch.clientX;
+        mc.y0 = touch.clientY;
+      },
+      { passive: false }
+    );
+
+    this.container.addEventListener(
+      "touchend",
+      (e) => {
+        e.preventDefault();
+        mc.down = false;
+      },
+      { passive: false }
+    );
+
+    this.container.addEventListener(
+      "touchmove",
+      (e) => {
+        e.preventDefault(); // Prevent scrolling
+        if (!mc.down) return;
+        const touch = e.touches[0];
+        const dx = touch.clientX - mc.x0;
+        const dy = touch.clientY - mc.y0;
+        mc.tx += dx * 0.01;
+        mc.ty += dy * 0.01;
+        mc.x0 = touch.clientX;
+        mc.y0 = touch.clientY;
+      },
+      { passive: false }
+    );
+
+    // ========== PREVENT CONTEXT MENU & WHEEL ==========
+    this.container.addEventListener("contextmenu", (e) => e.preventDefault());
+    this.container.addEventListener("wheel", (e) => e.preventDefault());
+
+    // ========== SMOOTH ROTATION LOOP ==========
+    const rotationLoop = () => {
+      mc.cx += (mc.tx - mc.cx) * 0.1;
+      mc.cy += (mc.ty - mc.cy) * 0.1;
+      if (this.cake) {
+        this.cake.rotation.y = mc.cx;
+        this.cake.rotation.x = mc.cy;
+      }
+      requestAnimationFrame(rotationLoop);
+    };
+    rotationLoop();
+  }
 
   // Animate the 3D scene
   animate() {
@@ -373,11 +411,11 @@ class Cake3DRenderer {
         icon: "error",
         title: "Oops...",
         text: "3D model not ready. Please wait a moment and try again.",
-        confirmButtonColor: "#2c9045"
+        confirmButtonColor: "#2c9045",
       });
       return;
     }
-    
+
     try {
       this.renderer.render(this.scene, this.camera);
       const canvas = this.renderer.domElement;
@@ -389,19 +427,18 @@ class Cake3DRenderer {
       link.click();
       document.body.removeChild(link);
       Swal.fire({
-          title: "Success!",
-          text: "Design image saved successfully!",
-          icon: "success",
-          confirmButtonColor: "#2c9045"
-        });
-
+        title: "Success!",
+        text: "Design image saved successfully!",
+        icon: "success",
+        confirmButtonColor: "#2c9045",
+      });
     } catch (error) {
       console.error("Error saving design:", error);
       Swal.fire({
         icon: "error",
         title: "Oops...",
         text: "Sorry, there was an error saving your design. Please try again.",
-        confirmButtonColor: "#2c9045"
+        confirmButtonColor: "#2c9045",
       });
     }
   }
@@ -411,7 +448,7 @@ class Cake3DRenderer {
     if (!this.renderer || !this.scene || !this.camera) {
       throw new Error("3D model not ready");
     }
-    
+
     this.renderer.render(this.scene, this.camera);
     const canvas = this.renderer.domElement;
     return canvas.toDataURL("image/png");

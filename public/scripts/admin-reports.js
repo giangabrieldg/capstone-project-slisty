@@ -121,26 +121,37 @@ async function updateReports(startDate, endDate) {
     }
 
     // Fetch data from all endpoints in parallel
-    const [reportsResponse, customCakeData, imageBasedData] = await Promise.all([
-      fetch(`${window.API_BASE_URL}/api/orders/admin/reports?start_date=${startDate}&end_date=${endDate}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      }),
-      fetch(`${window.API_BASE_URL}/api/custom-cake/admin/orders?start_date=${startDate}&end_date=${endDate}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      }),
-      fetch(`${window.API_BASE_URL}/api/custom-cake/admin/image-orders?start_date=${startDate}&end_date=${endDate}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      })
-    ]);
+    const [reportsResponse, customCakeData, imageBasedData] = await Promise.all(
+      [
+        fetch(
+          `${window.API_BASE_URL}/api/orders/admin/reports?start_date=${startDate}&end_date=${endDate}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        ),
+        fetch(
+          `${window.API_BASE_URL}/api/custom-cake/admin/orders?start_date=${startDate}&end_date=${endDate}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        ),
+        fetch(
+          `${window.API_BASE_URL}/api/custom-cake/admin/image-orders?start_date=${startDate}&end_date=${endDate}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        ),
+      ]
+    );
 
     if (!reportsResponse.ok) {
       if (reportsResponse.status === 401 || reportsResponse.status === 403) {
@@ -151,8 +162,12 @@ async function updateReports(startDate, endDate) {
     }
 
     const data = await reportsResponse.json();
-    const customCakeOrders = customCakeData.ok ? (await customCakeData.json()).orders || [] : [];
-    const imageBasedOrders = imageBasedData.ok ? (await imageBasedData.json()).orders || [] : [];
+    const customCakeOrders = customCakeData.ok
+      ? (await customCakeData.json()).orders || []
+      : [];
+    const imageBasedOrders = imageBasedData.ok
+      ? (await imageBasedData.json()).orders || []
+      : [];
 
     if (!data.success) {
       throw new Error(data.message || "Failed to fetch reports");
@@ -160,9 +175,9 @@ async function updateReports(startDate, endDate) {
 
     // Combine all orders: regular orders + custom cake orders
     const allOrders = [
-      ...data.orders.map(order => ({ ...order, order_type: 'regular' })),
-      ...formatCustomCakeOrdersForReports(customCakeOrders, 'CC'),
-      ...formatCustomCakeOrdersForReports(imageBasedOrders, 'RCC')
+      ...data.orders.map((order) => ({ ...order, order_type: "regular" })),
+      ...formatCustomCakeOrdersForReports(customCakeOrders, "CC"),
+      ...formatCustomCakeOrdersForReports(imageBasedOrders, "RCC"),
     ];
 
     // Sort all orders by date (newest first)
@@ -174,16 +189,25 @@ async function updateReports(startDate, endDate) {
       total_custom_cakes: customCakeOrders.length + imageBasedOrders.length,
       custom_cake_3d_orders: customCakeOrders.length,
       custom_cake_image_orders: imageBasedOrders.length,
-      total_orders: (data.summary.total_orders || 0) + customCakeOrders.length + imageBasedOrders.length,
-      total_revenue: (parseFloat(data.summary.total_revenue) || 0) + 
-                    calculateCustomCakeRevenue(customCakeOrders) + 
-                    calculateCustomCakeRevenue(imageBasedOrders)
+      total_orders:
+        (data.summary.total_orders || 0) +
+        customCakeOrders.length +
+        imageBasedOrders.length,
+      total_revenue:
+        (parseFloat(data.summary.total_revenue) || 0) +
+        calculateCustomCakeRevenue(customCakeOrders) +
+        calculateCustomCakeRevenue(imageBasedOrders),
     };
 
     // Update all components
     updateSummaryCards(updatedSummary);
     updateSalesTable(allOrders);
-    updateCharts(data.daily_orders, data.popular_items, customCakeOrders, imageBasedOrders);
+    updateCharts(
+      data.daily_orders,
+      data.popular_items,
+      customCakeOrders,
+      imageBasedOrders
+    );
   } catch (error) {
     console.error("Error fetching reports:", error);
     showError("Failed to load reports. Please try again.");
@@ -194,36 +218,39 @@ async function updateReports(startDate, endDate) {
 
 // Format custom cake orders for reports
 function formatCustomCakeOrdersForReports(orders, prefix) {
-  return orders.map(order => {
-    const isImageBased = prefix === 'RCC';
+  return orders.map((order) => {
+    const isImageBased = prefix === "RCC";
     const orderId = isImageBased ? order.imageBasedOrderId : order.customCakeId;
     const orderDate = getOrderDate(order);
-    
+
     // Ensure price is a number
     const totalAmount = order.price ? parseFloat(order.price) : 0;
-    
+
     return {
-      orderId: `${prefix}${String(orderId).padStart(3, '0')}`,
-      customer_name: order.customer_name || (order.customer?.name || 'Unknown'),
-      customer_email: order.customer_email || (order.customer?.email || 'No email'),
+      orderId: `${prefix}${String(orderId).padStart(3, "0")}`,
+      customer_name: order.customer_name || order.customer?.name || "Unknown",
+      customer_email:
+        order.customer_email || order.customer?.email || "No email",
       total_amount: totalAmount,
       status: order.status,
       status_key: mapCustomCakeStatus(order.status),
       order_date: orderDate,
-      delivery_method: order.delivery_method || 'pickup',
-      payment_method: 'gcash',
-      items: [{
-        name: isImageBased ? 'Image-Based Cake' : '3D Custom Cake',
-        size: order.size || 'Not specified',
-        quantity: 1,
-        price: totalAmount,
-        customCakeId: orderId,
-        is_custom_cake: true,
-        is_image_based: isImageBased
-      }],
-      order_type: isImageBased ? 'image_cake' : 'custom_cake',
+      delivery_method: order.delivery_method || "pickup",
+      payment_method: "gcash",
+      items: [
+        {
+          name: isImageBased ? "Image-Based Cake" : "3D Custom Cake",
+          size: order.size || "Not specified",
+          quantity: 1,
+          price: totalAmount,
+          customCakeId: orderId,
+          is_custom_cake: true,
+          is_image_based: isImageBased,
+        },
+      ],
+      order_type: isImageBased ? "image_cake" : "custom_cake",
       is_custom_cake: true,
-      is_image_based: isImageBased
+      is_image_based: isImageBased,
     };
   });
 }
@@ -239,28 +266,34 @@ function getOrderDate(order) {
 
 // Set maximum date to today for date inputs
 function initializeDateInputs() {
-  const today = new Date().toISOString().split('T')[0];
+  const today = new Date().toISOString().split("T")[0];
   document.getElementById("startDate").max = today;
   document.getElementById("endDate").max = today;
 }
 
 // Initialize when page loads
-document.addEventListener("DOMContentLoaded", function() {
+document.addEventListener("DOMContentLoaded", function () {
   initializeDateInputs();
 });
 
 const statusMap = {
-      'Pending Review': { class: 'pending', text: 'Pending Review' },
-      'Ready for Downpayment': { class: 'ready-for-dp', text: 'Ready for Downpayment' },
-      'Downpayment Paid': { class: 'dp-paid', text: 'Downpayment Paid' },
-      'Order Received': { class: 'order-received', text: 'Order Received' },
-      'In Progress': { class: 'in-progress', text: 'In Progress' },
-      'Ready for Pickup/Delivery': { class: 'ready', text: 'Ready for Pickup/Delivery' },
-      'Completed': { class: 'delivered', text: 'Completed' },
-      'Cancelled': { class: 'cancelled', text: 'Cancelled' },
-      'Not Feasible': { class: 'cancelled', text: 'Not Feasible' }
-    };
-    
+  "Pending Review": { class: "pending", text: "Pending Review" },
+  "Ready for Downpayment": {
+    class: "ready-for-dp",
+    text: "Ready for Downpayment",
+  },
+  "Downpayment Paid": { class: "dp-paid", text: "Downpayment Paid" },
+  "Order Received": { class: "order-received", text: "Order Received" },
+  "In Progress": { class: "in-progress", text: "In Progress" },
+  "Ready for Pickup/Delivery": {
+    class: "ready",
+    text: "Ready for Pickup/Delivery",
+  },
+  Completed: { class: "delivered", text: "Completed" },
+  Cancelled: { class: "cancelled", text: "Cancelled" },
+  "Not Feasible": { class: "cancelled", text: "Not Feasible" },
+};
+
 // Map custom cake status to regular order status for styling
 function mapCustomCakeStatus(customCakeStatus) {
   return customCakeStatus; // Return the actual status text
@@ -276,21 +309,25 @@ function calculateCustomCakeRevenue(orders) {
 // Update summary cards
 function updateSummaryCards(summary) {
   currentSummaryData = summary;
-  
+
   const cards = [
     { id: "totalOrders", value: summary?.total_orders || 0 },
     {
       id: "totalRevenue",
       value: `PHP ${(parseFloat(summary?.total_revenue) || 0).toFixed(2)}`,
     },
-    { 
-      id: "customCakes", 
+    {
+      id: "customCakes",
       value: summary?.total_custom_cakes || 0,
-      title: `3D Custom: ${summary?.custom_cake_3d_orders || 0}\nImage-based: ${summary?.custom_cake_image_orders || 0}`
+      title: `3D Custom: ${summary?.custom_cake_3d_orders || 0}\nImage-based: ${
+        summary?.custom_cake_image_orders || 0
+      }`,
     },
     {
       id: "avgOrderValue",
-      value: `PHP ${(parseFloat(summary?.average_order_value) || 0).toFixed(2)}`,
+      value: `PHP ${(parseFloat(summary?.average_order_value) || 0).toFixed(
+        2
+      )}`,
     },
   ];
 
@@ -300,14 +337,16 @@ function updateSummaryCards(summary) {
       element.textContent = card.value;
       if (card.title) {
         element.title = card.title;
-        element.setAttribute('data-bs-toggle', 'tooltip');
-        element.setAttribute('data-bs-placement', 'top');
+        element.setAttribute("data-bs-toggle", "tooltip");
+        element.setAttribute("data-bs-placement", "top");
       }
     }
   });
 
   // Initialize tooltips
-  const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+  const tooltipTriggerList = [].slice.call(
+    document.querySelectorAll('[data-bs-toggle="tooltip"]')
+  );
   tooltipTriggerList.forEach(function (tooltipTriggerEl) {
     new bootstrap.Tooltip(tooltipTriggerEl);
   });
@@ -331,39 +370,60 @@ function updateSalesTable(orders) {
     const row = document.createElement("tr");
     const items = order.items
       .map((item) => {
-        const price = typeof item.price === "number" ? item.price : parseFloat(item.price) || 0;
-        const quantity = typeof item.quantity === "number" ? item.quantity : parseInt(item.quantity) || 0;
-        
+        const price =
+          typeof item.price === "number"
+            ? item.price
+            : parseFloat(item.price) || 0;
+        const quantity =
+          typeof item.quantity === "number"
+            ? item.quantity
+            : parseInt(item.quantity) || 0;
+
         // Add size information if available
         const sizeInfo = item.size ? `Size: ${item.size}<br>` : "";
-        
+
         // Add custom cake indicator
-        const cakeType = item.is_custom_cake ? 
-          (item.is_image_based ? ' (Image-Based)' : ' (3D Custom)') : '';
-        
-        return `${item.name}${cakeType}<br>${sizeInfo}Qty: ${quantity} - PHP ${(price * quantity).toFixed(2)}`;
+        const cakeType = item.is_custom_cake
+          ? item.is_image_based
+            ? " (Image-Based)"
+            : " (3D Custom)"
+          : "";
+
+        return `${item.name}${cakeType}<br>${sizeInfo}Qty: ${quantity} - PHP ${(
+          price * quantity
+        ).toFixed(2)}`;
       })
-      .join("<br><br>"); 
+      .join("<br><br>");
 
     const orderDate = new Date(order.order_date).toLocaleDateString();
-    const pickupDate = order.pickup_date ? new Date(order.pickup_date).toLocaleDateString() : 'Not set';
+    const pickupDate = order.pickup_date
+      ? new Date(order.pickup_date).toLocaleDateString()
+      : "Not set";
 
     // Safely convert total_amount to number
-    const totalAmount = typeof order.total_amount === "number" ? order.total_amount : parseFloat(order.total_amount) || 0;
+    const totalAmount =
+      typeof order.total_amount === "number"
+        ? order.total_amount
+        : parseFloat(order.total_amount) || 0;
 
     // Format payment method
-    const paymentMethod = order.payment_method ? 
-      (order.payment_method === 'gcash' ? 'GCash' : 
-       order.payment_method.charAt(0).toUpperCase() + order.payment_method.slice(1)) : 
-      "Unknown";
+    const paymentMethod = order.payment_method
+      ? order.payment_method === "gcash"
+        ? "GCash"
+        : order.payment_method.charAt(0).toUpperCase() +
+          order.payment_method.slice(1)
+      : "Unknown";
 
     // Format delivery method
-    const deliveryMethod = order.delivery_method ? order.delivery_method.charAt(0).toUpperCase() + order.delivery_method.slice(1) : "Unknown";
+    const deliveryMethod = order.delivery_method
+      ? order.delivery_method.charAt(0).toUpperCase() +
+        order.delivery_method.slice(1)
+      : "Unknown";
 
     // Use the comprehensive status map
     const statusInfo = statusMap[order.status] || {
       text: order.status,
-      class: 'pending'
+      class: "pending",
     };
 
     // Create customer details with payment, delivery methods, and dates
@@ -381,13 +441,15 @@ function updateSalesTable(orders) {
 
     // Format order ID with appropriate styling
     const orderIdCell = getOrderIdCell(order);
-    
+
     row.innerHTML = `
       <td>${orderIdCell}</td>
       <td>${customerDetails}</td>
       <td>PHP ${totalAmount.toFixed(2)}</td>
       <td>${items}</td>
-      <td><span class="status ${statusInfo.class}">${statusInfo.text}</span></td>
+      <td><span class="status ${statusInfo.class}">${
+      statusInfo.text
+    }</span></td>
       <td>${orderDate}</td>
     `;
     tableBody.appendChild(row);
@@ -399,9 +461,9 @@ function updateSalesTable(orders) {
 
 // Generate order ID cell with appropriate styling
 function getOrderIdCell(order) {
-  if (order.order_type === 'custom_cake') {
+  if (order.order_type === "custom_cake") {
     return `<span class="order-id custom-cake-id" title="3D Custom Cake">${order.orderId}</span>`;
-  } else if (order.order_type === 'image_cake') {
+  } else if (order.order_type === "image_cake") {
     return `<span class="order-id image-cake-id" title="Image-Based Custom Cake">${order.orderId}</span>`;
   } else {
     return `<span class="order-id regular-id">${order.orderId}</span>`;
@@ -410,9 +472,9 @@ function getOrderIdCell(order) {
 
 // Add CSS for different order type styling
 function addOrderTypeStyles() {
-  if (!document.getElementById('order-type-styles')) {
-    const style = document.createElement('style');
-    style.id = 'order-type-styles';
+  if (!document.getElementById("order-type-styles")) {
+    const style = document.createElement("style");
+    style.id = "order-type-styles";
     style.textContent = `
       .order-id {
         font-weight: 600;
@@ -428,16 +490,25 @@ function addOrderTypeStyles() {
 }
 
 // Update charts with custom cake data
-function updateCharts(dailyOrders, popularItems, customCakeOrders, imageBasedOrders) {
+function updateCharts(
+  dailyOrders,
+  popularItems,
+  customCakeOrders,
+  imageBasedOrders
+) {
   // Update total orders chart with custom cake data
   if (dailyOrders && dailyOrders.length > 0) {
     const dates = dailyOrders.map((item) =>
       new Date(item.date).toLocaleDateString()
     );
     const regularOrdersData = dailyOrders.map((item) => item.count);
-    
+
     // Calculate custom cake orders per day
-    const customCakeOrdersData = calculateCustomCakesPerDay(dates, customCakeOrders, imageBasedOrders);
+    const customCakeOrdersData = calculateCustomCakesPerDay(
+      dates,
+      customCakeOrders,
+      imageBasedOrders
+    );
 
     totalOrdersChart.data.labels = dates;
     totalOrdersChart.data.datasets[0].data = regularOrdersData;
@@ -448,10 +519,11 @@ function updateCharts(dailyOrders, popularItems, customCakeOrders, imageBasedOrd
   // Update popular items chart - filter out custom cake orders
   if (popularItems && popularItems.length > 0) {
     // Filter out custom cake items from popular items
-    const regularPopularItems = popularItems.filter(item => 
-      !item.item_name.includes('Custom Cake') && 
-      !item.item_name.includes('Image-Based') &&
-      !item.item_name.includes('3D Custom')
+    const regularPopularItems = popularItems.filter(
+      (item) =>
+        !item.item_name.includes("Custom Cake") &&
+        !item.item_name.includes("Image-Based") &&
+        !item.item_name.includes("3D Custom")
     );
 
     const itemLabels = regularPopularItems.map((item) => item.item_name);
@@ -469,24 +541,24 @@ function updateCharts(dailyOrders, popularItems, customCakeOrders, imageBasedOrd
 function calculateCustomCakesPerDay(dates, customCakeOrders, imageBasedOrders) {
   const allCustomCakes = [...customCakeOrders, ...imageBasedOrders];
   const ordersPerDay = {};
-  
+
   // Initialize all dates with 0
-  dates.forEach(date => {
+  dates.forEach((date) => {
     ordersPerDay[date] = 0;
   });
-  
+
   // Count custom cake orders per day
-  allCustomCakes.forEach(order => {
+  allCustomCakes.forEach((order) => {
     const orderDate = getOrderDate(order);
     const dateString = orderDate.toLocaleDateString();
-    
+
     if (ordersPerDay.hasOwnProperty(dateString)) {
       ordersPerDay[dateString]++;
     }
   });
-  
+
   // Convert to array in the same order as dates
-  return dates.map(date => ordersPerDay[date] || 0);
+  return dates.map((date) => ordersPerDay[date] || 0);
 }
 
 // Error handling
@@ -495,8 +567,7 @@ function showError(message) {
   if (!errorAlert) {
     errorAlert = document.createElement("div");
     errorAlert.id = "errorAlert";
-    errorAlert.className =
-      "alert alert-danger alert-dismissible fade show";
+    errorAlert.className = "alert alert-danger alert-dismissible fade show";
     errorAlert.innerHTML = `
       <span id="errorMessage"></span>
       <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
@@ -524,8 +595,7 @@ function exportToExcel() {
   const customerCells = tableClone.querySelectorAll("td:nth-child(2)");
   customerCells.forEach((cell) => {
     const customerName =
-      cell.querySelector(".customer-name")?.textContent ||
-      "Unknown Customer";
+      cell.querySelector(".customer-name")?.textContent || "Unknown Customer";
     const paymentMethod =
       cell
         .querySelector(".payment-method")
@@ -554,26 +624,31 @@ function exportToExcel() {
   let customCakeOrders = 0;
 
   // Count only data rows (exclude summary/title rows we'll add)
-  rows.forEach(row => {
+  rows.forEach((row) => {
     // Check if this is a data row (has order ID)
-    const firstCell = row.querySelector('td:first-child');
-    if (firstCell && firstCell.textContent.startsWith('#')) {
+    const firstCell = row.querySelector("td:first-child");
+    if (firstCell && firstCell.textContent.startsWith("#")) {
       totalOrders++;
-      
+
       // Check order type
-      const orderIdSpan = firstCell.querySelector('.order-id');
+      const orderIdSpan = firstCell.querySelector(".order-id");
       if (orderIdSpan) {
-        if (orderIdSpan.classList.contains('regular-id')) {
+        if (orderIdSpan.classList.contains("regular-id")) {
           regularOrders++;
-        } else if (orderIdSpan.classList.contains('custom-cake-id') || orderIdSpan.classList.contains('image-cake-id')) {
+        } else if (
+          orderIdSpan.classList.contains("custom-cake-id") ||
+          orderIdSpan.classList.contains("image-cake-id")
+        ) {
           customCakeOrders++;
         }
       }
-      
+
       // Get revenue from amount cell (3rd cell)
-      const amountCell = row.querySelector('td:nth-child(3)');
+      const amountCell = row.querySelector("td:nth-child(3)");
       if (amountCell) {
-        const amountText = amountCell.textContent.replace('PHP ', '').replace(/,/g, '');
+        const amountText = amountCell.textContent
+          .replace("PHP ", "")
+          .replace(/,/g, "");
         totalRevenue += parseFloat(amountText) || 0;
       }
     }
@@ -590,7 +665,9 @@ function exportToExcel() {
 
   const summaryRow = document.createElement("tr");
   summaryRow.innerHTML = `<td colspan="6" style="text-align: center; font-weight: bold; background-color: #f5f5f5; padding: 12px;">
-    Summary: ${totalOrders} Total Orders (${regularOrders} Regular, ${customCakeOrders} Custom Cakes) | PHP ${totalRevenue.toFixed(2)} Total Revenue
+    Summary: ${totalOrders} Total Orders (${regularOrders} Regular, ${customCakeOrders} Custom Cakes) | PHP ${totalRevenue.toFixed(
+    2
+  )} Total Revenue
   </td>`;
 
   const generatedRow = document.createElement("tr");
@@ -600,19 +677,19 @@ function exportToExcel() {
 
   // Insert the additional rows
   const tbody = tableClone.querySelector("tbody");
-  
+
   // Clear any existing summary rows first
-  const existingSummaryRows = tbody.querySelectorAll('tr');
-  existingSummaryRows.forEach(row => {
+  const existingSummaryRows = tbody.querySelectorAll("tr");
+  existingSummaryRows.forEach((row) => {
     if (row.querySelector('td[colspan="6"]')) {
       row.remove();
     }
   });
-  
+
   // Add new summary rows at the beginning
   tbody.insertBefore(titleRow, tbody.firstChild);
   tbody.insertBefore(dateRangeRow, titleRow.nextSibling);
-  
+
   // Add summary and generated rows at the end
   tbody.appendChild(summaryRow);
   tbody.appendChild(generatedRow);
@@ -693,9 +770,7 @@ document.getElementById("applyDateFilter").addEventListener("click", () => {
   updateReports(startDate, endDate);
 });
 
-document
-  .getElementById("exportExcel")
-  .addEventListener("click", exportToExcel);
+document.getElementById("exportExcel").addEventListener("click", exportToExcel);
 
 document.querySelector(".search-bar").addEventListener("input", (e) => {
   const searchTerm = e.target.value.toLowerCase();
@@ -713,16 +788,19 @@ document.querySelector(".search-bar").addEventListener("input", (e) => {
   });
 });
 
-
 document.getElementById("applyFilter").addEventListener("click", () => {
-  const selectedStatus = document.getElementById("filterStatus").value.toLowerCase();
-  
+  const selectedStatus = document
+    .getElementById("filterStatus")
+    .value.toLowerCase();
+
   document.querySelectorAll("#salesTable tbody tr").forEach((row) => {
     // Skip summary rows
-    if (row.querySelector('td[colspan]')) return;
+    if (row.querySelector("td[colspan]")) return;
 
     const statusElement = row.cells[4]?.querySelector(".status");
-    const rowStatus = statusElement ? statusElement.textContent.trim().toLowerCase() : "";
+    const rowStatus = statusElement
+      ? statusElement.textContent.trim().toLowerCase()
+      : "";
 
     // Check if row matches selected filter
     if (selectedStatus === "" || rowStatus.includes(selectedStatus)) {
@@ -733,10 +811,11 @@ document.getElementById("applyFilter").addEventListener("click", () => {
   });
 
   // Close modal after applying filter
-  const filterModal = bootstrap.Modal.getInstance(document.getElementById("filterModal"));
+  const filterModal = bootstrap.Modal.getInstance(
+    document.getElementById("filterModal")
+  );
   if (filterModal) filterModal.hide();
 });
-
 
 // Initialize with default date range (last 30 days)
 const endDate = new Date().toISOString().split("T")[0];
