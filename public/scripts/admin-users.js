@@ -1,3 +1,65 @@
+// Password generation function
+function generatePassword() {
+  const length = 12;
+  const charset =
+    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
+  let password = "";
+
+  // Ensure at least one of each required character type
+  password += "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[Math.floor(Math.random() * 26)]; // uppercase
+  password += "abcdefghijklmnopqrstuvwxyz"[Math.floor(Math.random() * 26)]; // lowercase
+  password += "0123456789"[Math.floor(Math.random() * 10)]; // number
+  password += "!@#$%^&*"[Math.floor(Math.random() * 8)]; // special character
+
+  // Fill the rest randomly
+  for (let i = password.length; i < length; i++) {
+    password += charset[Math.floor(Math.random() * charset.length)];
+  }
+
+  // Shuffle the password to make it more random
+  return password
+    .split("")
+    .sort(() => Math.random() - 0.5)
+    .join("");
+}
+
+// Initialize password generation when modal opens
+document.addEventListener("DOMContentLoaded", function () {
+  const addUserModal = document.getElementById("addUserModal");
+  if (addUserModal) {
+    addUserModal.addEventListener("show.bs.modal", function () {
+      // Auto-generate password when modal opens
+      const passwordInput = document.getElementById("userPassword");
+      if (passwordInput) {
+        passwordInput.value = generatePassword();
+      }
+    });
+  }
+
+  // Generate password button functionality
+  const generatePasswordBtn = document.getElementById("generatePasswordBtn");
+  if (generatePasswordBtn) {
+    generatePasswordBtn.addEventListener("click", function () {
+      const passwordInput = document.getElementById("userPassword");
+      if (passwordInput) {
+        passwordInput.value = generatePassword();
+
+        // Show brief feedback
+        const originalText = generatePasswordBtn.textContent;
+        generatePasswordBtn.textContent = "Generated!";
+        generatePasswordBtn.classList.remove("btn-outline-secondary");
+        generatePasswordBtn.classList.add("btn-success");
+
+        setTimeout(() => {
+          generatePasswordBtn.textContent = "Generate";
+          generatePasswordBtn.classList.remove("btn-success");
+          generatePasswordBtn.classList.add("btn-outline-secondary");
+        }, 1000);
+      }
+    });
+  }
+});
+
 async function fetchUsers() {
   try {
     const response = await fetch(`${window.API_BASE_URL}/api/auth/users`, {
@@ -71,54 +133,6 @@ document.getElementById("addUserForm").addEventListener("submit", async (e) => {
   const passwordInput = modal.querySelector("#userPassword");
   const roleSelect = modal.querySelector("#userRole");
 
-  // Debug each element individually
-  console.log("Name input:", nameInput, "Value:", nameInput?.value);
-  console.log("Email input:", emailInput, "Value:", emailInput?.value);
-  console.log("Password input:", passwordInput, "Value:", passwordInput?.value);
-  console.log("Role select:", roleSelect, "Value:", roleSelect?.value);
-
-  // Check for missing elements with specific messages
-  if (!nameInput) {
-    console.error('Element with ID "userName" not found');
-    Swal.fire({
-      icon: "error",
-      title: "Oops...",
-      text: "Name field is missing",
-      confirmButtonColor: "#2c9045",
-    });
-    return;
-  }
-  if (!emailInput) {
-    console.error('Element with ID "userEmail" not found');
-    Swal.fire({
-      icon: "error",
-      title: "Oops...",
-      text: "Email field is missing",
-      confirmButtonColor: "#2c9045",
-    });
-    return;
-  }
-  if (!passwordInput) {
-    console.error('Element with ID "userPassword" not found');
-    Swal.fire({
-      icon: "error",
-      title: "Oops...",
-      text: "Password field is missing",
-      confirmButtonColor: "#2c9045",
-    });
-    return;
-  }
-  if (!roleSelect) {
-    console.error('Element with ID "userRole" not found');
-    Swal.fire({
-      icon: "error",
-      title: "Oops...",
-      text: "Role field is missing",
-      confirmButtonColor: "#2c9045",
-    });
-    return;
-  }
-
   // Get form values with safe access
   const name = nameInput.value ? nameInput.value.trim() : "";
   const email = emailInput.value ? emailInput.value.trim() : "";
@@ -150,14 +164,28 @@ document.getElementById("addUserForm").addEventListener("submit", async (e) => {
     return;
   }
 
-  // Client-side password validation
-  if (password.length < 8) {
-    Swal.fire({
-      icon: "error",
-      title: "Oops...",
-      text: "Password must be at least 8 characters long",
-      confirmButtonColor: "#2c9045",
-    });
+  // Show password confirmation before creating user
+  const result = await Swal.fire({
+    title: "Confirm User Creation",
+    html: `
+      <div class="text-start">
+        <p><strong>Name:</strong> ${name}</p>
+        <p><strong>Email:</strong> ${email}</p>
+        <p><strong>Role:</strong> ${role}</p>
+        <p><strong>Generated Password:</strong> <code>${password}</code></p>
+        <div class="alert alert-warning mt-2">
+          <small>Please save this password securely. It will not be shown again.</small>
+        </div>
+      </div>
+    `,
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "Create User",
+    cancelButtonText: "Cancel",
+    confirmButtonColor: "#2c9045",
+  });
+
+  if (!result.isConfirmed) {
     return;
   }
 
@@ -210,9 +238,21 @@ document.getElementById("addUserForm").addEventListener("submit", async (e) => {
       }
     }
     document.getElementById("addUserForm").reset();
+
+    // Show success message without email sending mention
     Swal.fire({
       title: "Success!",
-      text: `User ${name} added successfully!`,
+      html: `
+        <div class="text-center">
+          <p>User <strong>${name}</strong> added successfully!</p>
+          <div class="alert alert-warning mt-2">
+            <small>
+              <strong>Important:</strong> Please provide the generated password to the user securely.<br>
+              The password will not be shown again.
+            </small>
+          </div>
+        </div>
+      `,
       icon: "success",
       confirmButtonColor: "#2c9045",
     });
@@ -270,6 +310,7 @@ function addArchiveToggleListener(checkbox) {
     }
   });
 }
+
 // View switch functionality
 document.querySelectorAll(".view-link").forEach((link) => {
   link.addEventListener("click", (e) => {

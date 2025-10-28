@@ -223,18 +223,48 @@ body {
     box-shadow: 0 0 5px rgba(44, 144, 69, 0.3);
 }
 
-.status.locked {
-    background-color: #ffc107;
-    color: #000;
-    padding: 2px 8px;
-    border-radius: 12px;
-    font-size: 0.75em;
+/* Password input group styling */
+.input-group .btn-outline-secondary {
+    border-color: #6c757d;
+    color: #6c757d;
 }
 
-.unlock-btn {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.875rem;
+.input-group .btn-outline-secondary:hover {
+    background-color: #6c757d;
+    color: white;
 }
+
+.input-group .btn-success {
+    background-color: #28a745;
+    border-color: #28a745;
+    color: white;
+}
+
+/* Password field styling */
+#userPassword {
+    background-color: #f8f9fa;
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+}
+
+/* Form text styling */
+.form-text {
+    font-size: 0.875em;
+    color: #6c757d;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    color: #f8f9fa;
+    outline: var(--background-color);
+}
+
+.btn-primary:hover {
+    background-color: var(--hover-color);
+    outline: var(--hover-color);
+    transition: 0.3s ease;
+}
+
 
 /* ===== RESPONSIVE STYLES ===== */
 

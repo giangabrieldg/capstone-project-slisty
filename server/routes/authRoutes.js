@@ -14,7 +14,7 @@ require("dotenv").config();
 const router = express.Router();
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
-// Define FRONTEND_URL based on environment
+//Define FRONTEND_URL based on environment
 const FRONTEND_URL =
   process.env.NODE_ENV === "production"
     ? process.env.CLIENT_URL_PROD || "https://slice-n-grind.onrender.com"
@@ -22,7 +22,7 @@ const FRONTEND_URL =
 
 console.log("FRONTEND_URL set to:", FRONTEND_URL);
 
-// Middleware to set cache-control headers for protected routes
+//Middleware to set cache-control headers for protected routes
 const setNoCacheHeaders = (req, res, next) => {
   res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
   res.setHeader("Pragma", "no-cache");
@@ -41,7 +41,9 @@ router.post("/forgot-password", async (req, res) => {
   try {
     const user = await User.findOne({ where: { email } });
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res
+        .status(404)
+        .json({ message: "Incorrect username or password" });
     }
 
     if (user.isArchived) {
@@ -185,16 +187,16 @@ router.post("/login", async (req, res) => {
     const user = await User.findOne({ where: { email } });
 
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res
+        .status(404)
+        .json({ message: "Incorrect username or Password" });
     }
 
     // Check if account is archived
     if (user.isArchived) {
-      return res
-        .status(403)
-        .json({
-          message: "Account is archived. Please contact administrator.",
-        });
+      return res.status(403).json({
+        message: "Account is archived. Please contact administrator.",
+      });
     }
 
     // Check if account is temporarily locked
@@ -218,12 +220,10 @@ router.post("/login", async (req, res) => {
     }
 
     if (!user.password) {
-      return res
-        .status(400)
-        .json({
-          message:
-            'This account uses Google Sign-In. Please use "Continue with Google".',
-        });
+      return res.status(400).json({
+        message:
+          'This account uses Google Sign-In. Please use "Continue with Google".',
+      });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
@@ -431,12 +431,10 @@ router.post("/complete-registration", async (req, res) => {
   }
 
   if (phone && !/^(\+63|0)9\d{9}$/.test(phone)) {
-    return res
-      .status(400)
-      .json({
-        message:
-          "Please enter a valid Philippine phone number (e.g., +639171234567 or 09171234567)",
-      });
+    return res.status(400).json({
+      message:
+        "Please enter a valid Philippine phone number (e.g., +639171234567 or 09171234567)",
+    });
   }
 
   try {

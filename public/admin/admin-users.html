@@ -166,12 +166,29 @@
                     <label for="userPassword" class="form-label"
                       >Password</label
                     >
-                    <input
-                      type="password"
-                      class="form-control"
-                      id="userPassword"
-                      required
-                    />
+                    <div class="input-group">
+                      <input
+                        type="text"
+                        class="form-control"
+                        id="userPassword"
+                        required
+                        readonly
+                        placeholder="Click generate button"
+                      />
+                      <button
+                        type="button"
+                        class="btn btn-outline-secondary"
+                        id="generatePasswordBtn"
+                      >
+                        Generate
+                      </button>
+                    </div>
+                    <div class="form-text">
+                      <small
+                        >Password will be auto-generated. Click the generate
+                        button.</small
+                      >
+                    </div>
                   </div>
                   <div class="mb-3">
                     <label for="userRole" class="form-label">Role</label>
@@ -193,7 +210,7 @@
                 <button
                   type="submit"
                   form="addUserForm"
-                  class="btn btn-primary"
+                  class="btn btn-primary btn-outline-success"
                 >
                   Add User
                 </button>
