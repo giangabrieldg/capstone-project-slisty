@@ -1046,7 +1046,14 @@
                   >
                     <span
                       id="uploadedFileName"
-                      style="font-weight: bold; color: #2c9045"
+                      style="
+                        font-weight: bold;
+                        color: #2c9045;
+                        display: block;
+                        white-space: nowrap;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                      "
                       >No image selected</span
                     >
                   </div>
@@ -1084,19 +1091,20 @@
                     type="text"
                     id="imageMessage"
                     class="form-control"
-                    maxlength="100"
+                    maxlength="50"
                     placeholder="e.g., Happy Birthday"
                   />
-                  <div class="text-end">
-                    <span id="messageCharCount">0</span>/100 characters
-                  </div>
+                  <div class="text-end"></div>
                 </div>
                 <div class="mb-3">
-                  <label for="deliveryDate">Delivery Date</label>
+                  <label for="deliveryDate" class="form-label"
+                    >Delivery Date</label
+                  >
                   <input
                     type="date"
                     id="deliveryDate"
                     name="deliveryDate"
+                    class="form-control"
                     required
                   />
                 </div>
@@ -1107,12 +1115,10 @@
                   <textarea
                     id="imageNotes"
                     class="form-control"
-                    maxlength="200"
+                    maxlength="100"
                     rows="3"
                   ></textarea>
-                  <div class="text-end">
-                    <span id="notesCharCount">0</span>/200 characters
-                  </div>
+                  <div class="text-end"></div>
                 </div>
                 <button
                   type="submit"

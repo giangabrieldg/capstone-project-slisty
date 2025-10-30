@@ -5,7 +5,7 @@
     --background-color: #ffffff;
     --secondary-background-color: #f5f1e9;
     --text-color: #2d2d2d;
-    --hover: #0f5e23;
+    --hoverr: #0f5e23;
     --secondary-text-color: #5e5d5d;
     --white-text-color: #f9f6ee;
     --font-poppins: "Poppins", sans-serif;
@@ -95,7 +95,7 @@ footer {
 }
 
 .filter-btn:hover {
-    background-color: var(--hover-color);
+    background-color: var(--hoverr);
 }
 
 /* Table container */
@@ -308,7 +308,7 @@ footer {
 }
 
 .btn-link:hover {
-    color: var(--hover-color);
+    color: var(--hoverr);
     text-decoration: underline;
 }
 
@@ -319,7 +319,7 @@ footer {
 }
 
 .btn-primary:hover {
-    background-color: var(--hover-color);
+    background-color: var(--hoverr);
 }
 
 /* Modal styling */

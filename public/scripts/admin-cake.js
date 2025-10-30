@@ -186,106 +186,106 @@ async function fetchCustomCakeOrders() {
 
         // Format customer details with delivery address
         const customerDetails = `
-  <div class="customer-info">
-    <div class="customer-name fw-bold">${
-      order.customer_name || (order.customer ? order.customer.name : "Unknown")
-    }</div>
-    <div class="customer-contact small text-muted">
-      ${
-        order.customer_email || (order.customer ? order.customer.email : "N/A")
-      }<br>${order.customer_phone || "N/A"}
-    </div>
-    ${
-      order.status === "Cancelled" && order.cancellation_remarks
-        ? `
-      <div class="cancellation-info small text-danger mt-1">
-        <strong>Cancellation Reason:</strong> ${order.cancellation_remarks}
+      <div class="customer-info">
+        <div class="customer-name fw-bold">${
+          order.customer_name ||
+          (order.customer ? order.customer.name : "Unknown")
+        }</div>
+        <div class="customer-contact small text-muted">
+          ${
+            order.customer_email ||
+            (order.customer ? order.customer.email : "N/A")
+          }<br>${order.customer_phone || "N/A"}
+        </div>
         ${
-          order.cancelled_at
-            ? `<br><small>Cancelled on: ${new Date(
-                order.cancelled_at
-              ).toLocaleDateString()}</small>`
-            : ""
-        }
-      </div>
-    `
-        : ""
-    }
-    <div class="delivery-method small text-muted mt-1">
-      <strong>Method:</strong> ${
-        order.delivery_method.charAt(0).toUpperCase() +
-        order.delivery_method.slice(1)
-      }
-    </div>
-    ${
-      order.delivery_method === "delivery" && order.delivery_address
-        ? `
-      <div class="delivery-address small text-muted mt-1">
-        <strong>Delivery Address:</strong><br>
-        ${order.delivery_address}
-      </div>
-    `
-        : ""
-    }
-  </div>
-`;
-
-        // Format updated by information for image orders
-        const updatedByInfo = order.updater
-          ? `
-          <div class="updated-by-info">
-            <div class="updater-name fw-bold">${order.updater.name}</div>
-            <div class="updater-role small text-muted">
-              ${order.updater.userLevel}
-            </div>
+          order.status === "Cancelled" && order.cancellation_remarks
+            ? `
+          <div class="cancellation-info small text-danger mt-1">
+            <strong>Cancellation Reason:</strong> ${order.cancellation_remarks}
             ${
-              order.updatedAt
-                ? `
-              <div class="update-time small text-muted">
-                ${new Date(order.updatedAt).toLocaleDateString()} 
-                ${new Date(order.updatedAt).toLocaleTimeString()}
-              </div>
-            `
+              order.cancelled_at
+                ? `<br><small>Cancelled on: ${new Date(
+                    order.cancelled_at
+                  ).toLocaleDateString()}</small>`
                 : ""
             }
           </div>
         `
-          : `
-          <div class="updated-by-info">
-            <div class="text-muted small">Not updated yet</div>
+            : ""
+        }
+        <div class="delivery-method small text-muted mt-1">
+          <strong>Method:</strong> ${
+            order.delivery_method.charAt(0).toUpperCase() +
+            order.delivery_method.slice(1)
+          }
+        </div>
+        ${
+          order.delivery_method === "delivery" && order.delivery_address
+            ? `
+          <div class="delivery-address small text-muted mt-1">
+            <strong>Delivery Address:</strong><br>
+            ${order.delivery_address}
           </div>
-        `;
+        `
+            : ""
+        }
+      </div>
+    `;
+
+        // Format updated by information for image orders
+        const updatedByInfo = order.updater
+          ? `
+            <div class="updated-by-info">
+              <div class="updater-name fw-bold">${order.updater.name}</div>
+              <div class="updater-role small text-muted">
+                ${order.updater.userLevel}
+              </div>
+              ${
+                order.updatedAt
+                  ? `
+                <div class="update-time small text-muted">
+                  ${new Date(order.updatedAt).toLocaleDateString()} 
+                  ${new Date(order.updatedAt).toLocaleTimeString()}
+                </div>
+              `
+                  : ""
+              }
+            </div>
+          `
+          : `
+            <div class="updated-by-info">
+              <div class="text-muted small">Not updated yet</div>
+            </div>
+          `;
 
         const row = document.createElement("tr");
         row.innerHTML = `
-          <td>${displayOrderId}</td>
-          <td>${customerDetails}</td>
-          <td>${order.flavor}</td>
-          <td>${order.size || "Not specified"}</td>
-          <td>${order.message || "None"}</td>
-          <td>${new Date(order.eventDate).toLocaleDateString()}</td>
-          <td>${orderDate}</td>
-          <td>${deliveryDate}</td>
-          <td>${order.notes || "None"}</td>
-          <td class="text-center">
-            ${
-              order.imagePath
-                ? `<a href="#" class="view-image" data-image-url="${order.imagePath}" data-image-type="reference" data-bs-toggle="modal" data-bs-target="#imageModal">View</a>`
-                : "None"
-            }
-          </td>
-          <td>${renderStatusBadge(order.status)}</td>
-          <td>${renderPriceInfo(order)}</td>
-          <td>${paymentInfo}</td>
-          <td>${updatedByInfo}</td> <!-- NEW COLUMN -->
-          <td class="admin-actions-cell">
-            ${renderStatusActions(orderId, true, order.status, order)}
-          </td>
-        `;
+      <td>${displayOrderId}</td>
+      <td>${customerDetails}</td>
+      <td>${order.flavor}</td>
+      <td>${order.size || "Not specified"}</td>
+      <td>${order.message || "None"}</td>
+      <td>${orderDate}</td>
+      <td>${deliveryDate}</td> <!-- DELIVERY DATE (was eventDate) -->
+      <td>${order.notes || "None"}</td>
+      <td class="text-center">
+        ${
+          order.imagePath
+            ? `<a href="#" class="view-image" data-image-url="${order.imagePath}" data-image-type="reference" data-bs-toggle="modal" data-bs-target="#imageModal">View</a>`
+            : "None"
+        }
+      </td>
+      <td>${renderStatusBadge(order.status)}</td>
+      <td>${renderPriceInfo(order)}</td>
+      <td>${paymentInfo}</td>
+      <td>${updatedByInfo}</td>
+      <td class="admin-actions-cell">
+        ${renderStatusActions(orderId, true, order.status, order)}
+      </td>
+    `;
         imageTbody.appendChild(row);
       });
     }
-
     if (!customData.orders || customData.orders.length === 0) {
       const row = document.createElement("tr");
       row.innerHTML = `<td colspan="12" class="text-center">No custom cake orders found</td>`; // Changed from 11 to 12
@@ -294,7 +294,7 @@ async function fetchCustomCakeOrders() {
 
     if (!imageData.orders || imageData.orders.length === 0) {
       const row = document.createElement("tr");
-      row.innerHTML = `<td colspan="15" class="text-center">No image-based orders found</td>`; // Changed from 14 to 15
+      row.innerHTML = `<td colspan="14" class="text-center">No image-based orders found</td>`; // Changed from 15 to 14 (removed eventDate column)
       imageTbody.appendChild(row);
     }
 

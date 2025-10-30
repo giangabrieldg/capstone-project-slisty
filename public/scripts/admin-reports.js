@@ -239,7 +239,7 @@ function formatCustomCakeOrdersForReports(orders, prefix) {
       payment_method: "gcash",
       items: [
         {
-          name: isImageBased ? "Image-Based Cake" : "3D Custom Cake",
+          name: isImageBased ? "Image-Based Custom Cake" : "3D Custom Cake",
           size: order.size || "Not specified",
           quantity: 1,
           price: totalAmount,

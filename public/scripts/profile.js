@@ -66,28 +66,6 @@ class ProfileManager {
       editBtn.addEventListener("click", () => this.toggleEditForm(true));
     }
 
-    // Edit phone input formatting
-    const editPhone = document.getElementById("editPhone");
-    if (editPhone) {
-      editPhone.addEventListener("input", (e) => {
-        let value = e.target.value.replace(/\D/g, "");
-
-        if (value.startsWith("63")) {
-          value = "+" + value;
-        } else if (value.startsWith("0")) {
-          value = value;
-        } else if (value.length > 0) {
-          value = "+63" + value;
-        }
-
-        if (value.length > 13) {
-          value = value.substring(0, 13);
-        }
-
-        e.target.value = value;
-      });
-    }
-
     // Cancel edit button
     const cancelBtn = document.getElementById("cancelBtn");
     if (cancelBtn) {
@@ -338,7 +316,7 @@ class ProfileManager {
       if (show) {
         document.getElementById("editName").value =
           document.getElementById("userName").textContent;
-        document.getElementById("editPhone").value =
+        document.getElementById("contactNumber").value =
           document.getElementById("userPhone").textContent;
         document.getElementById("editAddress").value =
           document.getElementById("userAddress").textContent === "Not set"
@@ -352,13 +330,13 @@ class ProfileManager {
   async handleProfileSubmit(e) {
     e.preventDefault();
     const name = document.getElementById("editName").value;
-    const phone = document.getElementById("editPhone").value;
+    const phone = document.getElementById("contactNumber").value;
     const address = document.getElementById("editAddress").value;
 
     document.getElementById("nameError").textContent = "";
     document.getElementById("phoneError").textContent = "";
     document.getElementById("editName").classList.remove("is-invalid");
-    document.getElementById("editPhone").classList.remove("is-invalid");
+    document.getElementById("contactNumber").classList.remove("is-invalid");
 
     let isValid = true;
 
@@ -367,14 +345,6 @@ class ProfileManager {
       document.getElementById("editName").classList.add("is-invalid");
       isValid = false;
     }
-
-    if (phone && !/^(\+63|0)9\d{9}$/.test(phone)) {
-      document.getElementById("phoneError").textContent =
-        "Please enter a valid Philippine phone number (e.g., +639171234567 or 09171234567)";
-      document.getElementById("editPhone").classList.add("is-invalid");
-      isValid = false;
-    }
-
     if (!isValid) return;
 
     try {

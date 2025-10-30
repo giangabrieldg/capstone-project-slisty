@@ -8,7 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const name = document.getElementById("inquiryName").value;
     const email = document.getElementById("inquiryEmail").value;
-    const phone = document.getElementById("inquiryPhone").value;
+    const phone = document.getElementById("contactNumber").value;
     const subject = document.getElementById("inquirySubject").value;
     const message = document.getElementById("inquiryMessage").value;
     const recaptchaToken = grecaptcha.getResponse();

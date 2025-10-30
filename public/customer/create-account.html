@@ -104,15 +104,16 @@
             type="tel"
             class="form-control"
             id="contactNumber"
-            placeholder="Enter your 11-digit contact number"
-            pattern="09\d{9}"
+            name="ContactNumber"
+            placeholder="Contact Number (e.g., 09123456789)"
             maxlength="11"
             required
+            pattern="^09\d{9}$"
+            title="Enter a valid 11-digit Philippine mobile number starting with 09"
           />
-          <div class="invalid-feedback">
-            Please enter a valid 11-digit Philippine contact number starting
-            with 09.
-          </div>
+          <small id="phoneError" class="text-danger" style="display: none">
+            Invalid phone number. Must start with 09 and be 11 digits.
+          </small>
         </div>
         <button type="submit" class="btn btn-login btn-lg mb-3 w-100">
           Create Account
@@ -128,6 +129,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="/scripts/include-html.js"></script>
     <script src="/scripts/environment-config.js"></script>
+    <script src="scripts/phone-validation.js"></script>
     <script>
       // Bootstrap form validation with password match check
       (() => {
@@ -164,12 +166,6 @@
           false
         );
       })();
-
-      // Restrict contact number input to digits only
-      const contactInput = document.getElementById("contactNumber");
-      contactInput.addEventListener("input", (e) => {
-        e.target.value = e.target.value.replace(/\D/g, "");
-      });
     </script>
     <script
       src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js"

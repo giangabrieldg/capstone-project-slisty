@@ -689,8 +689,8 @@ router.put("/admin/image-orders/:orderId", verifyToken, async (req, res) => {
     // CREATE NOTIFICATION
     await createCustomCakeNotification(
       order.userID,
-      "Image Order Update",
-      `Your image order status has been updated to: ${status}`,
+      "Image Based Custom Cake Update",
+      `Your image based custom cake order status has been updated to: ${status}`,
       order.imageBasedOrderId,
       "image_order"
     );

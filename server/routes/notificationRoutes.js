@@ -92,8 +92,8 @@ router.get("/", verifyToken, async (req, res) => {
       notifications.push({
         id: notificationKey,
         type: "image_order",
-        title: "Image Order Update",
-        message: `Your image order is ${order.status}`,
+        title: "Image Based Custom Cake Update",
+        message: `Your image based custom cake order is ${order.status}`,
         time: order.updatedAt,
         isRead: readStatusMap.get(notificationKey) || false,
         relatedId: order.imageBasedOrderId,
@@ -103,7 +103,7 @@ router.get("/", verifyToken, async (req, res) => {
     //Sort by time (newest first) and limit to 15
     notifications.sort((a, b) => new Date(b.time) - new Date(a.time));
 
-    console.log("🔍 Final notifications count:", notifications.length);
+    console.log("Final notifications count:", notifications.length);
 
     res.json({ success: true, notifications: notifications.slice(0, 15) });
   } catch (error) {

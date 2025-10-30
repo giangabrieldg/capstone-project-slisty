@@ -178,12 +178,22 @@
                         <input
                           type="tel"
                           class="form-control"
-                          id="editPhone"
-                          placeholder="+639123456789"
-                          maxlength="13"
-                          inputmode="numeric"
+                          id="contactNumber"
+                          name="ContactNumber"
+                          placeholder="Contact Number (e.g., 09123456789)"
+                          maxlength="11"
+                          required
+                          pattern="^09\d{9}$"
+                          title="Enter a valid 11-digit Philippine mobile number starting with 09"
                         />
-                        <div class="invalid-feedback" id="phoneError"></div>
+                        <small
+                          id="phoneError"
+                          class="text-danger"
+                          style="display: none"
+                        >
+                          Invalid phone number. Must start with 09 and be 11
+                          digits.
+                        </small>
                       </div>
                       <div class="mb-3">
                         <label for="editAddress" class="form-label"
@@ -280,6 +290,7 @@
     <script src="/scripts/display-cart.js"></script>
     <script src="/scripts/include-html.js"></script>
     <script src="/scripts/update-navbar.js"></script>
+    <script src="/scripts/phone-validation.js"></script>
     <script
       src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js"
       integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO"

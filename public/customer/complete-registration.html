@@ -40,12 +40,17 @@
             <input
               type="tel"
               class="form-control"
-              id="phone"
-              placeholder="+639123456789"
-              maxlength="13"
-              inputmode="numeric"
+              id="contactNumber"
+              name="ContactNumber"
+              placeholder="Contact Number (e.g., 09123456789)"
+              maxlength="11"
+              required
+              pattern="^09\d{9}$"
+              title="Enter a valid 11-digit Philippine mobile number starting with 09"
             />
-            <div class="invalid-feedback" id="phoneError"></div>
+            <small id="phoneError" class="text-danger" style="display: none">
+              Invalid phone number. Must start with 09 and be 11 digits.
+            </small>
           </div>
           <div class="mb-3">
             <label for="address" class="form-label">Address</label>
@@ -78,6 +83,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="/scripts/include-html.js"></script>
     <script src="/scripts/environment-config.js"></script>
+    <script src="/scripts/phone-validation.js"></script>
     <script
       src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js"
       integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO"
@@ -86,22 +92,14 @@
     <script>
       function validateForm() {
         let isValid = true;
-        const phone = document.getElementById("phone").value.trim();
+        const phone = document.getElementById("contactNumber").value.trim();
         const address = document.getElementById("address").value.trim();
 
         // Clear previous errors
-        document.getElementById("phone").classList.remove("is-invalid");
+        document.getElementById("contactNumber").classList.remove("is-invalid");
         document.getElementById("address").classList.remove("is-invalid");
         document.getElementById("phoneError").textContent = "";
         document.getElementById("addressError").textContent = "";
-
-        // Validate phone number format if provided
-        if (phone && !/^\+63\d{10}$|^09\d{9}$/.test(phone)) {
-          document.getElementById("phone").classList.add("is-invalid");
-          document.getElementById("phoneError").textContent =
-            "Enter a valid Philippine phone number (e.g., +639123456789 or 09123456789)";
-          isValid = false;
-        }
 
         // Validate address
         if (!address) {
@@ -123,7 +121,7 @@
           if (!validateForm()) return;
 
           const name = document.getElementById("name").value;
-          const phone = document.getElementById("phone").value;
+          const phone = document.getElementById("contactNumber").value;
           const address = document.getElementById("address").value;
           const password = document.getElementById("password").value;
 
@@ -160,7 +158,7 @@
 
             const data = await response.json();
             await Swal.fire({
-              icon: "Success!",
+              icon: "success",
               title: "User registration",
               text: data.message,
               confirmButtonColor: "#2c9045",

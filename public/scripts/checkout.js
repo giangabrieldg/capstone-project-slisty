@@ -712,9 +712,9 @@ class CheckoutManager {
 
       if (!this.checkoutData.pickupDate) {
         Swal.fire({
-          icon: "error",
+          icon: "warning",
           title: "Oops...",
-          text: "Please select a delivery date.", // Updated message
+          text: "Please select a delivery date.",
           confirmButtonColor: "#2c9045",
         });
         return;
