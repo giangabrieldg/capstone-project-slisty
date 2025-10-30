@@ -458,8 +458,6 @@ class CustomCakeController {
   setupImageUpload() {
     const uploadArea = document.getElementById("uploadArea");
     const imageUpload = document.getElementById("imageUpload");
-    const uploadedImageDiv = document.getElementById("uploadedImage");
-    const previewImage = document.getElementById("previewImage");
 
     uploadArea.addEventListener("click", () => imageUpload.click());
 
@@ -478,9 +476,21 @@ class CustomCakeController {
       e.preventDefault();
       uploadArea.style.borderColor = "#d0d0d0";
       uploadArea.style.backgroundColor = "#fafafa";
+
       const files = e.dataTransfer.files;
-      if (files.length > 0 && files[0].type.startsWith("image/")) {
-        this.handleImageUpload(files[0]);
+      if (files.length > 0) {
+        const file = files[0];
+
+        // Immediate validation on drop
+        if (!file.type.startsWith("image/")) {
+          this.showImageError(
+            "Dropped file is not an image. Please drop JPG or PNG files only.",
+            "Invalid File"
+          );
+          return;
+        }
+
+        this.handleImageUpload(file);
       }
     });
 
@@ -492,7 +502,58 @@ class CustomCakeController {
   }
 
   handleImageUpload(file) {
+    // Strict file type validation - only JPG and PNG allowed
+    const allowedTypes = ["image/jpeg", "image/jpg", "image/png"];
+    const maxFileSize = 5 * 1024 * 1024; // 5MB
+
+    // Check file type explicitly
+    if (!allowedTypes.includes(file.type.toLowerCase())) {
+      this.showImageError(
+        "Invalid file type. Please upload only JPG or PNG images.<br><br>" +
+          "<small>Supported formats: .jpg, .jpeg, .png<br>" +
+          "Unsupported formats: .jfif, .gif, .bmp, .webp, .heic, etc.</small>",
+        "Invalid File Type"
+      );
+      return;
+    }
+
+    // Check file extension as additional safety
+    const fileName = file.name.toLowerCase();
+    const validExtensions = [".jpg", ".jpeg", ".png"];
+    const hasValidExtension = validExtensions.some((ext) =>
+      fileName.endsWith(ext)
+    );
+
+    if (!hasValidExtension) {
+      this.showImageError(
+        "Invalid file extension. Please upload only JPG or PNG images.<br><br>" +
+          "<small>Supported: .jpg, .jpeg, .png<br>" +
+          "Unsupported: .jfif, .gif, .bmp, .webp, .heic, etc.</small>",
+        "Invalid File Extension"
+      );
+      return;
+    }
+
+    // Check file size
+    if (file.size > maxFileSize) {
+      this.showImageError(
+        "File is too large. Please upload an image smaller than 5MB.",
+        "File Too Large"
+      );
+      return;
+    }
+
+    // Check if file is actually an image
+    if (!file.type.startsWith("image/")) {
+      this.showImageError(
+        "Selected file is not a valid image. Please upload JPG or PNG files only.",
+        "Invalid File"
+      );
+      return;
+    }
+
     const reader = new FileReader();
+
     reader.onload = (e) => {
       document.getElementById("previewImage").src = e.target.result;
       document.getElementById("uploadedImage").style.display = "block";
@@ -500,17 +561,51 @@ class CustomCakeController {
       document.getElementById("imageOrderForm").style.display = "block";
       document.getElementById("uploadedFileName").textContent = file.name;
 
-      // Re-setup the form when it becomes visible to ensure fresh event listeners
+      // Clear any previous errors
+      this.clearImageErrors();
+
+      // Re-setup the form when it becomes visible
       setTimeout(() => this.setupImageOrderForm(), 100);
     };
+
+    reader.onerror = () => {
+      this.showImageError(
+        "Error reading file. Please try again with a different image.",
+        "File Read Error"
+      );
+    };
+
     reader.readAsDataURL(file);
+  }
+
+  // New method for showing image upload errors
+  showImageError(message, title = "Upload Error") {
+    Swal.fire({
+      icon: "error",
+      title: title,
+      html: message,
+      confirmButtonColor: "#2c9045",
+    });
+
+    // Reset the file input completely
+    const imageUpload = document.getElementById("imageUpload");
+    imageUpload.value = "";
+
+    // Reset UI state
+    this.clearImageErrors();
+  }
+
+  // Clear any error states
+  clearImageErrors() {
+    const uploadArea = document.getElementById("uploadArea");
+    uploadArea.style.borderColor = "#d0d0d0";
+    uploadArea.style.backgroundColor = "#fafafa";
   }
 
   setupImageOrderForm() {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
 
-    // CHANGE THIS LINE: eventDate → deliveryDate
     const deliveryDateInput = document.getElementById("deliveryDate");
     if (deliveryDateInput) {
       deliveryDateInput.min = tomorrow.toISOString().split("T")[0];
@@ -549,34 +644,65 @@ class CustomCakeController {
 
       // Disable button and show loading state
       currentSubmitButton.disabled = true;
-      currentSubmitButton.textContent = "Submitting...";
+      currentSubmitButton.innerHTML = `
+      <span class="loading-spinner" style="
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border: 2px solid #ffffff;
+        border-radius: 50%;
+        border-top-color: transparent;
+        animation: spin 1s linear infinite;
+        margin-right: 8px;
+      "></span>
+      Submitting Order...
+    `;
       currentSubmitButton.style.opacity = "0.7";
 
       try {
+        // Validate that we have an image
+        const imageUpload = document.getElementById("imageUpload");
+        if (!imageUpload.files || imageUpload.files.length === 0) {
+          throw new Error("Please upload an image before submitting.");
+        }
+
         const result = await this.apiService.submitImageBasedOrder(newForm);
 
         if (result.success) {
-          this.apiService.handleResponse(result, () => {
+          await this.apiService.handleResponse(result, () => {
             this.resetImageOrderForm();
-            // Reset button state after successful submission
-            currentSubmitButton.disabled = false;
-            currentSubmitButton.textContent = originalText;
-            currentSubmitButton.style.opacity = "1";
           });
         } else {
           throw new Error(result.message || "Submission failed");
         }
       } catch (error) {
         console.error("Form submission error:", error);
-        // Re-enable button on error
-        currentSubmitButton.disabled = false;
-        currentSubmitButton.textContent = originalText;
-        currentSubmitButton.style.opacity = "1";
 
-        ToastNotifications.showToast(
-          error.message || "Error submitting order. Please try again.",
-          "error"
-        );
+        // Show appropriate error message based on error type
+        let userMessage = "Error submitting order. Please try again.";
+
+        if (
+          error.message.includes("500") ||
+          error.message.includes("Internal Server Error")
+        ) {
+          userMessage =
+            "Server error. Please try again in a few moments. If the problem persists, contact support.";
+        } else if (
+          error.message.includes("network") ||
+          error.message.includes("fetch")
+        ) {
+          userMessage =
+            "Network error. Please check your connection and try again.";
+        } else {
+          userMessage = error.message;
+        }
+
+        ToastNotifications.showToast(userMessage, "error");
+      } finally {
+        // Re-enable button regardless of success or failure
+        currentSubmitButton.disabled = false;
+        currentSubmitButton.textContent = "Submit Image Order";
+        currentSubmitButton.style.opacity = "1";
       }
     });
   }

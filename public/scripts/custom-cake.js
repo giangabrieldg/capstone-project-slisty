@@ -294,7 +294,19 @@ class CakeAPIService {
 
     // Disable button and show loading state
     submitButton.disabled = true;
-    submitButton.textContent = "Submitting...";
+    submitButton.innerHTML = `
+    <span class="loading-spinner" style="
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #ffffff;
+      border-radius: 50%;
+      border-top-color: transparent;
+      animation: spin 1s linear infinite;
+      margin-right: 8px;
+    "></span>
+    Submitting...
+  `;
     submitButton.style.opacity = "0.7";
 
     try {
@@ -319,13 +331,28 @@ class CakeAPIService {
       const token = this.getToken();
       const formData = new FormData();
 
-      // Validate form inputs - CHANGED: eventDate → deliveryDate
+      // Validate form inputs
       const flavor = formElement.querySelector("#imageFlavor").value.trim();
       const deliveryDate = formElement.querySelector("#deliveryDate").value;
       const message = formElement.querySelector("#imageMessage").value.trim();
       const notes = formElement.querySelector("#imageNotes").value.trim();
       const size = formElement.querySelector("#imageSize").value;
       const imageUpload = document.getElementById("imageUpload");
+
+      // NEW: Image validation before proceeding
+      const imageValidation = this.validateImageFile(imageUpload);
+      if (!imageValidation.valid) {
+        await Swal.fire({
+          icon: "error",
+          title: "Invalid Image",
+          text: imageValidation.message,
+          confirmButtonColor: "#2c9045",
+        });
+        return {
+          success: false,
+          message: imageValidation.message,
+        };
+      }
 
       // FIXED: Better date validation with proper error handling
       if (!flavor) {
@@ -340,17 +367,11 @@ class CakeAPIService {
           message: "Delivery date is required.",
         };
       }
-      if (!imageUpload || !imageUpload.files[0]) {
-        return {
-          success: false,
-          message: "Reference image is required.",
-        };
-      }
 
       // FIXED: Validate date after checking if it exists
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
-      tomorrow.setHours(0, 0, 0, 0); // Set to midnight for accurate date comparison
+      tomorrow.setHours(0, 0, 0, 0);
 
       const selectedDate = new Date(deliveryDate);
       if (isNaN(selectedDate.getTime())) {
@@ -359,7 +380,7 @@ class CakeAPIService {
           message: "Invalid delivery date format.",
         };
       }
-      selectedDate.setHours(0, 0, 0, 0); // Set to midnight for accurate date comparison
+      selectedDate.setHours(0, 0, 0, 0);
 
       if (selectedDate < tomorrow) {
         return {
@@ -425,6 +446,19 @@ class CakeAPIService {
         } catch (e) {
           // If we can't parse JSON error response, use default message
         }
+
+        // Handle specific HTTP status codes with user-friendly messages
+        if (response.status === 500) {
+          errorMessage =
+            "Server error. Please try again in a few moments. If the problem persists, contact support.";
+        } else if (response.status === 413) {
+          errorMessage =
+            "Image file is too large. Please upload a smaller image (max 5MB).";
+        } else if (response.status === 415) {
+          errorMessage =
+            "Unsupported image format. Please upload JPG or PNG files only.";
+        }
+
         throw new Error(errorMessage);
       }
 
@@ -450,12 +484,33 @@ class CakeAPIService {
       };
     } catch (error) {
       console.error("Error submitting image order:", error);
+
+      // Show appropriate error message based on error type
+      let userMessage = "Error submitting order. Please try again.";
+
+      if (
+        error.message.includes("500") ||
+        error.message.includes("Internal Server Error")
+      ) {
+        userMessage =
+          "Server error. Please try again in a few moments. If the problem persists, contact support.";
+      } else if (
+        error.message.includes("network") ||
+        error.message.includes("fetch")
+      ) {
+        userMessage =
+          "Network error. Please check your connection and try again.";
+      } else {
+        userMessage = error.message;
+      }
+
       await Swal.fire({
         icon: "error",
-        title: "Oops...",
-        text: "Error submitting order. Please try again.",
+        title: "Submission Failed",
+        text: userMessage,
         confirmButtonColor: "#2c9045",
       });
+
       return {
         success: false,
         error: error.message,
@@ -466,6 +521,70 @@ class CakeAPIService {
       submitButton.textContent = originalText;
       submitButton.style.opacity = "1";
     }
+  }
+
+  //Image validation method
+  validateImageFile(imageUpload) {
+    if (!imageUpload || !imageUpload.files || imageUpload.files.length === 0) {
+      return {
+        valid: false,
+        message: "Please select an image to upload.",
+      };
+    }
+
+    const file = imageUpload.files[0];
+
+    // Strict allowed file types - ONLY JPG and PNG
+    const allowedTypes = ["image/jpeg", "image/jpg", "image/png"];
+    const maxFileSize = 5 * 1024 * 1024; // 5MB
+
+    //Check MIME type
+    if (!allowedTypes.includes(file.type.toLowerCase())) {
+      return {
+        valid: false,
+        message:
+          "Invalid file type. Please upload only JPG or PNG images. Other formats like JFIF, GIF, BMP, WEBP are not supported.",
+      };
+    }
+
+    // Double-check with file extension
+    const fileName = file.name.toLowerCase();
+    const validExtensions = [".jpg", ".jpeg", ".png"];
+    const hasValidExtension = validExtensions.some((ext) =>
+      fileName.endsWith(ext)
+    );
+
+    if (!hasValidExtension) {
+      return {
+        valid: false,
+        message:
+          "Invalid file extension. Please upload only JPG or PNG images. Detected format: " +
+          file.name.split(".").pop().toUpperCase() +
+          " is not supported.",
+      };
+    }
+
+    // Check file size
+    if (file.size > maxFileSize) {
+      return {
+        valid: false,
+        message: "File is too large. Please upload an image smaller than 5MB.",
+      };
+    }
+
+    // Final check - ensure it's actually an image
+    if (!file.type.startsWith("image/")) {
+      return {
+        valid: false,
+        message:
+          "Selected file is not a valid image. Please upload JPG or PNG files only.",
+      };
+    }
+
+    return {
+      valid: true,
+      message: "Image validation passed",
+    };
   }
 
   // Process custom cake payment
