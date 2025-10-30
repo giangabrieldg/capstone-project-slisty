@@ -63,3 +63,15 @@ body {
 #paymentStatusMessage.show {
     display: block !important;
 }
+
+.prefilled-date {
+    background-color: #f8f9fa;
+    border-left: 4px solid #2c9045;
+    padding-left: 10px;
+}
+
+.prefilled-date input:disabled {
+    background-color: #e9ecef;
+    color: #495057;
+    cursor: not-allowed;
+}

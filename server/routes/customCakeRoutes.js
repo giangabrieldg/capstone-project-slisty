@@ -247,7 +247,7 @@ router.post(
   upload.single("image"),
   async (req, res) => {
     try {
-      const { flavor, message, notes, eventDate, size } = req.body;
+      const { flavor, message, notes, deliveryDate, size } = req.body;
       const delivery_method = req.body.delivery_method || "pickup";
       const delivery_address = req.body.delivery_address || null;
       const customer_name = req.body.customer_name;
@@ -257,7 +257,7 @@ router.post(
       // Validate required fields
       if (
         !flavor ||
-        !eventDate ||
+        !deliveryDate ||
         !req.file ||
         !customer_name ||
         !customer_email ||
@@ -266,25 +266,35 @@ router.post(
         return res.status(400).json({
           success: false,
           message:
-            "Flavor, event date, image, and customer details are required",
+            "Flavor, delivery date, image, and customer details are required",
         });
       }
 
-      //Validate delivery method
+      // Validate delivery method
       if (!["pickup", "delivery"].includes(delivery_method)) {
         return res
           .status(400)
           .json({ success: false, message: "Invalid delivery method" });
       }
 
-      // Validate event date
+      // FIXED: Proper date comparison without time component
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
-      const selectedDate = new Date(eventDate);
+      tomorrow.setHours(0, 0, 0, 0); // Set to midnight
+
+      const selectedDate = new Date(deliveryDate);
+      if (isNaN(selectedDate.getTime())) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid delivery date format",
+        });
+      }
+      selectedDate.setHours(0, 0, 0, 0); // Set to midnight
+
       if (selectedDate < tomorrow) {
         return res.status(400).json({
           success: false,
-          message: "Event date must be tomorrow or later",
+          message: "Delivery date must be tomorrow or later",
         });
       }
 
@@ -296,10 +306,11 @@ router.post(
         userID: req.user.userID,
         imagePath: imageUrl,
         flavor,
-        size: size || null, // ADD size
+        size: size || null,
         message: message || null,
         notes: notes || null,
-        eventDate,
+        deliveryDate: deliveryDate,
+        eventDate: deliveryDate, // Keep for backward compatibility
         status: "Pending Review",
         delivery_method,
         delivery_address:
@@ -313,6 +324,7 @@ router.post(
         success: true,
         message: "Image-based order created successfully",
         orderId: imageOrder.imageBasedOrderId,
+        deliveryDate: imageOrder.deliveryDate,
       });
     } catch (error) {
       console.error("Error creating image-based order:", error);

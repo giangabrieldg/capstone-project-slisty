@@ -286,7 +286,7 @@ class CakeAPIService {
     }
   }
 
-  // UPDATED: Submit image-based order with beautiful profile validation
+  //Submit image-based order with profile validation
   async submitImageBasedOrder(formElement) {
     // Prevent multiple submissions
     const submitButton = formElement.querySelector('button[type="submit"]');
@@ -319,28 +319,25 @@ class CakeAPIService {
       const token = this.getToken();
       const formData = new FormData();
 
-      // Validate form inputs
+      // Validate form inputs - CHANGED: eventDate → deliveryDate
       const flavor = formElement.querySelector("#imageFlavor").value.trim();
-      const eventDate = formElement.querySelector("#eventDate").value;
+      const deliveryDate = formElement.querySelector("#deliveryDate").value;
       const message = formElement.querySelector("#imageMessage").value.trim();
       const notes = formElement.querySelector("#imageNotes").value.trim();
       const size = formElement.querySelector("#imageSize").value;
       const imageUpload = document.getElementById("imageUpload");
 
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      const selectedDate = new Date(eventDate);
-
+      // FIXED: Better date validation with proper error handling
       if (!flavor) {
         return {
           success: false,
           message: "Flavor is required.",
         };
       }
-      if (!eventDate || selectedDate < tomorrow) {
+      if (!deliveryDate) {
         return {
           success: false,
-          message: "Event date must be tomorrow or later.",
+          message: "Delivery date is required.",
         };
       }
       if (!imageUpload || !imageUpload.files[0]) {
@@ -350,12 +347,33 @@ class CakeAPIService {
         };
       }
 
+      // FIXED: Validate date after checking if it exists
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setHours(0, 0, 0, 0); // Set to midnight for accurate date comparison
+
+      const selectedDate = new Date(deliveryDate);
+      if (isNaN(selectedDate.getTime())) {
+        return {
+          success: false,
+          message: "Invalid delivery date format.",
+        };
+      }
+      selectedDate.setHours(0, 0, 0, 0); // Set to midnight for accurate date comparison
+
+      if (selectedDate < tomorrow) {
+        return {
+          success: false,
+          message: "Delivery date must be tomorrow or later.",
+        };
+      }
+
       // Add form fields to FormData
       formData.append("flavor", flavor);
       formData.append("size", size);
       formData.append("message", message);
       formData.append("notes", notes);
-      formData.append("eventDate", eventDate);
+      formData.append("deliveryDate", deliveryDate);
       formData.append("image", imageUpload.files[0]);
 
       // Load customer profile to get name, email, phone

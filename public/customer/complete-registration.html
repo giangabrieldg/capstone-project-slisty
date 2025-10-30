@@ -159,7 +159,12 @@
             );
 
             const data = await response.json();
-            alert(data.message);
+            await Swal.fire({
+              icon: "Success!",
+              title: "User registration",
+              text: data.message,
+              confirmButtonColor: "#2c9045",
+            });
             if (response.ok) {
               window.location.href = "/customer/login.html";
             } else {

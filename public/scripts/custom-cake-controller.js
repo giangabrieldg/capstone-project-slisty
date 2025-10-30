@@ -161,7 +161,7 @@ class CustomCakeController {
     try {
       if (!this.apiService.isAuthenticated()) {
         await Swal.fire({
-          icon: "error",
+          icon: "warning",
           title: "Oops...",
           text: "Please log in to checkout your custom cake",
           confirmButtonColor: "#2c9045",
@@ -509,9 +509,14 @@ class CustomCakeController {
   setupImageOrderForm() {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
-    document.getElementById("eventDate").min = tomorrow
-      .toISOString()
-      .split("T")[0];
+
+    // CHANGE THIS LINE: eventDate → deliveryDate
+    const deliveryDateInput = document.getElementById("deliveryDate");
+    if (deliveryDateInput) {
+      deliveryDateInput.min = tomorrow.toISOString().split("T")[0];
+    } else {
+      console.warn("Delivery date input not found");
+    }
 
     document.getElementById("imageNotes").addEventListener("input", (e) => {
       document.getElementById("notesCharCount").textContent =
@@ -587,6 +592,14 @@ class CustomCakeController {
     const notesCharCount = document.getElementById("notesCharCount");
     if (messageCharCount) messageCharCount.textContent = "0";
     if (notesCharCount) notesCharCount.textContent = "0";
+
+    // Reset the delivery date min attribute
+    const deliveryDateInput = document.getElementById("deliveryDate");
+    if (deliveryDateInput) {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      deliveryDateInput.min = tomorrow.toISOString().split("T")[0];
+    }
 
     // Reset UI elements
     document.getElementById("imageOrderForm").style.display = "none";

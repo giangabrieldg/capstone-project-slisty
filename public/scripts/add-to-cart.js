@@ -5,7 +5,7 @@ document.getElementById("addToCart").addEventListener("click", async () => {
   if (!token) {
     // Show alert FIRST, then redirect AFTER user clicks OK
     await Swal.fire({
-      icon: "error",
+      icon: "warning",
       title: "Oops...",
       text: "Please log in to add items to your cart.",
       confirmButtonColor: "#2c9045",

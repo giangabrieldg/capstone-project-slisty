@@ -114,11 +114,9 @@ class CheckoutManager {
       if (!response.ok) throw new Error("Failed to load custom cake order");
 
       const data = await response.json();
-
-      //Check if data.order exists, otherwise use data directly
       this.customCakeOrder = data.order || data;
 
-      //Add proper null checking
+      // Add proper null checking
       if (!this.customCakeOrder) {
         console.error("Custom cake order is null or undefined");
         await Swal.fire({
@@ -129,6 +127,14 @@ class CheckoutManager {
         });
         window.location.href = "/customer/custom-orders.html";
         return;
+      }
+
+      // NEW: Pre-fill delivery date for image-based orders
+      if (
+        this.customCakeData.isImageOrder &&
+        this.customCakeOrder.deliveryDate
+      ) {
+        this.prefillDeliveryDate(this.customCakeOrder.deliveryDate);
       }
 
       // Check if price is properly set
@@ -708,7 +714,7 @@ class CheckoutManager {
         Swal.fire({
           icon: "error",
           title: "Oops...",
-          text: "Please select a pickup or delivery date.",
+          text: "Please select a delivery date.", // Updated message
           confirmButtonColor: "#2c9045",
         });
         return;
@@ -1249,6 +1255,37 @@ class CheckoutManager {
         confirmButtonColor: "#2c9045",
       });
     }
+  }
+
+  prefillDeliveryDate(deliveryDate) {
+    const dateInput = document.getElementById("pickupDate");
+    const dateLabel = document.querySelector('label[for="pickupDate"]');
+    const dateSection = document.getElementById("deliveryDateSection"); // You might need to add this ID to your HTML
+
+    if (!dateInput) return;
+
+    // Format the date for the input field (YYYY-MM-DD)
+    const formattedDate = new Date(deliveryDate).toISOString().split("T")[0];
+
+    // Set the date value
+    dateInput.value = formattedDate;
+    this.checkoutData.pickupDate = formattedDate;
+
+    // Disable the date picker
+    dateInput.disabled = true;
+
+    // Update label to show it's pre-filled
+    if (dateLabel) {
+      dateLabel.innerHTML =
+        'Delivery Date <span class="text-muted">(Pre-selected from your order)</span>';
+    }
+
+    // Optional: Add a visual indicator
+    if (dateSection) {
+      dateSection.classList.add("prefilled-date");
+    }
+
+    console.log("Pre-filled delivery date from order:", formattedDate);
   }
 }
 
