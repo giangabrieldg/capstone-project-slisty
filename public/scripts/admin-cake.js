@@ -288,14 +288,13 @@ async function fetchCustomCakeOrders() {
     }
     if (!customData.orders || customData.orders.length === 0) {
       const row = document.createElement("tr");
-      row.innerHTML = `<td colspan="12" class="text-center">No custom cake orders found</td>`; // Changed from 11 to 12
+      row.innerHTML = `<td colspan="12" class="text-center">No custom cake orders found</td>`;
       customTbody.appendChild(row);
     }
 
     if (!imageData.orders || imageData.orders.length === 0) {
       const row = document.createElement("tr");
-      row.innerHTML = `<td colspan="14" class="text-center">No image-based orders found</td>`; // Changed from 15 to 14 (removed eventDate column)
-      imageTbody.appendChild(row);
+      row.innerHTML = `<td colspan="14" class="text-center">No image-based orders found</td>`;
     }
 
     setupEventListeners(token);
@@ -340,7 +339,7 @@ function renderPriceInfo(order) {
   return html;
 }
 
-// Helper function to render payment info (FIXED: Completed orders show "paid")
+// Helper function to render payment info
 function renderPaymentInfo(order) {
   // If status is completed, payment should be marked as paid
   if (order.status === "Completed") {
@@ -388,7 +387,7 @@ function renderPaymentInfo(order) {
   return html;
 }
 
-// Helper function to render status badge (UPDATED with admin-orders color scheme)
+// Helper function to render status badge
 function renderStatusBadge(status) {
   const statusMap = {
     "Pending Review": { class: "pending", text: "Pending Review" },
@@ -462,7 +461,7 @@ function renderStatusActions(orderId, isImageOrder, currentStatus, order) {
     html += renderCustomCakeActions(orderId, currentStatus, order);
   }
 
-  // Cancel button for active orders - FIXED: Added data-is-image-order attribute
+  // Cancel button for active orders
   if (
     currentStatus !== "Cancelled" &&
     currentStatus !== "Completed" &&
@@ -488,7 +487,7 @@ function renderImageOrderActions(orderId, currentStatus, order) {
   ].includes(currentStatus);
   const priceIsSet = order.price && order.price > 0;
 
-  // Price input for relevant statuses - DISABLED once price is set
+  // Price input for relevant statuses
   if (showPriceInput && currentStatus !== "Not Feasible") {
     const isDisabled = priceIsSet ? "disabled" : "";
     const disabledText = priceIsSet ? " (Price locked)" : "";
@@ -525,7 +524,7 @@ function renderImageOrderActions(orderId, currentStatus, order) {
       </div>`;
   }
 
-  // Action buttons based on current status - REMOVED downpayment-paid button
+  //Action buttons based on current status
   switch (currentStatus) {
     case "Pending Review":
       html += `
@@ -555,7 +554,6 @@ function renderImageOrderActions(orderId, currentStatus, order) {
       break;
 
     case "Ready for Downpayment":
-      // REMOVED: Downpayment Paid button - this should only be updated via customer payment
       html += `
         <div class="text-center">
           <small class="text-muted d-block">
@@ -734,6 +732,7 @@ function handlePriceInput() {
 }
 
 // Main status actions handler
+// Main status actions handler
 async function handleStatusActions(e) {
   const target = e.target.closest("button");
   if (!target) return;
@@ -822,7 +821,6 @@ async function handleStatusActions(e) {
       newStatus = "Completed";
       body = { status: newStatus };
     } else if (target.classList.contains("cancel-order-btn")) {
-      // NEW: Handle cancellation with remarks modal
       const row = target.closest("tr");
       const orderDetails = {
         customer_name:
@@ -831,7 +829,7 @@ async function handleStatusActions(e) {
         order_type: isImageOrder ? "Image-based" : "3D Custom Cake",
       };
       openCancellationModal(orderId, isImageOrder, orderDetails);
-      return; // Don't proceed with regular fetch
+      return;
     }
 
     const response = await fetch(endpoint, {
@@ -846,7 +844,14 @@ async function handleStatusActions(e) {
     const data = await response.json();
 
     if (data.success) {
-      showNotification("success", `Order ${orderId} updated to ${newStatus}!`);
+      Swal.fire({
+        icon: "success",
+        title: "Success!",
+        text: `Order ${orderId} updated to ${newStatus}!`,
+        confirmButtonColor: "#2c9045",
+        timer: 3000,
+        showConfirmButton: true,
+      });
       fetchCustomCakeOrders();
     } else {
       const errorMsg =
@@ -856,11 +861,16 @@ async function handleStatusActions(e) {
     }
   } catch (error) {
     console.error("Error updating order:", error);
-    showNotification("error", `Failed to update order: ${error.message}`);
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: `Failed to update order: ${error.message}`,
+      confirmButtonColor: "#d33",
+    });
   }
 }
 
-// Cancellation Modal Functions - Add to admin-cake.js
+//Cancellation Modal Functions
 
 let cancellationModal = null;
 
@@ -919,7 +929,7 @@ function openCancellationModal(orderId, isImageOrder, orderDetails = {}) {
   cancellationModal.show();
 }
 
-// Confirm and process cancellation
+//Confirm and process cancellation
 async function confirmCancellation() {
   const orderId = document.getElementById("cancelOrderId").value;
   const isImageOrder =
@@ -943,15 +953,24 @@ async function confirmCancellation() {
 
     if (result.success) {
       cancellationModal.hide();
-      showNotification(
-        "success",
-        result.message || "Order cancelled successfully"
-      );
+      Swal.fire({
+        icon: "success",
+        title: "Success!",
+        text: result.message || "Order cancelled successfully",
+        confirmButtonColor: "#2c9045",
+        timer: 3000,
+        showConfirmButton: true,
+      });
 
       // Refresh the orders table
       fetchCustomCakeOrders();
     } else {
-      showNotification("error", result.message || "Failed to cancel order");
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: result.message || "Failed to cancel order",
+        confirmButtonColor: "#d33",
+      });
       confirmBtn.disabled = false;
       confirmBtn.innerHTML = originalText;
     }
@@ -992,26 +1011,6 @@ function resetCancellationForm() {
   if (alert) {
     alert.remove();
   }
-}
-
-// Notification helper function
-function showNotification(type, message) {
-  const alertClass = type === "success" ? "alert-success" : "alert-danger";
-  const icon = type === "success" ? "fa-check-circle" : "fa-exclamation-circle";
-
-  const notification = document.createElement("div");
-  notification.className = `alert ${alertClass} alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3`;
-  notification.style.zIndex = "9999";
-  notification.innerHTML = `
-    <i class="fas ${icon}"></i> ${message}
-    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-  `;
-
-  document.body.appendChild(notification);
-
-  setTimeout(() => {
-    notification.remove();
-  }, 5000);
 }
 
 // Search functionality

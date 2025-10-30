@@ -32,34 +32,31 @@
       <div data-include-admin-sidebar="/includes/sidebar-admin.html"></div>
       <main class="content">
         <!-- Reports Header -->
-        <div class="reports-header">
+        <div
+          class="reports-header d-flex flex-column flex-lg-row justify-content-between align-items-lg-center"
+        >
+          <!-- Left: Title -->
           <h2 class="mb-3 mb-lg-0">Reports</h2>
-          <div class="header-actions w-100 w-lg-auto">
-            <!-- Date Filter -->
-            <div class="date-filter mb-2 mb-lg-0">
-              <div
-                class="d-flex flex-column flex-sm-row align-items-stretch align-items-sm-center gap-2"
-              >
-                <input
-                  type="date"
-                  class="form-control date-picker"
-                  id="startDate"
-                  name="startDate"
-                />
-                <span class="text-center d-none d-sm-inline">to</span>
-                <input
-                  type="date"
-                  class="form-control date-picker"
-                  id="endDate"
-                  name="endDate"
-                />
-                <button id="applyDateFilter" class="btn btn-primary">
-                  Apply
-                </button>
-              </div>
-            </div>
-            <!-- Export Button -->
-            <button id="exportExcel" class="btn btn-success w-100 w-sm-auto">
+
+          <!-- Right: Date filter + buttons -->
+          <div
+            class="d-flex flex-column flex-sm-row align-items-stretch align-items-sm-center gap-2"
+          >
+            <input
+              type="date"
+              class="form-control date-picker"
+              id="startDate"
+              name="startDate"
+            />
+            <span class="text-center d-none d-sm-inline">to</span>
+            <input
+              type="date"
+              class="form-control date-picker"
+              id="endDate"
+              name="endDate"
+            />
+            <button id="applyDateFilter" class="btn btn-primary">Apply</button>
+            <button id="exportExcel" class="btn btn-success btn-export">
               <i class="bi bi-file-earmark-excel"></i>
               <span class="d-none d-sm-inline">Export to</span> Excel
             </button>

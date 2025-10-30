@@ -6,7 +6,8 @@ class AdminDashboard {
       total: 0,
       new_orders: 0,
       pending_custom_cakes: 0,
-      new_custom_cakes: 0, //new custom cake orders
+      new_custom_cakes: 0,
+      pending_inquiries: 0,
     };
     this.newOrders = [];
     this.pendingCustomCakes = [];
@@ -30,28 +31,39 @@ class AdminDashboard {
         return;
       }
 
-      // Fetch all data in parallel
-      const [dashboardResponse, customCakeData, imageBasedData] =
-        await Promise.all([
-          fetch(`${window.API_BASE_URL}/api/orders/admin/dashboard`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }),
-          fetch(`${window.API_BASE_URL}/api/custom-cake/admin/orders`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }),
-          fetch(`${window.API_BASE_URL}/api/custom-cake/admin/image-orders`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }),
-        ]);
+      // Fetch all data in parallel - ADD INQUIRIES HERE
+      const [
+        dashboardResponse,
+        customCakeData,
+        imageBasedData,
+        inquiriesResponse,
+      ] = await Promise.all([
+        fetch(`${window.API_BASE_URL}/api/orders/admin/dashboard`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }),
+        fetch(`${window.API_BASE_URL}/api/custom-cake/admin/orders`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }),
+        fetch(`${window.API_BASE_URL}/api/custom-cake/admin/image-orders`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }),
+        // ADD THIS - Fetch pending inquiries
+        fetch(`${window.API_BASE_URL}/api/inquiries`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }),
+      ]);
 
       if (!dashboardResponse.ok) {
         throw new Error("Failed to fetch dashboard data");
@@ -61,12 +73,21 @@ class AdminDashboard {
       const customCakeOrders = customCakeData.ok
         ? (await customCakeData.json()).orders || []
         : [];
+
       const imageBasedOrders = imageBasedData.ok
         ? (await imageBasedData.json()).orders || []
         : [];
 
+      const inquiries = inquiriesResponse.ok
+        ? await inquiriesResponse.json()
+        : [];
+
+      const pendingInquiries = inquiries.filter(
+        (inquiry) => inquiry.status === "Pending"
+      );
+
       if (data.success) {
-        // Get today's date for filtering
+        // today's date for filtering
         const today = new Date();
         const todayStart = new Date(
           today.getFullYear(),
@@ -148,14 +169,17 @@ class AdminDashboard {
         this.notifications = {
           ...data.notifications,
           new_custom_cakes: this.newCustomCakes.length,
+          pending_inquiries: pendingInquiries.length,
           total:
             (data.notifications.new_orders || 0) +
             (data.notifications.pending_custom_cakes || 0) +
-            this.newCustomCakes.length,
+            this.newCustomCakes.length +
+            pendingInquiries.length,
         };
 
         this.newOrders = data.new_orders || [];
         this.pendingCustomCakes = data.pending_custom_cakes || [];
+        this.pendingInquiries = pendingInquiries;
         this.lastUpdate = new Date();
 
         // Update summary with today's custom cake counts (only paid ones)
@@ -661,6 +685,40 @@ class AdminDashboard {
           </div>
         </div>
       `;
+    }
+
+    if (this.pendingInquiries && this.pendingInquiries.length > 0) {
+      content += `
+      <div class="mb-4">
+        <h6><i class="bi bi-question-circle text-info me-2"></i> Pending Inquiries (${
+          this.pendingInquiries.length
+        })</h6>
+        <div class="list-group">
+          ${this.pendingInquiries
+            .map(
+              (inquiry) => `
+              <div class="list-group-item">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <strong>${inquiry.subject}</strong> - ${
+                inquiry.User?.name || inquiry.name
+              }
+                    <br><small class="text-muted">${inquiry.email} | ${
+                inquiry.phone
+              }</small>
+                    <br><small class="text-truncate" style="max-width: 300px;">${
+                      inquiry.message
+                    }</small>
+                  </div>
+                  <span class="badge bg-secondary">Pending Reply</span>
+                </div>
+              </div>
+            `
+            )
+            .join("")}
+        </div>
+      </div>
+    `;
     }
 
     if (content === "") {

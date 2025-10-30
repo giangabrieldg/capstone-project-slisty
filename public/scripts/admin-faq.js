@@ -62,7 +62,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Event delegation for edit/remove buttons
-  faqsTableBody.addEventListener("click", (e) => {
+  faqsTableBody.addEventListener("click", async (e) => {
     if (e.target.classList.contains("edit-faq")) {
       modalTitle.textContent = "Edit FAQ";
       const question = e.target.dataset.question;
@@ -74,12 +74,20 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (e.target.classList.contains("remove-faq")) {
-      if (
-        confirm(
-          `Are you sure you want to delete the FAQ: "${e.target.dataset.question}"?`
-        )
-      ) {
-        deleteFaq(e.target.dataset.question);
+      const question = e.target.dataset.question;
+      const result = await Swal.fire({
+        title: "Are you sure?",
+        text: `You are about to delete the FAQ: "${question}"`,
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#3085d6",
+        confirmButtonText: "Yes, delete it!",
+        cancelButtonText: "Cancel",
+      });
+
+      if (result.isConfirmed) {
+        deleteFaq(question);
       }
     }
   });

@@ -578,7 +578,7 @@ function showError(message) {
   errorAlert.style.display = "block";
 }
 
-// Pure JavaScript Excel export function
+// Excel export function
 function exportToExcel() {
   if (isLoading) return;
 
@@ -608,15 +608,7 @@ function exportToExcel() {
     cell.innerHTML = `${customerName}<br>Payment: ${paymentMethod}<br>Delivery: ${deliveryMethod}`;
   });
 
-  // Add PHP formatting to amount cells
-  const amountCells = tableClone.querySelectorAll("td:nth-child(3)");
-  amountCells.forEach((cell) => {
-    if (cell.textContent.includes("PHP")) {
-      cell.textContent = cell.textContent.replace("PHP", "PHP ");
-    }
-  });
-
-  // Calculate summary from the actual table data
+  // Calculate summary from the actual table data - FIXED VERSION
   const rows = tableClone.querySelectorAll("tbody tr");
   let totalOrders = 0;
   let totalRevenue = 0;
@@ -625,9 +617,17 @@ function exportToExcel() {
 
   // Count only data rows (exclude summary/title rows we'll add)
   rows.forEach((row) => {
-    // Check if this is a data row (has order ID)
-    const firstCell = row.querySelector("td:first-child");
-    if (firstCell && firstCell.textContent.startsWith("#")) {
+    // Skip rows that are not data rows (empty or placeholder rows)
+    if (row.cells.length < 6) return;
+
+    const firstCell = row.cells[0];
+    const amountCell = row.cells[2];
+
+    // Check if this is a data row (has order ID and amount)
+    if (firstCell && amountCell && firstCell.textContent.trim() !== "") {
+      // Skip the "No orders found" row
+      if (firstCell.textContent.includes("No orders found")) return;
+
       totalOrders++;
 
       // Check order type
@@ -643,14 +643,35 @@ function exportToExcel() {
         }
       }
 
-      // Get revenue from amount cell (3rd cell)
-      const amountCell = row.querySelector("td:nth-child(3)");
-      if (amountCell) {
-        const amountText = amountCell.textContent
-          .replace("PHP ", "")
-          .replace(/,/g, "");
-        totalRevenue += parseFloat(amountText) || 0;
+      // Get revenue from amount cell (3rd cell) - IMPROVED PARSING
+      const amountText = amountCell.textContent.trim();
+
+      // Handle different possible formats
+      let amountValue = 0;
+      if (amountText.includes("PHP")) {
+        // Format: "PHP 1,234.56" or "PHP1,234.56"
+        const cleanAmount = amountText
+          .replace(/PHP\s?/gi, "") // Remove "PHP" and optional space
+          .replace(/,/g, "") // Remove commas
+          .trim();
+        amountValue = parseFloat(cleanAmount) || 0;
+      } else {
+        // Try direct parsing
+        const cleanAmount = amountText.replace(/,/g, "").trim();
+        amountValue = parseFloat(cleanAmount) || 0;
       }
+
+      totalRevenue += amountValue;
+    }
+  });
+
+  // Add PHP formatting to amount cells for consistency
+  const amountCells = tableClone.querySelectorAll("td:nth-child(3)");
+  amountCells.forEach((cell) => {
+    const amountText = cell.textContent.trim();
+    if (!amountText.includes("PHP") && amountText !== "") {
+      const amountValue = parseFloat(amountText.replace(/,/g, "")) || 0;
+      cell.textContent = `PHP ${amountValue.toFixed(2)}`;
     }
   });
 

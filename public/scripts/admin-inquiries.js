@@ -41,7 +41,13 @@ document.addEventListener("DOMContentLoaded", () => {
       .map(
         (inquiry) => `
       <tr>
-        <td>${inquiry.User?.name || inquiry.name}</td>
+        <td>
+          <div><strong>${inquiry.User?.name || inquiry.name}</strong></div>
+          <div class="text-muted small">${
+            inquiry.User?.email || inquiry.email
+          }</div>
+          <div class="text-muted small">${inquiry.phone}</div>
+        </td>
         <td>${inquiry.subject}</td>
         <td>${inquiry.message}</td>
         <td>${new Date(inquiry.createdAt).toISOString().split("T")[0]}</td>

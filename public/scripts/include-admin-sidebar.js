@@ -56,8 +56,6 @@ async function initializeAdminSidebar(container) {
   // Load notifications data on all pages
   await loadSidebarNotificationsData(container);
 
-  // REMOVED: Toggle button functionality since sidebar is always visible
-
   // Set active nav link based on current path
   if (navLinks.length > 0) {
     const currentPath = window.location.pathname;
@@ -110,27 +108,37 @@ async function loadSidebarNotificationsData(container) {
     if (!token) return;
 
     // Fetch notifications data
-    const [dashboardResponse, customCakeData, imageBasedData] =
-      await Promise.all([
-        fetch(`${window.API_BASE_URL}/api/orders/admin/dashboard`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }),
-        fetch(`${window.API_BASE_URL}/api/custom-cake/admin/orders`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }),
-        fetch(`${window.API_BASE_URL}/api/custom-cake/admin/image-orders`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }),
-      ]);
+    const [
+      dashboardResponse,
+      customCakeData,
+      imageBasedData,
+      inquiriesResponse,
+    ] = await Promise.all([
+      fetch(`${window.API_BASE_URL}/api/orders/admin/dashboard`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }),
+      fetch(`${window.API_BASE_URL}/api/custom-cake/admin/orders`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }),
+      fetch(`${window.API_BASE_URL}/api/custom-cake/admin/image-orders`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }),
+      fetch(`${window.API_BASE_URL}/api/inquiries`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }),
+    ]);
 
     const data = dashboardResponse.ok
       ? await dashboardResponse.json()
@@ -141,6 +149,13 @@ async function loadSidebarNotificationsData(container) {
     const imageBasedOrders = imageBasedData.ok
       ? (await imageBasedData.json()).orders || []
       : [];
+    const inquiries = inquiriesResponse.ok
+      ? await inquiriesResponse.json()
+      : [];
+
+    const pendingInquiries = inquiries.filter(
+      (inquiry) => inquiry.status === "Pending"
+    );
 
     if (data.success) {
       // Calculate notifications count
@@ -165,10 +180,12 @@ async function loadSidebarNotificationsData(container) {
         total:
           (data.notifications?.new_orders || 0) +
           (data.notifications?.pending_custom_cakes || 0) +
-          newCustomCakes.length,
+          newCustomCakes.length +
+          pendingInquiries.length,
         new_orders: data.new_orders || [],
         new_custom_cakes: newCustomCakes,
         pending_custom_cakes: data.pending_custom_cakes || [],
+        pending_inquiries: pendingInquiries,
       };
 
       // Update sidebar with the data
@@ -226,9 +243,6 @@ function updateSidebarNotificationsDisplay(container, notificationsData) {
       notificationsData.new_orders.slice(0, 3).forEach((order) => {
         notificationsHTML += `
           <div class="notification-item new-order">
-            <div class="notification-icon">
-              <i class="bi bi-cart-plus text-primary"></i>
-            </div>
             <div class="notification-content">
               <div class="notification-title">New Regular Order</div>
               <div class="notification-details">${order.orderId} - ${
@@ -255,9 +269,6 @@ function updateSidebarNotificationsDisplay(container, notificationsData) {
 
         notificationsHTML += `
           <div class="notification-item new-custom-cake">
-            <div class="notification-icon">
-              <i class="bi bi-cake2 text-success"></i>
-            </div>
             <div class="notification-content">
               <div class="notification-title">New Custom Cake</div>
               <div class="notification-details">${cakeId} - ${
@@ -280,9 +291,6 @@ function updateSidebarNotificationsDisplay(container, notificationsData) {
       notificationsData.pending_custom_cakes.slice(0, 2).forEach((cake) => {
         notificationsHTML += `
           <div class="notification-item pending-cake">
-            <div class="notification-icon">
-              <i class="bi bi-clock text-warning"></i>
-            </div>
             <div class="notification-content">
               <div class="notification-title">Pending Custom Cake</div>
               <div class="notification-details">${
@@ -297,15 +305,40 @@ function updateSidebarNotificationsDisplay(container, notificationsData) {
       });
     }
 
+    // Pending Inquiries
+    if (
+      notificationsData.pending_inquiries &&
+      notificationsData.pending_inquiries.length > 0
+    ) {
+      notificationsData.pending_inquiries.slice(0, 2).forEach((inquiry) => {
+        notificationsHTML += `
+          <div class="notification-item pending-inquiry">
+            <div class="notification-content">
+              <div class="notification-title">Pending Inquiry</div>
+              <div class="notification-details">${inquiry.subject}</div>
+              <div class="notification-meta">From: ${
+                inquiry.User?.name || inquiry.name
+              }</div>
+              <div class="notification-time">${new Date(
+                inquiry.createdAt
+              ).toLocaleTimeString()}</div>
+            </div>
+          </div>
+        `;
+      });
+    }
+
     // Show "view all" if there are more notifications
     const totalItems =
-      notificationsData.new_orders.length +
-      notificationsData.new_custom_cakes.length +
-      notificationsData.pending_custom_cakes.length;
+      (notificationsData.new_orders?.length || 0) +
+      (notificationsData.new_custom_cakes?.length || 0) +
+      (notificationsData.pending_custom_cakes?.length || 0) +
+      (notificationsData.pending_inquiries?.length || 0);
+
     if (totalItems > 5) {
       notificationsHTML += `
         <div class="notification-view-all">
-          <a href="admin-dashboard.html" class="btn btn-sm btn-outline-primary w-100">
+          <a href="admin-dashboard.html" class="btn btn-sm btn-outline-success w-100">
             View All Notifications
           </a>
         </div>
@@ -317,53 +350,53 @@ function updateSidebarNotificationsDisplay(container, notificationsData) {
 }
 
 // Initialize sidebar notifications
+// SIMPLE HYBRID SOLUTION
 function initializeSidebarNotifications(container) {
   const notificationToggle = container.querySelector("#notificationToggle");
-  const notificationsSection = container.querySelector("#notificationsSection");
-  const notificationsList = container.querySelector("#notificationsList");
+  const notificationDropdown = container.querySelector("#notificationDropdown");
 
-  if (notificationToggle && notificationsSection) {
-    // Initialize with hidden state
-    notificationsSection.classList.add("hidden");
+  if (!notificationToggle || !notificationDropdown) return;
 
-    notificationToggle.addEventListener("click", (e) => {
-      e.stopPropagation();
-      const isVisible = notificationsSection.classList.contains("visible");
+  // Use simple display toggle like the old version
+  notificationDropdown.style.display = "none";
 
-      if (isVisible) {
-        notificationsSection.classList.remove("visible");
-        notificationsSection.classList.add("hidden");
-        notificationToggle.classList.remove("active");
-      } else {
-        notificationsSection.classList.remove("hidden");
-        notificationsSection.classList.add("visible");
-        notificationToggle.classList.add("active");
-      }
-    });
+  notificationToggle.addEventListener("click", (e) => {
+    e.stopPropagation();
+    e.preventDefault();
 
-    // Close notifications when clicking outside
-    document.addEventListener("click", (e) => {
-      if (
-        !notificationsSection.contains(e.target) &&
-        !notificationToggle.contains(e.target)
-      ) {
-        notificationsSection.classList.remove("visible");
-        notificationsSection.classList.add("hidden");
-        notificationToggle.classList.remove("active");
-      }
-    });
+    const isVisible = notificationDropdown.style.display === "block";
 
-    // Add click handlers for notification items
-    if (notificationsList) {
-      notificationsList.addEventListener("click", (e) => {
-        const notificationItem = e.target.closest(".notification-item");
-        if (notificationItem) {
-          // Navigate to dashboard when clicking any notification
-          window.location.href = "admin-dashboard.html";
-        }
-      });
+    if (isVisible) {
+      notificationDropdown.style.display = "none";
+      notificationToggle.classList.remove("active");
+    } else {
+      notificationDropdown.style.display = "block";
+      notificationToggle.classList.add("active");
+
+      // Position it properly
+      const toggleRect = notificationToggle.getBoundingClientRect();
+      notificationDropdown.style.position = "fixed";
+      notificationDropdown.style.top = `${toggleRect.bottom + 5}px`;
+      notificationDropdown.style.left = `${toggleRect.left}px`;
+      notificationDropdown.style.zIndex = "9999";
     }
-  }
+  });
+
+  // Close when clicking outside
+  document.addEventListener("click", (e) => {
+    if (
+      !notificationDropdown.contains(e.target) &&
+      !notificationToggle.contains(e.target)
+    ) {
+      notificationDropdown.style.display = "none";
+      notificationToggle.classList.remove("active");
+    }
+  });
+
+  // Keep open when clicking inside
+  notificationDropdown.addEventListener("click", (e) => {
+    e.stopPropagation();
+  });
 }
 
 // Validate token with server

@@ -201,11 +201,18 @@ async function updateMenuItem(formData, form) {
 }
 
 async function deleteMenuItem(menuId) {
-  if (
-    !confirm(
-      "Are you sure you want to remove this item? This action cannot be undone."
-    )
-  ) {
+  const result = await Swal.fire({
+    title: "Are you sure?",
+    text: "You won't be able to revert this!",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#d33",
+    cancelButtonColor: "#3085d6",
+    confirmButtonText: "Yes, delete it!",
+    cancelButtonText: "Cancel",
+  });
+
+  if (!result.isConfirmed) {
     return;
   }
 
@@ -469,24 +476,25 @@ function setLoadingState(isLoading, message = "") {
 }
 
 function showSuccess(message) {
-  const toast = new bootstrap.Toast(document.getElementById("successToast"));
-  const toastMessage = document.getElementById("successToastMessage");
-  if (toastMessage) {
-    toastMessage.textContent = message;
-    toast.show();
-  }
+  Swal.fire({
+    icon: "success",
+    title: "Success!",
+    text: message,
+    confirmButtonColor: "#2c9045",
+    timer: 3000,
+    showConfirmButton: true,
+  });
 }
 
 function showError(title, error) {
   console.error(title, error);
-  const errorToast = new bootstrap.Toast(document.getElementById("errorToast"));
-  const errorToastMessage = document.getElementById("errorToastMessage");
-  if (errorToastMessage) {
-    errorToastMessage.textContent = `${title}: ${
-      error.message || "Unknown error"
-    }`;
-    errorToast.show();
-  }
+  Swal.fire({
+    icon: "error",
+    title: title,
+    text: error.message || "Unknown error occurred",
+    confirmButtonColor: "#d33",
+    showConfirmButton: true,
+  });
 }
 
 function handleFormSubmit(e) {
@@ -609,8 +617,6 @@ function initializePage() {
     "sizesContainer",
     "singlePriceContainer",
     "imagePreview",
-    "successToastMessage",
-    "errorToastMessage",
     "hasSizes",
   ];
   for (const id of requiredElements) {
