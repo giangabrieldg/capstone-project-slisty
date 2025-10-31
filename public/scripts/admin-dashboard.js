@@ -11,7 +11,7 @@ class AdminDashboard {
     };
     this.newOrders = [];
     this.pendingCustomCakes = [];
-    this.newCustomCakes = []; //track new custom cake orders
+    this.newCustomCakes = [];
     this.lastUpdate = null;
     this.init();
   }
@@ -56,7 +56,7 @@ class AdminDashboard {
             "Content-Type": "application/json",
           },
         }),
-        // ADD THIS - Fetch pending inquiries
+        //Fetch pending inquiries
         fetch(`${window.API_BASE_URL}/api/inquiries`, {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -90,22 +90,30 @@ class AdminDashboard {
         // today's date for filtering
         const today = new Date();
         const todayStart = new Date(
-          today.getFullYear(),
-          today.getMonth(),
-          today.getDate()
+          Date.UTC(today.getFullYear(), today.getMonth(), today.getDate())
         );
         const todayEnd = new Date(
-          today.getFullYear(),
-          today.getMonth(),
-          today.getDate() + 1
+          Date.UTC(today.getFullYear(), today.getMonth(), today.getDate() + 1)
         );
 
         // Get time 30 minutes ago for new orders
         const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
 
+        // Helper function to check if order is from today (considers timezone)
+        const isOrderFromToday = (orderDate) => {
+          const orderLocalDate = new Date(orderDate);
+          const todayLocal = new Date();
+
+          return (
+            orderLocalDate.getDate() === todayLocal.getDate() &&
+            orderLocalDate.getMonth() === todayLocal.getMonth() &&
+            orderLocalDate.getFullYear() === todayLocal.getFullYear()
+          );
+        };
+
         const todaysCustomCakeOrders = customCakeOrders.filter((order) => {
           const orderDate = this.getOrderDate(order);
-          const isToday = orderDate >= todayStart && orderDate < todayEnd;
+          const isToday = isOrderFromToday(orderDate);
           const statuses = [
             "Downpayment Paid",
             "In Progress",
@@ -117,7 +125,7 @@ class AdminDashboard {
 
         const todaysImageBasedOrders = imageBasedOrders.filter((order) => {
           const orderDate = this.getOrderDate(order);
-          const isToday = orderDate >= todayStart && orderDate < todayEnd;
+          const isToday = isOrderFromToday(orderDate);
           const statuses = [
             "Downpayment Paid",
             "In Progress",
@@ -144,9 +152,9 @@ class AdminDashboard {
           }),
         ];
 
-        // Combine all orders: regular orders + today's paid custom cake orders
+        // Combine all orders
         const allOrders = [
-          ...data.orders.map((order) => ({ ...order, order_type: "regular" })), // Add type marker
+          ...data.orders.map((order) => ({ ...order, order_type: "regular" })),
           ...this.formatCustomCakeOrdersForDashboard(
             todaysCustomCakeOrders,
             "CC"
@@ -259,7 +267,7 @@ class AdminDashboard {
     });
   }
 
-  // Map custom cake status to regular order status for styling
+  //Map custom cake status to regular order status for styling
   mapCustomCakeStatus(customCakeStatus) {
     // Return the actual status text instead of keys
     return customCakeStatus;
@@ -474,7 +482,7 @@ class AdminDashboard {
 
     // Sidebar notification badge (the one in the bell icon)
     const sidebarNotificationCount = document.querySelector(
-      ".sidebar-header .notification-count" // Specific selector for sidebar
+      ".sidebar-header .notification-count"
     );
 
     // Sidebar notification badge (in the section header)
@@ -593,124 +601,23 @@ class AdminDashboard {
 
     if (this.newOrders.length > 0) {
       content += `
-        <div class="mb-4">
-          <h6><i class="bi bi-cart-plus text-primary me-2"></i> New Regular Orders (${
-            this.newOrders.length
-          })</h6>
-          <div class="list-group">
-            ${this.newOrders
-              .map(
-                (order) => `
-              <div class="list-group-item">
-                <div class="d-flex justify-content-between align-items-center">
-                  <div>
+      <div class="mb-4">
+        <h6><i class="bi bi-cart-plus text-primary me-2"></i> New Regular Orders (${
+          this.newOrders.length
+        })</h6>
+        <div class="list-group">
+          ${this.newOrders
+            .map(
+              (order) => `
+              <div class="list-group-item notification-item">
+                <div class="d-flex justify-content-between align-items-start">
+                  <div class="flex-grow-1">
                     <strong>${order.orderId}</strong> - ${order.customer_name}
                     <br><small class="text-muted">${order.items}</small>
                   </div>
-                  <small class="text-muted">${new Date(
+                  <small class="text-muted text-nowrap ms-2">${new Date(
                     order.time
                   ).toLocaleTimeString()}</small>
-                </div>
-              </div>
-            `
-              )
-              .join("")}
-          </div>
-        </div>
-      `;
-    }
-
-    if (this.newCustomCakes.length > 0) {
-      content += `
-        <div class="mb-4">
-          <h6><i class="bi bi-cake2 text-success me-2"></i> New Custom Cake Orders (${
-            this.newCustomCakes.length
-          })</h6>
-          <div class="list-group">
-            ${this.newCustomCakes
-              .map(
-                (cake) => `
-              <div class="list-group-item">
-                <div class="d-flex justify-content-between align-items-center">
-                  <div>
-                    <strong>${this.formatCustomCakeId(cake)}</strong> - ${
-                  cake.customer_name || "Unknown Customer"
-                }
-                    <br><small class="text-muted">Size: ${
-                      cake.size || "Not specified"
-                    }, Type: ${
-                  cake.imageBasedOrderId ? "Image-Based" : "3D Custom"
-                }</small>
-                  </div>
-                  <div class="text-end">
-                    <small class="text-muted">${this.getOrderDate(
-                      cake
-                    ).toLocaleTimeString()}</small>
-                    <br><span class="badge bg-success">Downpayment Paid</span>
-                  </div>
-                </div>
-              </div>
-            `
-              )
-              .join("")}
-          </div>
-        </div>
-      `;
-    }
-
-    if (this.pendingCustomCakes.length > 0) {
-      content += `
-        <div>
-          <h6><i class="bi bi-cake text-warning me-2"></i> Pending Custom Cakes (${
-            this.pendingCustomCakes.length
-          })</h6>
-          <div class="list-group">
-            ${this.pendingCustomCakes
-              .map(
-                (cake) => `
-              <div class="list-group-item">
-                <div class="d-flex justify-content-between align-items-center">
-                  <div>
-                    <strong>${this.formatCustomCakeId(cake)}</strong>
-                    <br><small class="text-muted">Size: ${cake.size}, Status: ${
-                  cake.status
-                }</small>
-                  </div>
-                  <span class="badge bg-warning">Pending</span>
-                </div>
-              </div>
-            `
-              )
-              .join("")}
-          </div>
-        </div>
-      `;
-    }
-
-    if (this.pendingInquiries && this.pendingInquiries.length > 0) {
-      content += `
-      <div class="mb-4">
-        <h6><i class="bi bi-question-circle text-info me-2"></i> Pending Inquiries (${
-          this.pendingInquiries.length
-        })</h6>
-        <div class="list-group">
-          ${this.pendingInquiries
-            .map(
-              (inquiry) => `
-              <div class="list-group-item">
-                <div class="d-flex justify-content-between align-items-center">
-                  <div>
-                    <strong>${inquiry.subject}</strong> - ${
-                inquiry.User?.name || inquiry.name
-              }
-                    <br><small class="text-muted">${inquiry.email} | ${
-                inquiry.phone
-              }</small>
-                    <br><small class="text-truncate" style="max-width: 300px;">${
-                      inquiry.message
-                    }</small>
-                  </div>
-                  <span class="badge bg-secondary">Pending Reply</span>
                 </div>
               </div>
             `
@@ -719,6 +626,107 @@ class AdminDashboard {
         </div>
       </div>
     `;
+    }
+
+    if (this.newCustomCakes.length > 0) {
+      content += `
+      <div class="mb-4">
+        <h6><i class="bi bi-cake2 text-success me-2"></i> New Custom Cake Orders (${
+          this.newCustomCakes.length
+        })</h6>
+        <div class="list-group">
+          ${this.newCustomCakes
+            .map(
+              (cake) => `
+              <div class="list-group-item notification-item">
+                <div class="d-flex justify-content-between align-items-start">
+                  <div class="flex-grow-1 me-3">
+                    <strong>${this.formatCustomCakeId(cake)}</strong> - ${
+                cake.customer_name || "Unknown Customer"
+              }
+                    <br><small class="text-muted">Size: ${
+                      cake.size || "Not specified"
+                    }, Type: ${
+                cake.imageBasedOrderId ? "Image-Based" : "3D Custom"
+              }</small>
+                  </div>
+                  <div class="text-end text-nowrap">
+                    <small class="text-muted">${this.getOrderDate(
+                      cake
+                    ).toLocaleTimeString()}</small>
+                    <br><span class="badge bg-success">Downpayment Paid</span>
+                  </div>
+                </div>
+              </div>
+            `
+            )
+            .join("")}
+        </div>
+      </div>
+    `;
+    }
+
+    if (this.pendingCustomCakes.length > 0) {
+      content += `
+      <div class="mb-4">
+        <h6><i class="bi bi-cake text-warning me-2"></i> Pending Custom Cakes (${
+          this.pendingCustomCakes.length
+        })</h6>
+        <div class="list-group">
+          ${this.pendingCustomCakes
+            .map(
+              (cake) => `
+              <div class="list-group-item notification-item">
+                <div class="d-flex justify-content-between align-items-start">
+                  <div class="flex-grow-1 me-3">
+                    <strong>${this.formatCustomCakeId(cake)}</strong>
+                    <br><small class="text-muted">Size: ${cake.size}, Status: ${
+                cake.status
+              }</small>
+                  </div>
+                  <span class="badge bg-warning text-nowrap">Pending</span>
+                </div>
+              </div>
+            `
+            )
+            .join("")}
+        </div>
+      </div>
+    `;
+    }
+
+    if (this.pendingInquiries && this.pendingInquiries.length > 0) {
+      content += `
+    <div class="mb-4">
+      <h6><i class="bi bi-question-circle text-info me-2"></i> Pending Inquiries (${
+        this.pendingInquiries.length
+      })</h6>
+      <div class="list-group">
+        ${this.pendingInquiries
+          .map(
+            (inquiry) => `
+              <div class="list-group-item notification-item">
+                <div class="d-flex justify-content-between align-items-start">
+                  <div class="flex-grow-1 me-3">
+                    <strong>${inquiry.subject}</strong> - ${
+              inquiry.User?.name || inquiry.name
+            }
+                    <br><small class="text-muted">${inquiry.email} | ${
+              inquiry.phone
+            }</small>
+                    <br><small class="text-muted notification-message">${
+                      inquiry.message
+                    }</small>
+                  </div>
+                  <span class="badge bg-secondary text-nowrap">Pending Reply</span>
+                </div>
+              </div>
+            `
+          )
+          .join("")}
+      </div>
+    </div>
+  `;
     }
 
     if (content === "") {

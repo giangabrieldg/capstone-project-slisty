@@ -101,6 +101,40 @@ body {
     justify-content: center;
 }
 
+/* Add this to your CSS file or in a style tag */
+.notification-message {
+    max-width: 100%;
+    overflow: hidden;
+    display: -webkit-box;
+    line-clamp: 3;
+    -webkit-box-orient: vertical;
+    line-height: 1.4;
+    max-height: 4.2em;
+}
+
+.list-group-item {
+    word-wrap: break-word;
+}
+
+/* Ensure modal content is responsive */
+#notificationsModal .modal-body {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+#notificationsModal .list-group-item {
+    border: 1px solid #e9ecef;
+    border-radius: 0.375rem;
+    margin-bottom: 0.5rem;
+}
+
+/* Make notification items more compact and responsive */
+.notification-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
 /* Sales summary grid */
 .sales-summary {
     margin-bottom: 30px;
@@ -493,5 +527,26 @@ body {
 
     .table {
         min-width: 600px;
+    }
+}
+
+@media (max-width: 768px) {
+    .notification-item {
+        font-size: 0.9rem;
+    }
+
+    #notificationsModal .modal-dialog {
+        margin: 0.5rem;
+    }
+
+    #notificationsModal .list-group-item .d-flex {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 0.5rem;
+    }
+
+    #notificationsModal .list-group-item .text-end {
+        text-align: left !important;
+        width: 100%;
     }
 }
