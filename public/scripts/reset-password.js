@@ -9,11 +9,15 @@ document.addEventListener("DOMContentLoaded", () => {
     e.preventDefault();
     const passwordInput = document.getElementById("password");
     const confirmPasswordInput = document.getElementById("confirm-password");
-    const messageDiv = document.getElementById("message");
 
-    if (!passwordInput || !confirmPasswordInput || !messageDiv) {
+    if (!passwordInput || !confirmPasswordInput) {
       console.error("One or more form elements not found");
-      messageDiv.innerHTML = `<div class="alert alert-danger">Form elements missing. Please refresh the page.</div>`;
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Form elements missing. Please refresh the page.",
+        confirmButtonColor: "#2c9045",
+      });
       return;
     }
 
@@ -21,38 +25,93 @@ document.addEventListener("DOMContentLoaded", () => {
     const confirmPassword = confirmPasswordInput.value;
     const urlParams = new URLSearchParams(window.location.search);
     const token = urlParams.get("token");
-    const email = urlParams.get("email");
 
-    if (!token || !email) {
-      messageDiv.innerHTML = `<div class="alert alert-danger">Invalid or missing reset link. Please request a new password reset.</div>`;
+    if (!token) {
+      Swal.fire({
+        icon: "error",
+        title: "Invalid Reset Link",
+        text: "Invalid or missing reset link. Please request a new password reset.",
+        confirmButtonColor: "#2c9045",
+      });
       return;
     }
 
     if (password !== confirmPassword) {
-      messageDiv.innerHTML = `<div class="alert alert-danger">Passwords do not match.</div>`;
+      Swal.fire({
+        icon: "error",
+        title: "Passwords Don't Match",
+        text: "Please make sure both passwords match.",
+        confirmButtonColor: "#2c9045",
+      });
+      return;
+    }
+
+    // Validate password strength (optional - you can remove this if not needed)
+    if (password.length < 6) {
+      Swal.fire({
+        icon: "warning",
+        title: "Weak Password",
+        text: "Password should be at least 6 characters long.",
+        confirmButtonColor: "#2c9045",
+      });
       return;
     }
 
     try {
+      // Show loading state
+      Swal.fire({
+        title: "Resetting Password...",
+        text: "Please wait while we update your password.",
+        allowOutsideClick: false,
+        didOpen: () => {
+          Swal.showLoading();
+        },
+      });
+
+      // Use the correct endpoint and send only token and password
       const response = await fetch(
-        `${window.API_BASE_URL}/api/auth/reset-password`,
+        `${window.API_BASE_URL}/api/password/reset-password`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ token, email, password }),
+          body: JSON.stringify({ token, password }),
         }
       );
 
       const data = await response.json();
-      messageDiv.innerHTML = `<div class="alert ${
-        response.ok ? "alert-success" : "alert-danger"
-      }">${data.message}</div>`;
+
+      // Close loading SweetAlert
+      Swal.close();
+
       if (response.ok) {
-        setTimeout(() => (window.location.href = "/customer/login.html"), 2000);
+        await Swal.fire({
+          icon: "success",
+          title: "Password Reset!",
+          text: data.message,
+          confirmButtonColor: "#2c9045",
+          timer: 2000,
+          showConfirmButton: false,
+        });
+
+        window.location.href = "/customer/login.html";
+      } else {
+        await Swal.fire({
+          icon: "error",
+          title: "Reset Failed",
+          text: data.message,
+          confirmButtonColor: "#2c9045",
+        });
       }
     } catch (error) {
       console.error("Error:", error);
-      messageDiv.innerHTML = `<div class="alert alert-danger">An error occurred. Please try again.</div>`;
+      Swal.close(); // Close loading alert if open
+
+      await Swal.fire({
+        icon: "error",
+        title: "Connection Error",
+        text: "An error occurred. Please check your connection and try again.",
+        confirmButtonColor: "#2c9045",
+      });
     }
   });
 });

@@ -71,6 +71,50 @@
               required
             />
           </div>
+
+          <!-- Security Question Section -->
+          <div class="mb-3">
+            <div class="card">
+              <div class="card-header bg-light">
+                <h6 class="mb-0">Security Question (Optional)</h6>
+                <small class="text-muted"
+                  >Set a security question to help recover your account if you
+                  forget your email</small
+                >
+              </div>
+              <div class="card-body">
+                <div class="mb-3">
+                  <label for="secretQuestion" class="form-label"
+                    >Security Question</label
+                  >
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="secretQuestion"
+                    placeholder="Enter your security question (e.g., What was your first pet's name?)"
+                  />
+                  <small class="form-text text-muted"
+                    >Create a question that only you know the answer to.</small
+                  >
+                </div>
+                <div class="mb-3">
+                  <label for="secretAnswer" class="form-label"
+                    >Security Answer</label
+                  >
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="secretAnswer"
+                    placeholder="Enter the answer to your security question"
+                  />
+                  <small class="form-text text-muted"
+                    >This will be used to verify your identity.</small
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+
           <button type="submit" class="btn btn-primary w-100">
             Complete Registration
           </button>
@@ -94,6 +138,12 @@
         let isValid = true;
         const phone = document.getElementById("contactNumber").value.trim();
         const address = document.getElementById("address").value.trim();
+        const secretQuestion = document
+          .getElementById("secretQuestion")
+          .value.trim();
+        const secretAnswer = document
+          .getElementById("secretAnswer")
+          .value.trim();
 
         // Clear previous errors
         document.getElementById("contactNumber").classList.remove("is-invalid");
@@ -106,6 +156,20 @@
           document.getElementById("address").classList.add("is-invalid");
           document.getElementById("addressError").textContent =
             "Address is required";
+          isValid = false;
+        }
+
+        // Validate security question - both or none
+        if (
+          (secretQuestion && !secretAnswer) ||
+          (!secretQuestion && secretAnswer)
+        ) {
+          Swal.fire({
+            icon: "warning",
+            title: "Incomplete Security Question",
+            text: "Please provide both a question and answer, or leave both fields empty",
+            confirmButtonColor: "#2c9045",
+          });
           isValid = false;
         }
 
@@ -124,6 +188,9 @@
           const phone = document.getElementById("contactNumber").value;
           const address = document.getElementById("address").value;
           const password = document.getElementById("password").value;
+          const secretQuestion =
+            document.getElementById("secretQuestion").value;
+          const secretAnswer = document.getElementById("secretAnswer").value;
 
           // Extract token from URL query parameters
           const urlParams = new URLSearchParams(window.location.search);
@@ -142,6 +209,13 @@
           try {
             console.log("Sending token:", token); // Debug token
             const requestData = { name, phone, address, password };
+
+            // Add security question data only if both fields are provided
+            if (secretQuestion && secretAnswer) {
+              requestData.secretQuestion = secretQuestion;
+              requestData.secretAnswer = secretAnswer;
+            }
+
             console.log("Sending request data:", requestData); // Debug request data
 
             // Use window.API_BASE_URL from environment-config.js
@@ -157,13 +231,20 @@
             );
 
             const data = await response.json();
-            await Swal.fire({
-              icon: "success",
-              title: "User registration",
-              text: data.message,
-              confirmButtonColor: "#2c9045",
-            });
+
             if (response.ok) {
+              let successMessage = "Registration completed successfully!";
+              if (secretQuestion && secretAnswer) {
+                successMessage += " Your security question has been set.";
+              }
+
+              await Swal.fire({
+                icon: "success",
+                title: "Registration Complete",
+                text: successMessage,
+                confirmButtonColor: "#2c9045",
+              });
+
               window.location.href = "/customer/login.html";
             } else {
               if (data.message === "Invalid or expired token") {
@@ -177,7 +258,15 @@
                 Swal.fire({
                   icon: "error",
                   title: "Oops...",
-                  text: "USer not found. Please register again.",
+                  text: "User not found. Please register again.",
+                  confirmButtonColor: "#2c9045",
+                });
+              } else {
+                Swal.fire({
+                  icon: "error",
+                  title: "Oops...",
+                  text:
+                    data.message || "An error occurred during registration.",
                   confirmButtonColor: "#2c9045",
                 });
               }

@@ -114,6 +114,9 @@ class ProfileManager {
       if (!response.ok) throw new Error("Failed to load profile");
       const data = await response.json();
       this.renderProfile(data);
+
+      // Also check if secret question is set
+      await this.checkSecretQuestionStatus();
     } catch (error) {
       console.error("Error loading profile:", error);
       Swal.fire({
@@ -135,6 +138,124 @@ class ProfileManager {
       profile.phone || "Not set";
     document.getElementById("userAddress").textContent =
       profile.address || "Not set";
+  }
+
+  //show or hide edit form
+  toggleEditForm(show) {
+    const editForm = document.getElementById("editForm");
+    const editBtn = document.getElementById("editBtn");
+    if (editForm && editBtn) {
+      editForm.style.display = show ? "block" : "none";
+      editBtn.style.display = show ? "none" : "block";
+      if (show) {
+        document.getElementById("editName").value =
+          document.getElementById("userName").textContent;
+        document.getElementById("contactNumber").value =
+          document.getElementById("userPhone").textContent;
+        document.getElementById("editAddress").value =
+          document.getElementById("userAddress").textContent === "Not set"
+            ? ""
+            : document.getElementById("userAddress").textContent;
+
+        // Load secret question status when opening edit form
+        this.loadSecretQuestionForm();
+      }
+    }
+  }
+
+  //profile form submission
+  async handleProfileSubmit(e) {
+    e.preventDefault();
+    const name = document.getElementById("editName").value;
+    const phone = document.getElementById("contactNumber").value;
+    const address = document.getElementById("editAddress").value;
+
+    // Get secret question data if provided
+    const secretQuestion = document.getElementById("secretQuestion").value;
+    const secretAnswer = document.getElementById("secretAnswer").value;
+
+    document.getElementById("nameError").textContent = "";
+    document.getElementById("phoneError").textContent = "";
+    document.getElementById("editName").classList.remove("is-invalid");
+    document.getElementById("contactNumber").classList.remove("is-invalid");
+
+    let isValid = true;
+
+    if (!name) {
+      document.getElementById("nameError").textContent = "Name is required";
+      document.getElementById("editName").classList.add("is-invalid");
+      isValid = false;
+    }
+
+    // Validate secret question if provided
+    if (secretQuestion && !secretAnswer) {
+      Swal.fire({
+        icon: "warning",
+        title: "Incomplete Secret Question",
+        text: "Please provide an answer for your secret question",
+        confirmButtonColor: "#2c9045",
+      });
+      isValid = false;
+    }
+
+    if (!isValid) return;
+
+    try {
+      const requestBody = { name, phone, address };
+
+      // Add secret question data if provided
+      if (secretQuestion && secretAnswer) {
+        requestBody.secretQuestion = secretQuestion;
+        requestBody.secretAnswer = secretAnswer;
+      }
+
+      const response = await fetch(
+        `${window.API_BASE_URL}/api/auth/profile/update`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${this.token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(requestBody),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to update profile");
+      }
+
+      const data = await response.json();
+      this.renderProfile(data);
+      await this.checkSecretQuestionStatus();
+      this.toggleEditForm(false);
+
+      // Show appropriate success message
+      if (data.secretQuestionUpdated) {
+        Swal.fire({
+          title: "Success!",
+          text: "Profile and secret question updated successfully!",
+          icon: "success",
+          confirmButtonColor: "#2c9045",
+        });
+      } else {
+        Swal.fire({
+          title: "Success!",
+          text: "Profile updated successfully!",
+          icon: "success",
+          confirmButtonColor: "#2c9045",
+        });
+      }
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: `Error updating profile: ${error.message}`,
+        confirmButtonColor: "#2c9045",
+      });
+    }
   }
 
   //load user orders
@@ -306,85 +427,6 @@ class ProfileManager {
     `;
   }
 
-  //show or hide edit form
-  toggleEditForm(show) {
-    const editForm = document.getElementById("editForm");
-    const editBtn = document.getElementById("editBtn");
-    if (editForm && editBtn) {
-      editForm.style.display = show ? "block" : "none";
-      editBtn.style.display = show ? "none" : "block";
-      if (show) {
-        document.getElementById("editName").value =
-          document.getElementById("userName").textContent;
-        document.getElementById("contactNumber").value =
-          document.getElementById("userPhone").textContent;
-        document.getElementById("editAddress").value =
-          document.getElementById("userAddress").textContent === "Not set"
-            ? ""
-            : document.getElementById("userAddress").textContent;
-      }
-    }
-  }
-
-  //profile form submission
-  async handleProfileSubmit(e) {
-    e.preventDefault();
-    const name = document.getElementById("editName").value;
-    const phone = document.getElementById("contactNumber").value;
-    const address = document.getElementById("editAddress").value;
-
-    document.getElementById("nameError").textContent = "";
-    document.getElementById("phoneError").textContent = "";
-    document.getElementById("editName").classList.remove("is-invalid");
-    document.getElementById("contactNumber").classList.remove("is-invalid");
-
-    let isValid = true;
-
-    if (!name) {
-      document.getElementById("nameError").textContent = "Name is required";
-      document.getElementById("editName").classList.add("is-invalid");
-      isValid = false;
-    }
-    if (!isValid) return;
-
-    try {
-      const response = await fetch(
-        `${window.API_BASE_URL}/api/auth/profile/update`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${this.token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ name, phone, address }),
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to update profile");
-      }
-
-      const data = await response.json();
-      this.renderProfile(data);
-      this.toggleEditForm(false);
-      Swal.fire({
-        title: "Success!",
-        text: "Profile updated successfully!",
-        icon: "success",
-        confirmButtonColor: "#2c9045",
-      });
-    } catch (error) {
-      console.error("Error updating profile:", error);
-      Swal.fire({
-        icon: "error",
-        title: "Oops...",
-        text: `Error updating profile: ${error.message}`,
-        confirmButtonColor: "#2c9045",
-      });
-    }
-  }
-
   //logout function
   handleLogout() {
     Swal.fire({
@@ -424,6 +466,120 @@ class ProfileManager {
         });
       }
     });
+  }
+  async checkSecretQuestionStatus() {
+    try {
+      const response = await fetch(
+        `${window.API_BASE_URL}/api/password/check-secret-question`,
+        {
+          headers: { Authorization: `Bearer ${this.token}` },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        this.renderSecretQuestionStatus(data);
+      }
+    } catch (error) {
+      console.error("Error checking secret question status:", error);
+    }
+  }
+  // NEW: Render secret question status in the UI
+  renderSecretQuestionStatus(status) {
+    const secretQuestionStatus = document.getElementById(
+      "secretQuestionStatus"
+    );
+    if (!secretQuestionStatus) return;
+
+    if (status.isSecretQuestionSet) {
+      const lastUpdate = status.lastSecretQuestionUpdate
+        ? new Date(status.lastSecretQuestionUpdate).toLocaleDateString()
+        : "Unknown";
+
+      secretQuestionStatus.innerHTML = `
+      <div class="alert alert-success">
+        <i class="fas fa-shield-alt"></i>
+        <strong>Security Question Set</strong>
+        <p class="mb-0">Your security question is active. Last updated: ${lastUpdate}</p>
+      </div>
+    `;
+    } else {
+      secretQuestionStatus.innerHTML = `
+      <div class="alert alert-warning">
+        <i class="fas fa-exclamation-triangle"></i>
+        <strong>No Security Question Set</strong>
+        <p class="mb-0">Set a security question to help recover your account if you forget your email.</p>
+      </div>
+    `;
+    }
+  }
+  async loadSecretQuestionForm() {
+    try {
+      const response = await fetch(
+        `${window.API_BASE_URL}/api/password/check-secret-question`,
+        {
+          headers: { Authorization: `Bearer ${this.token}` },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+
+        const secretQuestionSection = document.getElementById(
+          "secretQuestionSection"
+        );
+        if (secretQuestionSection) {
+          if (data.isSecretQuestionSet) {
+            secretQuestionSection.innerHTML = `
+            <div class="form-group">
+              <label for="secretQuestion">Update Security Question</label>
+              <input type="text" class="form-control" id="secretQuestion" 
+                     placeholder="Enter your security question (e.g., What was your first pet's name?)">
+              <small class="form-text text-muted">Create a question that only you know the answer to.</small>
+            </div>
+            <div class="form-group">
+              <label for="secretAnswer">Security Answer</label>
+              <input type="text" class="form-control" id="secretAnswer" 
+                     placeholder="Enter the answer to your security question">
+              <small class="form-text text-muted">This answer will be used to verify your identity if you forget your email.</small>
+            </div>
+          `;
+
+            const secretQuestionInput =
+              document.getElementById("secretQuestion");
+            const secretAnswerInput = document.getElementById("secretAnswer");
+
+            updateCheckbox.addEventListener("change", function () {
+              const isRequired = this.checked;
+              secretQuestionInput.required = isRequired;
+              secretAnswerInput.required = isRequired;
+
+              if (!isRequired) {
+                secretQuestionInput.value = "";
+                secretAnswerInput.value = "";
+              }
+            });
+          } else {
+            secretQuestionSection.innerHTML = `
+            <div class="form-group">
+              <label for="secretQuestion">Set Security Question</label>
+              <input type="text" class="form-control" id="secretQuestion" 
+                     placeholder="Enter your security question (e.g., What was your first pet's name?)" required>
+              <small class="form-text text-muted">Create a question that only you know the answer to.</small>
+            </div>
+            <div class="form-group">
+              <label for="secretAnswer">Security Answer</label>
+              <input type="text" class="form-control" id="secretAnswer" 
+                     placeholder="Enter the answer to your security question" required>
+              <small class="form-text text-muted">This answer will be used to verify your identity if you forget your email.</small>
+            </div>
+          `;
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error loading secret question form:", error);
+    }
   }
 }
 

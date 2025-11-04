@@ -120,11 +120,9 @@ try {
   const paymentRoutes = require("./routes/paymentRoutes");
   const orderRoutes = require("./routes/orderRoutes");
   const customCakeRoutes = require("./routes/customCakeRoutes");
-  const {
-    cleanupAbandonedOrders,
-  } = require("./server-side-scripts/cleanup.js");
   const faqRoutes = require("./routes/faqRoutes");
   const notificationRoutes = require("./routes/notificationRoutes");
+  const passwordRoutes = require("./routes/passwordRoutes");
 
   console.log("Registering routes...");
   app.use("/api/inquiries", inquiriesRoutes);
@@ -136,6 +134,7 @@ try {
   app.use("/api/custom-cake", customCakeRoutes);
   app.use("/api/faqs", faqRoutes);
   app.use("/api/notifications", notificationRoutes);
+  app.use("/api/password", passwordRoutes);
   console.log("Routes registered successfully");
 
   // OAuth setup
@@ -175,14 +174,6 @@ try {
 } catch (error) {
   console.error("Error loading routes or cleanup:", error.message, error.stack);
 }
-
-// Test route
-app.get("/", (req, res) => {
-  console.log("GET / called");
-  res.json({ message: "Backend is running!" });
-});
-
-// Error handling middleware
 // Update error handling middleware
 app.use((err, req, res, next) => {
   console.error("Error details:", {

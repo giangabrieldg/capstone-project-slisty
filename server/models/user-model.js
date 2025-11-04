@@ -69,6 +69,29 @@ const User = sequelize.define(
       type: DataTypes.DATE,
       allowNull: true,
     },
+    // New fields for secret question feature
+    secretQuestion: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      validate: {
+        len: [1, 255],
+      },
+    },
+    secretAnswer: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      validate: {
+        len: [1, 255],
+      },
+    },
+    isSecretQuestionSet: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
+    lastSecretQuestionUpdate: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
   },
   {
     tableName: "Users",

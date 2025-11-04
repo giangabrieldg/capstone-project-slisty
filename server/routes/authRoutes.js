@@ -31,95 +31,6 @@ const setNoCacheHeaders = (req, res, next) => {
   next();
 };
 
-// Route to handle forgot password
-router.post("/forgot-password", async (req, res) => {
-  const { email } = req.body;
-
-  if (!email) {
-    return res.status(400).json({ message: "Email is required" });
-  }
-
-  try {
-    const user = await User.findOne({ where: { email } });
-    if (!user) {
-      return res
-        .status(404)
-        .json({ message: "Incorrect username or password" });
-    }
-
-    if (user.isArchived) {
-      return res.status(403).json({ message: "Account is archived" });
-    }
-
-    // Generate reset token
-    const resetToken = jwt.sign(
-      { userID: user.userID },
-      process.env.JWT_SECRET,
-      { expiresIn: "1h" }
-    );
-
-    // Store reset token
-    await ResetToken.create({
-      userID: user.userID,
-      token: resetToken,
-      expiresAt: new Date(Date.now() + 3600000), // 1 hour expiry
-    });
-
-    // Send reset email
-    const emailSent = await sendVerificationEmail(
-      email,
-      resetToken,
-      "Password Reset Request - Slice N Grind"
-    );
-    if (!emailSent) {
-      throw new Error("Failed to send reset email");
-    }
-
-    console.log(`Password reset requested for ${email}`);
-    res.status(200).json({ message: "Password reset link sent to your email" });
-  } catch (error) {
-    console.error("Error in forgot-password:", error);
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
-// Route to handle password reset
-router.post("/reset-password", async (req, res) => {
-  const { token, password } = req.body;
-
-  if (!token || !password) {
-    return res.status(400).json({ message: "Token and password are required" });
-  }
-
-  try {
-    // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findByPk(decoded.userID);
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    const resetToken = await ResetToken.findOne({
-      where: { userID: user.userID, token },
-    });
-    if (!resetToken || resetToken.expiresAt < new Date()) {
-      return res.status(400).json({ message: "Invalid or expired token" });
-    }
-
-    // Update password
-    const hashedPassword = await bcrypt.hash(password, 10);
-    await user.update({ password: hashedPassword });
-
-    // Delete used token
-    await ResetToken.destroy({ where: { userID: user.userID } });
-
-    res.status(200).json({ message: "Password reset successfully" });
-  } catch (error) {
-    console.error("Error in reset-password:", error);
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
 //Google Sign-In Route
 router.post("/google", async (req, res) => {
   const { idToken } = req.body;
@@ -419,8 +330,10 @@ router.get("/verify", async (req, res) => {
   }
 });
 
+//COMPLETE REGISTRATION ROUTE
 router.post("/complete-registration", async (req, res) => {
-  const { name, phone, address, password } = req.body;
+  const { name, phone, address, password, secretQuestion, secretAnswer } =
+    req.body;
   const token = req.query.token;
 
   console.log("Complete registration request body:", req.body);
@@ -435,6 +348,13 @@ router.post("/complete-registration", async (req, res) => {
     return res.status(400).json({
       message:
         "Please enter a valid Philippine phone number (e.g., +639171234567 or 09171234567)",
+    });
+  }
+
+  // Validate secret question if provided
+  if (secretQuestion && !secretAnswer) {
+    return res.status(400).json({
+      message: "Secret answer is required when setting a secret question",
     });
   }
 
@@ -453,18 +373,144 @@ router.post("/complete-registration", async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    console.log("Updating user with:", { name, phone, address });
-    await user.update({
+
+    // Prepare update data
+    const updateData = {
       name,
       phone: phone || null,
       address,
       password: hashedPassword,
-    });
+    };
+
+    // Add secret question data if provided
+    if (secretQuestion && secretAnswer) {
+      const hashedSecretAnswer = await bcrypt.hash(
+        secretAnswer.toLowerCase().trim(),
+        10
+      );
+      updateData.secretQuestion = secretQuestion;
+      updateData.secretAnswer = hashedSecretAnswer;
+      updateData.isSecretQuestionSet = true;
+      updateData.lastSecretQuestionUpdate = new Date();
+    }
+
+    console.log("Updating user with:", updateData);
+    await user.update(updateData);
     console.log("User updated successfully");
 
-    res.status(200).json({ message: "Registration completed successfully" });
+    res.status(200).json({
+      message: "Registration completed successfully",
+      secretQuestionSet: !!(secretQuestion && secretAnswer),
+    });
   } catch (error) {
     console.error("Error in complete-registration:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+router.get("/profile", verifyToken, setNoCacheHeaders, async (req, res) => {
+  try {
+    const user = await User.findByPk(req.user.userID);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json({
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      address: user.address,
+      userLevel: user.userLevel,
+      employeeID: user.employeeID,
+    });
+  } catch (error) {
+    console.error("Error fetching profile:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+//UPDATE PROFILE ROUTES
+router.put(
+  "/profile/update",
+  verifyToken,
+  setNoCacheHeaders,
+  async (req, res) => {
+    const { name, phone, address, secretQuestion, secretAnswer } = req.body;
+
+    if (!name || !address) {
+      return res.status(400).json({ message: "Name and address are required" });
+    }
+
+    // Validate secret question if provided
+    if (secretQuestion && !secretAnswer) {
+      return res.status(400).json({
+        message: "Secret answer is required when updating secret question",
+      });
+    }
+
+    try {
+      const user = await User.findByPk(req.user.userID);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Prepare update data
+      const updateData = {
+        name,
+        phone: phone || null,
+        address,
+      };
+
+      // Add secret question data if provided
+      if (secretQuestion && secretAnswer) {
+        const hashedSecretAnswer = await bcrypt.hash(
+          secretAnswer.toLowerCase().trim(),
+          10
+        );
+        updateData.secretQuestion = secretQuestion;
+        updateData.secretAnswer = hashedSecretAnswer;
+        updateData.isSecretQuestionSet = true;
+        updateData.lastSecretQuestionUpdate = new Date();
+      }
+
+      await user.update(updateData);
+
+      res.status(200).json({
+        message: "Profile updated successfully",
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        address: user.address,
+        secretQuestionUpdated: !!(secretQuestion && secretAnswer),
+      });
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      res.status(500).json({ message: "Server error" });
+    }
+  }
+);
+
+//ADMIN AUTHENTICATION ROUTES
+router.get("/users", verifyToken, setNoCacheHeaders, async (req, res) => {
+  if (req.user.userLevel !== "Admin") {
+    return res.status(403).json({ message: "Access denied: Admins only" });
+  }
+
+  try {
+    const users = await User.findAll({
+      where: { userLevel: ["Staff", "Admin"] },
+      attributes: [
+        "userID",
+        "employeeID",
+        "name",
+        "email",
+        "userLevel",
+        "isArchived",
+      ],
+    });
+    res.status(200).json(users);
+  } catch (error) {
+    console.error("Error fetching users:", error);
     res.status(500).json({ message: "Server error" });
   }
 });
@@ -543,30 +589,6 @@ router.post(
   }
 );
 
-router.get("/users", verifyToken, setNoCacheHeaders, async (req, res) => {
-  if (req.user.userLevel !== "Admin") {
-    return res.status(403).json({ message: "Access denied: Admins only" });
-  }
-
-  try {
-    const users = await User.findAll({
-      where: { userLevel: ["Staff", "Admin"] },
-      attributes: [
-        "userID",
-        "employeeID",
-        "name",
-        "email",
-        "userLevel",
-        "isArchived",
-      ],
-    });
-    res.status(200).json(users);
-  } catch (error) {
-    console.error("Error fetching users:", error);
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
 router.put(
   "/users/:id/archive",
   verifyToken,
@@ -601,105 +623,6 @@ router.put(
       });
     } catch (error) {
       console.error("Error updating archive status:", error);
-      res.status(500).json({ message: "Server error" });
-    }
-  }
-);
-
-router.get("/profile", verifyToken, setNoCacheHeaders, async (req, res) => {
-  try {
-    const user = await User.findByPk(req.user.userID);
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    res.status(200).json({
-      name: user.name,
-      email: user.email,
-      phone: user.phone,
-      address: user.address,
-      userLevel: user.userLevel,
-      employeeID: user.employeeID,
-    });
-  } catch (error) {
-    console.error("Error fetching profile:", error);
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
-router.put(
-  "/profile/update",
-  verifyToken,
-  setNoCacheHeaders,
-  async (req, res) => {
-    const { name, phone, address } = req.body;
-
-    if (!name || !address) {
-      return res.status(400).json({ message: "Name and address are required" });
-    }
-
-    try {
-      const user = await User.findByPk(req.user.userID);
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
-      }
-
-      await user.update({
-        name,
-        phone: phone || null,
-        address,
-      });
-
-      res.status(200).json({
-        message: "Profile updated successfully",
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        address: user.address,
-      });
-    } catch (error) {
-      console.error("Error updating profile:", error);
-      res.status(500).json({ message: "Server error" });
-    }
-  }
-);
-
-// Admin route to reset login attempts and unlock account
-router.put(
-  "/users/:id/reset-login-attempts",
-  verifyToken,
-  setNoCacheHeaders,
-  async (req, res) => {
-    if (req.user.userLevel !== "Admin") {
-      return res.status(403).json({ message: "Access denied: Admins only" });
-    }
-
-    const { id } = req.params;
-
-    try {
-      const user = await User.findByPk(id);
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
-      }
-
-      await user.update({
-        loginAttempts: 0,
-        lockedUntil: null,
-        lastLoginAttempt: null,
-      });
-
-      res.status(200).json({
-        message: "Login attempts reset successfully",
-        user: {
-          userID: user.userID,
-          email: user.email,
-          name: user.name,
-          loginAttempts: 0,
-          lockedUntil: null,
-        },
-      });
-    } catch (error) {
-      console.error("Error resetting login attempts:", error);
       res.status(500).json({ message: "Server error" });
     }
   }

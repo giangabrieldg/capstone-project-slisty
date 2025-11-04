@@ -149,6 +149,9 @@
                       <label class="info-label">Address:</label>
                       <span class="info-value" id="userAddress"></span>
                     </div>
+                    <div id="secretQuestionStatus" class="mb-3">
+                      <!-- Security question status will be shown here -->
+                    </div>
                     <div class="mt-4">
                       <button class="btn btn-outline-success" id="editBtn">
                         Edit Profile
@@ -205,6 +208,9 @@
                           rows="3"
                         ></textarea>
                         <div class="invalid-feedback" id="addressError"></div>
+                      </div>
+                      <div class="form-section" id="secretQuestionSection">
+                        <!-- Secret question form will be dynamically loaded here -->
                       </div>
                       <button type="submit" class="btn btn-success me-2">
                         Save Changes
