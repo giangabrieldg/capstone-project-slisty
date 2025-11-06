@@ -73,14 +73,12 @@
                 <button type="button" class="quantity-btn" id="decreaseQty">
                   −
                 </button>
-                <input
-                  type="number"
-                  class="form-control text-center border-0"
-                  value="1"
+                <span
+                  class="form-control text-center border-0 bg-transparent"
                   style="width: 60px"
-                  id="quantityInput"
-                  min="1"
-                />
+                  id="quantityDisplay"
+                  >1</span
+                >
                 <button type="button" class="quantity-btn" id="increaseQty">
                   +
                 </button>
@@ -116,10 +114,87 @@
     <script>
       // Store product data globally for add-to-cart.js
       let currentProduct = null;
+      let productId = null;
+
+      // Function to update UI based on stock
+      function updateSizeButtonsStock() {
+        if (!currentProduct || !currentProduct.hasSizes) return;
+
+        const sizeButtons = document.querySelectorAll(".size-btn");
+        sizeButtons.forEach((button) => {
+          const sizeName = button.dataset.size;
+          const sizeData = currentProduct.sizes.find(
+            (s) =>
+              s.sizeName.trim().toLowerCase() === sizeName.trim().toLowerCase()
+          );
+
+          if (sizeData) {
+            const isOutOfStock = sizeData.stock === 0;
+            const isLowStock = sizeData.stock > 0 && sizeData.stock <= 5;
+
+            // Update button state
+            button.disabled = isOutOfStock;
+            button.classList.toggle("out-of-stock", isOutOfStock);
+            button.dataset.stock = sizeData.stock;
+
+            // Update tooltip
+            if (isOutOfStock) {
+              button.title = "Out of stock";
+            } else if (isLowStock) {
+              button.title = `Only ${sizeData.stock} left in stock`;
+            } else {
+              button.title = "";
+            }
+
+            // Update button text with stock info
+            button.textContent = `${sizeData.sizeName} - ₱${Number(
+              sizeData.price
+            ).toFixed(2)}${isLowStock ? ` (${sizeData.stock} left)` : ""}`;
+          }
+        });
+
+        // Update active size if it became out of stock
+        const activeButton = document.querySelector(".size-btn.active");
+        if (activeButton && activeButton.disabled) {
+          // Find first available size
+          const firstAvailable = document.querySelector(
+            ".size-btn:not(.out-of-stock):not([disabled])"
+          );
+          if (firstAvailable) {
+            firstAvailable.click();
+          } else {
+            // No sizes available, disable add to cart
+            document.getElementById("addToCart").disabled = true;
+          }
+        }
+
+        updateStockIndicator();
+      }
+
+      // Function to fetch latest product data
+      async function fetchLatestProductData() {
+        if (!productId) return;
+
+        try {
+          const response = await fetch(
+            `${window.API_BASE_URL}/api/menu/${productId}`
+          );
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const product = await response.json();
+          currentProduct = product;
+          updateSizeButtonsStock();
+        } catch (error) {
+          console.error("Error fetching latest product data:", error);
+        }
+      }
 
       async function fetchProduct() {
         const urlParams = new URLSearchParams(window.location.search);
-        const productId = urlParams.get("id");
+        productId = urlParams.get("id");
 
         if (!productId) {
           document.getElementById("productName").textContent =
@@ -155,23 +230,29 @@
           sizeButtons.innerHTML = "";
 
           if (product.hasSizes && product.sizes?.length > 0) {
-            productPrice.textContent = `₱${Number(
-              product.sizes[0].price
-            ).toFixed(2)}`;
+            // Find first available size for default selection
+            const firstAvailableSize = product.sizes.find(
+              (size) => size.stock > 0
+            );
+            const defaultSize = firstAvailableSize || product.sizes[0];
+
+            productPrice.textContent = `₱${Number(defaultSize.price).toFixed(
+              2
+            )}`;
 
             product.sizes.forEach((size, index) => {
-              // Check stock availability
               const isOutOfStock = size.stock === 0;
               const isLowStock = size.stock > 0 && size.stock <= 5;
+              const isDefault = size === defaultSize && !isOutOfStock;
 
               const button = document.createElement("button");
               button.type = "button";
-              button.className = `size-btn ${index === 0 ? "active" : ""} ${
+              button.className = `size-btn ${isDefault ? "active" : ""} ${
                 isOutOfStock ? "out-of-stock" : ""
               }`;
               button.textContent = `${size.sizeName} - ₱${Number(
                 size.price
-              ).toFixed(2)}`;
+              ).toFixed(2)}${isLowStock ? ` (${size.stock} left)` : ""}`;
               button.dataset.price = size.price;
               button.dataset.size = size.sizeName;
               button.dataset.stock = size.stock;
@@ -184,26 +265,39 @@
               }
 
               button.addEventListener("click", () => {
+                if (button.disabled) return;
+
                 document
                   .querySelectorAll(".size-btn")
                   .forEach((btn) => btn.classList.remove("active"));
                 button.classList.add("active");
                 productPrice.textContent = `₱${Number(size.price).toFixed(2)}`;
                 updateMaxQuantity(size.stock);
+                updateStockIndicator();
               });
 
               sizeButtons.appendChild(button);
             });
 
             document.getElementById("sizeContainer").style.display = "block";
-            // Set initial max quantity based on first size
-            updateMaxQuantity(product.sizes[0].stock);
+            // Set initial max quantity based on selected size
+            updateMaxQuantity(defaultSize.stock);
+
+            // If no sizes available, disable add to cart
+            if (!firstAvailableSize) {
+              document.getElementById("addToCart").disabled = true;
+            }
           } else {
             productPrice.textContent = `₱${Number(
               product.basePrice || 0
             ).toFixed(2)}`;
             document.getElementById("sizeContainer").style.display = "none";
             updateMaxQuantity(product.stock || 0);
+
+            // Disable add to cart if no stock
+            if (product.stock === 0) {
+              document.getElementById("addToCart").disabled = true;
+            }
           }
 
           updateStockIndicator();
@@ -217,18 +311,21 @@
       }
 
       function updateMaxQuantity(maxStock) {
-        const quantityInput = document.getElementById("quantityInput");
-        const currentValue = parseInt(quantityInput.value);
+        const quantityDisplay = document.getElementById("quantityDisplay");
+        const currentValue = parseInt(quantityDisplay.textContent);
 
         if (currentValue > maxStock) {
-          quantityInput.value = maxStock;
+          quantityDisplay.textContent = maxStock;
         }
 
-        quantityInput.max = maxStock;
+        // Disable increase button if at max
+        document.getElementById("increaseQty").disabled =
+          currentValue >= maxStock;
       }
 
       function updateStockIndicator() {
         const stockIndicator = document.getElementById("stockIndicator");
+        const addToCartBtn = document.getElementById("addToCart");
         if (!stockIndicator) return;
 
         let stock = 0;
@@ -249,49 +346,62 @@
             ? `${sizeName} - Out of Stock`
             : "Out of Stock";
           stockIndicator.className = "stock-indicator out-of-stock";
+          addToCartBtn.disabled = true;
         } else if (stock <= 5) {
           stockIndicator.textContent = sizeName
             ? `${sizeName} - Only ${stock} left!`
             : `Only ${stock} left!`;
           stockIndicator.className = "stock-indicator low-stock";
+          addToCartBtn.disabled = false;
         } else {
           stockIndicator.textContent = sizeName
             ? `${sizeName} - In Stock`
             : "In Stock";
           stockIndicator.className = "stock-indicator in-stock";
+          addToCartBtn.disabled = false;
         }
       }
 
       function setupQuantityControls() {
-        const quantityInput = document.getElementById("quantityInput");
+        const quantityDisplay = document.getElementById("quantityDisplay");
 
         document.getElementById("decreaseQty").addEventListener("click", () => {
-          let value = parseInt(quantityInput.value);
-          if (value > 1) quantityInput.value = value - 1;
+          let value = parseInt(quantityDisplay.textContent);
+          if (value > 1) {
+            quantityDisplay.textContent = value - 1;
+            document.getElementById("increaseQty").disabled = false;
+          }
         });
 
         document.getElementById("increaseQty").addEventListener("click", () => {
-          let value = parseInt(quantityInput.value);
-          const max = parseInt(quantityInput.max) || 99;
-          if (value < max) quantityInput.value = value + 1;
-        });
+          let value = parseInt(quantityDisplay.textContent);
+          const max = parseInt(
+            document.getElementById("quantityInput")?.max || 99
+          ); // Keep the max logic
+          if (value < max) {
+            quantityDisplay.textContent = value + 1;
+          }
 
-        quantityInput.addEventListener("input", () => {
-          let value = parseInt(quantityInput.value);
-          const max = parseInt(quantityInput.max) || 99;
-
-          if (isNaN(value) || value < 1) quantityInput.value = 1;
-          if (value > max) quantityInput.value = max;
+          // Disable increase button if at max
+          document.getElementById("increaseQty").disabled = value >= max;
         });
 
         // Update stock indicator when quantity changes
-        quantityInput.addEventListener("change", updateStockIndicator);
+        quantityDisplay.addEventListener(
+          "DOMSubtreeModified",
+          updateStockIndicator
+        );
       }
+      // Listen for add to cart success to update stock immediately
+      document.addEventListener("cartUpdate", function () {
+        // Refresh product data after successful add to cart
+        setTimeout(fetchLatestProductData, 500);
+      });
 
       // Update stock indicator when size changes
       document.addEventListener("click", (e) => {
-        if (e.target.classList.contains("size-btn")) {
-          setTimeout(updateStockIndicator, 100);
+        if (e.target.classList.contains("size-btn") && !e.target.disabled) {
+          updateStockIndicator();
         }
       });
 

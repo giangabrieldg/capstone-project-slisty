@@ -57,6 +57,7 @@ body {
     border-radius: 0.5rem;
     font-weight: 500;
     transition: all 0.3s ease;
+    cursor: pointer;
 }
 
 .size-btn.active {
@@ -64,9 +65,27 @@ body {
     color: #fff;
 }
 
-.size-btn:hover {
+.size-btn:hover:not(.out-of-stock):not(:disabled) {
     background-color: var(--primary-color);
     color: #fff;
+}
+
+/* Disabled Size Buttons */
+.size-btn.out-of-stock,
+.size-btn:disabled {
+    background-color: #f3f4f6;
+    color: #9ca3af;
+    border-color: #d1d5db;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.size-btn.out-of-stock:hover,
+.size-btn:disabled:hover {
+    background-color: #f3f4f6;
+    color: #9ca3af;
+    border-color: #d1d5db;
+    transform: none;
 }
 
 /* Quantity Box */
@@ -82,10 +101,18 @@ body {
     font-size: 1.2rem;
     font-weight: 600;
     transition: background-color 0.3s ease;
+    cursor: pointer;
 }
 
-.quantity-btn:hover {
+.quantity-btn:hover:not(:disabled) {
     background-color: var(--secondary-color);
+}
+
+.quantity-btn:disabled {
+    background-color: #f3f4f6;
+    color: #9ca3af;
+    cursor: not-allowed;
+    opacity: 0.6;
 }
 
 /* Add to Cart */
@@ -99,11 +126,19 @@ body {
     border-radius: 2rem;
     transition: all 0.3s ease;
     display: inline-block;
+    cursor: pointer;
 }
 
-.add-to-cart-btn:hover {
+.add-to-cart-btn:hover:not(:disabled) {
     background: #1e6f32;
     transform: translateY(-2px);
+}
+
+.add-to-cart-btn:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+    opacity: 0.6;
+    transform: none;
 }
 
 /* Stock Indicator */

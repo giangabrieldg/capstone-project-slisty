@@ -688,7 +688,7 @@ class CheckoutManager {
 
       if (missingFields.length > 0) {
         await Swal.fire({
-          icon: "error",
+          icon: "warning",
           title: "Oops...",
           text: `Please complete your profile (${missingFields.join(
             ", "
@@ -1003,32 +1003,100 @@ class CheckoutManager {
       // Cash payment - no polling needed
       const orderData = JSON.parse(sessionStorage.getItem("pendingOrder"));
 
-      // Use the new cash payment endpoint instead of /api/orders/create
-      const response = await fetch(
-        `${window.API_BASE_URL}/api/payment/process-cash-order`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(orderData),
+      try {
+        // Use the new cash payment endpoint instead of /api/orders/create
+        const response = await fetch(
+          `${window.API_BASE_URL}/api/payment/process-cash-order`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(orderData),
+          }
+        );
+
+        if (!response.ok) {
+          const errorData = await response.json();
+
+          // === NEW: SPECIFIC STOCK ERROR HANDLING ===
+          if (
+            errorData.error &&
+            errorData.error.includes("Insufficient stock")
+          ) {
+            console.warn("Stock error detected:", errorData.error);
+
+            await Swal.fire({
+              icon: "warning",
+              title: "Stock Update",
+              html: `
+              <div class="text-center">
+                <i class="fas fa-exclamation-triangle fa-2x text-warning mb-3"></i>
+                <p>Some items in your cart are no longer available in the requested quantities.</p>
+                <p class="small text-muted">${errorData.error}</p>
+              </div>
+            `,
+              confirmButtonText: "Update Cart",
+              confirmButtonColor: "#2c9045",
+            });
+
+            // Reload cart to reflect current availability
+            await this.loadCartItems();
+            this.renderCartSummary();
+
+            this.resetCheckoutButton(checkoutBtn);
+            this.hideStatusMessage(statusMessage);
+
+            // Clear pending order since it's invalid
+            sessionStorage.removeItem("pendingOrder");
+            return;
+          }
+          // === END NEW STOCK ERROR HANDLING ===
+
+          throw new Error(errorData.message || "Order creation failed");
         }
-      );
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Order creation failed");
+        const result = await response.json();
+
+        // Clear pending data for cash payment (no polling needed)
+        sessionStorage.removeItem("pendingOrder");
+        sessionStorage.removeItem("pendingPayment");
+
+        // Redirect immediately for cash
+        window.location.href = `/customer/success.html?orderId=${
+          result.order.orderId || result.orderId
+        }`;
+      } catch (error) {
+        // === NEW: ADDITIONAL ERROR HANDLING FOR STOCK ISSUES ===
+        if (
+          error.message.includes("stock") ||
+          error.message.includes("Stock")
+        ) {
+          console.warn("Stock-related error:", error.message);
+
+          await Swal.fire({
+            icon: "warning",
+            title: "Inventory Changed",
+            text: "Product availability has changed. Please review your cart and try again.",
+            confirmButtonColor: "#2c9045",
+          });
+
+          // Reload cart to get current stock status
+          await this.loadCartItems();
+          this.renderCartSummary();
+
+          this.resetCheckoutButton(checkoutBtn);
+          this.hideStatusMessage(statusMessage);
+
+          // Clear invalid pending order
+          sessionStorage.removeItem("pendingOrder");
+          return;
+        }
+
+        // Re-throw other errors
+        throw error;
       }
-
-      const result = await response.json();
-
-      // Clear pending data for cash payment (no polling needed)
-      sessionStorage.removeItem("pendingOrder");
-      sessionStorage.removeItem("pendingPayment");
-
-      // Redirect immediately for cash
-      window.location.href = `/customer/success.html?orderId=${result.orderId}`;
     }
   }
 

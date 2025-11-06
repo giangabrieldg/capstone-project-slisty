@@ -15,6 +15,7 @@ const {
 } = require("../models");
 const sequelize = require("../config/database");
 const verifyToken = require("../middleware/verifyToken");
+const CartCleanupService = require("../services/cartCleanupService");
 
 // Helper function to verify webhook signatures
 const verifyWebhookSignature = (signature, payload, secret) => {
@@ -24,20 +25,92 @@ const verifyWebhookSignature = (signature, payload, secret) => {
 };
 
 const createOrderItems = async (orderId, items, transaction) => {
+  // First, validate all items have sufficient stock
+  for (const item of items) {
+    if (item.customCakeId) {
+      const customCake = await CustomCakeOrder.findByPk(item.customCakeId, {
+        transaction,
+      });
+      if (!customCake) {
+        throw new Error(`Custom cake order ${item.customCakeId} not found`);
+      }
+      if (customCake.status !== "Feasible") {
+        throw new Error(
+          `Custom cake order ${item.customCakeId} is not Feasible`
+        );
+      }
+    } else {
+      // Regular menu item - check current stock
+      const menuItem = await MenuItem.findByPk(item.menuId, {
+        include: [
+          {
+            model: ItemSize,
+            as: "sizes",
+            where: { isActive: true },
+            required: false,
+          },
+        ],
+        transaction,
+        lock: transaction.LOCK.UPDATE, // Lock for consistency
+      });
+
+      if (!menuItem) {
+        throw new Error(`Menu item ${item.menuId} not found`);
+      }
+
+      if (menuItem.hasSizes && item.size) {
+        const validSize = menuItem.sizes.find(
+          (s) =>
+            s.sizeName.trim().toLowerCase() === item.size.trim().toLowerCase()
+        );
+        if (!validSize) {
+          throw new Error(
+            `Invalid size ${item.size} for menu item ${item.menuId}`
+          );
+        }
+
+        // Check current stock
+        if (validSize.stock < item.quantity) {
+          throw new Error(
+            `Insufficient stock for ${item.size} of ${item.name}. Only ${validSize.stock} available.`
+          );
+        }
+
+        // Deduct stock
+        await ItemSize.update(
+          { stock: validSize.stock - item.quantity },
+          {
+            where: { sizeId: validSize.sizeId },
+            transaction,
+          }
+        );
+      } else {
+        // Check current stock for items without sizes
+        if (menuItem.stock < item.quantity) {
+          throw new Error(
+            `Insufficient stock for ${item.name}. Only ${menuItem.stock} available.`
+          );
+        }
+
+        // Deduct stock
+        await MenuItem.update(
+          { stock: menuItem.stock - item.quantity },
+          {
+            where: { menuId: menuItem.menuId },
+            transaction,
+          }
+        );
+      }
+    }
+  }
+
+  // === NEW: Clean up other users' carts before creating order ===
+  await CartCleanupService.cleanupOtherUsersCarts(items, transaction);
+
+  // After stock validation and deduction, create order items
   await Promise.all(
     items.map(async (item) => {
       if (item.customCakeId) {
-        const customCake = await CustomCakeOrder.findByPk(item.customCakeId, {
-          transaction,
-        });
-        if (!customCake) {
-          throw new Error(`Custom cake order ${item.customCakeId} not found`);
-        }
-        if (customCake.status !== "Feasible") {
-          throw new Error(
-            `Custom cake order ${item.customCakeId} is not Feasible`
-          );
-        }
         await OrderItem.create(
           {
             orderId,
@@ -62,54 +135,18 @@ const createOrderItems = async (orderId, items, transaction) => {
           },
           { transaction }
         );
-
-        const menuItem = await MenuItem.findByPk(item.menuId, {
-          include: [
-            {
-              model: ItemSize,
-              as: "sizes",
-              where: { isActive: true },
-              required: false,
-            },
-          ],
-          transaction,
-        });
-
-        if (!menuItem) {
-          throw new Error(`Menu item ${item.menuId} not found`);
-        }
-
-        if (menuItem.hasSizes && item.size) {
-          const validSize = menuItem.sizes.find(
-            (s) =>
-              s.sizeName.trim().toLowerCase() === item.size.trim().toLowerCase()
-          );
-          if (!validSize) {
-            throw new Error(
-              `Invalid size ${item.size} for menu item ${item.menuId}`
-            );
-          }
-          if (validSize.stock < item.quantity) {
-            throw new Error(
-              `Insufficient stock for ${item.size} of ${item.name}`
-            );
-          }
-          await validSize.update(
-            { stock: validSize.stock - item.quantity },
-            { transaction }
-          );
-        } else {
-          if (menuItem.stock < item.quantity) {
-            throw new Error(`Insufficient stock for ${item.name}`);
-          }
-          await menuItem.update(
-            { stock: menuItem.stock - item.quantity },
-            { transaction }
-          );
-        }
       }
     })
   );
+};
+
+const clearUserCart = async (userId, transaction) => {
+  const cart = await Cart.findOne({
+    where: { userID: userId },
+    transaction,
+  });
+
+  await clearUserCart(req.user.userID, transaction);
 };
 
 // /api/payment/create-gcash-source for both normal and custom cake orders
@@ -431,12 +468,7 @@ router.post("/verify-gcash-payment", verifyToken, async (req, res) => {
       transaction,
     });
 
-    if (cart) {
-      await CartItem.destroy({
-        where: { cartId: cart.cartId },
-        transaction,
-      });
-    }
+    await clearUserCart(req.user.userID, transaction);
 
     await transaction.commit();
 
@@ -514,9 +546,9 @@ router.post("/verify-custom-cake-payment", verifyToken, async (req, res) => {
       status: "In Progress",
       payment_status: "paid",
       final_payment_status: "paid",
-      delivery_method: delivery_method || "pickup", // ✅ Save to model
+      delivery_method: delivery_method || "pickup",
       delivery_address:
-        delivery_method === "delivery" ? delivery_address : null, // ✅ Save to model
+        delivery_method === "delivery" ? delivery_address : null,
     };
 
     // Add delivery date if provided
@@ -566,13 +598,13 @@ router.post("/verify-custom-cake-payment", verifyToken, async (req, res) => {
         payment_id: paymentId,
         payment_verified: true,
         payment_method: "gcash",
-        delivery_method: delivery_method || "pickup", // ✅ Save to Order table
+        delivery_method: delivery_method || "pickup",
         pickup_date: customOrder.deliveryDate,
         customer_name: customerInfo.fullName,
         customer_email: customerInfo.email,
         customer_phone: customerInfo.phone,
         delivery_address:
-          delivery_method === "delivery" ? delivery_address : null, // ✅ Save to Order table
+          delivery_method === "delivery" ? delivery_address : null,
         items: [
           {
             customCakeId,
@@ -637,7 +669,7 @@ router.post("/verify-custom-cake-payment", verifyToken, async (req, res) => {
   }
 });
 
-// POST /api/payment/webhook - Handle Paymongo webhooks (SINGLE UPDATED VERSION)
+// POST /api/payment/webhook - Handle Paymongo webhooks
 router.post(
   "/webhook",
   express.raw({ type: "application/json" }),
@@ -810,7 +842,7 @@ router.post(
           await transaction.commit();
           return res.status(200).end();
         } else {
-          //Handle regular orders
+          // Handle regular orders
           let order = await Order.findOne({
             where: { payment_id: paymentId },
             transaction,
@@ -855,19 +887,9 @@ router.post(
 
             order = await Order.create(orderData, { transaction });
 
+            // === NEW: Use createOrderItems for stock deduction and cart cleanup ===
             if (items.length > 0) {
-              await OrderItem.bulkCreate(
-                items.map((item) => ({
-                  orderId: order.orderId,
-                  menuId: item.menuId,
-                  sizeId: item.sizeId,
-                  quantity: item.quantity,
-                  price: item.price,
-                  item_name: item.name,
-                  size_name: item.size,
-                })),
-                { transaction }
-              );
+              await createOrderItems(order.orderId, items, transaction);
             }
           } else {
             await order.update(
@@ -898,7 +920,6 @@ router.post(
           return res.status(200).end();
         }
       }
-
       res.status(200).end();
     } catch (error) {
       console.error("Webhook processing error:", error);
@@ -1054,7 +1075,7 @@ router.post("/process-cash-order", verifyToken, async (req, res) => {
       { transaction }
     );
 
-    //Call createOrderItems to reduce stock
+    // Call createOrderItems to reduce stock and cleanup other carts
     await createOrderItems(order.orderId, items, transaction);
 
     // Clear the user's cart
@@ -1079,6 +1100,16 @@ router.post("/process-cash-order", verifyToken, async (req, res) => {
   } catch (error) {
     await transaction.rollback();
     console.error("Cash order processing error:", error);
+
+    // Enhanced error handling for stock issues
+    if (error.message.includes("Insufficient stock")) {
+      return res.status(409).json({
+        success: false,
+        error: error.message,
+        type: "stock_error",
+      });
+    }
+
     res.status(500).json({
       success: false,
       error: "Failed to process cash order",

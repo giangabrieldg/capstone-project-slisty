@@ -1,4 +1,4 @@
-// Fixed version - Wait for SweetAlert to close before redirecting
+// Fixed version - Proper stock validation and race condition handling
 document.getElementById("addToCart").addEventListener("click", async () => {
   // Retrieve the authentication token from sessionStorage
   const token = sessionStorage.getItem("token");
@@ -17,7 +17,9 @@ document.getElementById("addToCart").addEventListener("click", async () => {
 
   const urlParams = new URLSearchParams(window.location.search);
   const productId = urlParams.get("id");
-  const quantity = parseInt(document.getElementById("quantityInput").value);
+  const quantity = parseInt(
+    document.getElementById("quantityDisplay").textContent
+  );
   const productName = document.getElementById("productName").textContent;
 
   // Validate quantity
@@ -33,12 +35,11 @@ document.getElementById("addToCart").addEventListener("click", async () => {
 
   // Initialize variables for size and stock
   let selectedSize = null;
-  let selectedStock = null;
 
   console.log("Adding to cart:", { productId, quantity, size: selectedSize });
 
   try {
-    // Fetch product details from the backend
+    // Fetch current product details from the backend to check availability
     const response = await fetch(
       `${window.API_BASE_URL}/api/menu/${productId}`
     );
@@ -49,7 +50,7 @@ document.getElementById("addToCart").addEventListener("click", async () => {
     }
     const product = await response.json();
 
-    // Handle stock validation based on whether the item has sizes
+    // Handle size selection validation
     if (product.hasSizes) {
       // For items with sizes, ensure a size is selected
       const activeSizeButton = document.querySelector(".size-btn.active");
@@ -78,11 +79,11 @@ document.getElementById("addToCart").addEventListener("click", async () => {
         return;
       }
       // Get stock for the selected size
-      selectedStock = validSize.stock;
+      const selectedStock = validSize.stock;
       if (selectedStock < quantity) {
         Swal.fire({
           icon: "error",
-          title: "Oops...",
+          title: "Stock Limit",
           text: `Sorry, only ${selectedStock} items available for ${selectedSize}.`,
           confirmButtonColor: "#2c9045",
         });
@@ -90,11 +91,11 @@ document.getElementById("addToCart").addEventListener("click", async () => {
       }
     } else {
       // For non-sized items, use the main stock field
-      selectedStock = product.stock || 0;
+      const selectedStock = product.stock || 0;
       if (selectedStock < quantity) {
         Swal.fire({
           icon: "error",
-          title: "Oops...",
+          title: "Stock Limit",
           text: `Sorry, only ${selectedStock} items available in stock.`,
           confirmButtonColor: "#2c9045",
         });
@@ -109,7 +110,7 @@ document.getElementById("addToCart").addEventListener("click", async () => {
       size: selectedSize,
     };
 
-    // Send cart item to backend
+    // Send cart item to backend - the backend should handle final stock validation
     const cartResponse = await fetch(`${window.API_BASE_URL}/api/cart/add`, {
       method: "POST",
       headers: {
@@ -121,6 +122,72 @@ document.getElementById("addToCart").addEventListener("click", async () => {
 
     if (!cartResponse.ok) {
       const errorData = await cartResponse.json();
+
+      // Handle specific error cases
+      if (cartResponse.status === 409) {
+        // Check if user already has this item in cart
+        try {
+          const cartCheckResponse = await fetch(
+            `${window.API_BASE_URL}/api/cart`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+
+          if (cartCheckResponse.ok) {
+            const cartData = await cartCheckResponse.json();
+            const existingCartItem = cartData.cartItems?.find(
+              (item) =>
+                item.menuId === parseInt(productId) &&
+                item.size === selectedSize
+            );
+
+            if (existingCartItem) {
+              // User already has this item in cart
+              Swal.fire({
+                icon: "warning",
+                title: "Cart Limit",
+                html: `
+              <div class="text-center">
+                <p>You already have <strong>${existingCartItem.quantity}</strong> of this item in your cart.</p>
+                <p>Adding more would exceed the available stock limit.</p>
+                <p class="small text-muted mt-2">Please adjust your cart quantity instead.</p>
+              </div>
+            `,
+                confirmButtonColor: "#2c9045",
+                confirmButtonText: "OK",
+              });
+              return;
+            }
+          }
+        } catch (cartError) {
+          console.error("Error checking cart:", cartError);
+        }
+
+        // Generic stock error
+        Swal.fire({
+          icon: "error",
+          title: "Stock Issue",
+          text: "This item is no longer available in the requested quantity.",
+          confirmButtonColor: "#2c9045",
+        });
+        return;
+      }
+
+      if (cartResponse.status === 400) {
+        // Validation error
+        Swal.fire({
+          icon: "error",
+          title: "Validation Error",
+          text:
+            errorData.message || "Please check your selection and try again.",
+          confirmButtonColor: "#2c9045",
+        });
+        return;
+      }
+
       throw new Error(
         errorData.message || `Failed to add to cart: ${cartResponse.statusText}`
       );
@@ -135,6 +202,8 @@ document.getElementById("addToCart").addEventListener("click", async () => {
       icon: "success",
       confirmButtonColor: "#2c9045",
     });
+
+    document.dispatchEvent(new Event("cartUpdate"));
 
     // Update cart count badge if updateCartCount function exists
     if (typeof updateCartCount === "function") {

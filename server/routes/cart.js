@@ -1,51 +1,59 @@
-//For handling cart-related API endpoints.
-
+// Fixed version with transaction handling
 const express = require("express");
 const router = express.Router();
-const { Op } = require("sequelize");
+const { Op, Sequelize } = require("sequelize");
 const {
   Cart,
   CartItem,
   MenuItem,
   ItemSize,
   CustomCakeOrder,
+  sequelize,
 } = require("../models");
 const verifyToken = require("../middleware/verifyToken");
 
-// POST /api/cart/add - Add item or custom cake to cart.
+// POST /api/cart/add - Add item or custom cake to cart with transaction
 router.post("/add", verifyToken, async (req, res) => {
+  const transaction = await sequelize.transaction();
+
   try {
     const { menuId, customCakeId, quantity, size } = req.body;
+
     // Validate input
     if (!menuId && !customCakeId) {
+      await transaction.rollback();
       return res
         .status(400)
         .json({ message: "Either menuId or customCakeId is required" });
     }
     if (!quantity || quantity < 1) {
+      await transaction.rollback();
       return res.status(400).json({ message: "Invalid quantity" });
     }
 
     let selectedStock = null;
     let validSize = null;
+    let menuItem = null;
 
     // Handle custom cake
     if (customCakeId) {
-      const customCake = await CustomCakeOrder.findByPk(customCakeId);
+      const customCake = await CustomCakeOrder.findByPk(customCakeId, {
+        transaction,
+      });
       if (!customCake) {
+        await transaction.rollback();
         return res.status(404).json({ message: "Custom cake order not found" });
       }
       if (customCake.status !== "Feasible") {
-        return res
-          .status(400)
-          .json({
-            message: "Custom cake order must be Feasible to add to cart",
-          });
+        await transaction.rollback();
+        return res.status(400).json({
+          message: "Custom cake order must be Feasible to add to cart",
+        });
       }
       selectedStock = 1; // Custom cakes have a stock of 1
     } else {
-      // Handle menu item
-      const menuItem = await MenuItem.findByPk(menuId, {
+      // Handle menu item - use transaction and lock the row
+      menuItem = await MenuItem.findByPk(menuId, {
         include: [
           {
             model: ItemSize,
@@ -54,46 +62,24 @@ router.post("/add", verifyToken, async (req, res) => {
             required: false,
           },
         ],
+        transaction,
+        lock: transaction.LOCK.UPDATE, // Lock the menu item row
       });
+
       if (!menuItem) {
+        await transaction.rollback();
         return res.status(404).json({ message: "Menu item not found" });
-      }
-      if (menuItem.hasSizes) {
-        if (!size) {
-          return res
-            .status(400)
-            .json({ message: "Size is required for this item" });
-        }
-        validSize = menuItem.sizes.find(
-          (s) => s.sizeName.trim().toLowerCase() === size.trim().toLowerCase()
-        );
-        if (!validSize) {
-          return res.status(400).json({ message: `Invalid size: ${size}` });
-        }
-        selectedStock = validSize.stock;
-        if (selectedStock < quantity) {
-          return res
-            .status(400)
-            .json({
-              message: `Only ${selectedStock} items available for ${size}`,
-            });
-        }
-      } else {
-        selectedStock = menuItem.stock || 0;
-        if (selectedStock < quantity) {
-          return res
-            .status(400)
-            .json({
-              message: `Only ${selectedStock} items available in stock`,
-            });
-        }
       }
     }
 
     // Find or create user's cart
-    let cart = await Cart.findOne({ where: { userID: req.user.userID } });
+    let cart = await Cart.findOne({
+      where: { userID: req.user.userID },
+      transaction,
+    });
+
     if (!cart) {
-      cart = await Cart.create({ userID: req.user.userID });
+      cart = await Cart.create({ userID: req.user.userID }, { transaction });
     }
 
     // Check for existing cart item
@@ -104,36 +90,65 @@ router.post("/add", verifyToken, async (req, res) => {
         size: size || null,
         customCakeId: customCakeId || null,
       },
+      transaction,
     });
 
     if (cartItem) {
       // Update quantity if item exists
       const newQuantity = cartItem.quantity + quantity;
-      if (selectedStock < newQuantity) {
+
+      // For existing items, we need to check stock considering the current cart quantity
+      if (!customCakeId) {
+        const currentReservedQuantity = cartItem.quantity;
+        const availableStock = selectedStock + currentReservedQuantity;
+
+        if (availableStock < newQuantity) {
+          await transaction.rollback();
+          return res.status(409).json({
+            message: menuItem.hasSizes
+              ? `Only ${selectedStock} items available for ${size}`
+              : `Only ${selectedStock} items available in stock`,
+          });
+        }
+      } else if (newQuantity > 1) {
+        await transaction.rollback();
         return res.status(400).json({
-          message: customCakeId
-            ? "Only one custom cake order can be added"
-            : menuItem.hasSizes
-            ? `Only ${selectedStock} items available for ${size}`
-            : `Only ${selectedStock} items available in stock`,
+          message: "Only one custom cake order can be added",
         });
       }
+
       cartItem.quantity = newQuantity;
-      await cartItem.save();
+      await cartItem.save({ transaction });
     } else {
       // Create new cart item
-      cartItem = await CartItem.create({
-        cartId: cart.cartId,
-        menuId: menuId || null,
-        customCakeId: customCakeId || null,
-        quantity,
-        size: size || null,
-      });
+      cartItem = await CartItem.create(
+        {
+          cartId: cart.cartId,
+          menuId: menuId || null,
+          customCakeId: customCakeId || null,
+          quantity,
+          size: size || null,
+        },
+        { transaction }
+      );
     }
+
+    // Commit the transaction
+    await transaction.commit();
 
     return res.status(200).json({ message: "Item added to cart", cartItem });
   } catch (error) {
+    // Rollback transaction on error
+    await transaction.rollback();
     console.error("Add to cart error:", error);
+
+    // Handle specific database errors
+    if (error.name === "Sequelize.TimeoutError") {
+      return res.status(409).json({
+        message: "Item is currently being processed. Please try again.",
+      });
+    }
+
     return res.status(500).json({ message: "Server error" });
   }
 });
@@ -238,15 +253,19 @@ router.get("/", verifyToken, async (req, res) => {
   }
 });
 
-// PUT /api/cart/update - Update cart item quantity.
+// PUT /api/cart/update - Update cart item quantity with transaction
 router.put("/update", verifyToken, async (req, res) => {
+  const transaction = await sequelize.transaction();
+
   try {
     const { cartItemId, quantity } = req.body;
     if (!cartItemId || !quantity || quantity < 1) {
+      await transaction.rollback();
       return res
         .status(400)
         .json({ message: "Invalid cartItemId or quantity" });
     }
+
     const cartItem = await CartItem.findByPk(cartItemId, {
       include: [
         {
@@ -262,20 +281,32 @@ router.put("/update", verifyToken, async (req, res) => {
         },
         { model: CustomCakeOrder },
       ],
+      transaction,
     });
+
     if (!cartItem) {
+      await transaction.rollback();
       return res.status(404).json({ message: "Cart item not found" });
     }
+
     let selectedStock = null;
     if (cartItem.customCakeId) {
       selectedStock = 1;
       if (quantity > 1) {
+        await transaction.rollback();
         return res
           .status(400)
           .json({ message: "Only one custom cake order can be added" });
       }
     } else {
       const menuItem = cartItem.MenuItem;
+
+      // Lock and reload the menu item to get current stock
+      const lockedMenuItem = await MenuItem.findByPk(menuItem.menuId, {
+        transaction,
+        lock: transaction.LOCK.UPDATE,
+      });
+
       if (menuItem.hasSizes && cartItem.size) {
         const validSize = menuItem.sizes.find(
           (s) =>
@@ -283,52 +314,115 @@ router.put("/update", verifyToken, async (req, res) => {
             cartItem.size.trim().toLowerCase()
         );
         if (!validSize) {
+          await transaction.rollback();
           return res
             .status(400)
             .json({ message: `Invalid size: ${cartItem.size}` });
         }
-        selectedStock = validSize.stock;
-        if (selectedStock < quantity) {
-          return res
-            .status(400)
-            .json({
-              message: `Only ${selectedStock} items available for ${cartItem.size}`,
-            });
+
+        // Lock and reload the size row
+        const lockedSize = await ItemSize.findByPk(validSize.sizeId, {
+          transaction,
+          lock: transaction.LOCK.UPDATE,
+        });
+
+        selectedStock = lockedSize.stock;
+
+        // Calculate available stock considering current cart quantity
+        const currentReservedQuantity = cartItem.quantity;
+        const availableStock = selectedStock + currentReservedQuantity;
+
+        if (availableStock < quantity) {
+          await transaction.rollback();
+          return res.status(409).json({
+            message: `Only ${selectedStock} items available for ${cartItem.size}`,
+          });
         }
+
+        // Update stock
+        await ItemSize.update(
+          { stock: selectedStock - (quantity - currentReservedQuantity) },
+          {
+            where: { sizeId: validSize.sizeId },
+            transaction,
+          }
+        );
       } else {
-        selectedStock = menuItem.stock || 0;
-        if (selectedStock < quantity) {
-          return res
-            .status(400)
-            .json({
-              message: `Only ${selectedStock} items available in stock`,
-            });
+        selectedStock = lockedMenuItem.stock || 0;
+
+        // Calculate available stock considering current cart quantity
+        const currentReservedQuantity = cartItem.quantity;
+        const availableStock = selectedStock + currentReservedQuantity;
+
+        if (availableStock < quantity) {
+          await transaction.rollback();
+          return res.status(409).json({
+            message: `Only ${selectedStock} items available in stock`,
+          });
         }
+
+        // Update stock
+        await MenuItem.update(
+          { stock: selectedStock - (quantity - currentReservedQuantity) },
+          {
+            where: { menuId: menuItem.menuId },
+            transaction,
+          }
+        );
       }
     }
+
     cartItem.quantity = quantity;
-    await cartItem.save();
+    await cartItem.save({ transaction });
+
+    await transaction.commit();
     return res.status(200).json({ message: "Cart item updated", cartItem });
   } catch (error) {
+    await transaction.rollback();
     console.error("Update cart item error:", error);
     return res.status(500).json({ message: "Server error" });
   }
 });
 
-// DELETE /api/cart/remove - Remove item from cart.
+// DELETE /api/cart/remove - Remove item from cart with transaction
 router.delete("/remove", verifyToken, async (req, res) => {
+  const transaction = await sequelize.transaction();
+
   try {
     const { cartItemId } = req.body;
     if (!cartItemId) {
+      await transaction.rollback();
       return res.status(400).json({ message: "Invalid cartItemId" });
     }
-    const cartItem = await CartItem.findByPk(cartItemId);
+
+    const cartItem = await CartItem.findByPk(cartItemId, {
+      include: [
+        {
+          model: MenuItem,
+          include: [
+            {
+              model: ItemSize,
+              as: "sizes",
+              where: { isActive: true },
+              required: false,
+            },
+          ],
+        },
+      ],
+      transaction,
+    });
+
     if (!cartItem) {
+      await transaction.rollback();
       return res.status(404).json({ message: "Cart item not found" });
     }
-    await cartItem.destroy();
+
+    await cartItem.destroy({ transaction });
+    await transaction.commit();
+
     return res.status(200).json({ message: "Cart item removed" });
   } catch (error) {
+    await transaction.rollback();
     console.error("Remove cart item error:", error);
     return res.status(500).json({ message: "Server error" });
   }

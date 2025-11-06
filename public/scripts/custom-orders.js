@@ -146,10 +146,12 @@ function populateOrdersTable(customOrders, imageOrders) {
     )}`;
     const details = `Flavor: ${order.flavor}, Size: ${
       order.size || "Not specified"
-    }, Event: ${new Date(order.eventDate).toLocaleDateString()}`;
+    }`;
+
     const deliveryDate = order.deliveryDate
       ? new Date(order.deliveryDate).toLocaleDateString()
       : "Not set";
+
     const orderDate = order.orderDate
       ? new Date(order.orderDate).toLocaleDateString()
       : order.createdAt
