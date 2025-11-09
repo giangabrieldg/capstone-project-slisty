@@ -20,7 +20,7 @@ class CakeOptionsService {
   async loadDisabledOptions() {
     try {
       const response = await fetch(
-        `${window.API_BASE_URL}/api/admin/cake-options`
+        `${window.API_BASE_URL}/api/cake/available-options`
       );
       const result = await response.json();
 
