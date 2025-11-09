@@ -19,7 +19,9 @@ class CakeOptionsService {
   // Load disabled options from API
   async loadDisabledOptions() {
     try {
-      const response = await fetch("/api/cake/available-options");
+      const response = await fetch(
+        `${window.API_BASE_URL}/api/admin/cake-options`
+      );
       const result = await response.json();
 
       if (result.success) {
