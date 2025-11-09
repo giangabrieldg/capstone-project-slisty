@@ -49,17 +49,36 @@ class CustomCakeController {
     this.renderer = null;
     this.apiService = new CakeAPIService();
     this.guidedTour = null;
+    this.cakeOptionsService = window.cakeOptionsService;
   }
 
   async init() {
     this.renderer = new Cake3DRenderer("canvas-container");
     await this.renderer.init();
     this.guidedTour = new GuidedTour(this);
+
+    // Debug: Check if service is available
+    console.log("Cake Options Service:", this.cakeOptionsService);
+    console.log("Service initialized:", this.cakeOptionsService?.isInitialized);
+
     this.setupEventListeners();
     this.setupInitialView();
     this.updateCake();
     this.initializeDownpaymentDisplay();
     this.updateOrderSummary();
+
+    // Initialize cake options service
+    await this.cakeOptionsService.init();
+    console.log(
+      "After init - Service initialized:",
+      this.cakeOptionsService.isInitialized
+    );
+    console.log(
+      "Disabled options count:",
+      this.cakeOptionsService.disabledOptions.size
+    );
+
+    this.cakeOptionsService.applyDisabledOptions();
   }
 
   calculateTotalPrice() {
@@ -231,6 +250,7 @@ class CustomCakeController {
   setupSizeOptions() {
     document.querySelectorAll(".size-option-walmart").forEach((el) =>
       el.addEventListener("click", () => {
+        if (this.cakeOptionsService.shouldPreventClick(el)) return; //cake options disable
         document
           .querySelectorAll(".size-option-walmart")
           .forEach((o) => o.classList.remove("active"));
@@ -245,6 +265,7 @@ class CustomCakeController {
   setupFlavorOptions() {
     document.querySelectorAll(".flavor-option-walmart").forEach((el) =>
       el.addEventListener("click", () => {
+        if (this.cakeOptionsService.shouldPreventClick(el)) return; //cake options disable
         document
           .querySelectorAll(".flavor-option-walmart")
           .forEach((o) => o.classList.remove("active"));
@@ -259,6 +280,7 @@ class CustomCakeController {
   setupIcingOptions() {
     document.querySelectorAll(".icing-style-option").forEach((el) =>
       el.addEventListener("click", () => {
+        if (this.cakeOptionsService.shouldPreventClick(el)) return; //cake options disable
         document
           .querySelectorAll(".icing-style-option")
           .forEach((o) => o.classList.remove("active"));
@@ -276,8 +298,12 @@ class CustomCakeController {
       .querySelectorAll(".color-options-walmart .color-option-walmart")
       .forEach((c) =>
         c.addEventListener("click", () => {
+          // FIX: Added this line - was missing
+          if (this.cakeOptionsService.shouldPreventClick(c)) return;
+
           const parent = c.closest(".color-options-walmart");
           const borderType = parent.dataset.borderType;
+
           if (borderType === "bottom") {
             parent
               .querySelectorAll(".color-option-walmart")
@@ -313,6 +339,9 @@ class CustomCakeController {
 
     document.querySelectorAll(".toppings-color-option").forEach((c) =>
       c.addEventListener("click", () => {
+        // FIX: Added this line - was missing
+        if (this.cakeOptionsService.shouldPreventClick(c)) return;
+
         document
           .querySelectorAll(".toppings-color-option")
           .forEach((o) => o.classList.remove("active"));
@@ -325,10 +354,10 @@ class CustomCakeController {
       })
     );
   }
-
   setupFillingOptions() {
     document.querySelectorAll(".filling-option-walmart").forEach((el) =>
       el.addEventListener("click", () => {
+        if (this.cakeOptionsService.shouldPreventClick(el)) return; //cake options disable
         document
           .querySelectorAll(".filling-option-walmart")
           .forEach((o) => o.classList.remove("active"));
@@ -343,6 +372,7 @@ class CustomCakeController {
   setupBorderOptions() {
     document.querySelectorAll("#step-5 .border-option-walmart").forEach((el) =>
       el.addEventListener("click", () => {
+        if (this.cakeOptionsService.shouldPreventClick(el)) return;
         document
           .querySelectorAll("#step-5 .border-option-walmart")
           .forEach((o) => o.classList.remove("active"));
@@ -360,6 +390,9 @@ class CustomCakeController {
 
     document.querySelectorAll("#step-6 .border-option-walmart").forEach((el) =>
       el.addEventListener("click", () => {
+        // FIX: Added this line - was missing
+        if (this.cakeOptionsService.shouldPreventClick(el)) return;
+
         document
           .querySelectorAll("#step-6 .border-option-walmart")
           .forEach((o) => o.classList.remove("active"));
@@ -377,6 +410,8 @@ class CustomCakeController {
   setupMessageOptions() {
     document.querySelectorAll(".message-option-walmart").forEach((option) =>
       option.addEventListener("click", () => {
+        if (this.cakeOptionsService.shouldPreventClick(option)) return;
+
         document
           .querySelectorAll(".message-option-walmart")
           .forEach((o) => o.classList.remove("active"));
@@ -395,6 +430,7 @@ class CustomCakeController {
   setupDecorationOptions() {
     document.querySelectorAll(".decoration-option-walmart").forEach((el) =>
       el.addEventListener("click", () => {
+        if (this.cakeOptionsService.shouldPreventClick(el)) return;
         document
           .querySelectorAll(".decoration-option-walmart")
           .forEach((o) => o.classList.remove("active"));
@@ -433,6 +469,8 @@ class CustomCakeController {
 
     document.querySelectorAll(".flower-option-walmart").forEach((el) =>
       el.addEventListener("click", () => {
+        if (this.cakeOptionsService.shouldPreventClick(el)) return;
+
         document
           .querySelectorAll(".flower-option-walmart")
           .forEach((o) => o.classList.remove("active"));
@@ -443,7 +481,6 @@ class CustomCakeController {
       })
     );
   }
-
   setupCustomTextInput() {
     document
       .getElementById("customTextWalmart")

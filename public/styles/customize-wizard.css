@@ -1276,6 +1276,41 @@ h1 {
     color: white;
 }
 
+/* disabled options styles */
+
+.disabled-option {
+    opacity: 0.5 !important;
+    pointer-events: none !important;
+    cursor: not-allowed !important;
+    position: relative;
+}
+
+/* Remove the "Unavailable" text overlay */
+.disabled-option::after {
+    display: none;
+}
+
+/* For color options - reduce opacity but keep color visible */
+.color-option-walmart.disabled-option {
+    opacity: 0.4 !important;
+    filter: grayscale(30%) !important;
+}
+
+.size-option-walmart.disabled-option .size-circle-walmart,
+.flavor-option-walmart.disabled-option .flavor-circle {
+    filter: grayscale(100%);
+}
+
+.disabled-option.active {
+    background-color: transparent !important;
+    border-color: #ccc !important;
+}
+
+.disabled-option:not(.color-option-walmart) {
+    background-color: #f8f9fa !important;
+    border-color: #dee2e6 !important;
+}
+
 /* Responsive design */
 @media (max-width: 600px) {
     .profile-modal-content {

@@ -1,0 +1,396 @@
+/* Define CSS variables for consistent theming */
+:root {
+    --primary-color: #2c9045;
+    --secondary-color: #e6f3ea;
+    --background-color: #ffffff;
+    --secondary-background-color: #f5f1e9;
+    --text-color: #2d2d2d;
+    --hover-color: #0f5e23;
+    --secondary-text-color: #5e5d5d;
+    --white-text-color: #f9f6ee;
+    --font-poppins: "Poppins", sans-serif;
+    --font-baloo: "Baloo 2", sans-serif;
+    --yellow-color: #ffeb3b;
+    --disabled-color: #6c757d;
+}
+
+/* Base Styles */
+body {
+    background-color: var(--background-color);
+    font-family: var(--font-poppins);
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+}
+
+/* Main Content */
+.content {
+    margin-left: 250px;
+    padding: 30px;
+    width: calc(100% - 250px);
+    transition: margin-left 0.3s ease-in-out, width 0.3s ease-in-out;
+}
+
+/* Cake Options Header */
+.cake-options-header {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 30px;
+    padding: 20px;
+    background-color: var(--background-color);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+}
+
+.cake-options-header h2 {
+    color: var(--text-color);
+    font-weight: 700;
+    font-size: 1.8rem;
+    margin: 0;
+}
+
+.header-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Search Bar */
+.search-bar {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--secondary-color);
+    border-radius: 4px;
+    transition: border-color 0.2s ease;
+}
+
+.search-bar:focus {
+    border-color: var(--primary-color);
+    outline: none;
+    box-shadow: 0 0 5px rgba(44, 144, 69, 0.3);
+}
+
+/* Action Buttons */
+
+.enable-all,
+#toggleAllBtn {
+    background-color: var(--primary-color);
+    border: none;
+    color: var(--white-text-color);
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.enable-all:hover,
+#toggleAllBtn:hover {
+    background-color: var(--hover-color);
+}
+
+.action-buttons {
+    padding: 20px;
+    background-color: var(--background-color);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    text-align: center;
+}
+
+.btn-success {
+    background-color: var(--primary-color);
+    border: none;
+    color: var(--white-text-color);
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.2s ease;
+}
+
+.btn-success:hover:not(:disabled) {
+    background-color: var(--hover-color);
+}
+
+.btn-success:disabled {
+    background-color: var(--disabled-color);
+    cursor: not-allowed;
+}
+
+/* Option Sections */
+.option-section {
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 0;
+    margin-bottom: 20px;
+    background: var(--background-color);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.category-header {
+    background-color: var(--secondary-color);
+    color: var(--text-color);
+    padding: 15px 20px;
+    margin: 0;
+}
+
+.category-header h5 {
+    margin: 0;
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+/* Option Items */
+.option-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    border-bottom: 1px solid #e9ecef;
+    transition: background-color 0.2s ease;
+}
+
+.option-item:last-child {
+    border-bottom: none;
+}
+
+.option-item:hover {
+    background-color: var(--secondary-color);
+}
+
+.option-disabled {
+    background-color: #f8f9fa;
+    opacity: 0.7;
+}
+
+.option-info {
+    flex-grow: 1;
+}
+
+.option-name {
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 4px;
+}
+
+.option-value {
+    color: var(--secondary-text-color);
+    font-size: 0.85rem;
+    font-family: monospace;
+}
+
+/* Toggle Switches */
+.form-check-input {
+    width: 3em;
+    height: 1.5em;
+}
+
+.form-check-input:checked {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.form-check-label {
+    font-weight: 500;
+    margin-left: 8px;
+}
+
+/* Color Preview */
+.color-preview {
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    border: 2px solid #dee2e6;
+    margin-right: 12px;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+/* Alert Styling */
+.alert-info {
+    background-color: var(--secondary-color);
+    border-color: var(--primary-color);
+    color: var(--text-color);
+}
+
+.alert-info .bi-info-circle {
+    color: var(--primary-color);
+}
+
+/* ===== RESPONSIVE STYLES ===== */
+
+/* Desktop */
+@media (min-width: 992px) {
+    .cake-options-header {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .header-actions {
+        flex-direction: row;
+        align-items: center;
+        width: auto;
+        gap: 15px;
+    }
+
+    .search-bar {
+        width: 250px;
+    }
+}
+
+/* Tablet and below */
+@media (max-width: 991px) {
+    .content {
+        margin-left: 0;
+        width: 100%;
+        padding: 20px;
+    }
+
+    body.sidebar-visible .content {
+        margin-left: 250px;
+        width: calc(100% - 250px);
+    }
+}
+
+/* Mobile - Medium */
+@media (max-width: 768px) {
+    .content {
+        margin-left: 70px;
+        width: calc(100% - 70px);
+        padding: 15px;
+    }
+
+    body.sidebar-visible .content {
+        margin-left: 70px;
+        width: calc(100% - 70px);
+    }
+
+    .cake-options-header {
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+
+    .cake-options-header h2 {
+        font-size: 1.4rem;
+    }
+
+    .option-item {
+        padding: 12px 15px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .option-toggle {
+        align-self: flex-end;
+    }
+
+    .action-buttons {
+        padding: 15px;
+    }
+
+    .btn-lg {
+        padding: 8px 16px;
+        font-size: 0.9rem;
+    }
+}
+
+/* Mobile - Small */
+@media (max-width: 576px) {
+    .content {
+        margin-left: 60px;
+        width: calc(100% - 60px);
+        padding: 12px;
+    }
+
+    body.sidebar-visible .content {
+        margin-left: 200px;
+        width: calc(100% - 200px);
+    }
+
+    .cake-options-header {
+        padding: 12px;
+        gap: 12px;
+    }
+
+    .cake-options-header h2 {
+        font-size: 1.2rem;
+    }
+
+    .header-actions {
+        gap: 8px;
+    }
+
+    .category-header {
+        padding: 12px 15px;
+    }
+
+    .category-header h5 {
+        font-size: 1rem;
+    }
+
+    .option-item {
+        padding: 10px 12px;
+    }
+
+    .option-name {
+        font-size: 0.9rem;
+    }
+
+    .option-value {
+        font-size: 0.8rem;
+    }
+
+    .action-buttons {
+        padding: 12px;
+    }
+
+    .btn-lg {
+        padding: 6px 12px;
+        font-size: 0.85rem;
+        display: block;
+        width: 100%;
+        margin-bottom: 8px;
+    }
+
+    .btn-lg.ms-2 {
+        margin-left: 0 !important;
+    }
+}
+
+/* Extra Small Devices */
+@media (max-width: 400px) {
+    .content {
+        margin-left: 55px;
+        width: calc(100% - 55px);
+        padding: 10px;
+    }
+
+    .cake-options-header h2 {
+        font-size: 1.1rem;
+    }
+
+    .option-item {
+        padding: 8px 10px;
+    }
+
+    .form-check-input {
+        width: 2.5em;
+        height: 1.3em;
+    }
+
+    .form-check-label {
+        font-size: 0.85rem;
+    }
+}
+
+/* Landscape Mode for Mobile */
+@media (max-width: 768px) and (orientation: landscape) {
+    .content {
+        padding: 10px;
+    }
+
+    .cake-options-header {
+        padding: 10px;
+    }
+}

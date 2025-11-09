@@ -13,6 +13,7 @@ const OrderItem = require("./order-item-model")(sequelize, DataTypes);
 const CustomCakeOrder = require("./custom-cake-model");
 const ImageBasedOrder = require("./image-based-order-model");
 const Notification = require("./notification")(sequelize, DataTypes);
+const CakeOption = require("./cake-options-model")(sequelize, DataTypes);
 
 // MenuItem ↔ ItemSize
 MenuItem.hasMany(ItemSize, {
@@ -235,4 +236,5 @@ module.exports = {
   CustomCakeOrder,
   ImageBasedOrder,
   Notification,
+  CakeOption,
 };

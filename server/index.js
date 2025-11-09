@@ -123,6 +123,7 @@ try {
   const faqRoutes = require("./routes/faqRoutes");
   const notificationRoutes = require("./routes/notificationRoutes");
   const passwordRoutes = require("./routes/passwordRoutes");
+  const cakeOptionRoutes = require("./routes/cakeOptionRoutes");
 
   console.log("Registering routes...");
   app.use("/api/inquiries", inquiriesRoutes);
@@ -135,7 +136,7 @@ try {
   app.use("/api/faqs", faqRoutes);
   app.use("/api/notifications", notificationRoutes);
   app.use("/api/password", passwordRoutes);
-  console.log("Routes registered successfully");
+  app.use("/api", cakeOptionRoutes);
 
   // OAuth setup
   const oauth2Client = new google.auth.OAuth2(
