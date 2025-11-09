@@ -16,7 +16,9 @@ class CakeOptionsManager {
 
   async loadOptions() {
     try {
-      const response = await fetch("/api/admin/cake-options");
+      const response = await fetch(
+        `${window.API_BASE_URL}/api/admin/cake-options`
+      );
       const result = await response.json();
 
       if (result.success) {
@@ -340,13 +342,16 @@ class CakeOptionsManager {
       spinner.classList.remove("d-none");
       saveBtn.disabled = true;
 
-      const response = await fetch("/api/admin/cake-options", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ updates }),
-      });
+      const response = await fetch(
+        `${window.API_BASE_URL}/api/admin/cake-options`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ updates }),
+        }
+      );
 
       const result = await response.json();
 
@@ -381,13 +386,16 @@ class CakeOptionsManager {
 
     if (result.isConfirmed) {
       try {
-        const response = await fetch("/api/admin/cake-options", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ updates: [] }), // Empty array will reset all to enabled
-        });
+        const response = await fetch(
+          `${window.API_BASE_URL}/api/admin/cake-options`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ updates: [] }), // Empty array will reset all to enabled
+          }
+        );
 
         const result = await response.json();
 
