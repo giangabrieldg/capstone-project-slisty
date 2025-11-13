@@ -31,8 +31,6 @@ router.post("/add", verifyToken, async (req, res) => {
       return res.status(400).json({ message: "Invalid quantity" });
     }
 
-    let selectedStock = null;
-    let validSize = null;
     let menuItem = null;
 
     // Handle custom cake
@@ -50,7 +48,6 @@ router.post("/add", verifyToken, async (req, res) => {
           message: "Custom cake order must be Feasible to add to cart",
         });
       }
-      selectedStock = 1; // Custom cakes have a stock of 1
     } else {
       // Handle menu item - use transaction and lock the row
       menuItem = await MenuItem.findByPk(menuId, {
@@ -63,7 +60,7 @@ router.post("/add", verifyToken, async (req, res) => {
           },
         ],
         transaction,
-        lock: transaction.LOCK.UPDATE, // Lock the menu item row
+        lock: transaction.LOCK.UPDATE,
       });
 
       if (!menuItem) {
@@ -99,15 +96,42 @@ router.post("/add", verifyToken, async (req, res) => {
 
       // For existing items, we need to check stock considering the current cart quantity
       if (!customCakeId) {
-        const currentReservedQuantity = cartItem.quantity;
-        const availableStock = selectedStock + currentReservedQuantity;
+        let currentStock = 0;
 
-        if (availableStock < newQuantity) {
+        if (menuItem.hasSizes && size) {
+          // Lock and reload the size row to get current stock
+          const lockedSize = await ItemSize.findOne({
+            where: {
+              menuId: menuId,
+              sizeName: size,
+            },
+            transaction,
+            lock: transaction.LOCK.UPDATE,
+          });
+
+          if (!lockedSize) {
+            await transaction.rollback();
+            return res.status(400).json({ message: `Invalid size: ${size}` });
+          }
+
+          currentStock = lockedSize.stock;
+        } else {
+          // Lock and reload the menu item to get current stock
+          const lockedMenuItem = await MenuItem.findByPk(menuId, {
+            transaction,
+            lock: transaction.LOCK.UPDATE,
+          });
+
+          currentStock = lockedMenuItem.stock || 0;
+        }
+
+        // Check if new total quantity exceeds available stock
+        if (currentStock < newQuantity) {
           await transaction.rollback();
           return res.status(409).json({
             message: menuItem.hasSizes
-              ? `Only ${selectedStock} items available for ${size}`
-              : `Only ${selectedStock} items available in stock`,
+              ? `Only ${currentStock} items available for ${size}`
+              : `Only ${currentStock} items available in stock`,
           });
         }
       } else if (newQuantity > 1) {
@@ -120,6 +144,36 @@ router.post("/add", verifyToken, async (req, res) => {
       cartItem.quantity = newQuantity;
       await cartItem.save({ transaction });
     } else {
+      // For new cart items, check stock availability
+      if (!customCakeId) {
+        let currentStock = 0;
+
+        if (menuItem.hasSizes && size) {
+          const validSize = menuItem.sizes.find(
+            (s) => s.sizeName.trim().toLowerCase() === size.trim().toLowerCase()
+          );
+
+          if (!validSize) {
+            await transaction.rollback();
+            return res.status(400).json({ message: `Invalid size: ${size}` });
+          }
+
+          currentStock = validSize.stock;
+        } else {
+          currentStock = menuItem.stock || 0;
+        }
+
+        // Check if requested quantity exceeds available stock
+        if (currentStock < quantity) {
+          await transaction.rollback();
+          return res.status(409).json({
+            message: menuItem.hasSizes
+              ? `Only ${currentStock} items available for ${size}`
+              : `Only ${currentStock} items available in stock`,
+          });
+        }
+      }
+
       // Create new cart item
       cartItem = await CartItem.create(
         {
@@ -152,7 +206,6 @@ router.post("/add", verifyToken, async (req, res) => {
     return res.status(500).json({ message: "Server error" });
   }
 });
-
 // GET /api/cart - Retrieve cart items for the authenticated user
 router.get("/", verifyToken, async (req, res) => {
   try {

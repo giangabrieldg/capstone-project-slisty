@@ -761,8 +761,6 @@ router.get(
     }
   }
 );
-
-//GET /api/orders/admin/reports - Get sales reports data for admin dashboard
 router.get(
   "/admin/reports",
   verifyToken,
@@ -770,21 +768,32 @@ router.get(
   async (req, res) => {
     try {
       const { start_date, end_date } = req.query;
-      const startDate =
-        start_date ||
-        new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-          .toISOString()
-          .split("T")[0];
-      const endDate = end_date || new Date().toISOString().split("T")[0];
+
+      console.log("=== REPORTS DEBUG ===");
+      console.log("Request dates:", { start_date, end_date });
+
+      // FIX: Handle timezone conversion properly for +08:00
+      const startDate = start_date
+        ? new Date(start_date + "T00:00:00+08:00") // Start of day in +08:00
+        : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+      const endDate = end_date
+        ? new Date(end_date + "T23:59:59.999+08:00") // End of day in +08:00
+        : new Date();
+
+      console.log("Date range in +08:00 timezone:");
+      console.log("  Start:", startDate.toISOString());
+      console.log("  End:", endDate.toISOString());
+      console.log("  Current time:", new Date().toISOString());
 
       // Get orders with their items
       const orders = await Order.findAll({
         where: {
           createdAt: {
-            [Op.between]: [
-              new Date(startDate),
-              new Date(endDate + " 23:59:59"),
-            ],
+            [Op.between]: [startDate, endDate],
+          },
+          status: {
+            [Op.notIn]: ["Cancelled", "cancelled"],
           },
         },
         include: [
@@ -800,7 +809,9 @@ router.get(
         order: [["createdAt", "DESC"]],
       });
 
-      // FIXED: Filter to regular orders only
+      console.log(`Found ${orders.length} total orders`);
+
+      // Filter to regular orders only
       const regularOrdersOnly = orders.filter((order) => {
         const hasCustomCake = order.orderItems.some(
           (item) => item.customCakeId
@@ -808,14 +819,13 @@ router.get(
         return !hasCustomCake;
       });
 
-      // Format order ID with leading zeros (ORD001, ORD012, etc.)
-      function formatOrderId(orderId) {
-        return "ORD" + orderId.toString().padStart(3, "0");
-      }
+      console.log(
+        `Found ${regularOrdersOnly.length} regular orders after filtering custom cakes`
+      );
 
-      // Format orders for response
+      // Format orders...
       const formattedOrders = regularOrdersOnly.map((order) => ({
-        orderId: formatOrderId(order.orderId),
+        orderId: "ORD" + order.orderId.toString().padStart(3, "0"),
         customer_name: order.customer_name,
         total_amount: parseFloat(order.total_amount) || 0,
         status: formatStatus(order.status),
@@ -832,7 +842,7 @@ router.get(
         })),
       }));
 
-      // Get daily orders count for chart (regular orders only)
+      // For daily orders
       const dailyOrders = await Order.findAll({
         attributes: [
           [sequelize.fn("DATE", sequelize.col("createdAt")), "date"],
@@ -840,28 +850,52 @@ router.get(
         ],
         where: {
           createdAt: {
-            [Op.between]: [
-              new Date(startDate),
-              new Date(endDate + " 23:59:59"),
-            ],
+            [Op.between]: [startDate, endDate],
+          },
+          status: {
+            [Op.notIn]: ["Cancelled", "cancelled"],
           },
         },
         group: [sequelize.fn("DATE", sequelize.col("createdAt"))],
         order: [[sequelize.fn("DATE", sequelize.col("createdAt")), "ASC"]],
       });
 
-      // Get popular items from order items
-      const allOrderItems = await OrderItem.findAll({
+      console.log(`Daily orders count: ${dailyOrders.length}`);
+
+      // FIX: Get popular items without the wrong association
+      // First, get all ACTIVE order IDs within the date range
+      const activeOrders = await Order.findAll({
+        attributes: ["orderId"],
         where: {
           createdAt: {
-            [Op.between]: [
-              new Date(startDate),
-              new Date(endDate + " 23:59:59"),
-            ],
+            [Op.between]: [startDate, endDate],
           },
-          customCakeId: null, // Only regular menu items
+          status: {
+            [Op.notIn]: ["Cancelled", "cancelled"],
+          },
         },
       });
+
+      const activeOrderIds = activeOrders.map((order) => order.orderId);
+
+      console.log(`Active order IDs: ${activeOrderIds.length}`);
+
+      // Then get order items only for active orders
+      const allOrderItems = await OrderItem.findAll({
+        where: {
+          orderId: {
+            [Op.in]: activeOrderIds,
+          },
+          customCakeId: null, // Only regular menu items
+          createdAt: {
+            [Op.between]: [startDate, endDate],
+          },
+        },
+      });
+
+      console.log(
+        `Found ${allOrderItems.length} order items from active orders`
+      );
 
       const itemCounts = {};
       allOrderItems.forEach((item) => {
@@ -874,11 +908,14 @@ router.get(
         .sort((a, b) => b.total_quantity - a.total_quantity)
         .slice(0, 10);
 
-      // Calculate summary (regular orders only)
+      console.log(`Popular items: ${popularItems.length}`);
+
       const totalRevenue = regularOrdersOnly.reduce(
         (sum, order) => sum + parseFloat(order.total_amount),
         0
       );
+
+      console.log("=== END DEBUG ===");
 
       res.json({
         success: true,
@@ -893,7 +930,10 @@ router.get(
             ? totalRevenue / regularOrdersOnly.length
             : 0,
         },
-        date_range: { start_date: startDate, end_date: endDate },
+        date_range: {
+          start_date: start_date || startDate.toISOString().split("T")[0],
+          end_date: end_date || endDate.toISOString().split("T")[0],
+        },
       });
     } catch (error) {
       console.error("Reports error:", error);

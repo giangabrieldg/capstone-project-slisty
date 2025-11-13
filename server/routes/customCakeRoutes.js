@@ -17,6 +17,7 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 const googleDriveService = require("../utils/googleDrive");
+const { Op } = require("sequelize");
 
 // Configure Multer for temporary file storage
 const uploadDir = path.join(__dirname, "../../Uploads/custom-cakes");
@@ -378,7 +379,27 @@ router.get("/admin/orders", verifyToken, async (req, res) => {
         message: "Unauthorized: Admin or staff access required",
       });
     }
+
+    // ADD DATE FILTERING
+    const { start_date, end_date } = req.query;
+
+    const startDate = start_date
+      ? new Date(start_date)
+      : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+    const endDate = end_date ? new Date(end_date) : new Date();
+
+    startDate.setHours(0, 0, 0, 0);
+    endDate.setHours(23, 59, 59, 999);
+
+    console.log(`Custom cake date range: ${startDate} to ${endDate}`);
+
     const orders = await CustomCakeOrder.findAll({
+      where: {
+        createdAt: {
+          [Op.between]: [startDate, endDate],
+        },
+      },
       include: [
         {
           model: User,
@@ -387,7 +408,6 @@ router.get("/admin/orders", verifyToken, async (req, res) => {
           required: false,
         },
         {
-          // ADD THIS INCLUDE
           model: User,
           as: "updater",
           attributes: ["userID", "name", "email", "userLevel"],
@@ -396,6 +416,7 @@ router.get("/admin/orders", verifyToken, async (req, res) => {
       ],
       order: [["createdAt", "DESC"]],
     });
+
     const formattedOrders = orders.map((order) => ({
       ...order.toJSON(),
       customer: order.customer
@@ -407,16 +428,15 @@ router.get("/admin/orders", verifyToken, async (req, res) => {
         : null,
       updater: order.updater
         ? {
-            // ADD UPDATER INFO
             userID: order.updater.userID,
             name: order.updater.name,
             email: order.updater.email,
             userLevel: order.updater.userLevel,
           }
         : null,
-      cancelled_by: order.cancelled_by, // Add this
-      cancellation_remarks: order.cancellation_remarks, // Add this
-      cancelled_at: order.cancelled_at, // Add thi
+      cancelled_by: order.cancelled_by,
+      cancellation_remarks: order.cancellation_remarks,
+      cancelled_at: order.cancelled_at,
       deliveryDate: order.deliveryDate,
       downpayment_amount: order.downpayment_amount,
       remaining_balance: order.remaining_balance,
@@ -429,7 +449,15 @@ router.get("/admin/orders", verifyToken, async (req, res) => {
       customer_email: order.customer_email,
       customer_phone: order.customer_phone,
     }));
-    res.json({ success: true, orders: formattedOrders });
+
+    res.json({
+      success: true,
+      orders: formattedOrders,
+      date_range: {
+        start_date: startDate.toISOString().split("T")[0],
+        end_date: endDate.toISOString().split("T")[0],
+      },
+    });
   } catch (error) {
     console.error("Admin custom cake orders error:", error);
     res
@@ -448,7 +476,26 @@ router.get("/admin/image-orders", verifyToken, async (req, res) => {
       });
     }
 
+    // ADD DATE FILTERING
+    const { start_date, end_date } = req.query;
+
+    const startDate = start_date
+      ? new Date(start_date)
+      : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+    const endDate = end_date ? new Date(end_date) : new Date();
+
+    startDate.setHours(0, 0, 0, 0);
+    endDate.setHours(23, 59, 59, 999);
+
+    console.log(`Image custom cake date range: ${startDate} to ${endDate}`);
+
     const orders = await ImageBasedOrder.findAll({
+      where: {
+        createdAt: {
+          [Op.between]: [startDate, endDate],
+        },
+      },
       include: [
         {
           model: User,
@@ -484,12 +531,19 @@ router.get("/admin/image-orders", verifyToken, async (req, res) => {
           }
         : null,
       deliveryDate: order.deliveryDate,
-      cancelled_by: order.cancelled_by, // Add this
-      cancellation_remarks: order.cancellation_remarks, // Add this
-      cancelled_at: order.cancelled_at, // Add thi
+      cancelled_by: order.cancelled_by,
+      cancellation_remarks: order.cancellation_remarks,
+      cancelled_at: order.cancelled_at,
     }));
 
-    res.json({ success: true, orders: formattedOrders });
+    res.json({
+      success: true,
+      orders: formattedOrders,
+      date_range: {
+        start_date: startDate.toISOString().split("T")[0],
+        end_date: endDate.toISOString().split("T")[0],
+      },
+    });
   } catch (error) {
     console.error("Admin image-based orders error:", error);
 

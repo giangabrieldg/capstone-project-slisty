@@ -1,5 +1,23 @@
 let currentSummaryData = null;
 
+//date formatting for API
+function formatDateForAPI(dateString) {
+  const date = new Date(dateString);
+
+  // Convert to Manila time (UTC+8)
+  const manilaOffset = 8 * 60;
+  const localOffset = date.getTimezoneOffset();
+  const manilaTime = new Date(
+    date.getTime() + (manilaOffset + localOffset) * 60000
+  );
+
+  const year = manilaTime.getFullYear();
+  const month = String(manilaTime.getMonth() + 1).padStart(2, "0");
+  const day = String(manilaTime.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
 // Initialize charts
 const totalOrdersCtx = document
   .getElementById("totalOrdersChart")
@@ -120,11 +138,15 @@ async function updateReports(startDate, endDate) {
       return;
     }
 
+    // Format dates for ALL API calls
+    const formattedStartDate = formatDateForAPI(startDate);
+    const formattedEndDate = formatDateForAPI(endDate);
+
     // Fetch data from all endpoints in parallel
     const [reportsResponse, customCakeData, imageBasedData] = await Promise.all(
       [
         fetch(
-          `${window.API_BASE_URL}/api/orders/admin/reports?start_date=${startDate}&end_date=${endDate}`,
+          `${window.API_BASE_URL}/api/orders/admin/reports?start_date=${formattedStartDate}&end_date=${formattedEndDate}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -133,7 +155,7 @@ async function updateReports(startDate, endDate) {
           }
         ),
         fetch(
-          `${window.API_BASE_URL}/api/custom-cake/admin/orders?start_date=${startDate}&end_date=${endDate}`,
+          `${window.API_BASE_URL}/api/custom-cake/admin/orders?start_date=${formattedStartDate}&end_date=${formattedEndDate}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -142,7 +164,7 @@ async function updateReports(startDate, endDate) {
           }
         ),
         fetch(
-          `${window.API_BASE_URL}/api/custom-cake/admin/image-orders?start_date=${startDate}&end_date=${endDate}`,
+          `${window.API_BASE_URL}/api/custom-cake/admin/image-orders?start_date=${formattedStartDate}&end_date=${formattedEndDate}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -173,7 +195,16 @@ async function updateReports(startDate, endDate) {
       throw new Error(data.message || "Failed to fetch reports");
     }
 
-    // Combine all orders: regular orders + custom cake orders
+    // Filter out cancelled orders for charts and summary
+    const activeCustomCakeOrders = customCakeOrders.filter(
+      (order) => order.status !== "Cancelled" && order.status !== "Not Feasible"
+    );
+
+    const activeImageBasedOrders = imageBasedOrders.filter(
+      (order) => order.status !== "Cancelled" && order.status !== "Not Feasible"
+    );
+
+    // Combine all orders: regular orders + custom cake orders (include ALL for table)
     const allOrders = [
       ...data.orders.map((order) => ({ ...order, order_type: "regular" })),
       ...formatCustomCakeOrdersForReports(customCakeOrders, "CC"),
@@ -183,20 +214,21 @@ async function updateReports(startDate, endDate) {
     // Sort all orders by date (newest first)
     allOrders.sort((a, b) => new Date(b.order_date) - new Date(a.order_date));
 
-    // Update summary to include custom cakes
+    // Update summary to include ACTIVE custom cakes only (exclude cancelled)
     const updatedSummary = {
       ...data.summary,
-      total_custom_cakes: customCakeOrders.length + imageBasedOrders.length,
-      custom_cake_3d_orders: customCakeOrders.length,
-      custom_cake_image_orders: imageBasedOrders.length,
+      total_custom_cakes:
+        activeCustomCakeOrders.length + activeImageBasedOrders.length,
+      custom_cake_3d_orders: activeCustomCakeOrders.length,
+      custom_cake_image_orders: activeImageBasedOrders.length,
       total_orders:
         (data.summary.total_orders || 0) +
-        customCakeOrders.length +
-        imageBasedOrders.length,
+        activeCustomCakeOrders.length +
+        activeImageBasedOrders.length,
       total_revenue:
         (parseFloat(data.summary.total_revenue) || 0) +
-        calculateCustomCakeRevenue(customCakeOrders) +
-        calculateCustomCakeRevenue(imageBasedOrders),
+        calculateCustomCakeRevenue(activeCustomCakeOrders) +
+        calculateCustomCakeRevenue(activeImageBasedOrders),
     };
 
     // Update all components
@@ -205,7 +237,7 @@ async function updateReports(startDate, endDate) {
     updateCharts(
       data.daily_orders,
       data.popular_items,
-      customCakeOrders,
+      customCakeOrders, // Pass original data for filtering in updateCharts
       imageBasedOrders
     );
   } catch (error) {
@@ -225,6 +257,7 @@ function formatCustomCakeOrdersForReports(orders, prefix) {
 
     // Ensure price is a number
     const totalAmount = order.price ? parseFloat(order.price) : 0;
+    const pickupDate = order.deliveryDate || order.createdAt;
 
     return {
       orderId: `${prefix}${String(orderId).padStart(3, "0")}`,
@@ -235,6 +268,7 @@ function formatCustomCakeOrdersForReports(orders, prefix) {
       status: order.status,
       status_key: mapCustomCakeStatus(order.status),
       order_date: orderDate,
+      pickup_date: pickupDate,
       delivery_method: order.delivery_method || "pickup",
       payment_method: "gcash",
       items: [
@@ -261,6 +295,7 @@ function getOrderDate(order) {
   if (order.createdAt) return new Date(order.createdAt);
   if (order.updatedAt) return new Date(order.updatedAt);
   if (order.order_date) return new Date(order.order_date);
+  if (order.deliveryDate) return new Date(order.deliveryDate); // ADD THIS
   return new Date();
 }
 
@@ -277,6 +312,7 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 const statusMap = {
+  Pending: { class: "pending", text: "Pending" },
   "Pending Review": { class: "pending", text: "Pending Review" },
   "Ready for Downpayment": {
     class: "ready-for-dp",
@@ -432,7 +468,7 @@ function updateSalesTable(orders) {
         <div class="customer-name fw-bold">${order.customer_name}</div>
         <div class="order-dates small text-muted">
           <div>Order Date: ${orderDate}</div>
-          <div>Pickup Date: ${pickupDate}</div>
+          <div>Pickup/Delivery Date: ${pickupDate}</div>
         </div>
         <div class="payment-method small text-muted">Payment: ${paymentMethod}</div>
         <div class="delivery-method small text-muted">Delivery: ${deliveryMethod}</div>
@@ -496,18 +532,27 @@ function updateCharts(
   customCakeOrders,
   imageBasedOrders
 ) {
-  // Update total orders chart with custom cake data
+  // Filter out cancelled orders from custom cake data
+  const activeCustomCakeOrders = customCakeOrders.filter(
+    (order) => order.status !== "Cancelled" && order.status !== "Not Feasible"
+  );
+
+  const activeImageBasedOrders = imageBasedOrders.filter(
+    (order) => order.status !== "Cancelled" && order.status !== "Not Feasible"
+  );
+
+  // Update total orders chart with ACTIVE custom cake data only
   if (dailyOrders && dailyOrders.length > 0) {
     const dates = dailyOrders.map((item) =>
       new Date(item.date).toLocaleDateString()
     );
     const regularOrdersData = dailyOrders.map((item) => item.count);
 
-    // Calculate custom cake orders per day
+    // Calculate ACTIVE custom cake orders per day (exclude cancelled)
     const customCakeOrdersData = calculateCustomCakesPerDay(
       dates,
-      customCakeOrders,
-      imageBasedOrders
+      activeCustomCakeOrders,
+      activeImageBasedOrders
     );
 
     totalOrdersChart.data.labels = dates;
@@ -516,7 +561,7 @@ function updateCharts(
     totalOrdersChart.update();
   }
 
-  // Update popular items chart - filter out custom cake orders
+  // Update popular items chart - filter out custom cake orders AND cancelled orders
   if (popularItems && popularItems.length > 0) {
     // Filter out custom cake items from popular items
     const regularPopularItems = popularItems.filter(
@@ -539,16 +584,20 @@ function updateCharts(
 
 // Calculate custom cake orders per day for the chart
 function calculateCustomCakesPerDay(dates, customCakeOrders, imageBasedOrders) {
-  const allCustomCakes = [...customCakeOrders, ...imageBasedOrders];
+  // Filter out cancelled orders
+  const activeCustomCakes = [...customCakeOrders, ...imageBasedOrders].filter(
+    (order) => order.status !== "Cancelled" && order.status !== "Not Feasible"
+  );
+
   const ordersPerDay = {};
 
-  // Initialize all dates with 0
+  //all dates start with 0
   dates.forEach((date) => {
     ordersPerDay[date] = 0;
   });
 
-  // Count custom cake orders per day
-  allCustomCakes.forEach((order) => {
+  // Count ACTIVE custom cake orders per day
+  activeCustomCakes.forEach((order) => {
     const orderDate = getOrderDate(order);
     const dateString = orderDate.toLocaleDateString();
 
@@ -557,7 +606,7 @@ function calculateCustomCakesPerDay(dates, customCakeOrders, imageBasedOrders) {
     }
   });
 
-  // Convert to array in the same order as dates
+  // Convert to array in the same order with dates
   return dates.map((date) => ordersPerDay[date] || 0);
 }
 
@@ -809,6 +858,7 @@ document.querySelector(".search-bar").addEventListener("input", (e) => {
   });
 });
 
+//Filter by status
 document.getElementById("applyFilter").addEventListener("click", () => {
   const selectedStatus = document
     .getElementById("filterStatus")
@@ -823,12 +873,16 @@ document.getElementById("applyFilter").addEventListener("click", () => {
       ? statusElement.textContent.trim().toLowerCase()
       : "";
 
-    // Check if row matches selected filter
-    if (selectedStatus === "" || rowStatus.includes(selectedStatus)) {
-      row.style.display = "";
+    let shouldShow = false;
+
+    if (selectedStatus === "") {
+      shouldShow = true;
     } else {
-      row.style.display = "none";
+      // Use exact matching for all statuses
+      shouldShow = rowStatus === selectedStatus;
     }
+
+    row.style.display = shouldShow ? "" : "none";
   });
 
   // Close modal after applying filter
