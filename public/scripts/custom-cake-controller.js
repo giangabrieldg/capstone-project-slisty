@@ -640,12 +640,28 @@ class CustomCakeController {
   }
 
   setupImageOrderForm() {
-    const tomorrow = new Date();
+    const today = new Date();
+    const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const maxDate = new Date(today);
+    maxDate.setDate(maxDate.getDate() + 7); // 1 week from today
 
     const deliveryDateInput = document.getElementById("deliveryDate");
     if (deliveryDateInput) {
+      // Set min and max dates
       deliveryDateInput.min = tomorrow.toISOString().split("T")[0];
+      deliveryDateInput.max = maxDate.toISOString().split("T")[0];
+
+      // Add real-time validation
+      deliveryDateInput.addEventListener("change", (e) => {
+        this.validateDeliveryDate(e.target);
+      });
+
+      // Add input event for immediate feedback
+      deliveryDateInput.addEventListener("input", (e) => {
+        this.validateDeliveryDate(e.target);
+      });
     } else {
       console.warn("Delivery date input not found");
     }
@@ -672,6 +688,16 @@ class CustomCakeController {
     newForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       e.stopPropagation();
+
+      // Validate delivery date before submission
+      const deliveryDateInput = document.getElementById("deliveryDate");
+      if (deliveryDateInput && !this.validateDeliveryDate(deliveryDateInput)) {
+        ToastNotifications.showToast(
+          "Please fix the delivery date before submitting.",
+          "error"
+        );
+        return;
+      }
 
       // Prevent multiple submissions
       const currentSubmitButton = newForm.querySelector(
@@ -744,6 +770,64 @@ class CustomCakeController {
     });
   }
 
+  //Date validation method
+  validateDeliveryDate(dateInput) {
+    const selectedDate = new Date(dateInput.value);
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const maxDate = new Date(today);
+    maxDate.setDate(maxDate.getDate() + 7);
+
+    // Clear previous validation
+    dateInput.classList.remove("is-invalid");
+    dateInput.classList.remove("is-valid");
+
+    // Remove any existing error message
+    const existingError = dateInput.parentNode.querySelector(
+      ".delivery-date-error"
+    );
+    if (existingError) {
+      existingError.remove();
+    }
+
+    if (!dateInput.value) {
+      return false; // Let required attribute handle empty field
+    }
+
+    if (selectedDate < tomorrow) {
+      this.showDateError(
+        dateInput,
+        "Delivery date must be at least 1 day in advance. Same-day delivery is not available."
+      );
+      return false;
+    }
+
+    if (selectedDate > maxDate) {
+      this.showDateError(
+        dateInput,
+        "Delivery date cannot be more than 1 week in advance. Please select a date within the next 7 days."
+      );
+      return false;
+    }
+
+    // Valid date
+    dateInput.classList.add("is-valid");
+    return true;
+  }
+
+  // Helper method to show date errors
+  showDateError(dateInput, message) {
+    dateInput.classList.add("is-invalid");
+
+    const errorDiv = document.createElement("div");
+    errorDiv.className = "delivery-date-error invalid-feedback";
+    errorDiv.textContent = message;
+
+    dateInput.parentNode.appendChild(errorDiv);
+  }
+
   resetImageOrderForm() {
     const form = document.getElementById("imageOrderFormContent");
     if (form) {
@@ -756,12 +840,31 @@ class CustomCakeController {
     if (messageCharCount) messageCharCount.textContent = "0";
     if (notesCharCount) notesCharCount.textContent = "0";
 
-    // Reset the delivery date min attribute
+    // Reset the delivery date validation
     const deliveryDateInput = document.getElementById("deliveryDate");
     if (deliveryDateInput) {
-      const tomorrow = new Date();
+      const today = new Date();
+      const tomorrow = new Date(today);
       tomorrow.setDate(tomorrow.getDate() + 1);
+
+      const maxDate = new Date(today);
+      maxDate.setDate(maxDate.getDate() + 7); // 1 week from today
+
+      // Set min and max dates
       deliveryDateInput.min = tomorrow.toISOString().split("T")[0];
+      deliveryDateInput.max = maxDate.toISOString().split("T")[0];
+
+      // Clear validation states
+      deliveryDateInput.classList.remove("is-invalid");
+      deliveryDateInput.classList.remove("is-valid");
+
+      // Remove any error messages
+      const existingError = deliveryDateInput.parentNode.querySelector(
+        ".delivery-date-error"
+      );
+      if (existingError) {
+        existingError.remove();
+      }
     }
 
     // Reset UI elements

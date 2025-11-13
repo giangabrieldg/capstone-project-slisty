@@ -70,7 +70,7 @@ const createCustomCakeNotification = async (
       await notification.update({ isRead: false });
     }
 
-    console.log("✅ Created/updated notification for", type, ":", orderId);
+    console.log("Created/updated notification for", type, ":", orderId);
   } catch (error) {
     console.error("Error creating custom cake notification:", error);
   }
@@ -392,8 +392,6 @@ router.get("/admin/orders", verifyToken, async (req, res) => {
     startDate.setHours(0, 0, 0, 0);
     endDate.setHours(23, 59, 59, 999);
 
-    console.log(`Custom cake date range: ${startDate} to ${endDate}`);
-
     const orders = await CustomCakeOrder.findAll({
       where: {
         createdAt: {
@@ -487,8 +485,6 @@ router.get("/admin/image-orders", verifyToken, async (req, res) => {
 
     startDate.setHours(0, 0, 0, 0);
     endDate.setHours(23, 59, 59, 999);
-
-    console.log(`Image custom cake date range: ${startDate} to ${endDate}`);
 
     const orders = await ImageBasedOrder.findAll({
       where: {
