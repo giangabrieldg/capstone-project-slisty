@@ -199,6 +199,42 @@ async function updateMenuItem(formData, form) {
     setLoadingState(false);
   }
 }
+//validate image upload
+function validateImageFile(file) {
+  // Check if file is provided
+  if (!file) {
+    return { isValid: false, error: "Please select an image file" };
+  }
+
+  // Check file type
+  const allowedTypes = ["image/jpeg", "image/jpg", "image/png"];
+  if (!allowedTypes.includes(file.type)) {
+    return {
+      isValid: false,
+      error: "Only JPEG, JPG, and PNG files are allowed",
+    };
+  }
+
+  // Check file size (optional: limit to 5MB)
+  const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+  if (file.size > maxSize) {
+    return {
+      isValid: false,
+      error: "Image size must be less than 5MB",
+    };
+  }
+
+  return { isValid: true, error: null };
+}
+
+function showImageError(message, title = "Upload Error") {
+  Swal.fire({
+    icon: "error",
+    title: title,
+    html: message,
+    confirmButtonColor: "#2c9045",
+  });
+}
 
 async function deleteMenuItem(menuId) {
   const result = await Swal.fire({
@@ -678,6 +714,17 @@ function initializePage() {
     .getElementById("imageUpload")
     .addEventListener("change", function (e) {
       const file = e.target.files[0];
+
+      // Validate the file
+      const validation = validateImageFile(file);
+      if (!validation.isValid) {
+        showImageError(validation.error);
+        this.value = ""; // Clear the file input
+        document.getElementById("imagePreview").style.display = "none";
+        return;
+      }
+
+      // If validation passes, show preview
       if (file) {
         const reader = new FileReader();
         reader.onload = function (event) {

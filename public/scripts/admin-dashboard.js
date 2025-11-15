@@ -759,18 +759,6 @@ class AdminDashboard {
         this.showNotificationsModal();
       });
     }
-
-    // Refresh button
-    const refreshBtn = document.createElement("button");
-    refreshBtn.className =
-      "btn btn-sm btn-outline-primary mt-2 custom-outline-green";
-    refreshBtn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Refresh';
-    refreshBtn.addEventListener("click", () => this.loadDashboardData());
-
-    const dashboardHeader = document.querySelector(".dashboard-header");
-    if (dashboardHeader) {
-      dashboardHeader.appendChild(refreshBtn);
-    }
   }
 
   startAutoRefresh() {
