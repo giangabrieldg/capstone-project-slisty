@@ -22,6 +22,17 @@
       href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css"
       rel="stylesheet"
     />
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/lights/RectAreaLightUniformsLib.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/helpers/RectAreaLightHelper.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/RGBELoader.js"></script>
+
+    <!-- Draco decoder + new GLTFLoader that can read Draco -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+
     <link rel="stylesheet" href="/styles/sidebar.css" />
     <link rel="stylesheet" href="/styles/admin-cakes.css" />
   </head>
@@ -69,11 +80,9 @@
                   <tr>
                     <th>Order ID</th>
                     <th>Customer</th>
-                    <th>Details</th>
                     <th>Order Date</th>
                     <th>Delivery Date</th>
-                    <th>Reference Image</th>
-                    <th>Design Image</th>
+                    <th>3D Design</th>
                     <th>Status</th>
                     <th>Price</th>
                     <th>Payment</th>
@@ -92,12 +101,9 @@
                   <tr>
                     <th>Order ID</th>
                     <th>Customer</th>
-                    <th>Flavor</th>
-                    <th>Size</th>
-                    <th>Message</th>
+                    <th>Order Details</th>
                     <th>Order Date</th>
                     <th>Delivery Date</th>
-                    <th>Notes</th>
                     <th>Image</th>
                     <th>Status</th>
                     <th>Price</th>
@@ -133,7 +139,7 @@
                 <img
                   src="/public/assets/placeholder.jpg"
                   class="img-fluid"
-                  alt="Customer Image Reference"
+                  alt="Customer Custom Cake"
                 />
               </div>
               <div class="modal-footer">
@@ -262,11 +268,14 @@
         </div>
       </main>
     </div>
+    <!-- Scripts - CRITICAL: Load Three.js FIRST -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="/scripts/environment-config.js"></script>
     <script src="/scripts/include-admin-sidebar.js"></script>
+    <script src="/scripts/cake-renderer.js"></script>
     <script src="/scripts/admin-cake.js"></script>
     <script src="/scripts/horizontal-scrollbar.js"></script>
+    <script src="/scripts/admin-3d-cake-viewer.js"></script>
   </body>
 </html>

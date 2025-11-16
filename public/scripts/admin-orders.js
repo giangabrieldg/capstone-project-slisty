@@ -275,27 +275,6 @@ class AdminOrdersManager {
           this.cancelOrder(orderId);
         }
       });
-
-    // Sidebar toggle
-    const sidebarToggle = document.querySelector(".sidebar-toggle");
-    const sidebar = document.querySelector(".sidebar");
-    const body = document.body;
-    sidebarToggle.addEventListener("click", () => {
-      sidebar.classList.toggle("show");
-      body.classList.toggle("sidebar-visible");
-    });
-
-    document.addEventListener("click", (e) => {
-      if (
-        window.innerWidth <= 992 &&
-        !sidebar.contains(e.target) &&
-        !sidebarToggle.contains(e.target) &&
-        sidebar.classList.contains("show")
-      ) {
-        sidebar.classList.remove("show");
-        body.classList.remove("sidebar-visible");
-      }
-    });
   }
 
   //Applies search and filter functionality

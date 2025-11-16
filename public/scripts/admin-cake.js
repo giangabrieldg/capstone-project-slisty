@@ -31,21 +31,6 @@ async function fetchCustomCakeOrders() {
     // Process custom cake orders (3D designs)
     if (customData.success && customData.orders) {
       customData.orders.forEach((order) => {
-        const flavor = order.cakeColor === "#8B4513" ? "Chocolate" : "White";
-        const icingStyle =
-          order.icingStyle === "buttercream" ? "Buttercream" : "Whipped";
-        const decorations =
-          order.decorations === "flowers"
-            ? `Flowers (${order.flowerType})`
-            : order.decorations === "toppings"
-            ? "Toppings"
-            : order.decorations === "balloons"
-            ? "Balloons"
-            : "None";
-        const customText =
-          order.messageChoice === "custom" ? `"${order.customText}"` : "None";
-        const details = `${flavor} cake, ${order.size}, ${icingStyle} icing, ${order.filling} filling, ${order.bottomBorder} bottom border, ${order.topBorder} top border, ${decorations}, ${customText}`;
-
         const displayOrderId = `CC${String(order.customCakeId).padStart(
           3,
           "0"
@@ -136,33 +121,30 @@ async function fetchCustomCakeOrders() {
 
         const row = document.createElement("tr");
         row.innerHTML = `
-      <td>${displayOrderId}</td>
-      <td>${customerDetails}</td>
-      <td>${details}</td>
-      <td>${orderDate}</td>
-      <td>${deliveryDate}</td>
-      <td class="text-center">
-        ${
-          order.referenceImageUrl
-            ? `<a href="#" class="view-image" data-image-url="${order.referenceImageUrl}" data-image-type="reference" data-bs-toggle="modal" data-bs-target="#imageModal">View</a>`
-            : "None"
-        }
-      </td>
-      <td class="text-center">
-        ${
-          order.designImageUrl
-            ? `<a href="#" class="view-image" data-image-url="${order.designImageUrl}" data-image-type="design" data-bs-toggle="modal" data-bs-target="#imageModal">View</a>`
-            : "None"
-        }
-      </td>
-      <td>${renderStatusBadge(order.status)}</td>
-      <td>${renderPriceInfo(order)}</td>
-      <td>${paymentInfo}</td>
-      <td>${updatedByInfo}</td> <!-- NEW COLUMN -->
-      <td class="admin-actions-cell">
-        ${renderStatusActions(order.customCakeId, false, order.status, order)}
-      </td>
-    `;
+          <td>${displayOrderId}</td>
+          <td>${customerDetails}</td>
+          <td>${orderDate}</td>
+          <td>${deliveryDate}</td>
+          <td class="text-center">
+            <button class="btn btn-outline-primary btn-sm view-3d-design" 
+                    data-order-id="${order.customCakeId}"
+                    title="View 3D Cake Design">
+              <i class="bi bi-cube"></i> View 3D
+            </button>
+          </td>
+          <td>${renderStatusBadge(order.status)}</td>
+          <td>${renderPriceInfo(order)}</td>
+          <td>${paymentInfo}</td>
+          <td>${updatedByInfo}</td>
+          <td class="admin-actions-cell">
+            ${renderStatusActions(
+              order.customCakeId,
+              false,
+              order.status,
+              order
+            )}
+          </td>
+        `;
         customTbody.appendChild(row);
       });
     }
@@ -258,31 +240,45 @@ async function fetchCustomCakeOrders() {
             </div>
           `;
 
+        const orderDetails = `
+          <div class="order-details">
+            <div class="detail-item">
+              <strong>Flavor:</strong> ${order.flavor || "Not specified"}
+            </div>
+            <div class="detail-item">
+              <strong>Size:</strong> ${order.size || "Not specified"}
+            </div>
+            <div class="detail-item">
+              <strong>Message:</strong> "${order.message || "None"}"
+            </div>
+            <div class="detail-item">
+              <strong>Additional Notes:</strong> ${order.notes || "None"}
+            </div>
+          </div>
+        `;
+
         const row = document.createElement("tr");
         row.innerHTML = `
-      <td>${displayOrderId}</td>
-      <td>${customerDetails}</td>
-      <td>${order.flavor}</td>
-      <td>${order.size || "Not specified"}</td>
-      <td>${order.message || "None"}</td>
-      <td>${orderDate}</td>
-      <td>${deliveryDate}</td> <!-- DELIVERY DATE (was eventDate) -->
-      <td>${order.notes || "None"}</td>
-      <td class="text-center">
-        ${
-          order.imagePath
-            ? `<a href="#" class="view-image" data-image-url="${order.imagePath}" data-image-type="reference" data-bs-toggle="modal" data-bs-target="#imageModal">View</a>`
-            : "None"
-        }
-      </td>
-      <td>${renderStatusBadge(order.status)}</td>
-      <td>${renderPriceInfo(order)}</td>
-      <td>${paymentInfo}</td>
-      <td>${updatedByInfo}</td>
-      <td class="admin-actions-cell">
-        ${renderStatusActions(orderId, true, order.status, order)}
-      </td>
-    `;
+          <td>${displayOrderId}</td>
+          <td>${customerDetails}</td>
+          <td class>${orderDetails}</td>
+          <td>${orderDate}</td>
+          <td>${deliveryDate}</td>
+          <td class="text-center">
+            ${
+              order.imagePath
+                ? `<a href="#" class="view-image" data-image-url="${order.imagePath}" data-image-type="reference" data-bs-toggle="modal" data-bs-target="#imageModal">View</a>`
+                : "None"
+            }
+          </td>
+          <td>${renderStatusBadge(order.status)}</td>
+          <td>${renderPriceInfo(order)}</td>
+          <td>${paymentInfo}</td>
+          <td>${updatedByInfo}</td>
+          <td class="admin-actions-cell">
+            ${renderStatusActions(orderId, true, order.status, order)}
+          </td>
+        `;
         imageTbody.appendChild(row);
       });
     }
@@ -294,7 +290,7 @@ async function fetchCustomCakeOrders() {
 
     if (!imageData.orders || imageData.orders.length === 0) {
       const row = document.createElement("tr");
-      row.innerHTML = `<td colspan="14" class="text-center">No image-based orders found</td>`;
+      row.innerHTML = `<td colspan="11" class="text-center">No image-based orders found</td>`;
     }
 
     setupEventListeners(token);

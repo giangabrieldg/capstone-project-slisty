@@ -1217,4 +1217,84 @@ router.put(
   }
 );
 
+// GET /api/custom-cake/admin/orders/:orderId - Get specific custom cake order details (admin)
+router.get("/admin/orders/:orderId", verifyToken, async (req, res) => {
+  try {
+    if (!["admin", "staff"].includes(req.user.userLevel.toLowerCase())) {
+      return res.status(403).json({
+        success: false,
+        message: "Unauthorized: Admin or staff access required",
+      });
+    }
+
+    const { orderId } = req.params;
+
+    const order = await CustomCakeOrder.findByPk(orderId, {
+      include: [
+        {
+          model: User,
+          as: "customer",
+          attributes: ["userID", "name", "email"],
+          required: false,
+        },
+        {
+          model: User,
+          as: "updater",
+          attributes: ["userID", "name", "email", "userLevel"],
+          required: false,
+        },
+      ],
+    });
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Custom cake order not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      order: {
+        customCakeId: order.customCakeId,
+        size: order.size,
+        cakeColor: order.cakeColor,
+        icingStyle: order.icingStyle,
+        icingColor: order.icingColor,
+        filling: order.filling,
+        bottomBorder: order.bottomBorder,
+        topBorder: order.topBorder,
+        bottomBorderColor: order.bottomBorderColor,
+        topBorderColor: order.topBorderColor,
+        decorations: order.decorations,
+        flowerType: order.flowerType,
+        customText: order.customText,
+        messageChoice: order.messageChoice,
+        toppingsColor: order.toppingsColor,
+        referenceImageUrl: order.referenceImageUrl,
+        designImageUrl: order.designImageUrl,
+        status: order.status,
+        price: order.price,
+        deliveryDate: order.deliveryDate,
+        delivery_method: order.delivery_method,
+        delivery_address: order.delivery_address,
+        customer_name: order.customer_name,
+        customer_email: order.customer_email,
+        customer_phone: order.customer_phone,
+        createdAt: order.createdAt,
+        updatedAt: order.updatedAt,
+        customer: order.customer,
+        updater: order.updater,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching custom cake order details:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message,
+    });
+  }
+});
+
 module.exports = router;
