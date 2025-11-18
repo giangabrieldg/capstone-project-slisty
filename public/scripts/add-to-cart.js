@@ -127,7 +127,7 @@ document.getElementById("addToCart").addEventListener("click", async () => {
       if (cartResponse.status === 403) {
         // This is the allowCustomerOnly middleware blocking Staff/Admin
         Swal.fire({
-          icon: "warning",
+          icon: "error",
           title: "Access Denied",
           text: "Only customer accounts can add items to cart and make orders.",
           confirmButtonColor: "#2c9045",

@@ -42,7 +42,7 @@ class ProfileManager {
       if (response.status === 403) {
         const errorData = await response.json();
         await Swal.fire({
-          icon: "warning",
+          icon: "error",
           title: "Access Denied",
           text:
             errorData.message ||
@@ -140,7 +140,7 @@ class ProfileManager {
       if (response.status === 403) {
         const errorData = await response.json();
         await Swal.fire({
-          icon: "warning",
+          icon: "error",
           title: "Oops...",
           text:
             errorData.message ||

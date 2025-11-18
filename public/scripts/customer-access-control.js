@@ -5,7 +5,7 @@ function checkCustomerAccess() {
   // Only check userLevel if user is logged in (has token)
   if (token && (userLevel === "Staff" || userLevel === "Admin")) {
     Swal.fire({
-      icon: "warning",
+      icon: "error",
       title: "Access Denied",
       text: "This page is for customer accounts only.",
       confirmButtonColor: "#2c9045",
