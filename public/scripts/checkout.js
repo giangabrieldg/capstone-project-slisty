@@ -372,7 +372,7 @@ class CheckoutManager {
     } catch (error) {
       console.error("Error loading customer profile:", error);
       await Swal.fire({
-        icon: "error",
+        icon: "warning",
         title: "Oops...",
         text: "Please update your profile and try again.",
         confirmButtonColor: "#2c9045",

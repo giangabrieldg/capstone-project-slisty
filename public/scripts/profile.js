@@ -37,6 +37,31 @@ class ProfileManager {
       const response = await fetch(`${window.API_BASE_URL}/api/auth/profile`, {
         headers: { Authorization: `Bearer ${this.token}` },
       });
+
+      // Handle 403 error from allowCustomerOnly middleware
+      if (response.status === 403) {
+        const errorData = await response.json();
+        await Swal.fire({
+          icon: "warning",
+          title: "Access Denied",
+          text:
+            errorData.message ||
+            "Access denied: Only customer accounts can access this page.",
+          confirmButtonColor: "#2c9045",
+        });
+
+        // Redirect to appropriate dashboard based on user level
+        const userLevel = sessionStorage.getItem("userLevel");
+        if (userLevel === "Staff") {
+          window.location.href = "/staff/staff-dashboard.html";
+        } else if (userLevel === "Admin") {
+          window.location.href = "/admin/admin-dashboard.html";
+        } else {
+          window.location.href = "/customer/login.html";
+        }
+        return false;
+      }
+
       return response.ok;
     } catch (error) {
       console.error("Token validation failed:", error);
@@ -111,6 +136,28 @@ class ProfileManager {
       const response = await fetch(`${window.API_BASE_URL}/api/auth/profile`, {
         headers: { Authorization: `Bearer ${this.token}` },
       });
+      // Handle 403 error from allowCustomerOnly middleware
+      if (response.status === 403) {
+        const errorData = await response.json();
+        await Swal.fire({
+          icon: "warning",
+          title: "Oops...",
+          text:
+            errorData.message ||
+            "Access denied: Only customer accounts can view profiles.",
+          confirmButtonColor: "#2c9045",
+        });
+
+        // Redirect to appropriate dashboard
+        const userLevel = sessionStorage.getItem("userLevel");
+        if (userLevel === "Staff") {
+          window.location.href = "/staff/staff-dashboard.html";
+        } else if (userLevel === "Admin") {
+          window.location.href = "/admin/admin-dashboard.html";
+        }
+        return;
+      }
+
       if (!response.ok) throw new Error("Failed to load profile");
       const data = await response.json();
       this.renderProfile(data);

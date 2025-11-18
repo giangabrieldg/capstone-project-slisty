@@ -13,6 +13,7 @@ const {
 } = require("../models");
 const { Notification } = require("../models");
 const verifyToken = require("../middleware/verifyToken");
+const allowCustomerOnly = require("../middleware/checkOrderPermission");
 const { Op } = require("sequelize");
 
 //Middleware to check admin/staff permissions
@@ -210,7 +211,7 @@ const createOrderNotification = async (userID, title, message, orderId) => {
 };
 
 //POST /api/orders/create - Create new order
-router.post("/create", verifyToken, async (req, res) => {
+router.post("/create", verifyToken, allowCustomerOnly, async (req, res) => {
   const transaction = await sequelize.transaction();
   try {
     const {
@@ -284,143 +285,149 @@ router.post("/create", verifyToken, async (req, res) => {
 });
 
 // POST /api/orders/verify-gcash-payment - Verify GCash payment and update order
-router.post("/verify-gcash-payment", verifyToken, async (req, res) => {
-  let transaction;
-  try {
-    transaction = await sequelize.transaction();
-    const { paymentId, orderData } = req.body;
-    let order = await Order.findOne({
-      where: { payment_id: paymentId },
-      transaction,
-    });
+router.post(
+  "/verify-gcash-payment",
+  verifyToken,
+  allowCustomerOnly,
+  async (req, res) => {
+    let transaction;
+    try {
+      transaction = await sequelize.transaction();
+      const { paymentId, orderData } = req.body;
+      let order = await Order.findOne({
+        where: { payment_id: paymentId },
+        transaction,
+      });
 
-    if (!order) {
-      order = await Order.create(
-        {
-          userID: req.user.userID,
-          total_amount: orderData.totalAmount,
-          status: "order_received",
-          payment_method: "gcash",
-          payment_verified: true,
-          payment_id: paymentId,
-          delivery_method: orderData.deliveryMethod,
-          pickup_date: orderData.pickupDate,
-          customer_name: orderData.customerInfo.fullName,
-          customer_email: orderData.customerInfo.email,
-          customer_phone: orderData.customerInfo.phone,
-          delivery_address:
-            orderData.deliveryMethod === "delivery"
-              ? orderData.customerInfo.deliveryAddress
-              : null,
-          items: orderData.items,
-        },
-        { transaction }
-      );
+      if (!order) {
+        order = await Order.create(
+          {
+            userID: req.user.userID,
+            total_amount: orderData.totalAmount,
+            status: "order_received",
+            payment_method: "gcash",
+            payment_verified: true,
+            payment_id: paymentId,
+            delivery_method: orderData.deliveryMethod,
+            pickup_date: orderData.pickupDate,
+            customer_name: orderData.customerInfo.fullName,
+            customer_email: orderData.customerInfo.email,
+            customer_phone: orderData.customerInfo.phone,
+            delivery_address:
+              orderData.deliveryMethod === "delivery"
+                ? orderData.customerInfo.deliveryAddress
+                : null,
+            items: orderData.items,
+          },
+          { transaction }
+        );
 
-      await createOrderItems(order.orderId, orderData.items, transaction);
-      await clearCart(req.user.userID, transaction);
-    } else if (order.status === "pending_payment") {
-      await order.update(
-        {
-          status: "order_received",
-          payment_verified: true,
-          pickup_date: orderData.pickupDate,
-        },
-        { transaction }
-      );
+        await createOrderItems(order.orderId, orderData.items, transaction);
+        await clearCart(req.user.userID, transaction);
+      } else if (order.status === "pending_payment") {
+        await order.update(
+          {
+            status: "order_received",
+            payment_verified: true,
+            pickup_date: orderData.pickupDate,
+          },
+          { transaction }
+        );
 
-      await Promise.all(
-        orderData.items.map(async (item) => {
-          const existingOrderItem = await OrderItem.findOne({
-            where: {
-              orderId: order.orderId,
-              menuId: item.menuId,
-              size_name: item.size,
-              customCakeId: item.customCakeId || null,
-            },
-            transaction,
-          });
-          if (!existingOrderItem) {
-            await OrderItem.create(
-              {
+        await Promise.all(
+          orderData.items.map(async (item) => {
+            const existingOrderItem = await OrderItem.findOne({
+              where: {
                 orderId: order.orderId,
-                customCakeId: item.customCakeId,
                 menuId: item.menuId,
-                sizeId: item.sizeId,
-                quantity: item.quantity,
-                price: item.price,
-                item_name: item.name,
                 size_name: item.size,
+                customCakeId: item.customCakeId || null,
               },
-              { transaction }
-            );
+              transaction,
+            });
+            if (!existingOrderItem) {
+              await OrderItem.create(
+                {
+                  orderId: order.orderId,
+                  customCakeId: item.customCakeId,
+                  menuId: item.menuId,
+                  sizeId: item.sizeId,
+                  quantity: item.quantity,
+                  price: item.price,
+                  item_name: item.name,
+                  size_name: item.size,
+                },
+                { transaction }
+              );
 
-            if (!item.customCakeId) {
-              const menuItem = await MenuItem.findByPk(item.menuId, {
-                include: [
-                  {
-                    model: ItemSize,
-                    as: "sizes",
-                    where: { isActive: true },
-                    required: false,
-                  },
-                ],
-                transaction,
-              });
+              if (!item.customCakeId) {
+                const menuItem = await MenuItem.findByPk(item.menuId, {
+                  include: [
+                    {
+                      model: ItemSize,
+                      as: "sizes",
+                      where: { isActive: true },
+                      required: false,
+                    },
+                  ],
+                  transaction,
+                });
 
-              if (!menuItem) {
-                throw new Error(`Menu item ${item.menuId} not found`);
-              }
+                if (!menuItem) {
+                  throw new Error(`Menu item ${item.menuId} not found`);
+                }
 
-              if (menuItem.hasSizes && item.size) {
-                const validSize = menuItem.sizes.find(
-                  (s) =>
-                    s.sizeName.trim().toLowerCase() ===
-                    item.size.trim().toLowerCase()
-                );
-                if (!validSize) {
-                  throw new Error(
-                    `Invalid size ${item.size} for menu item ${item.menuId}`
+                if (menuItem.hasSizes && item.size) {
+                  const validSize = menuItem.sizes.find(
+                    (s) =>
+                      s.sizeName.trim().toLowerCase() ===
+                      item.size.trim().toLowerCase()
+                  );
+                  if (!validSize) {
+                    throw new Error(
+                      `Invalid size ${item.size} for menu item ${item.menuId}`
+                    );
+                  }
+                  if (validSize.stock < item.quantity) {
+                    throw new Error(
+                      `Insufficient stock for ${item.size} of ${item.name}`
+                    );
+                  }
+                  await validSize.update(
+                    { stock: validSize.stock - item.quantity },
+                    { transaction }
+                  );
+                } else {
+                  if (menuItem.stock < item.quantity) {
+                    throw new Error(`Insufficient stock for ${item.name}`);
+                  }
+                  await menuItem.update(
+                    { stock: menuItem.stock - item.quantity },
+                    { transaction }
                   );
                 }
-                if (validSize.stock < item.quantity) {
-                  throw new Error(
-                    `Insufficient stock for ${item.size} of ${item.name}`
-                  );
-                }
-                await validSize.update(
-                  { stock: validSize.stock - item.quantity },
-                  { transaction }
-                );
-              } else {
-                if (menuItem.stock < item.quantity) {
-                  throw new Error(`Insufficient stock for ${item.name}`);
-                }
-                await menuItem.update(
-                  { stock: menuItem.stock - item.quantity },
-                  { transaction }
-                );
               }
             }
-          }
-        })
-      );
+          })
+        );
 
-      await clearCart(req.user.userID, transaction);
+        await clearCart(req.user.userID, transaction);
+      }
+
+      await transaction.commit();
+      return res.json({ success: true, order });
+    } catch (error) {
+      if (transaction) await transaction.rollback();
+      console.error("GCash verification failed:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Payment verification failed",
+        error:
+          process.env.NODE_ENV === "development" ? error.message : undefined,
+      });
     }
-
-    await transaction.commit();
-    return res.json({ success: true, order });
-  } catch (error) {
-    if (transaction) await transaction.rollback();
-    console.error("GCash verification failed:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Payment verification failed",
-      error: process.env.NODE_ENV === "development" ? error.message : undefined,
-    });
   }
-});
+);
 
 // GET /api/orders/user/me - Get user orders with order items
 router.get("/user/me", verifyToken, async (req, res) => {
@@ -541,34 +548,41 @@ router.put("/:orderId/status", verifyToken, async (req, res) => {
 });
 
 // POST /api/orders/cancel/:orderId - Cancel an order
-router.post("/cancel/:orderId", verifyToken, async (req, res) => {
-  try {
-    const order = await Order.findOne({
-      where: { orderId: req.params.orderId, userID: req.user.userID },
-    });
+router.post(
+  "/cancel/:orderId",
+  verifyToken,
+  allowCustomerOnly,
+  async (req, res) => {
+    try {
+      const order = await Order.findOne({
+        where: { orderId: req.params.orderId, userID: req.user.userID },
+      });
 
-    if (!order) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Order not found" });
+      if (!order) {
+        return res
+          .status(404)
+          .json({ success: false, message: "Order not found" });
+      }
+
+      if (order.status === "pending_payment") {
+        await order.update({ status: "cancelled" });
+        await OrderItem.destroy({ where: { orderId: order.orderId } });
+        return res.json({ success: true, message: "Order canceled" });
+      }
+
+      res.json({
+        success: true,
+        message: "No action needed",
+        status: order.status,
+      });
+    } catch (error) {
+      console.error("Error canceling order:", error);
+      res
+        .status(500)
+        .json({ success: false, message: "Error canceling order" });
     }
-
-    if (order.status === "pending_payment") {
-      await order.update({ status: "cancelled" });
-      await OrderItem.destroy({ where: { orderId: order.orderId } });
-      return res.json({ success: true, message: "Order canceled" });
-    }
-
-    res.json({
-      success: true,
-      message: "No action needed",
-      status: order.status,
-    });
-  } catch (error) {
-    console.error("Error canceling order:", error);
-    res.status(500).json({ success: false, message: "Error canceling order" });
   }
-});
+);
 
 // GET /api/orders/admin/orders - Get all orders (EXCLUDE custom cakes)
 router.get(

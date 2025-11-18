@@ -11,9 +11,10 @@ const {
   sequelize,
 } = require("../models");
 const verifyToken = require("../middleware/verifyToken");
+const allowCustomerOnly = require("../middleware/checkOrderPermission");
 
 // POST /api/cart/add - Add item or custom cake to cart with transaction
-router.post("/add", verifyToken, async (req, res) => {
+router.post("/add", verifyToken, allowCustomerOnly, async (req, res) => {
   const transaction = await sequelize.transaction();
 
   try {

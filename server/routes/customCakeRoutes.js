@@ -17,6 +17,7 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 const googleDriveService = require("../utils/googleDrive");
+const allowCustomerOnly = require("../middleware/checkOrderPermission");
 const { Op } = require("sequelize");
 
 // Configure Multer for temporary file storage
@@ -80,6 +81,7 @@ const createCustomCakeNotification = async (
 router.post(
   "/create",
   verifyToken,
+  allowCustomerOnly,
   upload.fields([
     { name: "referenceImage", maxCount: 1 },
     { name: "designImage", maxCount: 1 },
@@ -244,6 +246,7 @@ router.post(
 router.post(
   "/image-order",
   verifyToken,
+  allowCustomerOnly,
   checkDriveAuth,
   upload.single("image"),
   async (req, res) => {
@@ -563,83 +566,90 @@ router.get("/admin/image-orders", verifyToken, async (req, res) => {
 });
 
 //POST /api/custom-cake/confirm-payment - Update order status after successful payment
-router.post("/confirm-payment", verifyToken, async (req, res) => {
-  try {
-    const {
-      customCakeId,
-      isImageOrder,
-      paymentId,
-      deliveryDate,
-      isDownpayment,
-    } = req.body;
-
-    if (!customCakeId) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Custom cake ID is required" });
-    }
-
-    // Get the order
-    const OrderModel = isImageOrder ? ImageBasedOrder : CustomCakeOrder;
-    const order = await OrderModel.findByPk(customCakeId);
-
-    if (!order) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Order not found" });
-    }
-
-    // Verify ownership
-    if (order.userID !== req.user.userID) {
-      return res
-        .status(403)
-        .json({ success: false, message: "Unauthorized access to order" });
-    }
-
-    // Update order based on payment type
-    let updateData = {
-      payment_status: "paid",
-      deliveryDate: deliveryDate || order.deliveryDate,
-    };
-
-    if (isDownpayment) {
-      // Downpayment received
-      updateData.status = "Downpayment Paid";
-      updateData.is_downpayment_paid = true;
-      updateData.downpayment_paid_at = new Date();
-    } else {
-      // Final payment received
-      updateData.status = "In Progress";
-      updateData.final_payment_status = "paid";
-    }
-
-    console.log("Updating custom cake order after payment:", {
-      customCakeId,
-      previousStatus: order.status,
-      newStatus: updateData.status,
-      isDownpayment,
-    });
-
-    await order.update(updateData);
-
-    res.json({
-      success: true,
-      message: `Custom cake order ${
-        isDownpayment ? "downpayment" : "payment"
-      } confirmed`,
-      order: {
-        customCakeId: order.customCakeId || order.imageBasedOrderId,
-        status: order.status,
+router.post(
+  "/confirm-payment",
+  verifyToken,
+  allowCustomerOnly,
+  async (req, res) => {
+    try {
+      const {
+        customCakeId,
+        isImageOrder,
+        paymentId,
+        deliveryDate,
         isDownpayment,
-      },
-    });
-  } catch (error) {
-    console.error("Error confirming custom cake payment:", error);
-    res
-      .status(500)
-      .json({ success: false, message: "Server error", error: error.message });
+      } = req.body;
+
+      if (!customCakeId) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Custom cake ID is required" });
+      }
+
+      // Get the order
+      const OrderModel = isImageOrder ? ImageBasedOrder : CustomCakeOrder;
+      const order = await OrderModel.findByPk(customCakeId);
+
+      if (!order) {
+        return res
+          .status(404)
+          .json({ success: false, message: "Order not found" });
+      }
+
+      // Verify ownership
+      if (order.userID !== req.user.userID) {
+        return res
+          .status(403)
+          .json({ success: false, message: "Unauthorized access to order" });
+      }
+
+      // Update order based on payment type
+      let updateData = {
+        payment_status: "paid",
+        deliveryDate: deliveryDate || order.deliveryDate,
+      };
+
+      if (isDownpayment) {
+        // Downpayment received
+        updateData.status = "Downpayment Paid";
+        updateData.is_downpayment_paid = true;
+        updateData.downpayment_paid_at = new Date();
+      } else {
+        // Final payment received
+        updateData.status = "In Progress";
+        updateData.final_payment_status = "paid";
+      }
+
+      console.log("Updating custom cake order after payment:", {
+        customCakeId,
+        previousStatus: order.status,
+        newStatus: updateData.status,
+        isDownpayment,
+      });
+
+      await order.update(updateData);
+
+      res.json({
+        success: true,
+        message: `Custom cake order ${
+          isDownpayment ? "downpayment" : "payment"
+        } confirmed`,
+        order: {
+          customCakeId: order.customCakeId || order.imageBasedOrderId,
+          status: order.status,
+          isDownpayment,
+        },
+      });
+    } catch (error) {
+      console.error("Error confirming custom cake payment:", error);
+      res.status(500).json({
+        success: false,
+        message: "Server error",
+        error: error.message,
+      });
+    }
   }
-});
+);
 
 router.put("/admin/orders/:customCakeId", verifyToken, async (req, res) => {
   try {
@@ -1001,82 +1011,93 @@ router.delete("/image-orders/:orderId", verifyToken, async (req, res) => {
   }
 });
 
-router.post("/process-cash-payment", verifyToken, async (req, res) => {
-  try {
-    const {
-      customCakeId,
-      isImageOrder,
-      pickupDate,
-      totalAmount,
-      isDownpayment,
-    } = req.body;
+router.post(
+  "/process-cash-payment",
+  verifyToken,
+  allowCustomerOnly,
+  async (req, res) => {
+    try {
+      const {
+        customCakeId,
+        isImageOrder,
+        pickupDate,
+        totalAmount,
+        isDownpayment,
+      } = req.body;
 
-    console.log("Cash payment request:", {
-      customCakeId,
-      isImageOrder,
-      isDownpayment,
-      totalAmount,
-    });
-
-    if (isDownpayment === true || isDownpayment === "true") {
-      console.warn(
-        `SECURITY: Attempted cash downpayment for order ${customCakeId}`
-      );
-      return res.status(400).json({
-        success: false,
-        message:
-          "Downpayments must be paid using GCash. Cash payment is not allowed for downpayments.",
-        reason: "INVALID_DOWNPAYMENT_METHOD",
+      console.log("Cash payment request:", {
+        customCakeId,
+        isImageOrder,
+        isDownpayment,
+        totalAmount,
       });
-    }
 
-    // Get the order
-    const OrderModel = isImageOrder ? ImageBasedOrder : CustomCakeOrder;
-    const order = await OrderModel.findByPk(customCakeId);
+      if (isDownpayment === true || isDownpayment === "true") {
+        console.warn(
+          `SECURITY: Attempted cash downpayment for order ${customCakeId}`
+        );
+        return res.status(400).json({
+          success: false,
+          message:
+            "Downpayments must be paid using GCash. Cash payment is not allowed for downpayments.",
+          reason: "INVALID_DOWNPAYMENT_METHOD",
+        });
+      }
 
-    if (!order) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Order not found" });
-    }
+      // Get the order
+      const OrderModel = isImageOrder ? ImageBasedOrder : CustomCakeOrder;
+      const order = await OrderModel.findByPk(customCakeId);
 
-    // Verify ownership
-    if (order.userID !== req.user.userID) {
-      return res.status(403).json({ success: false, message: "Unauthorized" });
-    }
+      if (!order) {
+        return res
+          .status(404)
+          .json({ success: false, message: "Order not found" });
+      }
 
-    const downpaymentStatuses = ["Ready for Downpayment", "Downpayment Paid"];
-    if (downpaymentStatuses.includes(order.status)) {
-      console.warn(
-        `SECURITY: Attempted cash payment on downpayment order ${customCakeId}, status: ${order.status}`
-      );
-      return res.status(400).json({
-        success: false,
-        message:
-          "This order requires GCash payment for downpayment. Cash payment is not available for this order.",
-        reason: "ORDER_REQUIRES_DOWNPAYMENT",
+      // Verify ownership
+      if (order.userID !== req.user.userID) {
+        return res
+          .status(403)
+          .json({ success: false, message: "Unauthorized" });
+      }
+
+      const downpaymentStatuses = ["Ready for Downpayment", "Downpayment Paid"];
+      if (downpaymentStatuses.includes(order.status)) {
+        console.warn(
+          `SECURITY: Attempted cash payment on downpayment order ${customCakeId}, status: ${order.status}`
+        );
+        return res.status(400).json({
+          success: false,
+          message:
+            "This order requires GCash payment for downpayment. Cash payment is not available for this order.",
+          reason: "ORDER_REQUIRES_DOWNPAYMENT",
+        });
+      }
+
+      // Update order status
+      await order.update({
+        status: "Ready for Pickup/Delivery",
+        payment_status: "pending", // Will be paid at pickup/delivery
+        updatedAt: new Date(),
       });
+
+      res.json({
+        success: true,
+        message: "Order confirmed for cash payment at pickup/delivery",
+        orderId: customCakeId,
+      });
+    } catch (error) {
+      console.error("Error processing cash payment:", error);
+      res
+        .status(500)
+        .json({
+          success: false,
+          message: "Server error",
+          error: error.message,
+        });
     }
-
-    // Update order status
-    await order.update({
-      status: "Ready for Pickup/Delivery",
-      payment_status: "pending", // Will be paid at pickup/delivery
-      updatedAt: new Date(),
-    });
-
-    res.json({
-      success: true,
-      message: "Order confirmed for cash payment at pickup/delivery",
-      orderId: customCakeId,
-    });
-  } catch (error) {
-    console.error("Error processing cash payment:", error);
-    res
-      .status(500)
-      .json({ success: false, message: "Server error", error: error.message });
   }
-});
+);
 
 // PUT /api/custom-cake/admin/orders/:customCakeId/cancel - Cancel custom cake order with remarks
 router.put(

@@ -223,6 +223,11 @@
             );
             sessionStorage.setItem("userEmail", data.user.email);
             sessionStorage.setItem("userLevel", data.user.userLevel);
+            // ADD THIS: Store canOrder for Google login too
+            sessionStorage.setItem(
+              "canOrder",
+              data.user.userLevel === "Customer"
+            );
 
             console.log("Google login successful - session data stored");
             window.location.href = data.redirectUrl;
@@ -255,7 +260,7 @@
 
             const data = await response.json();
             if (response.ok) {
-              // Use sessionStorage instead of localStorage
+              //Use sessionStorage instead of localStorage
               sessionStorage.setItem("token", data.token);
               sessionStorage.setItem(
                 "userName",
@@ -263,6 +268,12 @@
               );
               sessionStorage.setItem("userEmail", email);
               sessionStorage.setItem("userLevel", data.user?.userLevel);
+              // Set canOrder based on userLevel if not provided by backend
+              const canOrder =
+                data.user?.canOrder !== undefined
+                  ? data.user.canOrder
+                  : data.user?.userLevel === "Customer";
+              sessionStorage.setItem("canOrder", canOrder);
 
               console.log("Login successful - session data stored");
               window.location.href = data.redirectUrl;
@@ -291,6 +302,7 @@
           el.style.display = "none";
         });
       });
+
       // Toggle password visibility
       function togglePassword() {
         const passwordInput = document.getElementById("password");
@@ -312,9 +324,44 @@
           eyeClosed.style.display = "none";
         }
       }
-    </script>
 
-    <!-- Bootstrap loaded last as it's not critical for initial render -->
+      //Check order permission with better error handling
+      function checkOrderPermission() {
+        try {
+          const userLevel = sessionStorage.getItem("userLevel");
+          const orderSection = document.getElementById("order-section");
+          const orderMessage = document.getElementById("order-message");
+
+          // Only proceed if elements exist on this page
+          if (!orderSection && !orderMessage) {
+            return true; // This page doesn't have ordering functionality
+          }
+
+          if (userLevel === "Staff" || userLevel === "Admin") {
+            if (orderSection) orderSection.style.display = "none";
+            if (orderMessage) {
+              orderMessage.innerHTML = `<div class="alert alert-warning text-center">
+              <h4>Ordering Not Available</h4>
+              <p>Staff and Administrator accounts are not permitted to place orders.</p>
+              <p>Please use a customer account to place orders.</p>
+            </div>`;
+            }
+            return false;
+          }
+          return true;
+        } catch (error) {
+          console.error("Error checking order permission:", error);
+          return true; // Default to allowing if there's an error
+        }
+      }
+
+      //Wait for DOM to be fully loaded
+      document.addEventListener("DOMContentLoaded", function () {
+        setTimeout(checkOrderPermission, 100);
+      });
+
+      window.addEventListener("pageshow", checkOrderPermission);
+    </script>
     <script
       src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js"
       defer

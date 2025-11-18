@@ -124,6 +124,18 @@ document.getElementById("addToCart").addEventListener("click", async () => {
       const errorData = await cartResponse.json();
 
       // Handle specific error cases
+      if (cartResponse.status === 403) {
+        // This is the allowCustomerOnly middleware blocking Staff/Admin
+        Swal.fire({
+          icon: "warning",
+          title: "Access Denied",
+          text: "Only customer accounts can add items to cart and make orders.",
+          confirmButtonColor: "#2c9045",
+        });
+        return;
+      }
+
+      // Handle specific error cases
       if (cartResponse.status === 409) {
         // Check if user already has this item in cart
         try {

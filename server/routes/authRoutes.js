@@ -9,6 +9,7 @@ const { sendVerificationEmail } = require("../utils/sendEmail");
 const verifyToken = require("../middleware/verifyToken");
 const securityConfig = require("../config/login-security");
 const { sendStaffAccountEmail } = require("../utils/sendEmail");
+const allowCustomerOnly = require("../middleware/checkOrderPermission");
 const Sequelize = require("sequelize");
 require("dotenv").config();
 
@@ -76,6 +77,7 @@ router.post("/google", async (req, res) => {
         name: user.name,
         userLevel: user.userLevel,
         email: user.email,
+        canOrder: user.userLevel === "Customer",
       },
       redirectUrl:
         user.userLevel === "Admin"
@@ -199,6 +201,8 @@ router.post("/login", async (req, res) => {
       { expiresIn: "24h" }
     );
 
+    const canOrder = user.userLevel === "Customer";
+
     let redirectUrl;
     if (user.userLevel === "Customer") {
       redirectUrl = "/index.html";
@@ -214,12 +218,9 @@ router.post("/login", async (req, res) => {
       user: {
         name: user.name,
         userLevel: user.userLevel,
+        canOrder: user.userLevel === "Customer",
       },
       redirectUrl,
-      env: {
-        nodeEnv: process.env.NODE_ENV,
-        baseUrl: FRONTEND_URL,
-      },
     });
   } catch (error) {
     console.error("Error in login:", error);
@@ -408,31 +409,38 @@ router.post("/complete-registration", async (req, res) => {
   }
 });
 
-router.get("/profile", verifyToken, setNoCacheHeaders, async (req, res) => {
-  try {
-    const user = await User.findByPk(req.user.userID);
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
+router.get(
+  "/profile",
+  verifyToken,
+  allowCustomerOnly,
+  setNoCacheHeaders,
+  async (req, res) => {
+    try {
+      const user = await User.findByPk(req.user.userID);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
 
-    res.status(200).json({
-      name: user.name,
-      email: user.email,
-      phone: user.phone,
-      address: user.address,
-      userLevel: user.userLevel,
-      employeeID: user.employeeID,
-    });
-  } catch (error) {
-    console.error("Error fetching profile:", error);
-    res.status(500).json({ message: "Server error" });
+      res.status(200).json({
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        address: user.address,
+        userLevel: user.userLevel,
+        employeeID: user.employeeID,
+      });
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+      res.status(500).json({ message: "Server error" });
+    }
   }
-});
+);
 
 //UPDATE PROFILE ROUTES
 router.put(
   "/profile/update",
   verifyToken,
+  allowCustomerOnly,
   setNoCacheHeaders,
   async (req, res) => {
     const { name, phone, address, secretQuestion, secretAnswer } = req.body;
