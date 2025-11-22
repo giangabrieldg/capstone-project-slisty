@@ -16,14 +16,6 @@ require("dotenv").config();
 const router = express.Router();
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
-//Define FRONTEND_URL based on environment
-const FRONTEND_URL =
-  process.env.NODE_ENV === "production"
-    ? process.env.CLIENT_URL_PROD || "https://slice-n-grind.onrender.com"
-    : process.env.CLIENT_URL_LOCAL || "http://localhost:3000";
-
-console.log("FRONTEND_URL set to:", FRONTEND_URL);
-
 //Middleware to set cache-control headers for protected routes
 const setNoCacheHeaders = (req, res, next) => {
   res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
@@ -32,9 +24,40 @@ const setNoCacheHeaders = (req, res, next) => {
   next();
 };
 
-//Google Sign-In Route
+const validateSession = async (req, res, next) => {
+  if (req.user) {
+    try {
+      const user = await User.findByPk(req.user.userID);
+
+      // Check if session is valid
+      if (
+        !user ||
+        !user.isLoggedIn ||
+        user.currentSessionId !== req.sessionID
+      ) {
+        return res.status(401).json({
+          success: false,
+          message: "Session expired. Please login again.",
+        });
+      }
+
+      // Update last activity
+      user.lastActivity = new Date();
+      await user.save();
+    } catch (error) {
+      console.error("Session validation error:", error);
+    }
+  }
+  next();
+};
+
+// Google Sign-In Route - PREVENTION APPROACH
 router.post("/google", async (req, res) => {
-  const { idToken } = req.body;
+  const { idToken, browserId } = req.body;
+
+  if (!browserId) {
+    return res.status(400).json({ message: "Browser ID is required" });
+  }
 
   try {
     const ticket = await googleClient.verifyIdToken({
@@ -42,6 +65,26 @@ router.post("/google", async (req, res) => {
       audience: process.env.GOOGLE_CLIENT_ID,
     });
     const payload = ticket.getPayload();
+
+    // FIRST: Check if this browser already has an active session with DIFFERENT user
+    const activeUserInBrowser = await User.findOne({
+      where: {
+        currentBrowserId: browserId,
+        isLoggedIn: true,
+        email: { [Sequelize.Op.ne]: payload.email }, // ONLY prevent if DIFFERENT user
+      },
+    });
+
+    if (activeUserInBrowser) {
+      return res.status(409).json({
+        message: `You are already logged in as ${activeUserInBrowser.email}. Please logout first to login with another account.`,
+        alreadyLoggedIn: true,
+        currentUser: {
+          email: activeUserInBrowser.email,
+          name: activeUserInBrowser.name,
+        },
+      });
+    }
 
     let user = await User.findOne({ where: { googleID: payload.sub } });
     if (!user) {
@@ -64,8 +107,49 @@ router.post("/google", async (req, res) => {
       return res.status(403).json({ message: "Account is archived" });
     }
 
+    // Check if THIS user is already logged in elsewhere
+    if (
+      user.isLoggedIn &&
+      user.currentSessionId &&
+      user.currentBrowserId !== browserId
+    ) {
+      if (user.lastActivity) {
+        const sessionAge = Date.now() - new Date(user.lastActivity).getTime();
+        const maxSessionAge = 60 * 60 * 1000;
+
+        if (sessionAge < maxSessionAge) {
+          return res.status(409).json({
+            message: `You are already logged in another browser/tab. Please logout there first or wait for session to expire.`,
+            alreadyLoggedIn: true,
+          });
+        } else {
+          await user.update({
+            isLoggedIn: false,
+            currentSessionId: null,
+            currentBrowserId: null,
+            lastActivity: null,
+          });
+        }
+      }
+    }
+
+    const sessionId = require("crypto").randomBytes(16).toString("hex");
+
+    // Update user with NEW browser ID
+    await user.update({
+      currentSessionId: sessionId,
+      currentBrowserId: browserId,
+      isLoggedIn: true,
+      lastActivity: new Date(),
+    });
+
     const token = jwt.sign(
-      { userID: user.userID, userLevel: user.userLevel },
+      {
+        userID: user.userID,
+        userLevel: user.userLevel,
+        sessionId: sessionId,
+        browserId: browserId,
+      },
       process.env.JWT_SECRET,
       { expiresIn: "24h" }
     );
@@ -82,6 +166,8 @@ router.post("/google", async (req, res) => {
       redirectUrl:
         user.userLevel === "Admin"
           ? "/admin/admin-dashboard.html"
+          : user.userLevel === "Staff"
+          ? "/staff/staff-dashboard.html"
           : "/index.html",
     });
   } catch (error) {
@@ -90,14 +176,37 @@ router.post("/google", async (req, res) => {
   }
 });
 
+// Login Route - PREVENTION APPROACH
 router.post("/login", async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, browserId } = req.body;
 
-  if (!email || !password) {
-    return res.status(400).json({ message: "Email and password are required" });
+  if (!email || !password || !browserId) {
+    return res.status(400).json({
+      message: "Email, password, and browser ID are required",
+    });
   }
 
   try {
+    // FIRST: Check if this browser already has an active session with DIFFERENT user
+    const activeUserInBrowser = await User.findOne({
+      where: {
+        currentBrowserId: browserId,
+        isLoggedIn: true,
+        email: { [Sequelize.Op.ne]: email }, // ONLY prevent if DIFFERENT user
+      },
+    });
+
+    if (activeUserInBrowser) {
+      return res.status(409).json({
+        message: `You are already logged in as ${activeUserInBrowser.email}. Please logout first to login with another account.`,
+        alreadyLoggedIn: true,
+        currentUser: {
+          email: activeUserInBrowser.email,
+          name: activeUserInBrowser.name,
+        },
+      });
+    }
+
     const user = await User.findOne({ where: { email } });
 
     if (!user) {
@@ -106,22 +215,46 @@ router.post("/login", async (req, res) => {
         .json({ message: "Incorrect username or Password" });
     }
 
-    // Check if account is archived
     if (user.isArchived) {
       return res.status(403).json({
         message: "Account is archived. Please contact administrator.",
       });
     }
 
+    // Check if THIS user is already logged in elsewhere
+    if (
+      user.isLoggedIn &&
+      user.currentSessionId &&
+      user.currentBrowserId !== browserId
+    ) {
+      if (user.lastActivity) {
+        const sessionAge = Date.now() - new Date(user.lastActivity).getTime();
+        const maxSessionAge = 60 * 60 * 1000;
+
+        if (sessionAge < maxSessionAge) {
+          return res.status(409).json({
+            message: `You are already logged in another browser/tab. Please logout there first or wait for session to expire.`,
+            alreadyLoggedIn: true,
+          });
+        } else {
+          await user.update({
+            isLoggedIn: false,
+            currentSessionId: null,
+            currentBrowserId: null,
+            lastActivity: null,
+          });
+        }
+      }
+    }
+
     // Check if account is temporarily locked
     if (user.lockedUntil && user.lockedUntil > new Date()) {
-      const remainingTime = Math.ceil((user.lockedUntil - new Date()) / 60000); // minutes
+      const remainingTime = Math.ceil((user.lockedUntil - new Date()) / 60000);
       return res.status(423).json({
         message: `Account temporarily locked. Try again in ${remainingTime} minutes.`,
       });
     }
 
-    // Reset lock if lock time has expired
     if (user.lockedUntil && user.lockedUntil <= new Date()) {
       await user.update({
         lockedUntil: null,
@@ -143,16 +276,13 @@ router.post("/login", async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
-      // Increment login attempts
       const updatedAttempts = user.loginAttempts + 1;
 
-      // Check if should lock account
       if (updatedAttempts >= securityConfig.MAX_LOGIN_ATTEMPTS) {
         const lockedUntil = new Date(
           Date.now() + securityConfig.LOCKOUT_DURATION * 60000
         );
 
-        // Auto-archive staff/admin accounts after lockout
         let shouldArchive = false;
         if (
           securityConfig.AUTO_ARCHIVE_AFTER_LOCKOUT &&
@@ -169,13 +299,12 @@ router.post("/login", async (req, res) => {
         });
 
         const message = shouldArchive
-          ? `Account locked due to too many failed attempts and has been archived. Please contact administrator.`
-          : `Account locked due to too many failed attempts. Try again in ${securityConfig.LOCKOUT_DURATION} minutes.`;
+          ? `Account locked and archived. Please contact administrator.`
+          : `Account locked. Try again in ${securityConfig.LOCKOUT_DURATION} minutes.`;
 
         return res.status(423).json({ message });
       }
 
-      // Regular failed attempt (not yet at max)
       await user.update({
         loginAttempts: updatedAttempts,
         lastLoginAttempt: new Date(),
@@ -188,20 +317,29 @@ router.post("/login", async (req, res) => {
       });
     }
 
-    // SUCCESSFUL LOGIN - Reset attempt counters
+    // SUCCESSFUL LOGIN - Generate NEW session
+    const sessionId = require("crypto").randomBytes(16).toString("hex");
+
     await user.update({
       loginAttempts: 0,
       lockedUntil: null,
       lastLoginAttempt: null,
+      currentSessionId: sessionId,
+      currentBrowserId: browserId,
+      isLoggedIn: true,
+      lastActivity: new Date(),
     });
 
     const token = jwt.sign(
-      { userID: user.userID, userLevel: user.userLevel },
+      {
+        userID: user.userID,
+        userLevel: user.userLevel,
+        sessionId: sessionId,
+        browserId: browserId,
+      },
       process.env.JWT_SECRET || "default-secret",
       { expiresIn: "24h" }
     );
-
-    const canOrder = user.userLevel === "Customer";
 
     let redirectUrl;
     if (user.userLevel === "Customer") {
@@ -228,6 +366,65 @@ router.post("/login", async (req, res) => {
       message: "Server error",
       details:
         process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
+  }
+});
+
+router.get("/check", verifyToken, validateSession, async (req, res) => {
+  try {
+    const user = await User.findByPk(req.user.userID);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // ADD browser ID validation
+    if (user.currentBrowserId !== req.user.browserId) {
+      return res.status(401).json({
+        message: "Session invalid. Please login again.",
+      });
+    }
+
+    res.json({
+      authenticated: true,
+      user: {
+        id: user.userID,
+        name: user.name,
+        email: user.email,
+        userLevel: user.userLevel,
+        canOrder: user.userLevel === "Customer",
+      },
+    });
+  } catch (error) {
+    console.error("Error checking auth:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// NEW: Logout endpoint
+router.post("/logout", verifyToken, async (req, res) => {
+  try {
+    const user = await User.findByPk(req.user.userID);
+    if (user) {
+      // Only clear if this is the correct browser
+      if (user.currentBrowserId === req.user.browserId) {
+        await user.update({
+          currentSessionId: null,
+          currentBrowserId: null,
+          isLoggedIn: false,
+          lastActivity: null,
+        });
+      }
+    }
+
+    res.json({
+      success: true,
+      message: "Logout successful",
+    });
+  } catch (error) {
+    console.error("Error during logout:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error during logout",
     });
   }
 });
@@ -409,32 +606,26 @@ router.post("/complete-registration", async (req, res) => {
   }
 });
 
-router.get(
-  "/profile",
-  verifyToken,
-  allowCustomerOnly,
-  setNoCacheHeaders,
-  async (req, res) => {
-    try {
-      const user = await User.findByPk(req.user.userID);
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
-      }
-
-      res.status(200).json({
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        address: user.address,
-        userLevel: user.userLevel,
-        employeeID: user.employeeID,
-      });
-    } catch (error) {
-      console.error("Error fetching profile:", error);
-      res.status(500).json({ message: "Server error" });
+router.get("/profile", verifyToken, setNoCacheHeaders, async (req, res) => {
+  try {
+    const user = await User.findByPk(req.user.userID);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
     }
+
+    res.status(200).json({
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      address: user.address,
+      userLevel: user.userLevel,
+      employeeID: user.employeeID,
+    });
+  } catch (error) {
+    console.error("Error fetching profile:", error);
+    res.status(500).json({ message: "Server error" });
   }
-);
+});
 
 //UPDATE PROFILE ROUTES
 router.put(

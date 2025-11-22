@@ -92,6 +92,22 @@ const User = sequelize.define(
       type: DataTypes.DATE,
       allowNull: true,
     },
+    currentSessionId: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    currentBrowserId: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    lastActivity: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+    isLoggedIn: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
   },
   {
     tableName: "Users",

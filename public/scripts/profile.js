@@ -474,8 +474,8 @@ class ProfileManager {
     `;
   }
 
-  //logout function
-  handleLogout() {
+  //logout function - UPDATED
+  async handleLogout() {
     Swal.fire({
       title: "Are you sure?",
       text: "You will be logged out of your account",
@@ -486,34 +486,116 @@ class ProfileManager {
       confirmButtonText: "Yes, logout",
       cancelButtonText: "Cancel",
       reverseButtons: true,
-    }).then((result) => {
+    }).then(async (result) => {
       if (result.isConfirmed) {
-        // Clear all session and local storage
-        sessionStorage.removeItem("token");
-        sessionStorage.clear();
-        localStorage.clear();
+        try {
+          // Use the authService for proper logout
+          if (window.authService) {
+            await window.authService.logout();
+          } else {
+            // Fallback: manual cleanup if authService not available
+            const token = sessionStorage.getItem("token");
+            if (token) {
+              // Try to call backend logout API directly
+              try {
+                const BASE_URL =
+                  window.location.hostname === "localhost"
+                    ? "http://localhost:3000"
+                    : "https://capstone-project-slisty.onrender.com";
 
-        // Show success message
-        Swal.fire({
-          title: "Logged Out!",
-          text: "You have been successfully logged out",
-          icon: "success",
-          timer: 1500,
-          showConfirmButton: false,
-          confirmButtonColor: "#2c9045",
-        }).then(() => {
-          // Prevent back button from showing cached page
-          window.history.pushState(null, null, "/customer/login.html");
-          window.location.href = "/customer/login.html";
+                await fetch(`${BASE_URL}/api/auth/logout`, {
+                  method: "POST",
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                  },
+                  credentials: "include",
+                });
+              } catch (apiError) {
+                console.error("Backend logout failed:", apiError);
+                // Continue with client-side cleanup
+              }
+            }
 
-          // Add event listener to prevent back navigation
-          window.addEventListener("popstate", () => {
+            // Clear all session and local storage
+            sessionStorage.clear();
+            // KEEP browserId in localStorage for future logins
+            const browserId = localStorage.getItem("browserId");
+            localStorage.clear();
+            if (browserId) {
+              localStorage.setItem("browserId", browserId); // Restore browserId
+            }
+          }
+
+          // Show success message
+          Swal.fire({
+            title: "Logged Out!",
+            text: "You have been successfully logged out",
+            icon: "success",
+            timer: 1500,
+            showConfirmButton: false,
+            confirmButtonColor: "#2c9045",
+          }).then(() => {
+            // Get user email before clearing everything
+            const userEmail =
+              sessionStorage.getItem("userEmail") ||
+              localStorage.getItem("userEmail");
+
+            // Trigger cross-tab logout notification for THIS USER ONLY
+            if (userEmail) {
+              const logoutData = {
+                email: userEmail,
+                timestamp: Date.now(),
+                type: "logout",
+              };
+              localStorage.setItem("auth_logout", JSON.stringify(logoutData));
+              setTimeout(() => {
+                localStorage.removeItem("auth_logout");
+              }, 100);
+            } else {
+              // Legacy fallback
+              localStorage.setItem("auth_logout", Date.now().toString());
+              setTimeout(() => {
+                localStorage.removeItem("auth_logout");
+              }, 100);
+            }
+
+            // Prevent back button from showing cached page
+            window.history.pushState(null, null, "/customer/login.html");
+            window.location.href = "/customer/login.html";
+
+            // Add event listener to prevent back navigation
+            window.addEventListener("popstate", () => {
+              window.location.href = "/customer/login.html";
+            });
+          });
+        } catch (error) {
+          console.error("Logout error:", error);
+
+          // Force client-side cleanup even if backend fails
+          sessionStorage.clear();
+          // Preserve browserId
+          const browserId = localStorage.getItem("browserId");
+          localStorage.clear();
+          if (browserId) {
+            localStorage.setItem("browserId", browserId);
+          }
+
+          // Show error but still redirect
+          Swal.fire({
+            title: "Logged Out",
+            text: "You have been logged out (some services may be unavailable)",
+            icon: "info",
+            timer: 2000,
+            showConfirmButton: false,
+          }).then(() => {
             window.location.href = "/customer/login.html";
           });
-        });
+        }
       }
     });
   }
+
   async checkSecretQuestionStatus() {
     try {
       const response = await fetch(
