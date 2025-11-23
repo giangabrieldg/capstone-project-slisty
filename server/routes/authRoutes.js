@@ -10,11 +10,20 @@ const verifyToken = require("../middleware/verifyToken");
 const securityConfig = require("../config/login-security");
 const { sendStaffAccountEmail } = require("../utils/sendEmail");
 const allowCustomerOnly = require("../middleware/checkOrderPermission");
+const OTPService = require("../utils/otpService");
 const Sequelize = require("sequelize");
 require("dotenv").config();
 
 const router = express.Router();
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+//Define FRONTEND_URL based on environment
+const FRONTEND_URL =
+  process.env.NODE_ENV === "production"
+    ? process.env.CLIENT_URL_PROD || "https://slice-n-grind.onrender.com"
+    : process.env.CLIENT_URL_LOCAL || "http://localhost:3000";
+
+console.log("FRONTEND_URL set to:", FRONTEND_URL);
 
 //Middleware to set cache-control headers for protected routes
 const setNoCacheHeaders = (req, res, next) => {
@@ -178,11 +187,11 @@ router.post("/google", async (req, res) => {
 
 // Login Route - PREVENTION APPROACH
 router.post("/login", async (req, res) => {
-  const { email, password, browserId } = req.body;
+  const { email, password, browserId, otpCode } = req.body;
 
-  if (!email || !password || !browserId) {
+  if (!email || !browserId) {
     return res.status(400).json({
-      message: "Email, password, and browser ID are required",
+      message: "Email and browser ID are required",
     });
   }
 
@@ -266,6 +275,68 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ message: "Email not verified" });
     }
 
+    // ✅ OTP VERIFICATION FLOW
+    if (otpCode) {
+      // This is OTP verification step - only for customer users
+      if (user.userLevel !== "Customer") {
+        return res.status(400).json({
+          message: "OTP verification is only required for customer accounts",
+        });
+      }
+
+      // Verify OTP
+      const otpVerification = await OTPService.verifyOTP(
+        user.userID,
+        otpCode,
+        browserId,
+        "login"
+      );
+
+      if (!otpVerification.isValid) {
+        return res.status(401).json({
+          message: otpVerification.message,
+          requiresOTP: true,
+          email: user.email,
+        });
+      }
+
+      // ✅ OTP VERIFIED - Complete login
+      const sessionId = require("crypto").randomBytes(16).toString("hex");
+
+      await user.update({
+        loginAttempts: 0,
+        lockedUntil: null,
+        lastLoginAttempt: null,
+        currentSessionId: sessionId,
+        currentBrowserId: browserId,
+        isLoggedIn: true,
+        lastActivity: new Date(),
+      });
+
+      const token = jwt.sign(
+        {
+          userID: user.userID,
+          userLevel: user.userLevel,
+          sessionId: sessionId,
+          browserId: browserId,
+        },
+        process.env.JWT_SECRET || "default-secret",
+        { expiresIn: "24h" }
+      );
+
+      return res.status(200).json({
+        message: "Login successful",
+        token,
+        user: {
+          name: user.name,
+          userLevel: user.userLevel,
+          canOrder: user.userLevel === "Customer",
+        },
+        redirectUrl: "/index.html",
+      });
+    }
+
+    // ✅ INITIAL LOGIN ATTEMPT (Password verification)
     if (!user.password) {
       return res.status(400).json({
         message:
@@ -317,7 +388,27 @@ router.post("/login", async (req, res) => {
       });
     }
 
-    // SUCCESSFUL LOGIN - Generate NEW session
+    // ✅ PASSWORD VERIFIED - Check if OTP is required
+    if (user.userLevel === "Customer") {
+      // Send OTP for customer users
+      try {
+        await OTPService.createAndSendOTP(user, "login", browserId);
+
+        return res.status(200).json({
+          message: "OTP sent to your email",
+          requiresOTP: true,
+          email: user.email,
+          userLevel: user.userLevel,
+        });
+      } catch (otpError) {
+        console.error("Error sending OTP:", otpError);
+        return res.status(500).json({
+          message: "Failed to send OTP. Please try again.",
+        });
+      }
+    }
+
+    // ✅ DIRECT LOGIN FOR STAFF/ADMIN (No OTP required)
     const sessionId = require("crypto").randomBytes(16).toString("hex");
 
     await user.update({
@@ -366,6 +457,43 @@ router.post("/login", async (req, res) => {
       message: "Server error",
       details:
         process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
+  }
+});
+
+// Add OTP resend endpoint
+router.post("/resend-otp", async (req, res) => {
+  const { email, browserId } = req.body;
+
+  if (!email || !browserId) {
+    return res.status(400).json({
+      message: "Email and browser ID are required",
+    });
+  }
+
+  try {
+    const user = await User.findOne({ where: { email } });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Only allow OTP resend for customer users
+    if (user.userLevel !== "Customer") {
+      return res.status(400).json({
+        message: "OTP is only required for customer accounts",
+      });
+    }
+
+    await OTPService.createAndSendOTP(user, "login", browserId);
+
+    res.status(200).json({
+      message: "New OTP sent to your email",
+      requiresOTP: true,
+    });
+  } catch (error) {
+    console.error("Error resending OTP:", error);
+    res.status(500).json({
+      message: "Failed to resend OTP. Please try again.",
     });
   }
 });

@@ -1,4 +1,4 @@
-// scripts/authService.js - ROBUST VERSION with Multiple Fallbacks
+// scripts/authService.js - ROBUST VERSION with OTP Support
 class AuthService {
   constructor() {
     this.isChecking = false;
@@ -14,6 +14,10 @@ class AuthService {
 
     // Track tab/window ID in sessionStorage (cleared on browser close)
     this.tabId = this.getOrCreateTabId();
+
+    // OTP state
+    this.otpPending = false;
+    this.otpEmail = null;
 
     // Setup all cleanup mechanisms
     this.setupUnloadHandler();
@@ -254,7 +258,7 @@ class AuthService {
     }
   }
 
-  // Login method
+  // Login method with OTP support
   async login(credentials) {
     try {
       const response = await fetch(`${this.BASE_URL}/api/auth/login`, {
@@ -272,6 +276,14 @@ class AuthService {
       const data = await response.json();
 
       if (response.ok) {
+        // Check if OTP is required
+        if (data.requiresOTP) {
+          this.otpPending = true;
+          this.otpEmail = data.email;
+          throw new Error("OTP_REQUIRED");
+        }
+
+        // Regular successful login
         this.setAuthData(data);
         this.setupTabSync();
         this.setupHeartbeat(); // Start heartbeat
@@ -284,6 +296,77 @@ class AuthService {
         );
       } else {
         throw new Error(data.message || "Login failed");
+      }
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Verify OTP method
+  async verifyOTP(otpCode) {
+    if (!this.otpPending || !this.otpEmail) {
+      throw new Error("No OTP verification in progress");
+    }
+
+    try {
+      const response = await fetch(`${this.BASE_URL}/api/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: this.otpEmail,
+          browserId: this.browserId,
+          otpCode: otpCode,
+          // REMOVE the dummy password - backend now handles OTP separately
+        }),
+        credentials: "include",
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Successful OTP verification and login
+        this.otpPending = false;
+        this.otpEmail = null;
+        this.setAuthData(data);
+        this.setupTabSync();
+        this.setupHeartbeat(); // Start heartbeat
+        this.triggerLoginThisUserOnly(data.user.email);
+        return data;
+      } else {
+        throw new Error(data.message || "OTP verification failed");
+      }
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Resend OTP method
+  async resendOTP() {
+    if (!this.otpEmail) {
+      throw new Error("No email found for OTP resend");
+    }
+
+    try {
+      const response = await fetch(`${this.BASE_URL}/api/auth/resend-otp`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: this.otpEmail,
+          browserId: this.browserId,
+        }),
+        credentials: "include",
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        return data;
+      } else {
+        throw new Error(data.message || "Failed to resend OTP");
       }
     } catch (error) {
       throw error;
@@ -332,6 +415,8 @@ class AuthService {
       const userEmail = sessionStorage.getItem("userEmail");
 
       this.stopHeartbeat(); // Stop heartbeat
+      this.otpPending = false; // Clear OTP state
+      this.otpEmail = null;
 
       if (token) {
         await fetch(`${this.BASE_URL}/api/auth/logout`, {
@@ -378,6 +463,8 @@ class AuthService {
     sessionStorage.removeItem("userEmail");
     sessionStorage.removeItem("userLevel");
     sessionStorage.removeItem("canOrder");
+    this.otpPending = false;
+    this.otpEmail = null;
     this.stopHeartbeat();
   }
 
@@ -491,6 +578,14 @@ class AuthService {
         userLevel: sessionStorage.getItem("userLevel"),
         canOrder: sessionStorage.getItem("canOrder") === "true",
       },
+    };
+  }
+
+  // Get OTP state
+  getOTPState() {
+    return {
+      otpPending: this.otpPending,
+      otpEmail: this.otpEmail,
     };
   }
 }

@@ -244,42 +244,52 @@ const sendStaffAccountEmail = async (email, name, password, role) => {
   }
 };
 
-//Test email functionality on startup
-const testEmailFunctionality = async () => {
-  console.log("\n=== Email Service Initialization ===");
-
-  if (!process.env.GOOGLE_REFRESH_TOKEN) {
-    console.log("Gmail not configured - set GOOGLE_REFRESH_TOKEN");
-    return;
-  }
-
-  if (!process.env.EMAIL_USER) {
-    console.log("Email user not configured - set EMAIL_USER");
-    return;
-  }
+// Send OTP email for login verification
+const sendOTPEmail = async (email, otpCode, name) => {
+  const html = `
+    <div style="font-family: 'Poppins', sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #2c9045; border-radius: 8px;">
+      <h2 style="color: #2c9045;">Login Verification Code - Slice N Grind</h2>
+      <p>Hello ${name},</p>
+      <p>Your One-Time Password (OTP) for login is:</p>
+      
+      <div style="text-align: center; margin: 30px 0;">
+        <div style="display: inline-block; padding: 15px 30px; background-color: #f8f9fa; border: 2px dashed #2c9045; border-radius: 8px; font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #2c9045;">
+          ${otpCode}
+        </div>
+      </div>
+      
+      <p style="color: #5e5d5d; font-size: 14px;">
+        <strong>Important:</strong> 
+        <ul>
+          <li>This code expires in 10 minutes</li>
+          <li>Do not share this code with anyone</li>
+          <li>If you didn't request this code, please ignore this email</li>
+        </ul>
+      </p>
+      
+      <p style="color: #5e5d5d;">Best regards,<br>Slice N Grind Team</p>
+    </div>
+  `;
 
   try {
-    const connected = await verifyConnection();
-    if (connected) {
-      console.log("Email service ready - Gmail API is working");
-    } else {
-      console.log("Email service not available - check OAuth configuration");
-    }
+    await sendEmailViaGmailAPI(
+      email,
+      "Your Login Verification Code - Slice N Grind",
+      html
+    );
+    console.log(`OTP email sent to ${email}`);
+    return true;
   } catch (error) {
-    console.log("Email service test failed:", error.message);
+    console.error(`Failed to send OTP email to ${email}:`, error.message);
+    return false;
   }
-
-  console.log("=== Email Service Ready ===\n");
 };
-
-// Initialize on startup
-testEmailFunctionality();
 
 module.exports = {
   sendVerificationEmail,
   sendInquiryConfirmationEmail,
   sendInquiryReplyEmail,
   sendStaffAccountEmail,
+  sendOTPEmail,
   verifyConnection,
-  testEmailFunctionality,
 };
