@@ -4,6 +4,9 @@
 class AdminOrdersManager {
   constructor() {
     this.orders = [];
+    this.filteredOrders = [];
+    this.currentPage = 1;
+    this.ordersPerPage = 10;
     this.init();
   }
 
@@ -58,8 +61,10 @@ class AdminOrdersManager {
       const data = await response.json();
       if (!data.success) throw new Error(data.message);
       this.orders = data.orders;
-      this.renderOrders(this.orders);
-      this.applyFilters();
+      this.filteredOrders = [...this.orders];
+      this.currentPage = 1;
+      this.renderOrders();
+      this.renderPagination();
     } catch (error) {
       console.error("Error fetching orders:", error);
       Swal.fire({
@@ -71,14 +76,22 @@ class AdminOrdersManager {
     }
   }
 
+  // Get current page orders
+  getCurrentPageOrders() {
+    const startIndex = (this.currentPage - 1) * this.ordersPerPage;
+    const endIndex = startIndex + this.ordersPerPage;
+    return this.filteredOrders.slice(startIndex, endIndex);
+  }
+
   // Renders orders in the table
-  // Renders orders in the table
-  renderOrders(orders) {
+  renderOrders() {
     const tbody = document.getElementById("ordersTableBody");
     if (!tbody) return;
 
+    const currentPageOrders = this.getCurrentPageOrders();
+
     // Additional frontend filtering for safety
-    const normalOrders = orders.filter((order) => {
+    const normalOrders = currentPageOrders.filter((order) => {
       return !order.items.some((item) => item.customCakeId);
     });
 
@@ -240,6 +253,88 @@ class AdminOrdersManager {
     `;
       })
       .join("");
+
+    // Show message if no orders found
+    if (normalOrders.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="10" class="text-center py-4 text-muted">
+            No orders found
+          </td>
+        </tr>
+      `;
+    }
+  }
+
+  // Render pagination controls
+  renderPagination() {
+    const paginationContainer = document.getElementById("paginationContainer");
+    if (!paginationContainer) return;
+
+    const totalPages = Math.ceil(
+      this.filteredOrders.length / this.ordersPerPage
+    );
+
+    // Clear previous pagination
+    paginationContainer.innerHTML = "";
+
+    // Don't show pagination if only one page
+    if (totalPages <= 1) {
+      return;
+    }
+
+    // Previous button
+    const prevLi = document.createElement("li");
+    prevLi.className = `page-item ${this.currentPage === 1 ? "disabled" : ""}`;
+    prevLi.innerHTML = `
+      <a class="page-link" href="#" aria-label="Previous" data-page="${
+        this.currentPage - 1
+      }">
+        <span aria-hidden="true">&laquo;</span>
+      </a>
+    `;
+    paginationContainer.appendChild(prevLi);
+
+    // Page numbers
+    for (let i = 1; i <= totalPages; i++) {
+      const pageLi = document.createElement("li");
+      pageLi.className = `page-item ${this.currentPage === i ? "active" : ""}`;
+      pageLi.innerHTML = `
+        <a class="page-link" href="#" data-page="${i}">${i}</a>
+      `;
+      paginationContainer.appendChild(pageLi);
+    }
+
+    // Next button
+    const nextLi = document.createElement("li");
+    nextLi.className = `page-item ${
+      this.currentPage === totalPages ? "disabled" : ""
+    }`;
+    nextLi.innerHTML = `
+      <a class="page-link" href="#" aria-label="Next" data-page="${
+        this.currentPage + 1
+      }">
+        <span aria-hidden="true">&raquo;</span>
+      </a>
+    `;
+    paginationContainer.appendChild(nextLi);
+
+    // Add event listeners to pagination links
+    paginationContainer.querySelectorAll(".page-link").forEach((link) => {
+      link.addEventListener("click", (e) => {
+        e.preventDefault();
+        const page = parseInt(link.getAttribute("data-page"));
+        if (page && page !== this.currentPage) {
+          this.currentPage = page;
+          this.renderOrders();
+          this.renderPagination();
+          // Scroll to top of table
+          document.querySelector(".orders-payments-table").scrollIntoView({
+            behavior: "smooth",
+          });
+        }
+      });
+    });
   }
 
   setupEventListeners() {
@@ -290,7 +385,7 @@ class AdminOrdersManager {
       .getElementById("filterPaymentStatus")
       .value.toLowerCase();
 
-    const filteredOrders = this.orders.filter((order) => {
+    this.filteredOrders = this.orders.filter((order) => {
       const orderId = `#ORD${order.orderId
         .toString()
         .padStart(3, "0")}`.toLowerCase();
@@ -335,7 +430,9 @@ class AdminOrdersManager {
       );
     });
 
-    this.renderOrders(filteredOrders);
+    this.currentPage = 1;
+    this.renderOrders();
+    this.renderPagination();
   }
 
   // Updates order status

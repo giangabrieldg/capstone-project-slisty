@@ -1,3 +1,19 @@
+// Pagination state
+let paginationState = {
+  customOrders: {
+    currentPage: 1,
+    ordersPerPage: 10,
+    filteredOrders: [],
+    allOrders: [],
+  },
+  imageOrders: {
+    currentPage: 1,
+    ordersPerPage: 10,
+    filteredOrders: [],
+    allOrders: [],
+  },
+};
+
 // Fetch custom cake and image-based orders from backend and populate table
 async function fetchCustomCakeOrders() {
   try {
@@ -23,161 +39,81 @@ async function fetchCustomCakeOrders() {
       imageData = await imageResponse.json();
     }
 
-    const customTbody = document.querySelector(".cake-orders");
-    const imageTbody = document.querySelector(".image-orders");
-    customTbody.innerHTML = "";
-    imageTbody.innerHTML = "";
+    // Store all orders
+    paginationState.customOrders.allOrders = customData.success
+      ? customData.orders
+      : [];
+    paginationState.imageOrders.allOrders = imageData.success
+      ? imageData.orders
+      : [];
 
-    // Process custom cake orders (3D designs)
-    if (customData.success && customData.orders) {
-      customData.orders.forEach((order) => {
-        const displayOrderId = `CC${String(order.customCakeId).padStart(
-          3,
-          "0"
-        )}`;
-        const deliveryDate = order.deliveryDate
-          ? new Date(order.deliveryDate).toLocaleDateString()
-          : "Not set";
-        const orderDate = order.orderDate
-          ? new Date(order.orderDate).toLocaleDateString()
-          : order.createdAt
-          ? new Date(order.createdAt).toLocaleDateString()
-          : "Unknown";
+    // Reset to first page and apply filters
+    paginationState.customOrders.currentPage = 1;
+    paginationState.imageOrders.currentPage = 1;
 
-        // Enhanced payment information display
-        const paymentInfo = renderPaymentInfo(order);
+    applyFilters();
+    setupEventListeners(token);
+  } catch (error) {
+    console.error("Error fetching orders:", error);
+    Swal.fire({
+      icon: "error",
+      title: "Oops...",
+      text: `Failed to load orders: ${error.message}`,
+      confirmButtonColor: "#2c9045",
+    });
+  }
+}
 
-        // Format customer details with delivery address
-        const customerDetails = `
-  <div class="customer-info">
-    <div class="customer-name fw-bold">${
-      order.customer_name || (order.customer ? order.customer.name : "Unknown")
-    }</div>
-    <div class="customer-contact small text-muted">
-      ${
-        order.customer_email || (order.customer ? order.customer.email : "N/A")
-      }<br>${order.customer_phone || "N/A"}
-    </div>
-    ${
-      order.status === "Cancelled" && order.cancellation_remarks
-        ? `
-      <div class="cancellation-info small text-danger mt-1">
-        <strong>Cancellation Reason:</strong> ${order.cancellation_remarks}
-        ${
-          order.cancelled_at
-            ? `<br><small>Cancelled on: ${new Date(
-                order.cancelled_at
-              ).toLocaleDateString()}</small>`
-            : ""
-        }
-      </div>
-    `
-        : ""
-    }
-    <div class="delivery-method small text-muted mt-1">
-      <strong>Method:</strong> ${
-        order.delivery_method.charAt(0).toUpperCase() +
-        order.delivery_method.slice(1)
-      }
-    </div>
-    ${
-      order.delivery_method === "delivery" && order.delivery_address
-        ? `
-      <div class="delivery-address small text-muted mt-1">
-        <strong>Delivery Address:</strong><br>
-        ${order.delivery_address}
-      </div>
-    `
-        : ""
-    }
-  </div>
-`;
+// Get current page orders for custom orders
+function getCurrentCustomOrders() {
+  const state = paginationState.customOrders;
+  const startIndex = (state.currentPage - 1) * state.ordersPerPage;
+  const endIndex = startIndex + state.ordersPerPage;
+  return state.filteredOrders.slice(startIndex, endIndex);
+}
 
-        // Format updated by information
-        const updatedByInfo = order.updater
-          ? `
-      <div class="updated-by-info">
-        <div class="updater-name fw-bold">${order.updater.name}</div>
-        <div class="updater-role small text-muted">
-          ${order.updater.userLevel}
-        </div>
-        ${
-          order.updatedAt
-            ? `
-          <div class="update-time small text-muted">
-            ${new Date(order.updatedAt).toLocaleDateString()} 
-            ${new Date(order.updatedAt).toLocaleTimeString()}
-          </div>
-        `
-            : ""
-        }
-      </div>
-    `
-          : `
-      <div class="updated-by-info">
-        <div class="text-muted small">Not updated yet</div>
-      </div>
-    `;
+// Get current page orders for image orders
+function getCurrentImageOrders() {
+  const state = paginationState.imageOrders;
+  const startIndex = (state.currentPage - 1) * state.ordersPerPage;
+  const endIndex = startIndex + state.ordersPerPage;
+  return state.filteredOrders.slice(startIndex, endIndex);
+}
 
-        const row = document.createElement("tr");
-        row.innerHTML = `
-          <td>${displayOrderId}</td>
-          <td>${customerDetails}</td>
-          <td>${orderDate}</td>
-          <td>${deliveryDate}</td>
-          <td class="text-center">
-            <button class="btn btn-outline-primary btn-sm view-3d-design" 
-                    data-order-id="${order.customCakeId}"
-                    title="View 3D Cake Design">
-              <i class="bi bi-cube"></i> View 3D
-            </button>
-          </td>
-          <td>${renderStatusBadge(order.status)}</td>
-          <td>${renderPriceInfo(order)}</td>
-          <td>${paymentInfo}</td>
-          <td>${updatedByInfo}</td>
-          <td class="admin-actions-cell">
-            ${renderStatusActions(
-              order.customCakeId,
-              false,
-              order.status,
-              order
-            )}
-          </td>
-        `;
-        customTbody.appendChild(row);
-      });
-    }
+// Render custom cake orders
+function renderCustomCakeOrders() {
+  const tbody = document.querySelector(".cake-orders");
+  if (!tbody) return;
 
-    // Process image-based orders
-    if (imageData.success && imageData.orders) {
-      imageData.orders.forEach((order) => {
-        const orderId = order.imageBasedOrderId || order.id;
-        const displayOrderId = `RCC${String(orderId).padStart(3, "0")}`;
-        const deliveryDate = order.deliveryDate
-          ? new Date(order.deliveryDate).toLocaleDateString()
-          : "Not set";
-        const orderDate = order.orderDate
-          ? new Date(order.orderDate).toLocaleDateString()
-          : order.createdAt
-          ? new Date(order.createdAt).toLocaleDateString()
-          : "Unknown";
+  const currentPageOrders = getCurrentCustomOrders();
 
-        // Enhanced payment information display
-        const paymentInfo = renderPaymentInfo(order);
+  tbody.innerHTML = currentPageOrders
+    .map((order) => {
+      const displayOrderId = `CC${String(order.customCakeId).padStart(3, "0")}`;
+      const deliveryDate = order.deliveryDate
+        ? new Date(order.deliveryDate).toLocaleDateString()
+        : "Not set";
+      const orderDate = order.orderDate
+        ? new Date(order.orderDate).toLocaleDateString()
+        : order.createdAt
+        ? new Date(order.createdAt).toLocaleDateString()
+        : "Unknown";
 
-        // Format customer details with delivery address
-        const customerDetails = `
+      // Enhanced payment information display
+      const paymentInfo = renderPaymentInfo(order);
+
+      // Format customer details with delivery address
+      const customerDetails = `
       <div class="customer-info">
         <div class="customer-name fw-bold">${
           order.customer_name ||
           (order.customer ? order.customer.name : "Unknown")
         }</div>
         <div class="customer-contact small text-muted">
-          ${
-            order.customer_email ||
-            (order.customer ? order.customer.email : "N/A")
-          }<br>${order.customer_phone || "N/A"}
+            ${
+              order.customer_email ||
+              (order.customer ? order.customer.email : "N/A")
+            }<br>${order.customer_phone || "N/A"}
         </div>
         ${
           order.status === "Cancelled" && order.cancellation_remarks
@@ -214,9 +150,146 @@ async function fetchCustomCakeOrders() {
       </div>
     `;
 
-        // Format updated by information for image orders
-        const updatedByInfo = order.updater
-          ? `
+      // Format updated by information
+      const updatedByInfo = order.updater
+        ? `
+      <div class="updated-by-info">
+        <div class="updater-name fw-bold">${order.updater.name}</div>
+        <div class="updater-role small text-muted">
+          ${order.updater.userLevel}
+        </div>
+        ${
+          order.updatedAt
+            ? `
+          <div class="update-time small text-muted">
+            ${new Date(order.updatedAt).toLocaleDateString()} 
+            ${new Date(order.updatedAt).toLocaleTimeString()}
+          </div>
+        `
+            : ""
+        }
+      </div>
+    `
+        : `
+      <div class="updated-by-info">
+        <div class="text-muted small">Not updated yet</div>
+      </div>
+    `;
+
+      return `
+      <tr data-order-date="${orderDate}">
+        <td>${displayOrderId}</td>
+        <td>${customerDetails}</td>
+        <td>${orderDate}</td>
+        <td>${deliveryDate}</td>
+        <td class="text-center">
+          <button class="btn btn-outline-primary btn-sm view-3d-design" 
+                  data-order-id="${order.customCakeId}"
+                  title="View 3D Cake Design">
+            <i class="bi bi-cube"></i> View 3D
+          </button>
+        </td>
+        <td>${renderStatusBadge(order.status)}</td>
+        <td>${renderPriceInfo(order)}</td>
+        <td>${paymentInfo}</td>
+        <td>${updatedByInfo}</td>
+        <td class="admin-actions-cell">
+          ${renderStatusActions(order.customCakeId, false, order.status, order)}
+        </td>
+      </tr>
+    `;
+    })
+    .join("");
+
+  // Show message if no orders found
+  if (currentPageOrders.length === 0) {
+    tbody.innerHTML = `
+            <tr>
+                <td colspan="10" class="text-center py-4 text-muted">
+                    No custom cake orders found
+                </td>
+            </tr>
+        `;
+  }
+
+  // Render pagination
+  renderPagination("custom");
+}
+
+// Render image orders
+function renderImageOrders() {
+  const tbody = document.querySelector(".image-orders");
+  if (!tbody) return;
+
+  const currentPageOrders = getCurrentImageOrders();
+
+  tbody.innerHTML = currentPageOrders
+    .map((order) => {
+      const orderId = order.imageBasedOrderId || order.id;
+      const displayOrderId = `RCC${String(orderId).padStart(3, "0")}`;
+      const deliveryDate = order.deliveryDate
+        ? new Date(order.deliveryDate).toLocaleDateString()
+        : "Not set";
+      const orderDate = order.orderDate
+        ? new Date(order.orderDate).toLocaleDateString()
+        : order.createdAt
+        ? new Date(order.createdAt).toLocaleDateString()
+        : "Unknown";
+
+      // Enhanced payment information display
+      const paymentInfo = renderPaymentInfo(order);
+
+      // Format customer details with delivery address
+      const customerDetails = `
+      <div class="customer-info">
+        <div class="customer-name fw-bold">${
+          order.customer_name ||
+          (order.customer ? order.customer.name : "Unknown")
+        }</div>
+        <div class="customer-contact small text-muted">
+            ${
+              order.customer_email ||
+              (order.customer ? order.customer.email : "N/A")
+            }<br>${order.customer_phone || "N/A"}
+        </div>
+        ${
+          order.status === "Cancelled" && order.cancellation_remarks
+            ? `
+          <div class="cancellation-info small text-danger mt-1">
+            <strong>Cancellation Reason:</strong> ${order.cancellation_remarks}
+            ${
+              order.cancelled_at
+                ? `<br><small>Cancelled on: ${new Date(
+                    order.cancelled_at
+                  ).toLocaleDateString()}</small>`
+                : ""
+            }
+          </div>
+        `
+            : ""
+        }
+        <div class="delivery-method small text-muted mt-1">
+          <strong>Method:</strong> ${
+            order.delivery_method.charAt(0).toUpperCase() +
+            order.delivery_method.slice(1)
+          }
+        </div>
+        ${
+          order.delivery_method === "delivery" && order.delivery_address
+            ? `
+          <div class="delivery-address small text-muted mt-1">
+            <strong>Delivery Address:</strong><br>
+            ${order.delivery_address}
+          </div>
+        `
+            : ""
+        }
+      </div>
+    `;
+
+      // Format updated by information for image orders
+      const updatedByInfo = order.updater
+        ? `
             <div class="updated-by-info">
               <div class="updater-name fw-bold">${order.updater.name}</div>
               <div class="updater-role small text-muted">
@@ -234,13 +307,13 @@ async function fetchCustomCakeOrders() {
               }
             </div>
           `
-          : `
+        : `
             <div class="updated-by-info">
               <div class="text-muted small">Not updated yet</div>
             </div>
           `;
 
-        const orderDetails = `
+      const orderDetails = `
           <div class="order-details">
             <div class="detail-item">
               <strong>Flavor:</strong> ${order.flavor || "Not specified"}
@@ -257,52 +330,183 @@ async function fetchCustomCakeOrders() {
           </div>
         `;
 
-        const row = document.createElement("tr");
-        row.innerHTML = `
-          <td>${displayOrderId}</td>
-          <td>${customerDetails}</td>
-          <td class>${orderDetails}</td>
-          <td>${orderDate}</td>
-          <td>${deliveryDate}</td>
-          <td class="text-center">
-            ${
-              order.imagePath
-                ? `<a href="#" class="view-image" data-image-url="${order.imagePath}" data-image-type="reference" data-bs-toggle="modal" data-bs-target="#imageModal">View</a>`
-                : "None"
-            }
-          </td>
-          <td>${renderStatusBadge(order.status)}</td>
-          <td>${renderPriceInfo(order)}</td>
-          <td>${paymentInfo}</td>
-          <td>${updatedByInfo}</td>
-          <td class="admin-actions-cell">
-            ${renderStatusActions(orderId, true, order.status, order)}
-          </td>
+      return `
+          <tr data-order-date="${orderDate}">
+            <td>${displayOrderId}</td>
+            <td>${customerDetails}</td>
+            <td class>${orderDetails}</td>
+            <td>${orderDate}</td>
+            <td>${deliveryDate}</td>
+            <td class="text-center">
+              ${
+                order.imagePath
+                  ? `<a href="#" class="view-image" data-image-url="${order.imagePath}" data-image-type="reference" data-bs-toggle="modal" data-bs-target="#imageModal">View</a>`
+                  : "None"
+              }
+            </td>
+            <td>${renderStatusBadge(order.status)}</td>
+            <td>${renderPriceInfo(order)}</td>
+            <td>${paymentInfo}</td>
+            <td>${updatedByInfo}</td>
+            <td class="admin-actions-cell">
+              ${renderStatusActions(orderId, true, order.status, order)}
+            </td>
+          </tr>
         `;
-        imageTbody.appendChild(row);
-      });
-    }
-    if (!customData.orders || customData.orders.length === 0) {
-      const row = document.createElement("tr");
-      row.innerHTML = `<td colspan="12" class="text-center">No custom cake orders found</td>`;
-      customTbody.appendChild(row);
-    }
+    })
+    .join("");
 
-    if (!imageData.orders || imageData.orders.length === 0) {
-      const row = document.createElement("tr");
-      row.innerHTML = `<td colspan="11" class="text-center">No image-based orders found</td>`;
-    }
-
-    setupEventListeners(token);
-  } catch (error) {
-    console.error("Error fetching orders:", error);
-    Swal.fire({
-      icon: "error",
-      title: "Oops...",
-      text: `Failed to load orders: ${error.message}`,
-      confirmButtonColor: "#2c9045",
-    });
+  // Show message if no orders found
+  if (currentPageOrders.length === 0) {
+    tbody.innerHTML = `
+            <tr>
+                <td colspan="11" class="text-center py-4 text-muted">
+                    No image-based orders found
+                </td>
+            </tr>
+        `;
   }
+
+  // Render pagination
+  renderPagination("image");
+}
+
+// Render pagination controls
+function renderPagination(type) {
+  const containerId =
+    type === "custom" ? "customOrdersPagination" : "imageOrdersPagination";
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  const state =
+    paginationState[type === "custom" ? "customOrders" : "imageOrders"];
+  const totalPages = Math.ceil(
+    state.filteredOrders.length / state.ordersPerPage
+  );
+
+  // Clear previous pagination
+  container.innerHTML = "";
+
+  // Don't show pagination if only one page
+  if (totalPages <= 1) {
+    return;
+  }
+
+  // Previous button
+  const prevLi = document.createElement("li");
+  prevLi.className = `page-item ${state.currentPage === 1 ? "disabled" : ""}`;
+  prevLi.innerHTML = `
+        <a class="page-link" href="#" aria-label="Previous" data-page="${
+          state.currentPage - 1
+        }" data-type="${type}">
+            <span aria-hidden="true">&laquo;</span>
+        </a>
+    `;
+  container.appendChild(prevLi);
+
+  // Page numbers
+  for (let i = 1; i <= totalPages; i++) {
+    const pageLi = document.createElement("li");
+    pageLi.className = `page-item ${state.currentPage === i ? "active" : ""}`;
+    pageLi.innerHTML = `
+            <a class="page-link" href="#" data-page="${i}" data-type="${type}">${i}</a>
+        `;
+    container.appendChild(pageLi);
+  }
+
+  // Next button
+  const nextLi = document.createElement("li");
+  nextLi.className = `page-item ${
+    state.currentPage === totalPages ? "disabled" : ""
+  }`;
+  nextLi.innerHTML = `
+        <a class="page-link" href="#" aria-label="Next" data-page="${
+          state.currentPage + 1
+        }" data-type="${type}">
+            <span aria-hidden="true">&raquo;</span>
+        </a>
+    `;
+  container.appendChild(nextLi);
+
+  // Add event listeners to pagination links
+  container.querySelectorAll(".page-link").forEach((link) => {
+    link.addEventListener("click", (e) => {
+      e.preventDefault();
+      const page = parseInt(link.getAttribute("data-page"));
+      const linkType = link.getAttribute("data-type");
+      if (page && page !== state.currentPage) {
+        if (linkType === "custom") {
+          paginationState.customOrders.currentPage = page;
+          renderCustomCakeOrders();
+        } else {
+          paginationState.imageOrders.currentPage = page;
+          renderImageOrders();
+        }
+        // Scroll to top of table
+        document.querySelector(".tab-content").scrollIntoView({
+          behavior: "smooth",
+        });
+      }
+    });
+  });
+}
+
+// Apply filters to both order types
+function applyFilters() {
+  const searchTerm =
+    document.querySelector(".search-bar")?.value.toLowerCase() || "";
+  const selectedStatus =
+    document.getElementById("filterStatus")?.value.trim().toLowerCase() || "";
+
+  // Filter custom orders
+  paginationState.customOrders.filteredOrders =
+    paginationState.customOrders.allOrders.filter((order) => {
+      const orderId = `CC${String(order.customCakeId).padStart(
+        3,
+        "0"
+      )}`.toLowerCase();
+      const customerName = (
+        order.customer_name ||
+        (order.customer ? order.customer.name : "Unknown")
+      ).toLowerCase();
+      const rowStatus = order.status.toLowerCase();
+
+      const searchMatch =
+        orderId.includes(searchTerm) || customerName.includes(searchTerm);
+      const statusMatch = !selectedStatus || rowStatus.includes(selectedStatus);
+
+      return searchMatch && statusMatch;
+    });
+
+  // Filter image orders
+  paginationState.imageOrders.filteredOrders =
+    paginationState.imageOrders.allOrders.filter((order) => {
+      const orderId = order.imageBasedOrderId || order.id;
+      const displayOrderId = `RCC${String(orderId).padStart(
+        3,
+        "0"
+      )}`.toLowerCase();
+      const customerName = (
+        order.customer_name ||
+        (order.customer ? order.customer.name : "Unknown")
+      ).toLowerCase();
+      const rowStatus = order.status.toLowerCase();
+
+      const searchMatch =
+        displayOrderId.includes(searchTerm) ||
+        customerName.includes(searchTerm);
+      const statusMatch = !selectedStatus || rowStatus.includes(selectedStatus);
+
+      return searchMatch && statusMatch;
+    });
+
+  // Reset to first page
+  paginationState.customOrders.currentPage = 1;
+  paginationState.imageOrders.currentPage = 1;
+
+  // Render both tables
+  renderCustomCakeOrders();
+  renderImageOrders();
 }
 
 // Helper function to render price information
@@ -325,10 +529,10 @@ function renderPriceInfo(order) {
     const remainingBalance = parseFloat(order.remaining_balance) || 0;
 
     html += `
-      <small class="text-muted">
-        <div>50% Down: ₱${downpaymentAmount.toFixed(2)}</div>
-        <div>Balance: ₱${remainingBalance.toFixed(2)}</div>
-      </small>`;
+            <small class="text-muted">
+                <div>50% Down: ₱${downpaymentAmount.toFixed(2)}</div>
+                <div>Balance: ₱${remainingBalance.toFixed(2)}</div>
+            </small>`;
   }
 
   html += `</div>`;
@@ -340,8 +544,8 @@ function renderPaymentInfo(order) {
   // If status is completed, payment should be marked as paid
   if (order.status === "Completed") {
     return `<div class="payment-info-container">
-      <span class="status paid">Paid</span>
-    </div>`;
+            <span class="status paid">Paid</span>
+        </div>`;
   }
 
   let html = `<div class="payment-info-container">`;
@@ -352,17 +556,17 @@ function renderPaymentInfo(order) {
     const remainingBalance = parseFloat(order.remaining_balance) || 0;
 
     html += `
-      <div class="downpayment-status mb-2">
-        <span class="status paid">
-          Downpayment Paid
-        </span>
-        <div class="mt-1">
-          <small class="text-muted">
-            Paid: ₱${downpaymentAmount.toFixed(2)}<br>
-            Remaining: ₱${remainingBalance.toFixed(2)}
-          </small>
-        </div>
-      </div>`;
+            <div class="downpayment-status mb-2">
+                <span class="status paid">
+                    Downpayment Paid
+                </span>
+                <div class="mt-1">
+                    <small class="text-muted">
+                        Paid: ₱${downpaymentAmount.toFixed(2)}<br>
+                        Remaining: ₱${remainingBalance.toFixed(2)}
+                    </small>
+                </div>
+            </div>`;
 
     // Final payment status
     const finalPaymentBadge =
@@ -464,15 +668,16 @@ function renderStatusActions(orderId, isImageOrder, currentStatus, order) {
     currentStatus !== "Not Feasible"
   ) {
     html += `<button class="btn btn-outline-danger btn-sm cancel-order-btn mt-2" 
-            data-order-id="${orderId}" 
-            data-is-image-order="${isImageOrder}">
-      Cancel Order
-    </button>`;
+                data-order-id="${orderId}" 
+                data-is-image-order="${isImageOrder}">
+            Cancel Order
+        </button>`;
   }
 
   html += "</div>";
   return html;
 }
+
 // Image-based order actions
 function renderImageOrderActions(orderId, currentStatus, order) {
   let html = "";
@@ -489,61 +694,61 @@ function renderImageOrderActions(orderId, currentStatus, order) {
     const disabledText = priceIsSet ? " (Price locked)" : "";
 
     html += `
-      <div class="price-input mb-2">
-        <label class="form-label small">Total Price:${disabledText}</label>
-        <input 
-          type="number" 
-          class="form-control form-control-sm price-input-field" 
-          placeholder="Enter total price" 
-          value="${order.price || ""}" 
-          step="0.01" 
-          min="0"
-          ${isDisabled}
-        >
-        ${
-          order.price
-            ? `
-          <small class="text-muted d-block mt-1">
-            <i class="fas fa-info-circle"></i> 50% = ₱${(
-              order.price * 0.5
-            ).toFixed(2)}
-          </small>
-        `
-            : ""
-        }
-        ${
-          priceIsSet
-            ? `
-        `
-            : ""
-        }
-      </div>`;
+            <div class="price-input mb-2">
+                <label class="form-label small">Total Price:${disabledText}</label>
+                <input 
+                    type="number" 
+                    class="form-control form-control-sm price-input-field" 
+                    placeholder="Enter total price" 
+                    value="${order.price || ""}" 
+                    step="0.01" 
+                    min="0"
+                    ${isDisabled}
+                >
+                ${
+                  order.price
+                    ? `
+                        <small class="text-muted d-block mt-1">
+                            <i class="fas fa-info-circle"></i> 50% = ₱${(
+                              order.price * 0.5
+                            ).toFixed(2)}
+                        </small>
+                    `
+                    : ""
+                }
+                ${
+                  priceIsSet
+                    ? `
+                    `
+                    : ""
+                }
+            </div>`;
   }
 
   //Action buttons based on current status
   switch (currentStatus) {
     case "Pending Review":
       html += `
-        <button class="btn btn-success btn-sm mark-feasible mb-2" 
-                data-order-id="${orderId}" 
-                data-is-image-order="true">
-          Mark as Feasible
-        </button>
-        <button class="btn btn-danger btn-sm mark-not-feasible w-100" 
-                data-order-id="${orderId}" 
-                data-is-image-order="true">
-          Not Feasible
-        </button>`;
+                <button class="btn btn-success btn-sm mark-feasible mb-2" 
+                        data-order-id="${orderId}" 
+                        data-is-image-order="true">
+                    Mark as Feasible
+                </button>
+                <button class="btn btn-danger btn-sm mark-not-feasible w-100" 
+                        data-order-id="${orderId}" 
+                        data-is-image-order="true">
+                    Not Feasible
+                </button>`;
       break;
 
     case "Feasible":
       if (order.price) {
         html += `
-          <button class="btn btn-primary btn-sm ready-downpayment w-100" 
-                  data-order-id="${orderId}" 
-                  data-is-image-order="true">
-            Ready for Downpayment
-          </button>`;
+                    <button class="btn btn-primary btn-sm ready-downpayment w-100" 
+                            data-order-id="${orderId}" 
+                            data-is-image-order="true">
+                        Ready for Downpayment
+                    </button>`;
       } else {
         html += `<small class="text-warning d-block mb-1"><i class="fas fa-exclamation-triangle"></i> Set price first</small>`;
       }
@@ -551,38 +756,38 @@ function renderImageOrderActions(orderId, currentStatus, order) {
 
     case "Ready for Downpayment":
       html += `
-        <div class="text-center">
-          <small class="text-muted d-block">
-            <i class="fas fa-info-circle"></i> Waiting for customer to pay downpayment
-          </small>
-        </div>`;
+                <div class="text-center">
+                    <small class="text-muted d-block">
+                        <i class="fas fa-info-circle"></i> Waiting for customer to pay downpayment
+                    </small>
+                </div>`;
       break;
 
     case "Downpayment Paid":
       html += `
-        <button class="btn btn-primary btn-sm mark-in-progress w-100" 
-                data-order-id="${orderId}" 
-                data-is-image-order="true">
-          Mark In Progress
-        </button>`;
+                <button class="btn btn-primary btn-sm mark-in-progress w-100" 
+                        data-order-id="${orderId}" 
+                        data-is-image-order="true">
+                    Mark In Progress
+                </button>`;
       break;
 
     case "In Progress":
       html += `
-        <button class="btn btn-primary btn-sm ready-pickup w-100" 
-                data-order-id="${orderId}" 
-                data-is-image-order="true">
-          Ready for Pickup/Delivery
-        </button>`;
+                <button class="btn btn-primary btn-sm ready-pickup w-100" 
+                        data-order-id="${orderId}" 
+                        data-is-image-order="true">
+                    Ready for Pickup/Delivery
+                </button>`;
       break;
 
     case "Ready for Pickup/Delivery":
       html += `
-        <button class="btn btn-primary btn-sm mark-completed w-100" 
-                data-order-id="${orderId}" 
-                data-is-image-order="true">
-          Mark Completed
-        </button>`;
+                <button class="btn btn-primary btn-sm mark-completed w-100" 
+                        data-order-id="${orderId}" 
+                        data-is-image-order="true">
+                    Mark Completed
+                </button>`;
       break;
 
     case "Not Feasible":
@@ -605,28 +810,28 @@ function renderCustomCakeActions(orderId, currentStatus, order) {
   // Price input for Ready for Downpayment status
   if (showPriceInput && currentStatus !== "Pending Review") {
     html += `
-      <div class="price-input mb-2">
-        <label class="form-label small">Total Price:</label>
-        <input 
-          type="number" 
-          class="form-control form-control-sm price-input-field" 
-          placeholder="Enter total price" 
-          value="${order.price || ""}" 
-          step="0.01" 
-          min="0"
-        >
-        ${
-          order.price
-            ? `
-          <small class="text-muted d-block mt-1">
-            <i class="fas fa-info-circle"></i> 50% = ₱${(
-              order.price * 0.5
-            ).toFixed(2)}
-          </small>
-        `
-            : ""
-        }
-      </div>`;
+            <div class="price-input mb-2">
+                <label class="form-label small">Total Price:</label>
+                <input 
+                    type="number" 
+                    class="form-control form-control-sm price-input-field" 
+                    placeholder="Enter total price" 
+                    value="${order.price || ""}" 
+                    step="0.01" 
+                    min="0"
+                >
+                ${
+                  order.price
+                    ? `
+                        <small class="text-muted d-block mt-1">
+                            <i class="fas fa-info-circle"></i> 50% = ₱${(
+                              order.price * 0.5
+                            ).toFixed(2)}
+                        </small>
+                    `
+                    : ""
+                }
+            </div>`;
   }
 
   // Action buttons based on current status
@@ -637,30 +842,30 @@ function renderCustomCakeActions(orderId, currentStatus, order) {
 
     case "Ready for Downpayment":
       html += `
-        <button class="btn btn-primary btn-sm downpayment-paid w-100" data-order-id="${orderId}" data-is-image-order="false">
-          Mark: Downpayment Paid
-        </button>`;
+                <button class="btn btn-primary btn-sm downpayment-paid w-100" data-order-id="${orderId}" data-is-image-order="false">
+                    Mark: Downpayment Paid
+                </button>`;
       break;
 
     case "Downpayment Paid":
       html += `
-        <button class="btn btn-primary btn-sm mark-in-progress w-100" data-order-id="${orderId}" data-is-image-order="false">
-          Mark In Progress
-        </button>`;
+                <button class="btn btn-primary btn-sm mark-in-progress w-100" data-order-id="${orderId}" data-is-image-order="false">
+                    Mark In Progress
+                </button>`;
       break;
 
     case "In Progress":
       html += `
-        <button class="btn btn-primary btn-sm ready-pickup w-100" data-order-id="${orderId}" data-is-image-order="false">
-          Ready for Pickup/Delivery
-        </button>`;
+                <button class="btn btn-primary btn-sm ready-pickup w-100" data-order-id="${orderId}" data-is-image-order="false">
+                    Ready for Pickup/Delivery
+                </button>`;
       break;
 
     case "Ready for Pickup/Delivery":
       html += `
-        <button class="btn btn-primary btn-sm mark-completed w-100" data-order-id="${orderId}" data-is-image-order="false">
-          Mark Completed
-        </button>`;
+                <button class="btn btn-primary btn-sm mark-completed w-100" data-order-id="${orderId}" data-is-image-order="false">
+                    Mark Completed
+                </button>`;
       break;
 
     case "Cancelled":
@@ -675,6 +880,7 @@ function renderCustomCakeActions(orderId, currentStatus, order) {
 
   return html;
 }
+
 // Setup event listeners
 function setupEventListeners(token) {
   // Remove existing event listeners first to prevent duplicates
@@ -693,6 +899,23 @@ function setupEventListeners(token) {
   document.querySelectorAll(".price-input-field").forEach((input) => {
     input.removeEventListener("input", handlePriceInput);
     input.addEventListener("input", handlePriceInput);
+  });
+
+  // Search functionality
+  document.querySelector(".search-bar")?.addEventListener("input", (e) => {
+    applyFilters();
+  });
+
+  // Filter form submission
+  document.getElementById("filterForm")?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    applyFilters();
+
+    // Close modal after applying filter
+    const modal = bootstrap.Modal.getInstance(
+      document.getElementById("filterModal")
+    );
+    if (modal) modal.hide();
   });
 }
 
@@ -911,9 +1134,9 @@ function openCancellationModal(orderId, isImageOrder, orderDetails = {}) {
   const customerInfo = document.createElement("div");
   customerInfo.className = "alert alert-info";
   customerInfo.innerHTML = `
-    <strong>Customer:</strong> ${orderDetails.customer_name}<br>
-    <strong>Order Type:</strong> ${orderDetails.order_type}
-  `;
+        <strong>Customer:</strong> ${orderDetails.customer_name}<br>
+        <strong>Order Type:</strong> ${orderDetails.order_type}
+    `;
 
   const form = document.getElementById("cancellationForm");
   const existingAlert = form.querySelector(".alert");
@@ -1008,58 +1231,6 @@ function resetCancellationForm() {
     alert.remove();
   }
 }
-
-// Search functionality
-document.querySelector(".search-bar")?.addEventListener("input", (e) => {
-  const searchTerm = e.target.value.toLowerCase();
-
-  const activeTab = document.querySelector(".tab-pane.active");
-  if (activeTab) {
-    const tbody = activeTab.querySelector("tbody");
-    if (tbody) {
-      tbody.querySelectorAll("tr").forEach((row) => {
-        const orderId = row.cells[0].textContent.toLowerCase();
-        const customerName = row.cells[1].textContent.toLowerCase();
-        row.style.display =
-          orderId.includes(searchTerm) || customerName.includes(searchTerm)
-            ? ""
-            : "none";
-      });
-    }
-  }
-});
-
-// Filter functionality
-document.getElementById("filterForm")?.addEventListener("submit", (e) => {
-  e.preventDefault();
-  const selectedStatus = document
-    .getElementById("filterStatus")
-    .value.trim()
-    .toLowerCase();
-
-  const activeTab = document.querySelector(".tab-pane.active");
-  if (activeTab) {
-    const tbody = activeTab.querySelector("tbody");
-    if (tbody) {
-      tbody.querySelectorAll("tr").forEach((row) => {
-        const statusBadge = row.querySelector(".status");
-        const rowStatus = statusBadge
-          ? statusBadge.textContent.trim().toLowerCase()
-          : "";
-        row.style.display =
-          selectedStatus === "" || rowStatus.includes(selectedStatus)
-            ? ""
-            : "none";
-      });
-    }
-  }
-
-  // Close modal after applying filter
-  const modal = bootstrap.Modal.getInstance(
-    document.getElementById("filterModal")
-  );
-  if (modal) modal.hide();
-});
 
 // Initialize
 document.addEventListener("DOMContentLoaded", () => {

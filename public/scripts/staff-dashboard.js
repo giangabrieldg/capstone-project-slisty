@@ -228,6 +228,7 @@ class staffDashboard {
   }
 
   // Format custom cake orders for dashboard display
+  // Format custom cake orders for dashboard display
   formatCustomCakeOrdersForDashboard(orders, prefix) {
     return orders.map((order) => {
       const isImageBased = prefix === "RCC";
@@ -236,15 +237,21 @@ class staffDashboard {
         : order.customCakeId;
       const orderDate = this.getOrderDate(order);
 
-      // Ensure price is a number
-      const totalAmount = order.price ? parseFloat(order.price) : 0;
+      // Use downpayment_amount if available, otherwise calculate 50% of price
+      const totalAmount = order.downpayment_amount
+        ? parseFloat(order.downpayment_amount)
+        : order.price
+        ? parseFloat(order.price) * 0.5
+        : 0;
+
+      const fullPrice = order.price ? parseFloat(order.price) : 0;
 
       return {
         orderId: `${prefix}${String(orderId).padStart(3, "0")}`,
         customer_name: order.customer_name || order.customer?.name || "Unknown",
         customer_email:
           order.customer_email || order.customer?.email || "No email",
-        total_amount: totalAmount,
+        total_amount: totalAmount, // This is the 50% downpayment
         status: order.status,
         status_key: this.mapCustomCakeStatus(order.status),
         order_date: orderDate,
@@ -255,7 +262,7 @@ class staffDashboard {
             name: isImageBased ? "Image-Based Custom Cake" : "3D Custom Cake",
             size: order.size || "Not specified",
             quantity: 1,
-            price: totalAmount,
+            price: totalAmount, // Use downpayment amount here too
             customCakeId: orderId,
             is_custom_cake: true,
             is_image_based: isImageBased,
@@ -264,6 +271,7 @@ class staffDashboard {
         order_type: isImageBased ? "image_cake" : "custom_cake",
         is_custom_cake: true,
         is_image_based: isImageBased,
+        full_price: fullPrice, // Store full price separately if needed
       };
     });
   }
@@ -323,10 +331,10 @@ class staffDashboard {
 
     if (this.orders.length === 0) {
       tbody.innerHTML = `
-        <tr>
-          <td colspan="8" class="text-center py-4 text-muted">No orders for today</td>
-        </tr>
-      `;
+      <tr>
+        <td colspan="8" class="text-center py-4 text-muted">No orders for today</td>
+      </tr>
+    `;
       return;
     }
 
@@ -406,29 +414,38 @@ class staffDashboard {
             : "Custom Cake";
 
         return `
-        <tr class="${rowClass}">
-          <td>${orderIdCell}</td>
-          <td>
-            <div class="customer-info">
-              <div class="customer-name">${order.customer_name}</div>
-              <div class="customer-email small text-muted">${
-                order.customer_email || "No email"
-              }</div>
-            </div>
-          </td>
-          <td>${formattedDate}</td>
-          <td>${
-            order.delivery_method.charAt(0).toUpperCase() +
-            order.delivery_method.slice(1)
-          }</td>
-          <td>PHP ${totalAmount.toFixed(2)}</td>
-          <td>${paymentMethodDisplay}</td>
-          <td>${items}</td>
-          <td><span class="status ${statusInfo.class}">${
+      <tr class="${rowClass}">
+        <td>${orderIdCell}</td>
+        <td>
+          <div class="customer-info">
+            <div class="customer-name">${order.customer_name}</div>
+            <div class="customer-email small text-muted">${
+              order.customer_email || "No email"
+            }</div>
+          </div>
+        </td>
+        <td>${formattedDate}</td>
+        <td>${
+          order.delivery_method.charAt(0).toUpperCase() +
+          order.delivery_method.slice(1)
+        }</td>
+        <td>
+          PHP ${totalAmount.toFixed(2)}
+          ${
+            order.is_custom_cake && order.full_price
+              ? `<br><small class="text-muted">(50% of PHP ${order.full_price.toFixed(
+                  2
+                )})</small>`
+              : ""
+          }
+        </td>
+        <td>${paymentMethodDisplay}</td>
+        <td>${items}</td>
+        <td><span class="status ${statusInfo.class}">${
           statusInfo.text
         }</span></td>
-        </tr>
-      `;
+      </tr>
+    `;
       })
       .join("");
 
@@ -452,25 +469,25 @@ class staffDashboard {
       const style = document.createElement("style");
       style.id = "order-type-styles";
       style.textContent = `
-        .order-id {
-          font-weight: 600;
-          padding: 2px 6px;
-          border-radius: 3px;
-        }
-        .new-order {
-          background-color: #f0f8f5 !important;
-          border-left: 4px solid #2c9045;
-        }
+      .order-id {
+        font-weight: 600;
+        padding: 2px 6px;
+        border-radius: 3px;
+      }
+      .new-order {
+        background-color: #f0f8f5 !important;
+        border-left: 4px solid #2c9045;
+      }
 
-        .new-order .order-id.regular-id {
-          animation: pulse 1.5s ease-in-out infinite;
-        }
+      .new-order .order-id.regular-id {
+        animation: pulse 1.5s ease-in-out infinite;
+      }
 
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.6; }
-        }
-      `;
+      @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.6; }
+      }
+    `;
       document.head.appendChild(style);
     }
   }
@@ -765,7 +782,7 @@ class staffDashboard {
   startAutoRefresh() {
     setInterval(() => {
       this.loadDashboardData();
-    }, 2 * 60 * 1000);
+    }, 10 * 1000); // 10 seconds
   }
 
   showError(message) {

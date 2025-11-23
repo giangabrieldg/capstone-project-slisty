@@ -560,7 +560,32 @@ body {
 }
 
 
+/* Pagination Styles */
+.pagination {
+    margin: 20px 0;
+}
 
+.page-link {
+    color: #2c9045;
+    border: 1px solid #dee2e6;
+}
+
+.page-item.active .page-link {
+    background-color: #2c9045;
+    border-color: #2c9045;
+}
+
+.page-link:hover {
+    color: #1e6c32;
+    background-color: #e9ecef;
+    border-color: #dee2e6;
+}
+
+.page-item.disabled .page-link {
+    color: #6c757d;
+    background-color: #fff;
+    border-color: #dee2e6;
+}
 
 /* ===== RESPONSIVE STYLES ===== */
 
