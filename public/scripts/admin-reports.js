@@ -195,6 +195,12 @@ async function updateReports(startDate, endDate) {
       throw new Error(data.message || "Failed to fetch reports");
     }
 
+    // DEBUG: Check the structure of regular orders
+    console.log("Regular orders data:", data.orders);
+    if (data.orders && data.orders.length > 0) {
+      console.log("First regular order structure:", data.orders[0]);
+    }
+
     // Filter out cancelled orders for charts and summary
     const activeCustomCakeOrders = customCakeOrders.filter(
       (order) => order.status !== "Cancelled" && order.status !== "Not Feasible"
@@ -204,9 +210,21 @@ async function updateReports(startDate, endDate) {
       (order) => order.status !== "Cancelled" && order.status !== "Not Feasible"
     );
 
-    // Combine all orders: regular orders + custom cake orders (include ALL for table)
+    // Format regular orders with proper customer info
+    const formattedRegularOrders = data.orders.map((order) => ({
+      ...order,
+      order_type: "regular",
+      // Ensure customer info is properly mapped
+      customer_name: order.customer_name || order.customer?.name || "Unknown",
+      customer_email:
+        order.customer_email || order.customer?.email || "No email",
+      customer_phone:
+        order.customer_phone || order.customer?.phone || "No phone",
+    }));
+
+    // Combine all orders: regular orders + custom cake orders
     const allOrders = [
-      ...data.orders.map((order) => ({ ...order, order_type: "regular" })),
+      ...formattedRegularOrders,
       ...formatCustomCakeOrdersForReports(customCakeOrders, "CC"),
       ...formatCustomCakeOrdersForReports(imageBasedOrders, "RCC"),
     ];
@@ -237,7 +255,7 @@ async function updateReports(startDate, endDate) {
     updateCharts(
       data.daily_orders,
       data.popular_items,
-      customCakeOrders, // Pass original data for filtering in updateCharts
+      customCakeOrders,
       imageBasedOrders
     );
   } catch (error) {
@@ -255,16 +273,38 @@ function formatCustomCakeOrdersForReports(orders, prefix) {
     const orderId = isImageBased ? order.imageBasedOrderId : order.customCakeId;
     const orderDate = getOrderDate(order);
 
-    // Ensure price is a number
-    const totalAmount = order.price ? parseFloat(order.price) : 0;
+    // Use downpayment_amount if available, otherwise calculate 50% of price
+    const totalAmount = order.downpayment_amount
+      ? parseFloat(order.downpayment_amount)
+      : order.price
+      ? parseFloat(order.price) * 0.5
+      : 0;
+
+    const fullPrice = order.price ? parseFloat(order.price) : 0;
     const pickupDate = order.deliveryDate || order.createdAt;
+
+    // Enhanced customer info extraction
+    let customerName = "Unknown";
+    let customerEmail = "No email";
+    let customerPhone = "No phone";
+
+    // Try multiple possible locations for customer data
+    if (order.customer_name) customerName = order.customer_name;
+    else if (order.customer?.name) customerName = order.customer.name;
+
+    if (order.customer_email) customerEmail = order.customer_email;
+    else if (order.customer?.email) customerEmail = order.customer.email;
+
+    if (order.customer_phone) customerPhone = order.customer_phone;
+    else if (order.customer?.phone) customerPhone = order.customer.phone;
 
     return {
       orderId: `${prefix}${String(orderId).padStart(3, "0")}`,
-      customer_name: order.customer_name || order.customer?.name || "Unknown",
-      customer_email:
-        order.customer_email || order.customer?.email || "No email",
+      customer_name: customerName,
+      customer_email: customerEmail,
+      customer_phone: customerPhone,
       total_amount: totalAmount,
+      full_price: fullPrice,
       status: order.status,
       status_key: mapCustomCakeStatus(order.status),
       order_date: orderDate,
@@ -277,6 +317,7 @@ function formatCustomCakeOrdersForReports(orders, prefix) {
           size: order.size || "Not specified",
           quantity: 1,
           price: totalAmount,
+          full_price: fullPrice,
           customCakeId: orderId,
           is_custom_cake: true,
           is_image_based: isImageBased,
@@ -285,6 +326,7 @@ function formatCustomCakeOrdersForReports(orders, prefix) {
       order_type: isImageBased ? "image_cake" : "custom_cake",
       is_custom_cake: true,
       is_image_based: isImageBased,
+      downpayment_amount: totalAmount,
     };
   });
 }
@@ -338,6 +380,19 @@ function mapCustomCakeStatus(customCakeStatus) {
 // Calculate total revenue from custom cake orders
 function calculateCustomCakeRevenue(orders) {
   return orders.reduce((total, order) => {
+    // Use downpayment_amount if available, otherwise use 50% of price
+    if (order.downpayment_amount) {
+      return total + parseFloat(order.downpayment_amount);
+    } else if (order.price) {
+      return total + parseFloat(order.price) * 0.5;
+    }
+    return total;
+  }, 0);
+}
+
+// Calculate full price revenue from custom cake orders (for reference)
+function calculateCustomCakeFullRevenue(orders) {
+  return orders.reduce((total, order) => {
     return total + (order.price ? parseFloat(order.price) : 0);
   }, 0);
 }
@@ -346,18 +401,34 @@ function calculateCustomCakeRevenue(orders) {
 function updateSummaryCards(summary) {
   currentSummaryData = summary;
 
+  // Calculate revenue breakdown for tooltip
+  const regularRevenue = parseFloat(summary?.total_revenue) || 0;
+  const customCakeDownpaymentRevenue =
+    summary?.custom_cake_downpayment_revenue ||
+    calculateCustomCakeRevenue(summary?.custom_cake_orders || []) ||
+    0;
+
+  const totalRevenue = regularRevenue + customCakeDownpaymentRevenue;
+
   const cards = [
     { id: "totalOrders", value: summary?.total_orders || 0 },
     {
       id: "totalRevenue",
-      value: `PHP ${(parseFloat(summary?.total_revenue) || 0).toFixed(2)}`,
+      value: `PHP ${totalRevenue.toFixed(2)}`,
+      title: `Revenue Breakdown:\n• Regular Orders: PHP ${regularRevenue.toFixed(
+        2
+      )}\n• Custom Cake Downpayments: PHP ${customCakeDownpaymentRevenue.toFixed(
+        2
+      )}\n• Total: PHP ${totalRevenue.toFixed(2)}`,
     },
     {
       id: "customCakes",
       value: summary?.total_custom_cakes || 0,
-      title: `3D Custom: ${summary?.custom_cake_3d_orders || 0}\nImage-based: ${
+      title: `Custom Cakes Breakdown:\n• 3D Custom: ${
+        summary?.custom_cake_3d_orders || 0
+      }\n• Image-based: ${
         summary?.custom_cake_image_orders || 0
-      }`,
+      }\n• Downpayment Revenue: PHP ${customCakeDownpaymentRevenue.toFixed(2)}`,
     },
     {
       id: "avgOrderValue",
@@ -389,6 +460,7 @@ function updateSummaryCards(summary) {
 }
 
 // Update sales table
+// Update sales table to show customer contact info and styled order details
 function updateSalesTable(orders) {
   const tableBody = document.getElementById("salesTableBody");
   tableBody.innerHTML = "";
@@ -396,7 +468,7 @@ function updateSalesTable(orders) {
   if (!orders || orders.length === 0) {
     tableBody.innerHTML = `
       <tr>
-        <td colspan="6" class="text-center py-4 text-muted">No orders found for the selected date range</td>
+        <td colspan="7" class="text-center py-4 text-muted">No orders found for the selected date range</td>
       </tr>
     `;
     return;
@@ -406,28 +478,33 @@ function updateSalesTable(orders) {
     const row = document.createElement("tr");
     const items = order.items
       .map((item) => {
-        const price =
-          typeof item.price === "number"
-            ? item.price
-            : parseFloat(item.price) || 0;
-        const quantity =
-          typeof item.quantity === "number"
-            ? item.quantity
-            : parseInt(item.quantity) || 0;
+        const price = item.price || 0;
+        const quantity = item.quantity || 1;
+        const fullPrice = item.full_price || price * 2; // Estimate full price if not available
 
-        // Add size information if available
-        const sizeInfo = item.size ? `Size: ${item.size}<br>` : "";
-
-        // Add custom cake indicator
-        const cakeType = item.is_custom_cake
-          ? item.is_image_based
-            ? " (Image-Based)"
-            : " (3D Custom)"
+        // Add size information if available - STYLED AS TEXT-MUTED
+        const sizeInfo = item.size
+          ? `<span class="small text-muted">Size: ${item.size}</span><br>`
           : "";
 
-        return `${item.name}${cakeType}<br>${sizeInfo}Qty: ${quantity} - PHP ${(
+        // Add custom cake indicator and downpayment info
+        const cakeType = item.is_custom_cake
+          ? item.is_image_based
+            ? " (Image-Based Custom Cake)"
+            : " (3D Custom Cake)"
+          : "";
+
+        const downpaymentInfo = item.is_custom_cake
+          ? `<br><small class="text-muted">50% Downpayment of PHP ${fullPrice.toFixed(
+              2
+            )}</small>`
+          : "";
+
+        return `${
+          item.name
+        }${cakeType}<br>${sizeInfo}<span class="small text-muted">Qty: ${quantity}</span> - PHP ${(
           price * quantity
-        ).toFixed(2)}`;
+        ).toFixed(2)}${downpaymentInfo}`;
       })
       .join("<br><br>");
 
@@ -436,11 +513,8 @@ function updateSalesTable(orders) {
       ? new Date(order.pickup_date).toLocaleDateString()
       : "Not set";
 
-    // Safely convert total_amount to number
-    const totalAmount =
-      typeof order.total_amount === "number"
-        ? order.total_amount
-        : parseFloat(order.total_amount) || 0;
+    // Safely convert total_amount to number (this is downpayment for custom cakes)
+    const totalAmount = order.total_amount || 0;
 
     // Format payment method
     const paymentMethod = order.payment_method
@@ -462,16 +536,27 @@ function updateSalesTable(orders) {
       class: "pending",
     };
 
-    // Create customer details with payment, delivery methods, and dates
+    // Add downpayment indicator for custom cakes
+    const amountDisplay = order.is_custom_cake
+      ? `PHP ${totalAmount.toFixed(
+          2
+        )}<br><small class="text-muted">(50% Downpayment)</small>`
+      : `PHP ${totalAmount.toFixed(2)}`;
+
+    // Create customer details with contact info, payment, delivery methods, and dates
     const customerDetails = `
       <div class="customer-info">
         <div class="customer-name fw-bold">${order.customer_name}</div>
-        <div class="order-dates small text-muted">
-          <div>Order Date: ${orderDate}</div>
-          <div>Pickup/Delivery Date: ${pickupDate}</div>
+        <div class="customer-contact small text-muted">
+          <div>${order.customer_email || "No email"}</div>
+          <div>${order.customer_phone || "No phone"}</div>
         </div>
-        <div class="payment-method small text-muted">Payment: ${paymentMethod}</div>
-        <div class="delivery-method small text-muted">Delivery: ${deliveryMethod}</div>
+        <div class="order-dates small text-muted mt-1">
+          <div><strong>Order Date:</Strong> ${orderDate}</div>
+          <div><strong>Pickup/Delivery Date:</strong> ${pickupDate}</div>
+        </div>
+        <div class="payment-method small text-muted"><strong>Payment:</strong> ${paymentMethod}</div>
+        <div class="delivery-method small text-muted"><strong>Delivery:</strong> ${deliveryMethod}</div>
       </div>
     `;
 
@@ -481,11 +566,9 @@ function updateSalesTable(orders) {
     row.innerHTML = `
       <td>${orderIdCell}</td>
       <td>${customerDetails}</td>
-      <td>PHP ${totalAmount.toFixed(2)}</td>
+      <td>${amountDisplay}</td>
       <td>${items}</td>
-      <td><span class="status ${statusInfo.class}">${
-      statusInfo.text
-    }</span></td>
+      <td><span class="status ${statusInfo.class}">${statusInfo.text}</span></td>
       <td>${orderDate}</td>
     `;
     tableBody.appendChild(row);
@@ -628,6 +711,7 @@ function showError(message) {
 }
 
 // Excel export function
+// Excel export function - UPDATED WITH CONTACT INFO
 function exportToExcel() {
   if (isLoading) return;
 
@@ -640,11 +724,19 @@ function exportToExcel() {
   // Create a clone of the table for export
   const tableClone = table.cloneNode(true);
 
-  // Process customer details for Excel (extract from HTML)
+  // Process customer details for Excel (extract from HTML) - UPDATED WITH CONTACT INFO
   const customerCells = tableClone.querySelectorAll("td:nth-child(2)");
   customerCells.forEach((cell) => {
     const customerName =
       cell.querySelector(".customer-name")?.textContent || "Unknown Customer";
+    const customerEmail =
+      cell
+        .querySelector(".customer-contact")
+        ?.children[0]?.textContent?.replace("📧 ", "") || "No email";
+    const customerPhone =
+      cell
+        .querySelector(".customer-contact")
+        ?.children[1]?.textContent?.replace("📞 ", "") || "No phone";
     const paymentMethod =
       cell
         .querySelector(".payment-method")
@@ -654,15 +746,30 @@ function exportToExcel() {
         .querySelector(".delivery-method")
         ?.textContent?.replace("Delivery: ", "") || "Unknown";
 
-    cell.innerHTML = `${customerName}<br>Payment: ${paymentMethod}<br>Delivery: ${deliveryMethod}`;
+    cell.innerHTML = `${customerName}<br>Email: ${customerEmail}<br>Phone: ${customerPhone}<br>Payment: ${paymentMethod}<br>Delivery: ${deliveryMethod}`;
   });
 
-  // Calculate summary from the actual table data - FIXED VERSION
+  // Process order details for Excel - remove text-muted styling but keep content
+  const orderDetailCells = tableClone.querySelectorAll("td:nth-child(4)");
+  orderDetailCells.forEach((cell) => {
+    // Remove the text-muted class spans but keep the content
+    const htmlContent = cell.innerHTML;
+    const cleanContent = htmlContent
+      .replace(/<span class="text-muted">/g, "")
+      .replace(/<\/span>/g, "")
+      .replace(/<small class="text-muted">/g, "")
+      .replace(/<\/small>/g, "");
+    cell.innerHTML = cleanContent;
+  });
+
+  // Calculate summary from the actual table data - UPDATED FOR DOWNPAYMENTS
   const rows = tableClone.querySelectorAll("tbody tr");
   let totalOrders = 0;
   let totalRevenue = 0;
   let regularOrders = 0;
   let customCakeOrders = 0;
+  let regularRevenue = 0;
+  let customCakeDownpaymentRevenue = 0;
 
   // Count only data rows (exclude summary/title rows we'll add)
   rows.forEach((row) => {
@@ -679,38 +786,38 @@ function exportToExcel() {
 
       totalOrders++;
 
-      // Check order type
+      // Check order type and calculate revenue
       const orderIdSpan = firstCell.querySelector(".order-id");
-      if (orderIdSpan) {
-        if (orderIdSpan.classList.contains("regular-id")) {
-          regularOrders++;
-        } else if (
-          orderIdSpan.classList.contains("custom-cake-id") ||
-          orderIdSpan.classList.contains("image-cake-id")
-        ) {
-          customCakeOrders++;
-        }
-      }
-
-      // Get revenue from amount cell (3rd cell) - IMPROVED PARSING
       const amountText = amountCell.textContent.trim();
 
-      // Handle different possible formats
+      // Parse amount - handle downpayment notation
       let amountValue = 0;
       if (amountText.includes("PHP")) {
-        // Format: "PHP 1,234.56" or "PHP1,234.56"
         const cleanAmount = amountText
-          .replace(/PHP\s?/gi, "") // Remove "PHP" and optional space
-          .replace(/,/g, "") // Remove commas
+          .replace(/PHP\s?/gi, "")
+          .replace(/,/g, "")
+          .replace(/\(.*\)/g, "") // Remove parentheses content (like "50% Downpayment")
           .trim();
         amountValue = parseFloat(cleanAmount) || 0;
       } else {
-        // Try direct parsing
         const cleanAmount = amountText.replace(/,/g, "").trim();
         amountValue = parseFloat(cleanAmount) || 0;
       }
 
       totalRevenue += amountValue;
+
+      if (orderIdSpan) {
+        if (orderIdSpan.classList.contains("regular-id")) {
+          regularOrders++;
+          regularRevenue += amountValue;
+        } else if (
+          orderIdSpan.classList.contains("custom-cake-id") ||
+          orderIdSpan.classList.contains("image-cake-id")
+        ) {
+          customCakeOrders++;
+          customCakeDownpaymentRevenue += amountValue;
+        }
+      }
     }
   });
 
@@ -735,9 +842,12 @@ function exportToExcel() {
 
   const summaryRow = document.createElement("tr");
   summaryRow.innerHTML = `<td colspan="6" style="text-align: center; font-weight: bold; background-color: #f5f5f5; padding: 12px;">
-    Summary: ${totalOrders} Total Orders (${regularOrders} Regular, ${customCakeOrders} Custom Cakes) | PHP ${totalRevenue.toFixed(
+    Summary: ${totalOrders} Total Orders (${regularOrders} Regular, ${customCakeOrders} Custom Cakes) | 
+    PHP ${totalRevenue.toFixed(2)} Total Revenue (PHP ${regularRevenue.toFixed(
     2
-  )} Total Revenue
+  )} Regular + PHP ${customCakeDownpaymentRevenue.toFixed(
+    2
+  )} Custom Cake Downpayments)
   </td>`;
 
   const generatedRow = document.createElement("tr");
@@ -786,6 +896,7 @@ function exportToExcel() {
         .order-id.regular-id { color: #2c9045; font-weight: bold; }
         .order-id.custom-cake-id { color: #e91e63; font-weight: bold; background-color: #fce4ec; }
         .order-id.image-cake-id { color: #ff9800; font-weight: bold; background-color: #fff3e0; }
+        .downpayment-note { font-size: 11px; color: #666; font-style: italic; }
       </style>
       <!--[if gte mso 9]>
       <xml>

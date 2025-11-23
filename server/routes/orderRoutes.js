@@ -153,6 +153,9 @@ const formatOrders = (orders) => {
     })
     .map((order) => ({
       ...order.toJSON(),
+      customer_name: order.customer_name, // Ensure these are included
+      customer_email: order.customer_email,
+      customer_phone: order.customer_phone,
       user: order.customer
         ? {
             userID: order.customer.userID,
@@ -728,7 +731,8 @@ router.get(
       const formattedOrders = regularOrdersOnly.map((order) => ({
         orderId: formatOrderId(order.orderId),
         customer_name: order.customer_name,
-        customer_email: order.customer_email,
+        customer_email: order.customer_email, // ADD THIS
+        customer_phone: order.customer_phone, // ADD THIS
         total_amount: parseFloat(order.total_amount) || 0,
         status: formatStatus(order.status),
         status_key: order.status,
@@ -837,10 +841,12 @@ router.get(
         `Found ${regularOrdersOnly.length} regular orders after filtering custom cakes`
       );
 
-      // Format orders...
+      // Format orders
       const formattedOrders = regularOrdersOnly.map((order) => ({
         orderId: "ORD" + order.orderId.toString().padStart(3, "0"),
         customer_name: order.customer_name,
+        customer_email: order.customer_email,
+        customer_phone: order.customer_phone,
         total_amount: parseFloat(order.total_amount) || 0,
         status: formatStatus(order.status),
         status_key: order.status,

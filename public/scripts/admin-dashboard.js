@@ -227,6 +227,7 @@ class AdminDashboard {
   }
 
   // Format custom cake orders for dashboard display
+  // Format custom cake orders for dashboard display
   formatCustomCakeOrdersForDashboard(orders, prefix) {
     return orders.map((order) => {
       const isImageBased = prefix === "RCC";
@@ -235,15 +236,21 @@ class AdminDashboard {
         : order.customCakeId;
       const orderDate = this.getOrderDate(order);
 
-      // Ensure price is a number
-      const totalAmount = order.price ? parseFloat(order.price) : 0;
+      // Use downpayment_amount if available, otherwise calculate 50% of price
+      const totalAmount = order.downpayment_amount
+        ? parseFloat(order.downpayment_amount)
+        : order.price
+        ? parseFloat(order.price) * 0.5
+        : 0;
+
+      const fullPrice = order.price ? parseFloat(order.price) : 0;
 
       return {
         orderId: `${prefix}${String(orderId).padStart(3, "0")}`,
         customer_name: order.customer_name || order.customer?.name || "Unknown",
         customer_email:
           order.customer_email || order.customer?.email || "No email",
-        total_amount: totalAmount,
+        total_amount: totalAmount, // This is the 50% downpayment
         status: order.status,
         status_key: this.mapCustomCakeStatus(order.status),
         order_date: orderDate,
@@ -254,7 +261,7 @@ class AdminDashboard {
             name: isImageBased ? "Image-Based Custom Cake" : "3D Custom Cake",
             size: order.size || "Not specified",
             quantity: 1,
-            price: totalAmount,
+            price: totalAmount, // Use downpayment amount here too
             customCakeId: orderId,
             is_custom_cake: true,
             is_image_based: isImageBased,
@@ -263,6 +270,7 @@ class AdminDashboard {
         order_type: isImageBased ? "image_cake" : "custom_cake",
         is_custom_cake: true,
         is_image_based: isImageBased,
+        full_price: fullPrice, // Store full price separately if needed
       };
     });
   }
@@ -281,16 +289,50 @@ class AdminDashboard {
   }
 
   updateSummaryCards() {
-    // Revenue - from regular orders only
-    document.querySelector('[data-summary="revenue"]').textContent = `PHP ${(
-      this.summary.total_revenue || 0
-    ).toFixed(2)}`;
+    // Calculate total revenue including custom cake downpayments
+    const regularRevenue = this.summary.total_revenue || 0;
 
-    // Total Orders - from regular orders only
+    // Calculate custom cake downpayment revenue from today's orders
+    // Include all statuses where downpayment has been paid and work has started
+    const customCakeDownpaymentRevenue = this.orders
+      .filter(
+        (order) =>
+          order.is_custom_cake &&
+          [
+            "Downpayment Paid",
+            "In Progress",
+            "Ready for Pickup/Delivery",
+            "Completed",
+          ].includes(order.status)
+      )
+      .reduce((total, order) => {
+        const amount = order.total_amount || 0;
+        return (
+          total +
+          (typeof amount === "number" ? amount : parseFloat(amount) || 0)
+        );
+      }, 0);
+
+    const totalRevenue = regularRevenue + customCakeDownpaymentRevenue;
+
+    // Update Revenue card with total including custom cake downpayments
+    const revenueElement = document.querySelector('[data-summary="revenue"]');
+    revenueElement.textContent = `PHP ${totalRevenue.toFixed(2)}`;
+
+    // Add detailed tooltip
+    revenueElement.title = `Revenue Breakdown:\n• Regular Orders: PHP ${regularRevenue.toFixed(
+      2
+    )}\n• Custom Cake Downpayments: PHP ${customCakeDownpaymentRevenue.toFixed(
+      2
+    )}\n• Total: PHP ${totalRevenue.toFixed(2)}`;
+    revenueElement.setAttribute("data-bs-toggle", "tooltip");
+    revenueElement.setAttribute("data-bs-placement", "top");
+
+    // Total Orders - from regular orders only (unchanged)
     document.querySelector('[data-summary="orders"]').textContent =
       this.summary.total_orders || 0;
 
-    // Custom Cakes - Today's total (separate from regular orders)
+    // Custom Cakes - Today's total (unchanged)
     const customCakesElement = document.querySelector(
       '[data-summary="custom-cakes"]'
     );
@@ -299,11 +341,13 @@ class AdminDashboard {
     const imageBasedCount = this.summary.custom_cake_image_orders || 0;
 
     customCakesElement.textContent = totalCustomCakes;
-    customCakesElement.title = `Today's Custom Cakes:\n3D Custom: ${customCake3DCount}\nImage-based: ${imageBasedCount}`;
+    customCakesElement.title = `Today's Custom Cakes:\n• 3D Custom: ${customCake3DCount}\n• Image-based: ${imageBasedCount}\n• Downpayment Revenue: PHP ${customCakeDownpaymentRevenue.toFixed(
+      2
+    )}`;
     customCakesElement.setAttribute("data-bs-toggle", "tooltip");
     customCakesElement.setAttribute("data-bs-placement", "top");
 
-    // Customers
+    // Customers (unchanged)
     document.querySelector('[data-summary="customers"]').textContent =
       this.summary.new_customers || "0";
 
@@ -420,7 +464,16 @@ class AdminDashboard {
             order.delivery_method.charAt(0).toUpperCase() +
             order.delivery_method.slice(1)
           }</td>
-          <td>PHP ${totalAmount.toFixed(2)}</td>
+          <td>
+            PHP ${totalAmount.toFixed(2)}
+            ${
+              order.is_custom_cake && order.full_price
+                ? `<br><small class="text-muted">(50% of PHP ${order.full_price.toFixed(
+                    2
+                  )})</small>`
+                : ""
+            }
+          </td>
           <td>${paymentMethodDisplay}</td>
           <td>${items}</td>
           <td><span class="status ${statusInfo.class}">${
@@ -761,10 +814,11 @@ class AdminDashboard {
     }
   }
 
+  //auto refresh every 10 seconds
   startAutoRefresh() {
     setInterval(() => {
       this.loadDashboardData();
-    }, 2 * 60 * 1000);
+    }, 10 * 1000); // 10 seconds
   }
 
   showError(message) {
