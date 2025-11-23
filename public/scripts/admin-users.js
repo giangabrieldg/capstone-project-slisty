@@ -1,3 +1,6 @@
+// Add this configuration at the top of your file
+const AUTO_DELETE_DAYS = 30; // Set the number of days after which archived accounts should be deleted
+
 // Password generation function
 function generatePassword() {
   const length = 12;
@@ -23,35 +26,14 @@ function generatePassword() {
     .join("");
 }
 
-// Password visibility variables
-let isPasswordVisible = false;
 let currentPassword = "";
 
-// Initialize password generation and visibility toggle
+// Remove the password visibility toggle functionality
 document.addEventListener("DOMContentLoaded", function () {
+  // Remove the entire password visibility toggle section
   const showPasswordBtn = document.getElementById("showPasswordBtn");
-  const passwordInput = document.getElementById("userPassword");
-
-  // Password visibility toggle
-  if (showPasswordBtn && passwordInput) {
-    showPasswordBtn.addEventListener("click", function () {
-      if (!currentPassword) return; // Don't toggle if no password generated
-
-      if (isPasswordVisible) {
-        // Hide password
-        passwordInput.type = "password";
-        passwordInput.value = "••••••••••••";
-        showPasswordBtn.innerHTML = '<i class="bi bi-eye"></i>';
-        showPasswordBtn.title = "Show password";
-      } else {
-        // Show password
-        passwordInput.type = "text";
-        passwordInput.value = currentPassword;
-        showPasswordBtn.innerHTML = '<i class="bi bi-eye-slash"></i>';
-        showPasswordBtn.title = "Hide password";
-      }
-      isPasswordVisible = !isPasswordVisible;
-    });
+  if (showPasswordBtn) {
+    showPasswordBtn.style.display = "none"; // Hide the show password button
   }
 
   const addUserModal = document.getElementById("addUserModal");
@@ -63,18 +45,12 @@ document.addEventListener("DOMContentLoaded", function () {
         currentPassword = generatePassword();
         passwordInput.value = "••••••••••••";
         passwordInput.type = "password";
-        isPasswordVisible = false;
-        // Reset eye icon
-        const showPasswordBtn = document.getElementById("showPasswordBtn");
-        if (showPasswordBtn) {
-          showPasswordBtn.innerHTML = '<i class="bi bi-eye"></i>';
-          showPasswordBtn.title = "Show password";
-        }
+        // Remove the visibility toggle reset
       }
     });
   }
 
-  // Generate password button functionality
+  // Generate password button functionality - remove success state visibility
   const generatePasswordBtn = document.getElementById("generatePasswordBtn");
   if (generatePasswordBtn) {
     generatePasswordBtn.addEventListener("click", function () {
@@ -83,16 +59,8 @@ document.addEventListener("DOMContentLoaded", function () {
         currentPassword = generatePassword();
         passwordInput.value = "••••••••••••";
         passwordInput.type = "password";
-        isPasswordVisible = false;
 
-        // Reset eye icon
-        const showPasswordBtn = document.getElementById("showPasswordBtn");
-        if (showPasswordBtn) {
-          showPasswordBtn.innerHTML = '<i class="bi bi-eye"></i>';
-          showPasswordBtn.title = "Show password";
-        }
-
-        // Show brief feedback
+        // Show brief feedback (keep this but remove any password display)
         const originalText = generatePasswordBtn.textContent;
         generatePasswordBtn.textContent = "Generated!";
         generatePasswordBtn.classList.remove("btn-outline-secondary");
@@ -106,8 +74,42 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     });
   }
+
+  // Check for accounts that should be auto-deleted
+  checkAutoDeleteAccounts();
 });
 
+// Add this function to check and delete old archived accounts
+async function checkAutoDeleteAccounts() {
+  try {
+    const response = await fetch(
+      `${window.API_BASE_URL}/api/auth/auto-delete-archived`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${sessionStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({ days: AUTO_DELETE_DAYS }),
+      }
+    );
+
+    if (response.ok) {
+      const result = await response.json();
+      if (result.deletedCount > 0) {
+        console.log(
+          `Auto-deleted ${result.deletedCount} archived accounts older than ${AUTO_DELETE_DAYS} days`
+        );
+        // Refresh the user list if any accounts were deleted
+        await fetchUsers();
+      }
+    }
+  } catch (error) {
+    console.error("Error in auto-delete check:", error);
+  }
+}
+
+// Modified fetchUsers function to show archive date and auto-delete status
 async function fetchUsers() {
   try {
     const response = await fetch(`${window.API_BASE_URL}/api/auth/users`, {
@@ -131,14 +133,34 @@ async function fetchUsers() {
 
     users.forEach((user) => {
       const row = document.createElement("tr");
+
+      // Calculate days until auto-delete for archived users
+      let autoDeleteInfo = "";
+      if (user.isArchived && user.archivedAt) {
+        const archivedDate = new Date(user.archivedAt);
+        const daysArchived = Math.floor(
+          (new Date() - archivedDate) / (1000 * 60 * 60 * 24)
+        );
+        const daysLeft = AUTO_DELETE_DAYS - daysArchived;
+
+        if (daysLeft > 0) {
+          autoDeleteInfo = `<br><small class="text-warning">Auto-delete in ${daysLeft} days</small>`;
+        } else {
+          autoDeleteInfo = `<br><small class="text-danger">Scheduled for deletion</small>`;
+        }
+      }
+
       row.innerHTML = `
         <td>${user.employeeID || "N/A"}</td>
         <td>${user.name}</td>
         <td>${user.email}</td>
         <td>${user.userLevel}</td>
-        <td><span class="status ${user.isArchived ? "archived" : "active"}">${
-        user.isArchived ? "Archived" : "Active"
-      }</span></td>
+        <td>
+          <span class="status ${user.isArchived ? "archived" : "active"}">
+            ${user.isArchived ? "Archived" : "Active"}
+          </span>
+          ${autoDeleteInfo}
+        </td>
         <td>
           <label class="archive-toggle">
             <input type="checkbox" class="archive-checkbox" data-user-id="${
@@ -169,6 +191,86 @@ async function fetchUsers() {
     });
   }
 }
+
+// Modified archive toggle functionality to include archive date
+function addArchiveToggleListener(checkbox) {
+  checkbox.addEventListener("change", async () => {
+    const userId = checkbox.getAttribute("data-user-id");
+    const isArchived = checkbox.checked;
+
+    // Show confirmation for archiving with auto-delete warning
+    if (isArchived) {
+      const result = await Swal.fire({
+        title: "Archive User?",
+        html: `
+          <div class="text-start">
+            <p>Are you sure you want to archive this user?</p>
+            <div class="alert alert-warning">
+              <small>
+                <strong>Auto-delete Notice:</strong> Archived accounts will be automatically deleted after ${AUTO_DELETE_DAYS} days.
+              </small>
+            </div>
+          </div>
+        `,
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Yes, Archive User",
+        cancelButtonText: "Cancel",
+        confirmButtonColor: "#2c9045",
+      });
+
+      if (!result.isConfirmed) {
+        checkbox.checked = false;
+        return;
+      }
+    }
+
+    try {
+      const response = await fetch(
+        `${window.API_BASE_URL}/api/auth/users/${userId}/archive`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${sessionStorage.getItem("token")}`,
+          },
+          body: JSON.stringify({ isArchived }),
+        }
+      );
+      if (!response.ok) {
+        if (response.status === 401) {
+          sessionStorage.removeItem("token");
+          window.location.href = "/customer/login.html";
+          throw new Error("Unauthorized: Please log in again");
+        }
+        throw new Error("Failed to update user status");
+      }
+      await fetchUsers();
+
+      Swal.fire({
+        title: "Success!",
+        text: `User ${isArchived ? "archived" : "unarchived"} successfully!${
+          isArchived
+            ? ` Account will be auto-deleted after ${AUTO_DELETE_DAYS} days.`
+            : ""
+        }`,
+        icon: "success",
+        confirmButtonColor: "#2c9045",
+      });
+    } catch (error) {
+      console.error("Error updating archive status:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: `Error: ${error.message}`,
+        confirmButtonColor: "#2c9045",
+      });
+    }
+  });
+}
+
+// The rest of your existing functions remain the same...
+// (addUserForm event listener, view switch functionality, search functionality)
 
 // Add new user functionality
 document.getElementById("addUserForm").addEventListener("submit", async (e) => {
@@ -213,6 +315,7 @@ document.getElementById("addUserForm").addEventListener("submit", async (e) => {
   }
 
   // Show password confirmation before creating user
+  // Show password confirmation without revealing the password
   const result = await Swal.fire({
     title: "Confirm User Creation",
     html: `
@@ -220,14 +323,12 @@ document.getElementById("addUserForm").addEventListener("submit", async (e) => {
         <p><strong>Name:</strong> ${name}</p>
         <p><strong>Email:</strong> ${email}</p>
         <p><strong>Role:</strong> ${role}</p>
-        <p><strong>Password:</strong> 
-          <button type="button" id="tempShowPass" class="btn btn-sm btn-outline-secondary ms-2">
-            <i class="bi bi-eye"></i> Show Password
-          </button>
-          <span id="passwordDisplay" style="display:none;"><code>${password}</code></span>
-        </p>
+        <p><strong>Password:</strong> <code>••••••••••••</code></p>
         <div class="alert alert-info mt-2">
-          <small>This password will be automatically sent to the user's email.</small>
+          <small>
+            <strong>Password generated successfully</strong><br>
+            The password has been automatically generated and will be sent to the user's email.
+          </small>
         </div>
       </div>
     `,
@@ -236,14 +337,6 @@ document.getElementById("addUserForm").addEventListener("submit", async (e) => {
     confirmButtonText: "Create User & Send Email",
     cancelButtonText: "Cancel",
     confirmButtonColor: "#2c9045",
-    didOpen: () => {
-      document
-        .getElementById("tempShowPass")
-        .addEventListener("click", function () {
-          this.style.display = "none";
-          document.getElementById("passwordDisplay").style.display = "inline";
-        });
-    },
   });
 
   if (!result.isConfirmed) {
@@ -312,7 +405,7 @@ document.getElementById("addUserForm").addEventListener("submit", async (e) => {
           <p>User <strong>${name}</strong> added successfully!</p>
           <div class="alert alert-success mt-2">
             <small>
-              <strong>✓ Credentials sent:</strong> The login credentials have been sent to <strong>${email}</strong><br>
+              The login credentials have been sent to <strong>${email}</strong><br>
               The user will receive their password via email.
             </small>
           </div>
@@ -331,50 +424,6 @@ document.getElementById("addUserForm").addEventListener("submit", async (e) => {
     });
   }
 });
-
-// Archive toggle functionality
-function addArchiveToggleListener(checkbox) {
-  checkbox.addEventListener("change", async () => {
-    const userId = checkbox.getAttribute("data-user-id");
-    const isArchived = checkbox.checked;
-    try {
-      const response = await fetch(
-        `${window.API_BASE_URL}/api/auth/users/${userId}/archive`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${sessionStorage.getItem("token")}`,
-          },
-          body: JSON.stringify({ isArchived }),
-        }
-      );
-      if (!response.ok) {
-        if (response.status === 401) {
-          sessionStorage.removeItem("token");
-          window.location.href = "/customer/login.html";
-          throw new Error("Unauthorized: Please log in again");
-        }
-        throw new Error("Failed to update user status");
-      }
-      await fetchUsers();
-      Swal.fire({
-        title: "Success!",
-        text: `User ${isArchived ? "archived" : "unarchived"} successfully!`,
-        icon: "success",
-        confirmButtonColor: "#2c9045",
-      });
-    } catch (error) {
-      console.error("Error updating archive status:", error);
-      Swal.fire({
-        icon: "error",
-        title: "Oops...",
-        text: `Error: ${error.message}`,
-        confirmButtonColor: "#2c9045",
-      });
-    }
-  });
-}
 
 // View switch functionality
 document.querySelectorAll(".view-link").forEach((link) => {

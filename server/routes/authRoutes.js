@@ -812,6 +812,10 @@ router.put(
         updateData.loginAttempts = 0;
         updateData.lastLoginAttempt = null;
         updateData.lockedUntil = null;
+        updateData.archivedAt = null; // Clear archive date when unarchiving
+      } else {
+        // Set archive date when archiving
+        updateData.archivedAt = new Date();
       }
 
       await user.update(updateData);
@@ -819,6 +823,7 @@ router.put(
         message: `User ${isArchived ? "archived" : "unarchived"} successfully${
           !isArchived ? " and login security reset" : ""
         }`,
+        archivedAt: isArchived ? updateData.archivedAt : null,
       });
     } catch (error) {
       console.error("Error updating archive status:", error);
@@ -826,5 +831,88 @@ router.put(
     }
   }
 );
+
+router.post(
+  "/auto-delete-archived",
+  verifyToken,
+  setNoCacheHeaders,
+  async (req, res) => {
+    if (req.user.userLevel !== "Admin") {
+      return res.status(403).json({ message: "Access denied: Admins only" });
+    }
+
+    const { days = 30 } = req.body; // Default to 30 days if not specified
+
+    try {
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - days);
+
+      // Find users that are archived and were archived before the cutoff date
+      const usersToDelete = await User.findAll({
+        where: {
+          isArchived: true,
+          archivedAt: {
+            [Op.lte]: cutoffDate,
+          },
+        },
+      });
+
+      const deletedUserIds = usersToDelete.map((user) => user.userID);
+
+      // Delete the users
+      await User.destroy({
+        where: {
+          isArchived: true,
+          archivedAt: {
+            [Op.lte]: cutoffDate,
+          },
+        },
+      });
+
+      res.status(200).json({
+        success: true,
+        deletedCount: usersToDelete.length,
+        deletedUserIds: deletedUserIds,
+        message: `Deleted ${usersToDelete.length} archived accounts older than ${days} days`,
+      });
+    } catch (error) {
+      console.error("Error auto-deleting archived accounts:", error);
+      res.status(500).json({ message: "Server error during auto-deletion" });
+    }
+  }
+);
+
+// endpoint to change password of staff/admin users
+router.post("/change-password", verifyToken, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const userId = req.user.userID;
+
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Verify current password
+    const isCurrentPasswordValid = await bcrypt.compare(
+      currentPassword,
+      user.password
+    );
+    if (!isCurrentPasswordValid) {
+      return res.status(400).json({ message: "Current password is incorrect" });
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update password
+    await user.update({ password: hashedPassword });
+
+    res.json({ message: "Password updated successfully" });
+  } catch (error) {
+    console.error("Error changing password:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
 
 module.exports = router;

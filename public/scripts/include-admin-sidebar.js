@@ -61,6 +61,11 @@ async function initializeAdminSidebar(container) {
   // Load notifications data on all pages
   await loadSidebarNotificationsData(container);
 
+  // Initialize change password functionality
+  if (typeof initializeChangePassword === "function") {
+    initializeChangePassword(container, userData);
+  }
+
   // Set active nav link based on current path
   if (navLinks.length > 0) {
     const currentPath = window.location.pathname;
@@ -68,6 +73,7 @@ async function initializeAdminSidebar(container) {
     navLinks.forEach((link) => {
       const linkPath = new URL(link.href, window.location.origin).pathname;
 
+      // Only set active state for main navigation links, not logout
       if (link.id === "logoutLink") {
         link.classList.remove("active");
         return;
@@ -82,6 +88,10 @@ async function initializeAdminSidebar(container) {
 
     navLinks.forEach((link) => {
       link.addEventListener("click", function () {
+        // Don't set active state for logout link
+        if (this.id === "logoutLink") {
+          return;
+        }
         navLinks.forEach((nav) => nav.classList.remove("active"));
         this.classList.add("active");
       });
