@@ -27,6 +27,7 @@ class CheckoutManager {
     this.loadCustomerProfile();
     this.setupEventListeners();
     this.initializeDatePicker();
+    this.loadTermsAndConditions();
 
     const isPageRefresh =
       performance.navigation.type === 1 ||
@@ -255,7 +256,69 @@ class CheckoutManager {
     }
   }
 
-  //Updates payment methods display for custom cake orders
+  async loadTermsAndConditions() {
+    try {
+      const termsContent = document.getElementById("termsContent");
+      if (termsContent) {
+        termsContent.innerHTML = `
+        <div class="terms-content">
+          <h6 class="text-success mb-3"><i class="fas fa-gavel"></i> Orders & Custom Cakes</h6>
+          <ul class="mb-4">
+            <li>We accept orders for standard menu items and custom cakes.</li>
+            <li>Custom cake orders must be placed at least 1 week before the event.</li>
+            <li>A 50% down payment through GCash is required for all custom cake orders.</li>
+            <li>Exact replication of reference designs is not guaranteed.</li>
+          </ul>
+
+          <h6 class="text-success mb-3"><i class="fas fa-credit-card"></i> Payments</h6>
+          <ul class="mb-4">
+            <li>Payments can be made through GCash via PayMongo or Cash.</li>
+            <li>Orders will be processed only after payment is verified.</li>
+          </ul>
+
+          <h6 class="text-success mb-3"><i class="fas fa-truck"></i> Delivery & Pick-Up</h6>
+          <ul class="mb-4">
+            <li>Pick-up is encouraged for cake/food safety.</li>
+            <li>Slice N Grind uses Lalamove for deliveries.</li>
+            <li>Delivery fees are charged to the customer.</li>
+          </ul>
+          
+          <h6 class="text-success mb-3"><i class="fas fa-user-check"></i> Customer Responsibilities</h6>
+          <ul class="mb-4">
+            <li>Provide accurate information during ordering.</li>
+            <li>Respond to verification messages promptly.</li>
+            <li>Inspect the order upon pick-up or delivery.</li>
+            <li>Handle and store cakes/food properly.</li>
+          </ul>
+
+          <h6 class="text-success mb-3"><i class="fas fa-shield-alt"></i> Privacy & Liability</h6>
+          <ul class="mb-4">
+            <li>Personal information is used only for order processing and will only be shared with PayMongo and Lalamove as needed.</li>
+          </ul>
+
+          <div class="alert alert-info mt-4">
+            <small>
+              <i class="fas fa-info-circle"></i>
+              By placing an order, you acknowledge that you have read, understood, and agree to be bound by these Terms and Conditions.
+            </small>
+          </div>
+        </div>
+      `;
+      }
+    } catch (error) {
+      console.error("Error loading terms and conditions:", error);
+      // Fallback content in case of error
+      const termsContent = document.getElementById("termsContent");
+      if (termsContent) {
+        termsContent.innerHTML = `
+        <div class="alert alert-warning">
+          <p>By placing an order with Slice N Grind, you agree to our standard terms and conditions including downpayment requirements, delivery policies, and cancellation terms.</p>
+          <p>Please contact us for complete terms and conditions.</p>
+        </div>
+      `;
+      }
+    }
+  }
 
   // Update the payment methods display to only show GCash for custom cakes
   updatePaymentMethodsForCustomCake(isDownpayment) {
@@ -696,6 +759,24 @@ class CheckoutManager {
           confirmButtonColor: "#2c9045",
         });
         window.location.href = "/customer/profile.html";
+        return;
+      }
+
+      // NEW: Terms and Conditions validation
+      const agreeTermsCheckbox = document.getElementById("agreeTerms");
+      if (!agreeTermsCheckbox || !agreeTermsCheckbox.checked) {
+        await Swal.fire({
+          icon: "warning",
+          title: "Terms and Conditions Required",
+          html: `
+          <div class="text-center">
+            <i class="fas fa-exclamation-triangle fa-2x text-warning mb-3"></i>
+            <p>Please agree to the Terms and Conditions to proceed with your order.</p>
+            <small class="text-muted">You can review the terms by clicking the link above.</small>
+          </div>
+        `,
+          confirmButtonColor: "#2c9045",
+        });
         return;
       }
 

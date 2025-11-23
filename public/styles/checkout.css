@@ -75,3 +75,42 @@ body {
     color: #495057;
     cursor: not-allowed;
 }
+
+.terms-container .form-check-label {
+    font-weight: 500;
+}
+
+.terms-container a {
+    color: #2c9045;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.terms-container a:hover {
+    text-decoration: underline;
+}
+
+.terms-content h6 {
+    font-weight: 600;
+}
+
+.terms-content ul {
+    padding-left: 1.5rem;
+}
+
+.terms-content li {
+    margin-bottom: 0.5rem;
+    line-height: 1.5;
+}
+
+.prefilled-date {
+    background-color: #e8f5e8;
+    border-radius: 4px;
+    padding: 10px;
+}
+
+/* Make the modal content more readable */
+.modal-body {
+    max-height: 70vh;
+    overflow-y: auto;
+}
