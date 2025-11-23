@@ -361,7 +361,7 @@ const statusMap = {
     text: "Ready for Downpayment",
   },
   "Downpayment Paid": { class: "dp-paid", text: "Downpayment Paid" },
-  "Order Received": { class: "order-received", text: "Order Received" },
+  "Order Submitted": { class: "order-received", text: "Order Submitted" }, // Changed from "Order Received"
   "In Progress": { class: "in-progress", text: "In Progress" },
   "Ready for Pickup/Delivery": {
     class: "ready",
@@ -374,7 +374,11 @@ const statusMap = {
 
 // Map custom cake status to regular order status for styling
 function mapCustomCakeStatus(customCakeStatus) {
-  return customCakeStatus; // Return the actual status text
+  // If the custom cake status is "Order Received", map it to "Order Submitted"
+  if (customCakeStatus === "Order Received") {
+    return "Order Submitted";
+  }
+  return customCakeStatus; // Return the actual status text for other statuses
 }
 
 // Calculate total revenue from custom cake orders

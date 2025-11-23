@@ -199,7 +199,7 @@ function formatStatus(status) {
   const statusMap = {
     pending: "Pending",
     pending_payment: "Pending Payment",
-    order_received: "Order Received",
+    order_received: "Order Submitted",
     processing: "In Progress",
     shipped: "Ready for Delivery",
     delivered: "Completed",

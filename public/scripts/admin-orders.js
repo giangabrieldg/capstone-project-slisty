@@ -100,7 +100,7 @@ class AdminOrdersManager {
         const statusMap = {
           pending: "Pending",
           pending_payment: "Pending Payment",
-          order_received: "Order Received",
+          order_received: "Order Submitted",
           processing: "In Progress",
           shipped: "Ready for Pickup/Delivery",
           delivered: "Completed",
@@ -454,7 +454,7 @@ class AdminOrdersManager {
       if (!data.success) throw new Error(data.message);
 
       const statusMap = {
-        order_received: "Order Received", // NEW STATUS
+        order_received: "Order Submitted", // NEW STATUS
         processing: "In Progress",
         shipped: "Ready for Pickup/Delivery",
         delivered: "Completed",

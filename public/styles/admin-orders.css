@@ -148,8 +148,8 @@ body {
 }
 
 .status.order_received {
-    background-color: #d1f2eb;
-    color: #117a65;
+    background-color: #e2e3e5;
+    color: #383d41;
 }
 
 .status.processing {

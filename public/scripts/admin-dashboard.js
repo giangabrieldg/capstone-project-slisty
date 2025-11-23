@@ -381,7 +381,7 @@ class AdminDashboard {
         text: "Ready for Downpayment",
       },
       "Downpayment Paid": { class: "dp-paid", text: "Downpayment Paid" },
-      "Order Received": { class: "order-received", text: "Order Received" },
+      "Order Submitted": { class: "order-received", text: "Order Submitted" },
       "In Progress": { class: "in-progress", text: "In Progress" },
       "Ready for Pickup/Delivery": {
         class: "ready",
